@@ -8,6 +8,8 @@ Principle: each milestone must have:
 - at least one executable check where practical
 - a demoable output that the next milestone can build on
 
+**Morning review handoff:** `docs/review-spine-handoff.md` names the current clean review base, the ancestry chain it already contains, the remaining blockers, and the dirty-root files that should stay out of merge scope.
+
 ---
 
 ## Milestone 1 — Spec Backbone + Demo Contract
