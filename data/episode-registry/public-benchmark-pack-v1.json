@@ -1,0 +1,562 @@
+{
+  "meta": {
+    "id": "public-benchmark-pack-v1-episode-registry",
+    "version": "1.0.0",
+    "benchmark_pack_id": "public-benchmark-pack-v1",
+    "benchmark_pack_path": "benchmarks/public-pack-v1/benchmark-pack.json",
+    "family_registry_path": "benchmarks/public-pack-v1/episode-family-registry.json",
+    "description": "Companion registry for Public Benchmark Pack v1 covering public-safe rubric templates and provenance for every shipped episode.",
+    "student_visible_only": true,
+    "teacher_only_fields_present": false,
+    "generated_from": [
+      "seed/role-foundry-apprentice.json",
+      "benchmarks/public-pack-v1/benchmark-pack.json",
+      "benchmarks/public-pack-v1/episode-family-registry.json"
+    ]
+  },
+  "coverage": {
+    "public_episode_count": 12,
+    "benchmark_ready_family_count": 6,
+    "rubric_template_count": 6,
+    "rubric_mapped_episode_count": 12,
+    "provenance_mapped_episode_count": 12
+  },
+  "rubric_templates": [
+    {
+      "id": "pbpv1-rubric-landing-story-v1",
+      "family_id": "rf.frontend-apprentice.public.landing-story",
+      "version": "1.0.0",
+      "title": "Landing story clarity rubric",
+      "description": "Scores whether the edited slice makes the apprentice loop obvious without slipping into generic platform copy or fake live claims.",
+      "score_scale": {
+        "min": 0.0,
+        "max": 1.0
+      },
+      "dimensions": [
+        {
+          "id": "story_clarity",
+          "label": "Story clarity",
+          "weight": 0.4,
+          "description": "The slice quickly explains what the apprentice is doing and why the work matters.",
+          "pass_signal": "A judge can understand the dogfood loop in one quick read.",
+          "fail_signal": "The slice still reads like a generic agent-platform pitch."
+        },
+        {
+          "id": "named_roles_and_dogfood",
+          "label": "Named roles and dogfood framing",
+          "weight": 0.35,
+          "description": "The slice explicitly names the Frontend Apprentice plus Robin and Neo, and says the apprentice is building Role Foundry itself.",
+          "pass_signal": "Student, teachers, and product are all named concretely.",
+          "fail_signal": "Key actors are implied or omitted, or the dogfood loop stays vague."
+        },
+        {
+          "id": "honesty_and_scope",
+          "label": "Honesty and scope control",
+          "weight": 0.25,
+          "description": "The slice stays narrow and avoids fake live capability claims.",
+          "pass_signal": "The copy stays concrete without claiming unwired integrations.",
+          "fail_signal": "The slice adds fluff or implies fake live behavior."
+        }
+      ]
+    },
+    {
+      "id": "pbpv1-rubric-curriculum-split-v1",
+      "family_id": "rf.frontend-apprentice.public.curriculum-split",
+      "version": "1.0.0",
+      "title": "Curriculum split clarity rubric",
+      "description": "Scores whether the slice makes the public/student-visible lane distinct from teacher-only evaluation without leaking hidden material.",
+      "score_scale": {
+        "min": 0.0,
+        "max": 1.0
+      },
+      "dimensions": [
+        {
+          "id": "boundary_clarity",
+          "label": "Boundary clarity",
+          "weight": 0.45,
+          "description": "The slice clearly labels what the student can see versus what remains teacher-only.",
+          "pass_signal": "The public-versus-teacher boundary is explicit and easy to follow.",
+          "fail_signal": "The boundary remains fuzzy or purely implied."
+        },
+        {
+          "id": "public_prompt_pack_fidelity",
+          "label": "Public prompt-pack fidelity",
+          "weight": 0.35,
+          "description": "Student-facing text references public curriculum only.",
+          "pass_signal": "The prompt-pack description stays grounded in public curriculum.",
+          "fail_signal": "The slice hints at hidden prompts or grading internals."
+        },
+        {
+          "id": "no_teacher_leakage",
+          "label": "No teacher leakage",
+          "weight": 0.2,
+          "description": "The slice avoids teacher-only prompt text, rubric text, and holdout specifics.",
+          "pass_signal": "No teacher-only content is exposed.",
+          "fail_signal": "Teacher-only prompt or rubric details leak into the public artifact."
+        }
+      ]
+    },
+    {
+      "id": "pbpv1-rubric-score-deltas-v1",
+      "family_id": "rf.frontend-apprentice.public.score-deltas",
+      "version": "1.0.0",
+      "title": "Score delta legibility rubric",
+      "description": "Scores whether improvement is shown with explicit deltas rather than vibes-based claims.",
+      "score_scale": {
+        "min": 0.0,
+        "max": 1.0
+      },
+      "dimensions": [
+        {
+          "id": "delta_visibility",
+          "label": "Delta visibility",
+          "weight": 0.45,
+          "description": "The slice shows at least two iterations and makes the change legible.",
+          "pass_signal": "A judge can see what improved between runs.",
+          "fail_signal": "The slice gestures at improvement without a visible comparison."
+        },
+        {
+          "id": "metric_specificity",
+          "label": "Metric specificity",
+          "weight": 0.35,
+          "description": "The slice uses concrete counts, rates, or score movement.",
+          "pass_signal": "Concrete deltas replace vague better/worse language.",
+          "fail_signal": "The slice relies on generic improvement language."
+        },
+        {
+          "id": "instrumentation_honesty",
+          "label": "Instrumentation honesty",
+          "weight": 0.2,
+          "description": "The slice does not imply telemetry or runtime instrumentation that does not exist.",
+          "pass_signal": "The delta story stays honest about what is real versus illustrative.",
+          "fail_signal": "The slice suggests unwired instrumentation or fabricated telemetry."
+        }
+      ]
+    },
+    {
+      "id": "pbpv1-rubric-proof-bundle-v1",
+      "family_id": "rf.frontend-apprentice.public.proof-bundle",
+      "version": "1.0.0",
+      "title": "Proof bundle legibility rubric",
+      "description": "Scores whether a run leaves behind a judge-friendly proof bundle with the right public evidence.",
+      "score_scale": {
+        "min": 0.0,
+        "max": 1.0
+      },
+      "dimensions": [
+        {
+          "id": "evidence_completeness",
+          "label": "Evidence completeness",
+          "weight": 0.45,
+          "description": "The slice exposes changed files, transcript evidence, policy snapshot, and receipt summary.",
+          "pass_signal": "A judge can inspect the main evidence types without hunting.",
+          "fail_signal": "Key public artifacts are missing or hard to find."
+        },
+        {
+          "id": "audit_legibility",
+          "label": "Audit legibility",
+          "weight": 0.35,
+          "description": "The evidence is organized so a judge can skim it quickly.",
+          "pass_signal": "The proof bundle is easy to scan at a glance.",
+          "fail_signal": "Evidence exists but is muddled or decorative."
+        },
+        {
+          "id": "storage_honesty",
+          "label": "Storage and backend honesty",
+          "weight": 0.2,
+          "description": "The slice does not claim artifact plumbing that the repo has not wired yet.",
+          "pass_signal": "The bundle stays honest about demo versus live storage.",
+          "fail_signal": "The slice implies nonexistent artifact backends or APIs."
+        }
+      ]
+    },
+    {
+      "id": "pbpv1-rubric-demo-honesty-v1",
+      "family_id": "rf.frontend-apprentice.public.demo-honesty",
+      "version": "1.0.0",
+      "title": "Demo honesty rubric",
+      "description": "Scores whether the slice resists fake-live theater and keeps scope tight.",
+      "score_scale": {
+        "min": 0.0,
+        "max": 1.0
+      },
+      "dimensions": [
+        {
+          "id": "explicit_stub_boundaries",
+          "label": "Explicit stub boundaries",
+          "weight": 0.4,
+          "description": "The slice plainly says what is demo-only, stubbed, or still pending.",
+          "pass_signal": "The edited surface names the live limitations directly.",
+          "fail_signal": "The surface buries or obscures what is still stubbed."
+        },
+        {
+          "id": "narrow_scope_control",
+          "label": "Narrow scope control",
+          "weight": 0.35,
+          "description": "The response ships one coherent slice instead of broad churn.",
+          "pass_signal": "The change stays focused and internally coherent.",
+          "fail_signal": "The slice sprawls or turns into repo-wide theater."
+        },
+        {
+          "id": "no_decorative_overclaim",
+          "label": "No decorative overclaim",
+          "weight": 0.25,
+          "description": "The slice avoids partner-track stickers, fake auth, or fake control-plane claims.",
+          "pass_signal": "The result reads stronger because it is more honest, not because it is louder.",
+          "fail_signal": "Decorative integrations or fake capability claims are used as padding."
+        }
+      ]
+    },
+    {
+      "id": "pbpv1-rubric-failure-to-curriculum-v1",
+      "family_id": "rf.frontend-apprentice.public.failure-to-curriculum",
+      "version": "1.0.0",
+      "title": "Failure-to-curriculum rubric",
+      "description": "Scores whether the slice promotes public-safe lessons from failures without reconstructing teacher-only material.",
+      "score_scale": {
+        "min": 0.0,
+        "max": 1.0
+      },
+      "dimensions": [
+        {
+          "id": "lesson_sanitization",
+          "label": "Lesson sanitization",
+          "weight": 0.4,
+          "description": "The promoted lesson is phrased as a public-safe theme rather than leaked exam text.",
+          "pass_signal": "The new lesson feels useful while staying generic enough to remain public-safe.",
+          "fail_signal": "The slice quotes or reconstructs hidden prompt wording too closely."
+        },
+        {
+          "id": "curriculum_usefulness",
+          "label": "Curriculum usefulness",
+          "weight": 0.35,
+          "description": "The promoted theme is actionable for the next public training loop.",
+          "pass_signal": "The lesson could plausibly guide the next student-visible iteration.",
+          "fail_signal": "The promoted theme is too vague to teach anything."
+        },
+        {
+          "id": "teacher_separation",
+          "label": "Teacher separation",
+          "weight": 0.25,
+          "description": "The slice preserves the separation between public curriculum and teacher-only evaluation.",
+          "pass_signal": "Teacher-only evaluation remains separate and unquoted.",
+          "fail_signal": "The slice blurs public curriculum with teacher-only grading details."
+        }
+      ]
+    }
+  ],
+  "episodes": [
+    {
+      "id": "pbpv1-e01",
+      "family_id": "rf.frontend-apprentice.public.landing-story",
+      "title": "Name the apprentice in the opening screenful",
+      "rubric_template_id": "pbpv1-rubric-landing-story-v1",
+      "provenance": {
+        "source_seed_scenarios": [
+          "t1"
+        ],
+        "source_seed_titles": [
+          "Rewrite the landing story around the apprentice loop"
+        ],
+        "source_seed_types": [
+          "training"
+        ],
+        "public_spec_refs": [
+          "specs/008-public-benchmark-pack-v1.md"
+        ],
+        "public_doc_refs": [
+          "docs/public-benchmark-pack-v1.md",
+          "docs/dataset-episode-registry.md"
+        ],
+        "teacher_only_inputs_used": false,
+        "notes": "Derived from student-visible training curriculum only; no teacher-only prompt text or hidden rubric content is used."
+      }
+    },
+    {
+      "id": "pbpv1-e02",
+      "family_id": "rf.frontend-apprentice.public.landing-story",
+      "title": "Tighten the README intro around the dogfood loop",
+      "rubric_template_id": "pbpv1-rubric-landing-story-v1",
+      "provenance": {
+        "source_seed_scenarios": [
+          "t1"
+        ],
+        "source_seed_titles": [
+          "Rewrite the landing story around the apprentice loop"
+        ],
+        "source_seed_types": [
+          "training"
+        ],
+        "public_spec_refs": [
+          "specs/008-public-benchmark-pack-v1.md"
+        ],
+        "public_doc_refs": [
+          "docs/public-benchmark-pack-v1.md",
+          "docs/dataset-episode-registry.md"
+        ],
+        "teacher_only_inputs_used": false,
+        "notes": "Derived from student-visible training curriculum only; no teacher-only prompt text or hidden rubric content is used."
+      }
+    },
+    {
+      "id": "pbpv1-e03",
+      "family_id": "rf.frontend-apprentice.public.curriculum-split",
+      "title": "Make student-visible versus teacher-only surfaces explicit",
+      "rubric_template_id": "pbpv1-rubric-curriculum-split-v1",
+      "provenance": {
+        "source_seed_scenarios": [
+          "t2"
+        ],
+        "source_seed_titles": [
+          "Show public curriculum vs sealed holdouts"
+        ],
+        "source_seed_types": [
+          "training"
+        ],
+        "public_spec_refs": [
+          "specs/008-public-benchmark-pack-v1.md"
+        ],
+        "public_doc_refs": [
+          "docs/public-benchmark-pack-v1.md",
+          "docs/dataset-episode-registry.md"
+        ],
+        "teacher_only_inputs_used": false,
+        "notes": "Derived from student-visible training curriculum only; no teacher-only prompt text or hidden rubric content is used."
+      }
+    },
+    {
+      "id": "pbpv1-e04",
+      "family_id": "rf.frontend-apprentice.public.curriculum-split",
+      "title": "Explain the prompt-pack contract on the run detail page",
+      "rubric_template_id": "pbpv1-rubric-curriculum-split-v1",
+      "provenance": {
+        "source_seed_scenarios": [
+          "t2"
+        ],
+        "source_seed_titles": [
+          "Show public curriculum vs sealed holdouts"
+        ],
+        "source_seed_types": [
+          "training"
+        ],
+        "public_spec_refs": [
+          "specs/008-public-benchmark-pack-v1.md"
+        ],
+        "public_doc_refs": [
+          "docs/public-benchmark-pack-v1.md",
+          "docs/dataset-episode-registry.md"
+        ],
+        "teacher_only_inputs_used": false,
+        "notes": "Derived from student-visible training curriculum only; no teacher-only prompt text or hidden rubric content is used."
+      }
+    },
+    {
+      "id": "pbpv1-e05",
+      "family_id": "rf.frontend-apprentice.public.score-deltas",
+      "title": "Show why Run 2 is better with concrete deltas",
+      "rubric_template_id": "pbpv1-rubric-score-deltas-v1",
+      "provenance": {
+        "source_seed_scenarios": [
+          "t3"
+        ],
+        "source_seed_titles": [
+          "Expose visible score deltas"
+        ],
+        "source_seed_types": [
+          "training"
+        ],
+        "public_spec_refs": [
+          "specs/008-public-benchmark-pack-v1.md"
+        ],
+        "public_doc_refs": [
+          "docs/public-benchmark-pack-v1.md",
+          "docs/dataset-episode-registry.md"
+        ],
+        "teacher_only_inputs_used": false,
+        "notes": "Derived from student-visible training curriculum only; no teacher-only prompt text or hidden rubric content is used."
+      }
+    },
+    {
+      "id": "pbpv1-e06",
+      "family_id": "rf.frontend-apprentice.public.score-deltas",
+      "title": "Explain why deltas matter more than vibes",
+      "rubric_template_id": "pbpv1-rubric-score-deltas-v1",
+      "provenance": {
+        "source_seed_scenarios": [
+          "t3"
+        ],
+        "source_seed_titles": [
+          "Expose visible score deltas"
+        ],
+        "source_seed_types": [
+          "training"
+        ],
+        "public_spec_refs": [
+          "specs/008-public-benchmark-pack-v1.md"
+        ],
+        "public_doc_refs": [
+          "docs/public-benchmark-pack-v1.md",
+          "docs/dataset-episode-registry.md"
+        ],
+        "teacher_only_inputs_used": false,
+        "notes": "Derived from student-visible training curriculum only; no teacher-only prompt text or hidden rubric content is used."
+      }
+    },
+    {
+      "id": "pbpv1-e07",
+      "family_id": "rf.frontend-apprentice.public.proof-bundle",
+      "title": "Make the proof bundle legible at a glance",
+      "rubric_template_id": "pbpv1-rubric-proof-bundle-v1",
+      "provenance": {
+        "source_seed_scenarios": [
+          "t4"
+        ],
+        "source_seed_titles": [
+          "Attach a proof bundle to each strong run"
+        ],
+        "source_seed_types": [
+          "training"
+        ],
+        "public_spec_refs": [
+          "specs/008-public-benchmark-pack-v1.md"
+        ],
+        "public_doc_refs": [
+          "docs/public-benchmark-pack-v1.md",
+          "docs/dataset-episode-registry.md"
+        ],
+        "teacher_only_inputs_used": false,
+        "notes": "Derived from student-visible training curriculum only; no teacher-only prompt text or hidden rubric content is used."
+      }
+    },
+    {
+      "id": "pbpv1-e08",
+      "family_id": "rf.frontend-apprentice.public.proof-bundle",
+      "title": "Strengthen transcript evidence without widening scope",
+      "rubric_template_id": "pbpv1-rubric-proof-bundle-v1",
+      "provenance": {
+        "source_seed_scenarios": [
+          "t4"
+        ],
+        "source_seed_titles": [
+          "Attach a proof bundle to each strong run"
+        ],
+        "source_seed_types": [
+          "training"
+        ],
+        "public_spec_refs": [
+          "specs/008-public-benchmark-pack-v1.md"
+        ],
+        "public_doc_refs": [
+          "docs/public-benchmark-pack-v1.md",
+          "docs/dataset-episode-registry.md"
+        ],
+        "teacher_only_inputs_used": false,
+        "notes": "Derived from student-visible training curriculum only; no teacher-only prompt text or hidden rubric content is used."
+      }
+    },
+    {
+      "id": "pbpv1-e09",
+      "family_id": "rf.frontend-apprentice.public.demo-honesty",
+      "title": "Refuse fake live wiring in judge-facing copy",
+      "rubric_template_id": "pbpv1-rubric-demo-honesty-v1",
+      "provenance": {
+        "source_seed_scenarios": [
+          "t5"
+        ],
+        "source_seed_titles": [
+          "Honor demo-only constraints under pressure"
+        ],
+        "source_seed_types": [
+          "training"
+        ],
+        "public_spec_refs": [
+          "specs/008-public-benchmark-pack-v1.md"
+        ],
+        "public_doc_refs": [
+          "docs/public-benchmark-pack-v1.md",
+          "docs/dataset-episode-registry.md"
+        ],
+        "teacher_only_inputs_used": false,
+        "notes": "Derived from student-visible training curriculum only; no teacher-only prompt text or hidden rubric content is used."
+      }
+    },
+    {
+      "id": "pbpv1-e10",
+      "family_id": "rf.frontend-apprentice.public.demo-honesty",
+      "title": "Keep the slice narrow and skip partner-track theater",
+      "rubric_template_id": "pbpv1-rubric-demo-honesty-v1",
+      "provenance": {
+        "source_seed_scenarios": [
+          "t5"
+        ],
+        "source_seed_titles": [
+          "Honor demo-only constraints under pressure"
+        ],
+        "source_seed_types": [
+          "training"
+        ],
+        "public_spec_refs": [
+          "specs/008-public-benchmark-pack-v1.md"
+        ],
+        "public_doc_refs": [
+          "docs/public-benchmark-pack-v1.md",
+          "docs/dataset-episode-registry.md"
+        ],
+        "teacher_only_inputs_used": false,
+        "notes": "Derived from student-visible training curriculum only; no teacher-only prompt text or hidden rubric content is used."
+      }
+    },
+    {
+      "id": "pbpv1-e11",
+      "family_id": "rf.frontend-apprentice.public.failure-to-curriculum",
+      "title": "Promote one failed theme into public curriculum safely",
+      "rubric_template_id": "pbpv1-rubric-failure-to-curriculum-v1",
+      "provenance": {
+        "source_seed_scenarios": [
+          "t6"
+        ],
+        "source_seed_titles": [
+          "Convert failures into the next curriculum"
+        ],
+        "source_seed_types": [
+          "training"
+        ],
+        "public_spec_refs": [
+          "specs/008-public-benchmark-pack-v1.md"
+        ],
+        "public_doc_refs": [
+          "docs/public-benchmark-pack-v1.md",
+          "docs/dataset-episode-registry.md"
+        ],
+        "teacher_only_inputs_used": false,
+        "notes": "Derived from student-visible training curriculum only; no teacher-only prompt text or hidden rubric content is used."
+      }
+    },
+    {
+      "id": "pbpv1-e12",
+      "family_id": "rf.frontend-apprentice.public.failure-to-curriculum",
+      "title": "Refresh the student prompt pack from public themes only",
+      "rubric_template_id": "pbpv1-rubric-failure-to-curriculum-v1",
+      "provenance": {
+        "source_seed_scenarios": [
+          "t6"
+        ],
+        "source_seed_titles": [
+          "Convert failures into the next curriculum"
+        ],
+        "source_seed_types": [
+          "training"
+        ],
+        "public_spec_refs": [
+          "specs/008-public-benchmark-pack-v1.md"
+        ],
+        "public_doc_refs": [
+          "docs/public-benchmark-pack-v1.md",
+          "docs/dataset-episode-registry.md"
+        ],
+        "teacher_only_inputs_used": false,
+        "notes": "Derived from student-visible training curriculum only; no teacher-only prompt text or hidden rubric content is used."
+      }
+    }
+  ]
+}
