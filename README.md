@@ -139,8 +139,18 @@ There is also now a separate **local-only private holdout scaffold**:
 - `benchmarks/private-holdout-pack-template.json` defines the public-safe shape only
 - `benchmarks/private-holdout-pack/` is gitignored for real teacher-only material
 - `tests/test_private_holdout_separation.py` proves tracked artifacts stay clean
+- `runner_bridge.autoresearch_alpha` can now hydrate a **local private-holdout** teacher lane from `private_holdout_manifest` while keeping student-visible artifacts redacted
 
-That scaffold is a contract for future fresh holdouts. It is **not** proof that a sealed certification path already exists.
+That scaffold is now enough for a **local private-holdout** alpha run once fresh episodes are authored locally. It is still **not** proof of a sealed certification path.
+
+The local-only shape is:
+
+```bash
+python3 -m runner_bridge.autoresearch_alpha \
+  --request benchmarks/private-holdout-pack/local-sealed-alpha-loop.request.json
+```
+
+That request file stays local-only, points `private_holdout_manifest` at the gitignored manifest, and references holdout episodes by id so the bridge can hydrate teacher-only prompts into `request.private.json` only.
 
 ## What is still stubbed
 

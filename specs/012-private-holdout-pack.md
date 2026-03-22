@@ -83,6 +83,8 @@ To create a private holdout pack locally:
 3. Run `python3 scripts/holdout_author.py audit` to check for leaks and schema conformance.
 4. Run `python3 -m unittest tests/test_private_holdout_separation.py` to verify no leakage.
 5. Use the manifest with the existing local evaluation flow for teacher-only scoring.
+   - `runner_bridge.autoresearch_alpha` may point `private_holdout_manifest` at this file.
+   - Teacher-eval stages may reference holdout episodes by `id`; the bridge hydrates `teacher_prompt` and `scoring_rubric` from the local manifest into `request.private.json` only.
 
 See `docs/private-holdout-authoring.md` for the full workflow guide.
 

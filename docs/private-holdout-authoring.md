@@ -74,6 +74,29 @@ python3 -m unittest tests/test_private_holdout_separation.py -v
 
 These tests enforce the separation contract from spec 012. They pass in CI (where no local manifest exists) and also validate the manifest schema when one is present.
 
+### 6. Run a local private-holdout alpha loop
+
+Create a local-only request file such as `benchmarks/private-holdout-pack/local-sealed-alpha-loop.request.json`.
+
+Key points:
+- set top-level `private_holdout_manifest` to your local manifest path
+- keep the request file itself under `benchmarks/private-holdout-pack/`
+- in `baseline-eval` and `candidate-teacher-eval`, reference holdout episodes by `id`
+- only store replay outcome fields in the request (`passed`, `score`, `teacher_notes`, optional public failure theme/summary)
+- let `runner_bridge.autoresearch_alpha` hydrate `teacher_prompt` and `scoring_rubric` from the local manifest into `request.private.json`
+
+Then run:
+
+```bash
+python3 -m runner_bridge.autoresearch_alpha \
+  --request benchmarks/private-holdout-pack/local-sealed-alpha-loop.request.json \
+  --artifacts-root runtime/autoresearch-alpha/local-private-holdout
+```
+
+Honest claim boundary:
+- this proves a **local private-holdout** execution path
+- it does **not** prove sealed certification or tamper-proof evaluation
+
 ## What makes a good holdout episode
 
 - **Fresh wording**: The prompt must not be derivable from anything in the public repo
