@@ -137,6 +137,11 @@ Principle: each milestone must have:
 
 These slices are real. This branch now has an executable **public alpha loop**, but a truly sealed holdout path is still blocked pending fresh teacher-only rewrites stored only in the local gitignored private path.
 
+**Autoresearch Alpha review-spine freeze:**
+- In scope on this branch: the public benchmark pack v1, the executable public alpha loop, the read-only live UI/read-model shell, and the local private-holdout authoring/separation contract.
+- Out of scope on this branch: sealed-certification claims, partner-integration expansion, native live artifact browsing/storage fan-out, and broad `runner_bridge` core-contract churn.
+- If a follow-up change is not required to keep those four contracts coherent, it belongs on another branch.
+
 ---
 
 ## Milestone 6 — Submission Proof + Partner Wiring
