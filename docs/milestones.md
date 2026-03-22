@@ -137,6 +137,12 @@ Principle: each milestone must have:
 
 These slices are real. This branch now has an executable **public alpha loop**, but a truly sealed holdout path is still blocked pending fresh teacher-only rewrites stored only in the local gitignored private path.
 
+**Phase F adapter-readiness hardening (F001-F004):**
+- `scripts/check_clawith_adapter_prereqs.py` — GET-only prereq checker covering all 6 required F001 categories with explicit ready/blocked/unknown output
+- `docs/clawith-adapter-bringup.md` — seam-to-upstream mapping matrix using the 5 allowed F003 statuses
+- `tests/test_clawith_adapter_readiness.py` — 19 tests covering F001 probe coverage, F002 zero false-ready, F003 mapping completeness, and F004 non-destructive guarantee
+- The prereq checker never reports `ready` when admin or model-pool presence is missing or unknown (F002 hardening)
+
 **Autoresearch Alpha review-spine freeze:**
 - In scope on this branch: the public benchmark pack v1, the executable public alpha loop, the read-only live UI/read-model shell, and the local private-holdout authoring/separation contract.
 - Out of scope on this branch: sealed-certification claims, partner-integration expansion, native live artifact browsing/storage fan-out, and broad `runner_bridge` core-contract churn.

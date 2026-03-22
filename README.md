@@ -161,7 +161,7 @@ This repo is intentionally honest about what is not wired yet:
 - no auth, no Privy, no fake consumer OAuth path
 - no live artifact viewer backed by run storage fan-out
 
-Live mode can now seed Clawith, drive bridge-mediated runs, and the browser shell can consume configured read-model / alpha-loop exports. That is still deliberately narrow. Demo mode remains first-class and judge-friendly on its own.
+Live mode can now seed the repo's Clawith-compatible seam, drive bridge-mediated runs, and the browser shell can consume configured read-model / alpha-loop exports. That is still deliberately narrow. It does not claim stock upstream Clawith natively accepts Role Foundry seed writes. Demo mode remains first-class and judge-friendly on its own.
 
 ## Where Clawith fits
 
@@ -189,6 +189,7 @@ Using different model families for building and judging reduces correlated self-
 - `docs/milestones.md` — spec-first milestone rail and current delivery status
 - `docs/v1-mvp-plan.md` — build slices
 - `docs/clawith-integration.md` — live-mode setup, prerequisites, image contract, and read-only probe lane
+- `docs/clawith-adapter-bringup.md` — seam-to-upstream mapping matrix and adapter-first bring-up prereqs
 - `docs/runner-bridge.md` — bridge path, teacher evaluation contract, comparison receipts, and explicit auth deferral
 - `docs/public-benchmark-pack-v1.md` — public-safe benchmark pack scope, blocked families, and local private-holdout path
 - `docs/private-holdout-authoring.md` — local-only teacher workflow for authoring and auditing fresh holdouts
