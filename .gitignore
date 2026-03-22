@@ -6,6 +6,7 @@ build/
 coverage/
 __pycache__/
 *.py[cod]
+runtime/
 .env
 .env.*
 !.env.example

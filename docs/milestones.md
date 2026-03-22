@@ -81,7 +81,7 @@ Principle: each milestone must have:
 
 ## Milestone 4 — Runner Bridge + First Live Run
 
-**Status:** queued
+**Status:** active
 
 **Goal:** make one real teacher/student run happen without faking consumer OAuth inside Clawith.
 

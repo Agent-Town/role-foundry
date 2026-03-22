@@ -78,15 +78,36 @@ docker compose --profile live up
 
 See `docs/clawith-integration.md` for prerequisites and the full integration guide.
 
+## First live run
+
+The first honest runner-bridge slice is now in the repo. It is intentionally small:
+- `python3 -m runner_bridge.cli` drives one run lifecycle
+- `LocalReplayRunner` is the zero-secret backend that writes a transcript and artifact bundle
+- if you pass `--clawith-url`, the bridge patches run state into a Clawith-compatible control plane
+- if you omit `--clawith-url`, you can still exercise the artifact/transcript contract locally
+
+Example:
+
+```bash
+python3 -m runner_bridge.cli \
+  --request runner_bridge/examples/first-live-run.json \
+  --clawith-url http://localhost:3000 \
+  --clawith-secret "$CLAWITH_SECRET"
+```
+
+Artifacts land under `runtime/runs/<run_id>/`.
+
+See `docs/runner-bridge.md` for the control-plane patch contract and the local/mockable fallback path.
+
 ## What is still stubbed
 
 This repo is intentionally honest about what is not wired yet:
 - the **web app still serves demo data** — it does not read from a live Clawith API
-- no real runner dispatch (see `docs/runner-bridge.md` for the intended bridge)
+- only one **local/mockable runner path** is implemented today (`LocalReplayRunner`); Claude/Codex-backed adapters still need wiring
 - no auth, no Privy, no fake consumer OAuth path
 - no live artifact viewer backed by run storage
 
-Live mode starts and seeds a real Clawith control plane, but the web UI does not consume it yet. That is deliberate. The demo is first-class and judge-friendly on its own.
+Live mode can now seed Clawith and drive one bridge-mediated run, but the web UI still does not consume live state. That is deliberate. The demo remains first-class and judge-friendly on its own.
 
 ## Where Clawith fits
 

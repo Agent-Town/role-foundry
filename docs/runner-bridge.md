@@ -2,76 +2,175 @@
 
 ## The problem
 
-Role Foundry needs to dispatch agent runs (teacher evaluations, student training iterations, critic reviews) to LLM backends. Clawith is the control plane, but:
+Role Foundry needs to dispatch runs without lying about auth or pretending Clawith magically speaks consumer subscriptions.
 
-1. **Clawith does not natively support consumer OAuth or subscription-based auth.** It manages API-level provider credentials and model pools for its own native agents.
-2. **Building a full OAuth/subscription layer into Clawith for the hackathon is not realistic** and would distort the core product work.
+Two things are true at once:
+1. **Clawith is the control plane** for role/run state.
+2. **Actual execution can live outside Clawith** behind a narrow machine-to-machine bridge.
 
-## The bridge
+That is the hackathon-fast, honest path.
 
-Instead of pretending Clawith has consumer auth, we use a **runner-bridge** pattern:
+## The implemented Milestone 4 slice
 
-```
-User (demo UI or operator)
-  → Role Foundry Web (defines role, curates scenarios)
-  → Clawith API (creates run records, manages state)
-  → Runner Adapter (dispatches to actual LLM backend)
-     ├── ClaudeVibeRunner (Claude Code + vibecosystem)
-     ├── CodexRunner (OpenAI Codex API)
-     └── ScriptRunner (deterministic checks)
-```
-
-### How auth works in this model
-
-- **Clawith** authenticates runner adapters using its own secret (`CLAWITH_SECRET`). This is machine-to-machine, not consumer auth.
-- **LLM providers** are authenticated using API keys stored in Clawith's model pool or passed as environment variables to runners.
-- **The demo UI** doesn't need auth at all — it serves pre-baked data.
-- **The operator** (Robin + Neo) triggers live runs through Clawith's API or CLI, not through a consumer login flow.
-
-### What this means for the hackathon
-
-- No login screen, no OAuth flow, no subscription check
-- The demo UI works without any backend
-- Live mode requires operator access to Clawith (API key or CLI)
-- Partner-track identity (ERC-8004, ENS, Self) attaches to agent identities and run artifacts, not to a consumer auth session
-
-## Why native OAuth-in-Clawith is postponed
-
-| Reason | Detail |
-|---|---|
-| Scope | OAuth + session management + subscription logic is a full feature, not a hackathon hack |
-| Risk | Half-built auth is worse than no auth — it creates false security claims |
-| Honesty | The submission metadata should describe the real stack, not a fake auth layer |
-| Priority | The core product value is the evaluation loop, not the login screen |
-
-## When to revisit
-
-Native consumer auth makes sense when:
-- Role Foundry moves beyond operator-only usage
-- There's a real need for per-user isolation and billing
-- Clawith upstream adds OAuth support, or we build it properly
-
-That's a post-hackathon concern.
-
-## Runner adapter contract
-
-Each runner adapter implements a minimal interface:
+The repo now ships one working bridge path:
 
 ```
-Input:
-  - run_id (from Clawith)
-  - agent_role (teacher | student | critic | verifier)
-  - scenario_set_id
-  - workspace_snapshot
-  - time_budget
-  - cost_budget
-
-Output:
-  - status (completed | failed | timeout)
-  - transcript_path
-  - artifact_bundle_path
-  - scorecard (if evaluator role)
-  - machine_score
+python3 -m runner_bridge.cli
+  → validates the run request contract
+  → marks the run as running
+  → executes one external adapter
+  → persists transcript + artifact bundle under runtime/runs/<run_id>/
+  → patches final status back to the control plane
 ```
 
-The adapter is responsible for LLM auth, sandboxing, and artifact collection. Clawith is responsible for run lifecycle, state, and evaluation aggregation.
+The first adapter is **LocalReplayRunner**.
+
+That is deliberate:
+- it is **zero-secret**
+- it is **portable**
+- it proves the lifecycle and storage contract without claiming Claude/Codex wiring that is not finished yet
+- it gives us a local/mockable path when a real Clawith image or provider credentials are unavailable
+
+This is not consumer OAuth. It is not pretending Clawith natively owns a Claude subscription. It is a narrow bridge.
+
+## Current bridge shape
+
+```text
+Operator / script
+  → runner_bridge.cli
+  → Clawith-compatible control plane
+  → LocalReplayRunner (today)
+  → transcript.ndjson + artifact-bundle.json + result.json
+```
+
+Future adapters can slot into the same bridge command:
+- ClaudeVibeRunner
+- CodexRunner
+- deterministic verifier scripts
+
+## Request contract
+
+Each run request must include:
+
+```json
+{
+  "run_id": "run-live-001",
+  "agent_role": "student",
+  "scenario_set_id": "public-curriculum-v1",
+  "workspace_snapshot": {},
+  "time_budget": { "seconds": 60 },
+  "cost_budget": { "usd": 1.5 }
+}
+```
+
+Those are the required Milestone 4 fields:
+- `run_id`
+- `agent_role`
+- `scenario_set_id`
+- `workspace_snapshot`
+- `time_budget`
+- `cost_budget`
+
+## Result contract
+
+Each adapter must leave a `result.json` that the bridge can normalize into:
+
+```json
+{
+  "status": "completed",
+  "transcript_path": "transcript.ndjson",
+  "artifact_bundle_path": "artifact-bundle.json",
+  "machine_score": 0.8,
+  "scorecard": {}
+}
+```
+
+Allowed statuses are:
+- `completed`
+- `failed`
+- `timeout`
+
+Failure is first-class. A failed run still needs receipts.
+
+## Control-plane patch contract
+
+For this milestone we keep the control-plane contract narrow and mockable.
+
+The bridge sends:
+
+### Run starts
+
+`PATCH /api/runs/{run_id}`
+
+```json
+{
+  "status": "running",
+  "started_at": "2026-03-22T08:00:00Z",
+  "agent_role": "student",
+  "scenario_set_id": "public-curriculum-v1"
+}
+```
+
+### Run finishes
+
+`PATCH /api/runs/{run_id}`
+
+```json
+{
+  "status": "completed",
+  "finished_at": "2026-03-22T08:00:12Z",
+  "transcript_path": "/abs/path/runtime/runs/run-live-001/transcript.ndjson",
+  "artifact_bundle_path": "/abs/path/runtime/runs/run-live-001/artifact-bundle.json",
+  "machine_score": 0.8,
+  "scorecard": {}
+}
+```
+
+If the adapter fails, the same endpoint is patched with `status: "failed"` (or `timeout`) plus an `error` field.
+
+Important: this is the **bridge-side contract** Role Foundry can target today. It is intentionally small so it can be implemented against a fake server in tests or shimmed onto a real Clawith instance without inventing fake upstream capabilities.
+
+## Artifact layout
+
+By default the bridge writes to:
+
+```text
+runtime/runs/<run_id>/
+  request.json
+  stdout.log
+  stderr.log
+  transcript.ndjson
+  artifact-bundle.json
+  result.json
+```
+
+That is the persistence contract for Milestone 4.
+
+## First live run
+
+Against a Clawith-compatible endpoint:
+
+```bash
+python3 -m runner_bridge.cli \
+  --request runner_bridge/examples/first-live-run.json \
+  --clawith-url http://localhost:3000 \
+  --clawith-secret "$CLAWITH_SECRET"
+```
+
+Without a control plane, to exercise the local receipts path only:
+
+```bash
+python3 -m runner_bridge.cli \
+  --request runner_bridge/examples/first-live-run.json
+```
+
+The second command is not a claim that Clawith is running. It is just the fastest zero-secret way to verify the transcript/artifact contract locally.
+
+## What is still not done
+
+- no native consumer OAuth in Clawith
+- no claim that Clawith already ships these exact run-patch endpoints upstream
+- no ClaudeVibeRunner wired yet
+- no web UI reading live run state yet
+
+That is fine. The slice is still useful because it proves one honest run lifecycle end to end.

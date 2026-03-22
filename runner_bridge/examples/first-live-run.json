@@ -1,0 +1,22 @@
+{
+  "run_id": "run-live-001",
+  "agent_role": "student",
+  "scenario_set_id": "public-curriculum-v1",
+  "workspace_snapshot": {
+    "objective": "Ship one honest first live run with transcript and artifact receipts.",
+    "changed_files": [
+      "app/run.html",
+      "README.md"
+    ],
+    "notes": [
+      "Demo mode stays zero-secret.",
+      "Live mode uses the runner bridge, not fake OAuth."
+    ]
+  },
+  "time_budget": {
+    "seconds": 60
+  },
+  "cost_budget": {
+    "usd": 1.5
+  }
+}
