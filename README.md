@@ -89,7 +89,7 @@ If you want the fastest honest walkthrough:
 2. Run `docker compose up` and inspect `http://localhost:8080`.
 3. Read `docs/submission-proof-checklist.md` and `docs/conversation-log.md` for the curated build story and non-claims.
 4. Optionally run `python3 -m runner_bridge.cli --request runner_bridge/examples/first-live-run.json` to exercise the zero-secret receipt path locally.
-5. Optionally run `python3 -m runner_bridge.alpha_demo` to exercise the canonical Frontend Apprentice pack through the bundled Clawith-compatible control-plane shim and inspect queued → running → completed state history.
+5. Optionally run `python3 -m runner_bridge.alpha_demo` to exercise the canonical Frontend Apprentice pack through the bundled Clawith-compatible control-plane shim and inspect a real baseline → candidate iteration with queued → running → completed state history on both runs.
 6. If Claude Code is installed and authenticated, optionally run `python3 -m runner_bridge.cli --backend claude-vibe --request runner_bridge/examples/claude-vibe-smoke.json` to exercise the new project-local Claude student path without touching global `~/.claude/settings.json`.
 
 ## First live run
@@ -100,10 +100,11 @@ The first honest runner-bridge slice is now in the repo. It is intentionally sma
 - `LocalReplayRunner` remains the zero-secret backend that writes a transcript and artifact bundle
 - `ClaudeVibeRunner` is now available as an opt-in backend (`--backend claude-vibe`) for **student/builder** runs through the local `claude` CLI
 - the Claude path uses a **project-local** profile under `.claude/` (`.claude/agents/role-foundry-student.md` + `.claude/templates/role-foundry-student-run.md`) and `--setting-sources project`, so it does not depend on or modify global `~/.claude/settings.json`
+- the canonical pack now includes both `runner_bridge/examples/teacher-eval-baseline.json` and `runner_bridge/examples/teacher-eval-loop.json`, so the repo has an honest baseline plus candidate iteration pair
 - optional `teacher_evaluation` input still produces a teacher scorecard, public curriculum themes, and iteration history deltas on the deterministic local path
-- the bridge stores a redacted `request.json` plus a raw `request.private.json` so sealed holdout prompts stay out of student-facing artifacts
+- the bridge stores a redacted `request.json` plus a raw `request.private.json`, and evaluation runs now also emit `student-view.json` plus `teacher-scorecard.json`, so student-safe versus teacher/judge context is explicit in the artifacts
 - if you pass `--clawith-url`, the bridge patches run state into a Clawith-compatible control plane
-- `python3 -m runner_bridge.alpha_demo` proves the first queued → running → completed lifecycle against the bundled Clawith-compatible shim and reads the final run record back for inspection
+- `python3 -m runner_bridge.alpha_demo` now proves a baseline → candidate sequence against the bundled Clawith-compatible shim, derives the candidate iteration link from the actual baseline receipts, and reads both final run records back for inspection
 - if you omit `--clawith-url`, you can still exercise the artifact/transcript contract locally
 
 Examples:
@@ -132,7 +133,11 @@ python3 -m runner_bridge.cli \
 python3 -m runner_bridge.alpha_demo
 ```
 
-Artifacts land under `runtime/runs/<run_id>/` for the direct bridge CLI and under `runtime/alpha-runs/<run_id>/` for the bundled alpha demo.
+```bash
+python3 -m runner_bridge.alpha_demo --flow request --request-name first_live_run
+```
+
+Artifacts land under `runtime/runs/<run_id>/` for the direct bridge CLI and under `runtime/alpha-runs/<run_id>/` for the bundled alpha demo. The default alpha demo now writes both run directories plus `runtime/alpha-runs/baseline-candidate-summary.json`.
 
 See `docs/runner-bridge.md` for the bridge contract, project-local Claude adapter, and local/mockable fallback path, and `docs/clawith-autoresearch-alpha.md` for the canonical-pack + control-plane-shim alpha path.
 

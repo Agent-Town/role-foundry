@@ -43,11 +43,12 @@ class CanonicalPackTests(unittest.TestCase):
         info = manifest(pack)
         self.assertEqual(export_seed_payload(pack)["meta"]["dataset_manifest_id"], info["id"])
         self.assertEqual(export_request(pack, "first_live_run")["scenario_set_id"], info["scenario_set_id"])
+        self.assertEqual(export_request(pack, "teacher_eval_baseline")["scenario_set_id"], info["scenario_set_id"])
         self.assertEqual(export_request(pack, "teacher_eval_loop")["scenario_set_id"], info["scenario_set_id"])
 
 
 class AlphaDemoTests(unittest.TestCase):
-    def test_alpha_demo_runs_against_bundled_shim_and_records_state_history(self):
+    def test_alpha_demo_runs_two_iteration_flow_against_bundled_shim_and_records_lineage(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             artifacts_root = Path(tmpdir) / "artifacts"
             data_dir = Path(tmpdir) / "shim"
@@ -69,40 +70,98 @@ class AlphaDemoTests(unittest.TestCase):
 
             payload = json.loads(result.stdout)
             self.assertTrue(payload["ok"])
+            self.assertEqual(payload["flow"], "baseline-candidate")
             self.assertEqual(payload["dataset_manifest_id"], "frontend-apprentice-alpha-v1")
-            self.assertEqual(payload["status_history"], ["queued", "running", "completed"])
-            self.assertEqual(payload["run_id"], "run-eval-002")
+            self.assertEqual(payload["run_ids"], ["run-eval-001", "run-eval-002"])
+            self.assertTrue(Path(payload["sequence_summary_path"]).exists())
 
-            run_dir = artifacts_root / "run-eval-002"
-            self.assertTrue((run_dir / "dataset-manifest.json").exists())
-            self.assertTrue((run_dir / "control-plane-summary.json").exists())
-            self.assertTrue((run_dir / "request.json").exists())
-            self.assertTrue((run_dir / "request.private.json").exists())
-            self.assertTrue((run_dir / "artifact-bundle.json").exists())
-            self.assertTrue((run_dir / "result.json").exists())
+            baseline_dir = artifacts_root / "run-eval-001"
+            candidate_dir = artifacts_root / "run-eval-002"
+            for run_dir in (baseline_dir, candidate_dir):
+                self.assertTrue((run_dir / "dataset-manifest.json").exists())
+                self.assertTrue((run_dir / "control-plane-summary.json").exists())
+                self.assertTrue((run_dir / "request.json").exists())
+                self.assertTrue((run_dir / "request.private.json").exists())
+                self.assertTrue((run_dir / "artifact-bundle.json").exists())
+                self.assertTrue((run_dir / "result.json").exists())
+                self.assertTrue((run_dir / "student-view.json").exists())
+                self.assertTrue((run_dir / "teacher-scorecard.json").exists())
 
-            control_plane_summary = json.loads((run_dir / "control-plane-summary.json").read_text())
-            self.assertEqual(control_plane_summary["mode"], "bundled-clawith-compatible-shim")
-            self.assertEqual(control_plane_summary["status_history"], ["queued", "running", "completed"])
-            self.assertEqual(control_plane_summary["run_record"]["dataset_manifest_id"], "frontend-apprentice-alpha-v1")
-            self.assertEqual(control_plane_summary["run_record"]["state_history"][-1]["status"], "completed")
+            baseline_control_plane_summary = json.loads((baseline_dir / "control-plane-summary.json").read_text())
+            candidate_control_plane_summary = json.loads((candidate_dir / "control-plane-summary.json").read_text())
+            self.assertEqual(baseline_control_plane_summary["mode"], "bundled-clawith-compatible-shim")
+            self.assertEqual(candidate_control_plane_summary["mode"], "bundled-clawith-compatible-shim")
+            self.assertEqual(baseline_control_plane_summary["status_history"], ["queued", "running", "completed"])
+            self.assertEqual(candidate_control_plane_summary["status_history"], ["queued", "running", "completed"])
+            self.assertEqual(
+                baseline_control_plane_summary["run_record"]["lineage"],
+                {
+                    "sequence_id": "frontend-apprentice-alpha-v1:baseline-candidate",
+                    "root_run_id": "run-eval-001",
+                    "parent_run_id": None,
+                    "iteration_index": 1,
+                    "iteration_label": "baseline",
+                },
+            )
+            self.assertEqual(candidate_control_plane_summary["run_record"]["lineage"]["root_run_id"], "run-eval-001")
+            self.assertEqual(candidate_control_plane_summary["run_record"]["lineage"]["parent_run_id"], "run-eval-001")
+            self.assertEqual(candidate_control_plane_summary["run_record"]["lineage"]["iteration_index"], 2)
+            self.assertEqual(candidate_control_plane_summary["run_record"]["state_history"][-1]["status"], "completed")
 
             self.assertTrue((data_dir / "control-plane-state.json").exists())
             state = json.loads((data_dir / "control-plane-state.json").read_text())
-            self.assertIn("run-eval-002", state["runs"])
+            self.assertEqual(sorted(state["runs"].keys()), ["run-eval-001", "run-eval-002"])
+            self.assertEqual(
+                [entry["status"] for entry in state["runs"]["run-eval-001"]["state_history"]],
+                ["queued", "running", "completed"],
+            )
             self.assertEqual(
                 [entry["status"] for entry in state["runs"]["run-eval-002"]["state_history"]],
                 ["queued", "running", "completed"],
             )
 
-            redacted_request = (run_dir / "request.json").read_text()
-            private_request = (run_dir / "request.private.json").read_text()
-            self.assertNotIn(SEALED_PROMPT, redacted_request)
-            self.assertIn(SEALED_PROMPT, private_request)
+            baseline_result = json.loads((baseline_dir / "result.json").read_text())
+            candidate_private_request = json.loads((candidate_dir / "request.private.json").read_text())
+            self.assertEqual(
+                candidate_private_request["teacher_evaluation"]["previous_iteration"]["aggregate_score"],
+                baseline_result["scorecard"]["aggregate_score"],
+            )
+            self.assertEqual(candidate_private_request["teacher_evaluation"]["previous_iteration"]["run_id"], "run-eval-001")
 
-            artifact_bundle = json.loads((run_dir / "artifact-bundle.json").read_text())
-            self.assertEqual(artifact_bundle["student_view"]["sealed_holdout_count"], 2)
-            self.assertEqual(artifact_bundle["teacher_output"]["aggregate_score"]["passed"], 4)
+            baseline_redacted_request = (baseline_dir / "request.json").read_text()
+            candidate_redacted_request = (candidate_dir / "request.json").read_text()
+            baseline_private_request = (baseline_dir / "request.private.json").read_text()
+            candidate_private_request_text = (candidate_dir / "request.private.json").read_text()
+            baseline_student_view = (baseline_dir / "student-view.json").read_text()
+            candidate_student_view = (candidate_dir / "student-view.json").read_text()
+            candidate_teacher_scorecard = (candidate_dir / "teacher-scorecard.json").read_text()
+            self.assertNotIn(SEALED_PROMPT, baseline_redacted_request)
+            self.assertNotIn(SEALED_PROMPT, candidate_redacted_request)
+            self.assertIn(SEALED_PROMPT, baseline_private_request)
+            self.assertIn(SEALED_PROMPT, candidate_private_request_text)
+            self.assertNotIn(SEALED_PROMPT, baseline_student_view)
+            self.assertNotIn(SEALED_PROMPT, candidate_student_view)
+            self.assertNotIn(SEALED_PROMPT, candidate_teacher_scorecard)
+
+            baseline_student_payload = json.loads(baseline_student_view)
+            candidate_student_payload = json.loads(candidate_student_view)
+            self.assertEqual(baseline_student_payload["iteration"]["label"], "baseline")
+            self.assertEqual(candidate_student_payload["iteration"]["label"], "candidate")
+            self.assertEqual(candidate_student_payload["iteration"]["parent_run_id"], "run-eval-001")
+            self.assertEqual(candidate_student_payload["sealed_holdout_count"], 2)
+
+            candidate_artifact_bundle = json.loads((candidate_dir / "artifact-bundle.json").read_text())
+            self.assertEqual(candidate_artifact_bundle["lineage"]["parent_run_id"], "run-eval-001")
+            self.assertEqual(candidate_artifact_bundle["teacher_output"]["aggregate_score"]["passed"], 4)
+            self.assertEqual(candidate_artifact_bundle["receipts"]["student_view_path"], "student-view.json")
+            self.assertEqual(candidate_artifact_bundle["receipts"]["teacher_scorecard_path"], "teacher-scorecard.json")
+
+            sequence_summary = json.loads((artifacts_root / "baseline-candidate-summary.json").read_text())
+            self.assertEqual(sequence_summary["run_ids"], ["run-eval-001", "run-eval-002"])
+            self.assertEqual(sequence_summary["iteration_history"][0]["run_id"], "run-eval-001")
+            self.assertEqual(sequence_summary["iteration_history"][1]["run_id"], "run-eval-002")
+            self.assertEqual(sequence_summary["runs"][1]["artifact_groups"]["student_safe"]["student_view_path"], str(candidate_dir / "student-view.json"))
+            self.assertEqual(sequence_summary["runs"][1]["artifact_groups"]["teacher_private"]["request_private_path"], str(candidate_dir / "request.private.json"))
 
 
 class AlphaDocumentationTests(unittest.TestCase):
@@ -111,13 +170,15 @@ class AlphaDocumentationTests(unittest.TestCase):
         text = ALPHA_DOC.read_text().lower()
         self.assertIn("canonical dataset pack", text)
         self.assertIn("clawith-compatible shim", text)
+        self.assertIn("baseline", text)
         self.assertIn("not claimed", text)
 
     def test_readme_and_runner_doc_mention_alpha_demo(self):
         self.assertIn("runner_bridge.alpha_demo", README.read_text())
         runner_text = RUNNER_DOC.read_text().lower()
         self.assertIn("canonical pack", runner_text)
-        self.assertIn("queued", runner_text)
+        self.assertIn("teacher-scorecard.json", runner_text)
+        self.assertIn("baseline", runner_text)
 
 
 if __name__ == "__main__":

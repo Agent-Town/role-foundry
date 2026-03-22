@@ -81,6 +81,7 @@ The Frontend Apprentice alpha path now has one canonical pack:
 That manifest is the source of truth for:
 - the seed payload used by `seed/bootstrap.py`
 - `runner_bridge/examples/first-live-run.json`
+- `runner_bridge/examples/teacher-eval-baseline.json`
 - `runner_bridge/examples/teacher-eval-loop.json`
 
 Those committed JSON files remain in the repo as compatibility exports, but they are derived from the canonical pack and can be checked with:
@@ -100,9 +101,10 @@ python3 -m runner_bridge.alpha_demo
 That script is deliberately honest:
 - by default it starts a repo-local **Clawith-compatible shim**
 - it seeds the canonical role + scenarios over HTTP
-- it creates a **queued** run record first
-- the bridge then patches `running` and final status
-- it reads the final run record back and writes `control-plane-summary.json`
+- it runs the canonical **baseline** request first and records a real `queued → running → completed` lifecycle
+- it derives the candidate request's `previous_iteration` block from the actual baseline scorecard receipts
+- it registers the candidate with explicit lineage (`root_run_id`, `parent_run_id`, `iteration_index`)
+- it reads both final run records back and writes per-run `control-plane-summary.json` files plus `baseline-candidate-summary.json`
 
 This proves the control-plane/data-loop spine without claiming native upstream Clawith support for the exact same endpoints.
 
@@ -166,7 +168,7 @@ Milestone 5 adds one optional extension:
 }
 ```
 
-The backend may receive the raw teacher payload, but the artifact directory keeps a redacted student-safe request view.
+The backend may receive the raw teacher payload, but the artifact directory keeps a redacted student-safe request view. The alpha-demo iteration flow now also derives the candidate `previous_iteration` block from the actual baseline receipts instead of hard-coding a fake historical success.
 
 For `ClaudeVibeRunner`, the prompt sent to Claude is built from a **student-safe derived view**: visible training scenarios, public curriculum themes, and the sealed holdout count. The holdout prompt text itself never enters the Claude prompt.
 
@@ -254,6 +256,8 @@ runtime/runs/<run_id>/
   transcript.ndjson
   artifact-bundle.json
   result.json
+  student-view.json          # evaluation runs only
+  teacher-scorecard.json     # evaluation runs only
 ```
 
 `ClaudeVibeRunner` adds a few backend-specific receipts in the same run directory:
@@ -269,6 +273,10 @@ claude.stderr.log
 
 `request.private.json` is the raw backend input. That split is what keeps holdout prompt text out of the student-facing bundle while still letting the teacher side evaluate the run.
 
+For evaluation runs, the bridge also emits:
+- `student-view.json` — the student-safe prompt pack and promoted public curriculum themes
+- `teacher-scorecard.json` — the teacher-facing score output, including iteration history, without sealed holdout prompt text
+
 ## First live run
 
 Against a Clawith-compatible endpoint:
@@ -281,6 +289,13 @@ python3 -m runner_bridge.cli \
 ```
 
 Teacher evaluation demo:
+
+```bash
+python3 -m runner_bridge.cli \
+  --request runner_bridge/examples/teacher-eval-baseline.json \
+  --clawith-url http://localhost:3000 \
+  --clawith-secret "$CLAWITH_SECRET"
+```
 
 ```bash
 python3 -m runner_bridge.cli \
@@ -304,15 +319,21 @@ python3 -m runner_bridge.cli \
   --request runner_bridge/examples/claude-vibe-smoke.json
 ```
 
-Canonical alpha path with inspectable queued → running → completed state:
+Canonical alpha path with inspectable baseline → candidate state and lineage:
 
 ```bash
 python3 -m runner_bridge.alpha_demo
 ```
 
+Single-request compatibility path:
+
+```bash
+python3 -m runner_bridge.alpha_demo --flow request --request-name first_live_run
+```
+
 The second command is not a claim that Clawith is running. It is just the fastest zero-secret way to verify the transcript/artifact contract locally.
 The Claude smoke command is not a claim that the full dogfood loop is done. It only proves that Role Foundry can now drive one real Claude-backed student run through the bridge while keeping the profile repo-local and failure states explicit.
-The alpha-demo command is not a claim that upstream Clawith already exposes this exact API. It proves the repo can now write and read a real run lifecycle through an honestly named Clawith-compatible seam.
+The alpha-demo command is not a claim that upstream Clawith already exposes this exact API. It proves the repo can now write and read a real two-run iteration slice through an honestly named Clawith-compatible seam.
 
 ## What is still not done
 

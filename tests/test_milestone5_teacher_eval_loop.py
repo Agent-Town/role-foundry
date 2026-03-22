@@ -98,26 +98,41 @@ class TeacherEvalLoopContractTests(unittest.TestCase):
             self.assertTrue((run_dir / "artifact-bundle.json").exists())
             self.assertTrue((run_dir / "result.json").exists())
             self.assertTrue((run_dir / "transcript.ndjson").exists())
+            self.assertTrue((run_dir / "student-view.json").exists())
+            self.assertTrue((run_dir / "teacher-scorecard.json").exists())
 
             redacted_request = (run_dir / "request.json").read_text()
             private_request = (run_dir / "request.private.json").read_text()
             artifact_bundle_text = (run_dir / "artifact-bundle.json").read_text()
             result_text = (run_dir / "result.json").read_text()
             transcript_text = (run_dir / "transcript.ndjson").read_text()
+            student_view_text = (run_dir / "student-view.json").read_text()
+            teacher_scorecard_text = (run_dir / "teacher-scorecard.json").read_text()
 
             self.assertNotIn(SEALED_PROMPT, redacted_request)
             self.assertIn(SEALED_PROMPT, private_request)
             self.assertNotIn(SEALED_PROMPT, artifact_bundle_text)
             self.assertNotIn(SEALED_PROMPT, result_text)
             self.assertNotIn(SEALED_PROMPT, transcript_text)
+            self.assertNotIn(SEALED_PROMPT, student_view_text)
+            self.assertNotIn(SEALED_PROMPT, teacher_scorecard_text)
 
             artifact_bundle = json.loads(artifact_bundle_text)
+            student_view = json.loads(student_view_text)
+            teacher_scorecard = json.loads(teacher_scorecard_text)
             self.assertEqual(artifact_bundle["student_view"]["agent_role"], "student")
             self.assertEqual(artifact_bundle["teacher_output"]["agent_role"], "teacher")
+            self.assertEqual(student_view["agent_role"], "student")
+            self.assertEqual(student_view["iteration"]["label"], "candidate")
+            self.assertEqual(teacher_scorecard["agent_role"], "teacher")
+            self.assertEqual(teacher_scorecard["iteration"]["label"], "candidate")
             self.assertTrue(
                 all(scenario["type"] == "training" for scenario in artifact_bundle["student_view"]["visible_scenarios"])
             )
             self.assertEqual(artifact_bundle["student_view"]["sealed_holdout_count"], 2)
+
+            self.assertEqual(artifact_bundle["receipts"]["student_view_path"], "student-view.json")
+            self.assertEqual(artifact_bundle["receipts"]["teacher_scorecard_path"], "teacher-scorecard.json")
 
             teacher_output = artifact_bundle["teacher_output"]
             self.assertEqual(teacher_output["aggregate_score"]["passed"], 4)
@@ -138,7 +153,9 @@ class TeacherEvalLoopContractTests(unittest.TestCase):
             history = teacher_output["iteration_history"]
             self.assertEqual(len(history), 2)
             self.assertEqual(history[0]["run_id"], "run-eval-001")
+            self.assertEqual(history[0]["label"], "baseline")
             self.assertEqual(history[1]["run_id"], "run-eval-002")
+            self.assertEqual(history[1]["label"], "candidate")
             self.assertEqual(history[1]["delta"]["pass_count"], 2)
             self.assertAlmostEqual(history[1]["delta"]["holdout_pass_rate"], 0.5)
 
@@ -159,6 +176,7 @@ class TeacherEvalDocumentationTests(unittest.TestCase):
         text = RUNNER_DOC.read_text()
         self.assertIn("teacher evaluation", text.lower())
         self.assertIn("request.private.json", text)
+        self.assertIn("teacher-scorecard.json", text)
         self.assertIn("public curriculum themes", text.lower())
 
     def test_readme_mentions_teacher_scorecards_and_iteration_history(self):

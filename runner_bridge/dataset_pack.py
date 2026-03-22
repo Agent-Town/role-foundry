@@ -11,6 +11,7 @@ DEFAULT_PACK_PATH = REPO_ROOT / "datasets" / "frontend-apprentice" / "alpha-pack
 DERIVED_EXPORT_PATHS = {
     "seed_payload": REPO_ROOT / "seed" / "role-foundry-apprentice.json",
     "first_live_run": REPO_ROOT / "runner_bridge" / "examples" / "first-live-run.json",
+    "teacher_eval_baseline": REPO_ROOT / "runner_bridge" / "examples" / "teacher-eval-baseline.json",
     "teacher_eval_loop": REPO_ROOT / "runner_bridge" / "examples" / "teacher-eval-loop.json",
 }
 
@@ -100,7 +101,7 @@ def write_derived_exports(path: str | Path = DEFAULT_PACK_PATH) -> None:
     pack = load_pack(path)
     export_seed = export_seed_payload(pack)
     DERIVED_EXPORT_PATHS["seed_payload"].write_text(json.dumps(export_seed, indent=2) + "\n")
-    for request_name in ("first_live_run", "teacher_eval_loop"):
+    for request_name in ("first_live_run", "teacher_eval_baseline", "teacher_eval_loop"):
         DERIVED_EXPORT_PATHS[request_name].write_text(
             json.dumps(export_request(pack, request_name), indent=2) + "\n"
         )
@@ -113,6 +114,7 @@ def exported_files_match(path: str | Path = DEFAULT_PACK_PATH) -> list[str]:
     expected = {
         DERIVED_EXPORT_PATHS["seed_payload"]: export_seed_payload(pack),
         DERIVED_EXPORT_PATHS["first_live_run"]: export_request(pack, "first_live_run"),
+        DERIVED_EXPORT_PATHS["teacher_eval_baseline"]: export_request(pack, "teacher_eval_baseline"),
         DERIVED_EXPORT_PATHS["teacher_eval_loop"]: export_request(pack, "teacher_eval_loop"),
     }
 

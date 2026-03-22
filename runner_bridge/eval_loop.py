@@ -56,6 +56,7 @@ def build_teacher_evaluation(payload: dict[str, Any]) -> dict[str, Any]:
     scenario_results = []
     visible_scenarios = []
     raw_failure_themes = []
+    current_iteration = _public_iteration(evaluation.get("iteration"))
 
     for scenario in scenarios:
         scenario_type = scenario.get("type", "training")
@@ -107,6 +108,7 @@ def build_teacher_evaluation(payload: dict[str, Any]) -> dict[str, Any]:
         payload.get("run_id"),
         aggregate_score,
         evaluation.get("previous_iteration"),
+        current_iteration=current_iteration,
     )
 
     student_view = {
@@ -118,6 +120,8 @@ def build_teacher_evaluation(payload: dict[str, Any]) -> dict[str, Any]:
         "prompt_summary": evaluation.get("student_prompt_summary")
         or "Train on the visible curriculum only. Hidden holdouts stay sealed.",
     }
+    if current_iteration:
+        student_view["iteration"] = current_iteration
 
     teacher_output = {
         "agent_role": "teacher",
@@ -128,6 +132,8 @@ def build_teacher_evaluation(payload: dict[str, Any]) -> dict[str, Any]:
         "verdict": evaluation.get("teacher_verdict")
         or "Teacher scored the run against public curriculum plus sealed holdouts.",
     }
+    if current_iteration:
+        teacher_output["iteration"] = current_iteration
     if iteration_history:
         teacher_output["iteration_history"] = iteration_history
 
@@ -166,55 +172,62 @@ def _build_iteration_history(
     run_id: str | None,
     aggregate_score: dict[str, Any],
     previous_iteration: Any,
+    *,
+    current_iteration: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
     history = []
+    current_label = (current_iteration or {}).get("label") or "current"
+    current_index = (current_iteration or {}).get("index")
     if isinstance(previous_iteration, dict):
         previous_aggregate = previous_iteration.get("aggregate_score", {})
-        history.append(
-            {
-                "run_id": previous_iteration.get("run_id"),
-                "label": previous_iteration.get("label") or "previous",
-                "aggregate_score": previous_aggregate,
-            }
-        )
+        previous_entry = {
+            "run_id": previous_iteration.get("run_id"),
+            "label": previous_iteration.get("label") or "previous",
+            "aggregate_score": previous_aggregate,
+        }
+        if previous_iteration.get("index") is not None:
+            previous_entry["index"] = previous_iteration.get("index")
+        history.append(previous_entry)
 
-        history.append(
-            {
-                "run_id": run_id,
-                "label": "current",
-                "aggregate_score": aggregate_score,
-                "delta": {
-                    "pass_count": aggregate_score.get("passed", 0)
-                    - int(previous_aggregate.get("passed", 0) or 0),
-                    "pass_rate": round(
-                        float(aggregate_score.get("pass_rate", 0.0) or 0.0)
-                        - float(previous_aggregate.get("pass_rate", 0.0) or 0.0),
-                        4,
-                    ),
-                    "average_score": round(
-                        float(aggregate_score.get("average_score", 0.0) or 0.0)
-                        - float(previous_aggregate.get("average_score", 0.0) or 0.0),
-                        4,
-                    ),
-                    "holdout_pass_count": aggregate_score.get("holdout", {}).get("passed", 0)
-                    - int(previous_aggregate.get("holdout", {}).get("passed", 0) or 0),
-                    "holdout_pass_rate": round(
-                        float(aggregate_score.get("holdout", {}).get("pass_rate", 0.0) or 0.0)
-                        - float(previous_aggregate.get("holdout", {}).get("pass_rate", 0.0) or 0.0),
-                        4,
-                    ),
-                },
-            }
-        )
+        current_entry = {
+            "run_id": run_id,
+            "label": current_label,
+            "aggregate_score": aggregate_score,
+            "delta": {
+                "pass_count": aggregate_score.get("passed", 0)
+                - int(previous_aggregate.get("passed", 0) or 0),
+                "pass_rate": round(
+                    float(aggregate_score.get("pass_rate", 0.0) or 0.0)
+                    - float(previous_aggregate.get("pass_rate", 0.0) or 0.0),
+                    4,
+                ),
+                "average_score": round(
+                    float(aggregate_score.get("average_score", 0.0) or 0.0)
+                    - float(previous_aggregate.get("average_score", 0.0) or 0.0),
+                    4,
+                ),
+                "holdout_pass_count": aggregate_score.get("holdout", {}).get("passed", 0)
+                - int(previous_aggregate.get("holdout", {}).get("passed", 0) or 0),
+                "holdout_pass_rate": round(
+                    float(aggregate_score.get("holdout", {}).get("pass_rate", 0.0) or 0.0)
+                    - float(previous_aggregate.get("holdout", {}).get("pass_rate", 0.0) or 0.0),
+                    4,
+                ),
+            },
+        }
+        if current_index is not None:
+            current_entry["index"] = current_index
+        history.append(current_entry)
         return history
 
-    history.append(
-        {
-            "run_id": run_id,
-            "label": "current",
-            "aggregate_score": aggregate_score,
-        }
-    )
+    current_entry = {
+        "run_id": run_id,
+        "label": current_label,
+        "aggregate_score": aggregate_score,
+    }
+    if current_index is not None:
+        current_entry["index"] = current_index
+    history.append(current_entry)
     return history
 
 
@@ -243,3 +256,18 @@ def _public_actor(actor: Any, *, default_role: str) -> dict[str, Any]:
         "name": actor.get("name") or default_role.title(),
         "agent_role": actor.get("agent_role") or default_role,
     }
+
+
+def _public_iteration(iteration: Any) -> dict[str, Any] | None:
+    if not isinstance(iteration, dict):
+        return None
+    public = {
+        "label": iteration.get("label") or "current",
+    }
+    if iteration.get("index") is not None:
+        public["index"] = iteration.get("index")
+    if iteration.get("sequence_id"):
+        public["sequence_id"] = iteration.get("sequence_id")
+    if iteration.get("parent_run_id"):
+        public["parent_run_id"] = iteration.get("parent_run_id")
+    return public

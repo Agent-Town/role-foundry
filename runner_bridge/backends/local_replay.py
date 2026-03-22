@@ -25,6 +25,8 @@ def main(argv: list[str] | None = None) -> int:
     transcript_path = output_dir / "transcript.ndjson"
     artifact_bundle_path = output_dir / "artifact-bundle.json"
     result_path = output_dir / "result.json"
+    student_view_path = output_dir / "student-view.json"
+    teacher_scorecard_path = output_dir / "teacher-scorecard.json"
 
     events = [
         {
@@ -155,7 +157,15 @@ def main(argv: list[str] | None = None) -> int:
             "result_path": result_path.name,
         },
     }
+    if request.get("lineage"):
+        artifact_bundle["lineage"] = request["lineage"]
+    if request.get("meta"):
+        artifact_bundle["meta"] = request["meta"]
     if evaluation:
+        student_view_path.write_text(json.dumps(evaluation["student_view"], indent=2))
+        teacher_scorecard_path.write_text(json.dumps(evaluation["teacher_output"], indent=2))
+        artifact_bundle["receipts"]["student_view_path"] = student_view_path.name
+        artifact_bundle["receipts"]["teacher_scorecard_path"] = teacher_scorecard_path.name
         artifact_bundle["student_view"] = evaluation["student_view"]
         artifact_bundle["teacher_output"] = evaluation["teacher_output"]
         artifact_bundle["iteration_history"] = evaluation["iteration_history"]
