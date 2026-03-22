@@ -14,7 +14,7 @@ That is the hackathon-fast, honest path.
 
 The repo now ships one working bridge path:
 
-```
+```text
 python3 -m runner_bridge.cli
   → validates the run request contract
   → marks the run as running
@@ -32,6 +32,19 @@ That is deliberate:
 - it gives us a local/mockable path when a real Clawith image or provider credentials are unavailable
 
 This is not consumer OAuth. It is not pretending Clawith natively owns a Claude subscription. It is a narrow bridge.
+
+## The implemented Milestone 5 extension
+
+The same bridge now carries one honest teacher-evaluation slice.
+
+If a request includes an optional `teacher_evaluation` payload, `LocalReplayRunner` will:
+- keep the **student view** limited to public curriculum only
+- keep sealed holdout prompt text out of judge-facing artifact files
+- emit a **teacher scorecard** with per-scenario notes plus aggregate score
+- collapse failed holdouts into **public curriculum themes** instead of leaking hidden prompts
+- record **iteration history** with score deltas versus the prior run
+
+The important line: the teacher can know more than the student without the repo leaking the sealed exam into the student-facing bundle.
 
 ## Current bridge shape
 
@@ -71,6 +84,45 @@ Those are the required Milestone 4 fields:
 - `time_budget`
 - `cost_budget`
 
+### Optional teacher evaluation payload
+
+Milestone 5 adds one optional extension:
+
+```json
+{
+  "teacher_evaluation": {
+    "teacher": { "name": "Robin + Neo", "agent_role": "teacher" },
+    "student": { "name": "Frontend Apprentice", "agent_role": "student" },
+    "previous_iteration": {
+      "run_id": "run-eval-001",
+      "aggregate_score": { "passed": 2, "total": 5, "pass_rate": 0.4 }
+    },
+    "scenarios": [
+      {
+        "id": "t4",
+        "type": "training",
+        "student_prompt": "Leave a proof bundle",
+        "passed": true,
+        "score": 1.0,
+        "teacher_notes": "Receipts are clear now."
+      },
+      {
+        "id": "h2",
+        "type": "holdout",
+        "holdout_prompt": "Judge-only hidden prompt text",
+        "passed": false,
+        "score": 0.6,
+        "teacher_notes": "Still too close to leaking the exam.",
+        "public_failure_theme": "Explain evaluation integrity without leaking the exam",
+        "public_failure_summary": "Teach the public lesson, not the hidden prompt."
+      }
+    ]
+  }
+}
+```
+
+The backend may receive the raw teacher payload, but the artifact directory keeps a redacted student-safe request view.
+
 ## Result contract
 
 Each adapter must leave a `result.json` that the bridge can normalize into:
@@ -91,6 +143,36 @@ Allowed statuses are:
 - `timeout`
 
 Failure is first-class. A failed run still needs receipts.
+
+### Teacher scorecard shape
+
+When `teacher_evaluation` is present, the scorecard now carries:
+- teacher identity and `agent_role: "teacher"`
+- student identity and `agent_role: "student"`
+- aggregate score (`passed`, `total`, `pass_rate`, `average_score`)
+- per-scenario notes
+- public curriculum themes derived from failed holdouts
+- iteration history with score deltas
+
+That is the Milestone 5 storage contract.
+
+### Additive receipt provenance exports
+
+The bridge now writes one extra receipt-provenance layer on top of the existing run outputs.
+
+Important: this does **not** change the teacher judgment semantics.
+It just makes the existing baseline / candidate / evaluation receipts easier to inspect and carry around.
+
+The extra files are:
+- `receipts/manifest.json` — artifact inventory with visibility labels, file hashes, and canonical receipt paths
+- `receipts/candidate.json` — current-run receipt anchored to the workspace snapshot and student-visible prompt pack
+- `receipts/baseline.json` — prior-run aggregate receipt when `previous_iteration` exists
+- `receipts/evaluation.json` — teacher score/export receipt when `teacher_evaluation` ran
+- `receipts/evidence-index.json` — evidence map linking receipts back to transcript lines, artifact JSON pointers, and private source records where needed
+- `receipts/summary.md` — human-readable export for quick judge/operator inspection
+
+Private source artifacts may still be referenced in the evidence index, but only by path + pointer.
+The public provenance files do not quote sealed holdout prompt text.
 
 ## Control-plane patch contract
 
@@ -137,14 +219,26 @@ By default the bridge writes to:
 ```text
 runtime/runs/<run_id>/
   request.json
+  request.private.json
   stdout.log
   stderr.log
   transcript.ndjson
   artifact-bundle.json
   result.json
+  receipts/
+    manifest.json
+    candidate.json
+    baseline.json      # when previous_iteration exists
+    evaluation.json    # when teacher_evaluation runs
+    evidence-index.json
+    summary.md
 ```
 
-That is the persistence contract for Milestone 4.
+`request.json` is the redacted artifact copy.
+
+`request.private.json` is the raw backend input. That split is what keeps holdout prompt text out of the student-facing bundle while still letting the teacher side evaluate the run.
+
+`artifact-bundle.json` and `result.json` now also include a small `provenance` block pointing at the receipt manifest, evidence index, summary export, and any baseline / candidate / evaluation receipt files for the run.
 
 ## First live run
 
@@ -153,6 +247,15 @@ Against a Clawith-compatible endpoint:
 ```bash
 python3 -m runner_bridge.cli \
   --request runner_bridge/examples/first-live-run.json \
+  --clawith-url http://localhost:3000 \
+  --clawith-secret "$CLAWITH_SECRET"
+```
+
+Teacher evaluation demo:
+
+```bash
+python3 -m runner_bridge.cli \
+  --request runner_bridge/examples/teacher-eval-loop.json \
   --clawith-url http://localhost:3000 \
   --clawith-secret "$CLAWITH_SECRET"
 ```
@@ -173,4 +276,4 @@ The second command is not a claim that Clawith is running. It is just the fastes
 - no ClaudeVibeRunner wired yet
 - no web UI reading live run state yet
 
-That is fine. The slice is still useful because it proves one honest run lifecycle end to end.
+That is fine. The slice is still useful because it proves one honest run lifecycle end to end, and now also proves a narrow teacher evaluation + iteration loop without leaking holdout prompt text into student-facing artifacts.

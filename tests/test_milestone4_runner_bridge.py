@@ -121,6 +121,10 @@ class RunnerBridgeContractTests(unittest.TestCase):
             self.assertTrue((run_dir / "result.json").exists())
             self.assertTrue((run_dir / "stdout.log").exists())
             self.assertTrue((run_dir / "stderr.log").exists())
+            self.assertTrue((run_dir / "receipts" / "manifest.json").exists())
+            self.assertTrue((run_dir / "receipts" / "candidate.json").exists())
+            self.assertTrue((run_dir / "receipts" / "evidence-index.json").exists())
+            self.assertTrue((run_dir / "receipts" / "summary.md").exists())
 
             transcript = (run_dir / "transcript.ndjson").read_text()
             self.assertIn("runner.started", transcript)
@@ -129,6 +133,23 @@ class RunnerBridgeContractTests(unittest.TestCase):
             artifact_bundle = json.loads((run_dir / "artifact-bundle.json").read_text())
             self.assertEqual(artifact_bundle["run_id"], "run-live-success")
             self.assertIn("changed_files", artifact_bundle["workspace_snapshot"])
+            self.assertEqual(
+                artifact_bundle["provenance"]["receipt_manifest_path"],
+                "receipts/manifest.json",
+            )
+            self.assertEqual(
+                artifact_bundle["provenance"]["episode_receipt_paths"]["candidate"],
+                "receipts/candidate.json",
+            )
+            self.assertNotIn("baseline", artifact_bundle["provenance"]["episode_receipt_paths"])
+            self.assertNotIn("evaluation", artifact_bundle["provenance"]["episode_receipt_paths"])
+
+            receipt_manifest = json.loads((run_dir / "receipts" / "manifest.json").read_text())
+            self.assertEqual(receipt_manifest["receipts"]["episode_receipt_paths"]["candidate"], "receipts/candidate.json")
+            self.assertIn("request.private.json", {artifact["path"] for artifact in receipt_manifest["artifacts"]})
+
+            normalized_result = json.loads((run_dir / "result.json").read_text())
+            self.assertEqual(normalized_result["provenance"]["summary_path"], "receipts/summary.md")
 
             statuses = [patch["payload"]["status"] for patch in server.patches]
             self.assertEqual(statuses, ["running", "completed"])
@@ -186,9 +207,12 @@ class RunnerBridgeContractTests(unittest.TestCase):
             run_dir = artifacts_root / "run-live-fail"
             self.assertTrue((run_dir / "transcript.ndjson").exists())
             self.assertTrue((run_dir / "artifact-bundle.json").exists())
+            self.assertTrue((run_dir / "receipts" / "manifest.json").exists())
+            self.assertTrue((run_dir / "receipts" / "candidate.json").exists())
             failure_result = json.loads((run_dir / "result.json").read_text())
             self.assertEqual(failure_result["status"], "failed")
             self.assertIn("error", failure_result)
+            self.assertEqual(failure_result["provenance"]["receipt_manifest_path"], "receipts/manifest.json")
 
             statuses = [patch["payload"]["status"] for patch in server.patches]
             self.assertEqual(statuses, ["running", "failed"])
@@ -232,11 +256,14 @@ class RunnerBridgeDocumentationTests(unittest.TestCase):
         self.assertIn("LocalReplayRunner", text)
         self.assertIn("PATCH /api/runs/{run_id}", text)
         self.assertIn("zero-secret", text.lower())
+        self.assertIn("receipt provenance", text.lower())
+        self.assertIn("evidence-index.json", text)
 
     def test_readme_mentions_first_live_run_cli(self):
         text = README.read_text()
         self.assertIn("python3 -m runner_bridge.cli", text)
         self.assertIn("first live run", text.lower())
+        self.assertIn("receipt provenance pack", text.lower())
 
 
 if __name__ == "__main__":

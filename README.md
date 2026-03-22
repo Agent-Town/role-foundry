@@ -20,8 +20,10 @@ That makes the core claim legible:
 2. **Public curriculum** — visible training slices like rewriting the apprentice story, clarifying curriculum vs holdouts, exposing score deltas, and adding proof bundles
 3. **Sealed holdouts** — hidden-eval categories that test whether the apprentice keeps demo mode honest and avoids leaking the exam
 4. **Two judged runs** — Run 2 clearly improves over Run 1
-5. **Failure → curriculum loop** — failures become the next public teaching themes without exposing hidden prompts
-6. **Proof bundle** — receipt summary, changed files, policy snapshot, and transcript excerpt
+5. **Teacher scorecard** — per-scenario teacher notes plus aggregate score across public curriculum and sealed holdouts
+6. **Failure → curriculum loop** — failed holdouts become the next public teaching themes without exposing hidden prompts
+7. **Iteration history** — score deltas over time stay visible in both the UI and stored run data
+8. **Proof bundle** — receipt summary, changed files, policy snapshot, and transcript excerpt
 
 This is the point of Role Foundry: make capability visible with honest evaluation instead of vibes.
 
@@ -38,8 +40,9 @@ This is the point of Role Foundry: make capability visible with honest evaluatio
 2. **Role Foundry publishes public curriculum** — scenarios the apprentice can practice on
 3. **Role Foundry seals hidden holdouts** — separate judge-only tests the apprentice never sees during training
 4. **The apprentice ships a slice** — copy, UI, scorecard, or artifact surface
-5. **Teacher judges the run** — scorecard shows public and hidden performance
+5. **Teacher judges the run** — a teacher scorecard records per-scenario notes plus an aggregate score
 6. **Failures become curriculum** — only the failure themes are promoted, never the hidden prompt text
+7. **Iteration history records deltas** — later runs show what improved overall and on sealed holdouts
 
 ## Why this demo reads stronger now
 
@@ -83,10 +86,13 @@ See `docs/clawith-integration.md` for prerequisites and the full integration gui
 The first honest runner-bridge slice is now in the repo. It is intentionally small:
 - `python3 -m runner_bridge.cli` drives one run lifecycle
 - `LocalReplayRunner` is the zero-secret backend that writes a transcript and artifact bundle
+- optional `teacher_evaluation` input produces a teacher scorecard, public curriculum themes, and iteration history deltas
+- the bridge stores a redacted `request.json` plus a raw `request.private.json` so sealed holdout prompts stay out of student-facing artifacts
+- the bridge also emits a receipt provenance pack (`receipts/manifest.json`, baseline/candidate/evaluation exports, `receipts/evidence-index.json`, and `receipts/summary.md`) so judges can trace a run back to its source artifacts without changing the scoring semantics
 - if you pass `--clawith-url`, the bridge patches run state into a Clawith-compatible control plane
 - if you omit `--clawith-url`, you can still exercise the artifact/transcript contract locally
 
-Example:
+Examples:
 
 ```bash
 python3 -m runner_bridge.cli \
@@ -95,15 +101,22 @@ python3 -m runner_bridge.cli \
   --clawith-secret "$CLAWITH_SECRET"
 ```
 
+```bash
+python3 -m runner_bridge.cli \
+  --request runner_bridge/examples/teacher-eval-loop.json \
+  --clawith-url http://localhost:3000 \
+  --clawith-secret "$CLAWITH_SECRET"
+```
+
 Artifacts land under `runtime/runs/<run_id>/`.
 
-See `docs/runner-bridge.md` for the control-plane patch contract and the local/mockable fallback path.
+See `docs/runner-bridge.md` for the control-plane patch contract, teacher scorecard extension, and the local/mockable fallback path.
 
 ## What is still stubbed
 
 This repo is intentionally honest about what is not wired yet:
 - the **web app still serves demo data** — it does not read from a live Clawith API
-- only one **local/mockable runner path** is implemented today (`LocalReplayRunner`); Claude/Codex-backed adapters still need wiring
+- only one **local/mockable runner path** is implemented today (`LocalReplayRunner`); teacher scorecards and iteration history are real contracts, but Claude/Codex-backed adapters still need wiring
 - no auth, no Privy, no fake consumer OAuth path
 - no live artifact viewer backed by run storage
 

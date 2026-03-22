@@ -10,6 +10,8 @@ from pathlib import Path
 from typing import Any
 
 from .contract import ContractError, RunRequest
+from .eval_loop import redact_request_for_artifacts
+from .provenance import write_receipt_provenance
 
 ALLOWED_STATUSES = {"completed", "failed", "timeout"}
 
@@ -60,8 +62,11 @@ class RunBridge:
         run_dir = self.artifacts_root / request.run_id
         run_dir.mkdir(parents=True, exist_ok=True)
 
+        raw_request = request.to_dict()
         request_path = run_dir / "request.json"
-        request_path.write_text(json.dumps(request.to_dict(), indent=2))
+        private_request_path = run_dir / "request.private.json"
+        request_path.write_text(json.dumps(redact_request_for_artifacts(raw_request), indent=2))
+        private_request_path.write_text(json.dumps(raw_request, indent=2))
 
         started_at = _utc_now()
         self.control_plane.patch_run(
@@ -74,7 +79,7 @@ class RunBridge:
             },
         )
 
-        command = [*self.backend_command, "--request", str(request_path), "--output-dir", str(run_dir)]
+        command = [*self.backend_command, "--request", str(private_request_path), "--output-dir", str(run_dir)]
         stdout_path = run_dir / "stdout.log"
         stderr_path = run_dir / "stderr.log"
 
@@ -103,6 +108,10 @@ class RunBridge:
         result["started_at"] = started_at
         result["finished_at"] = _utc_now()
         result_path = run_dir / "result.json"
+        result_path.write_text(json.dumps(result, indent=2))
+
+        provenance = write_receipt_provenance(run_dir, raw_request, result)
+        result["provenance"] = provenance
         result_path.write_text(json.dumps(result, indent=2))
 
         final_payload = {
