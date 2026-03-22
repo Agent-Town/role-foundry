@@ -58,10 +58,10 @@ The current version is stronger because it is:
 
 | | Demo mode | Live mode |
 |---|---|---|
-| **What runs** | Static UI with pre-baked apprentice data | Real Clawith control plane + runner backends |
-| **Requirements** | Docker (web container + local services) | Docker + Clawith image + model credentials |
-| **Good for** | Judges, walkthroughs, design review | Actual training and evaluation |
-| **Current status** | Shipping now | Opt-in via `docker compose --profile live up` |
+| **What runs** | Static UI with pre-baked apprentice data | Configured read-only browser shell + optional Clawith / runner-bridge receipts |
+| **Requirements** | Docker (web container + local services) | `liveDataUrl` export for the browser shell; add Clawith image + model credentials for actual runs |
+| **Good for** | Judges, walkthroughs, design review | Inspecting exported run state honestly, then actual training / evaluation once the backend is wired |
+| **Current status** | Shipping now | Browser shell now consumes configured exports; native live storage/browser fan-out is still pending |
 
 ## Local quickstart
 
@@ -73,7 +73,13 @@ open http://localhost:8080
 
 This starts the static web demo plus Postgres and Redis.
 
-To start **live mode** (requires an external Clawith image):
+To exercise the **browser live shell** against the committed alpha-loop sample:
+
+```text
+http://localhost:8080/?mode=live&liveDataUrl=live-read-model.alpha-loop.sample.json
+```
+
+To start the optional backend-side **live mode** (requires an external Clawith image):
 
 ```bash
 docker compose --profile live up
@@ -115,12 +121,12 @@ See `docs/runner-bridge.md` for the control-plane patch contract, teacher scorec
 ## What is still stubbed
 
 This repo is intentionally honest about what is not wired yet:
-- the **web app still serves demo data** — it does not read from a live Clawith API
+- the browser **live shell is read-only** — it consumes configured exports / receipts, but it does not chase native run storage or claim upstream Clawith parity
 - only one **local/mockable runner path** is implemented today (`LocalReplayRunner`); teacher scorecards and iteration history are real contracts, but Claude/Codex-backed adapters still need wiring
 - no auth, no Privy, no fake consumer OAuth path
-- no live artifact viewer backed by run storage
+- no live artifact viewer backed by run storage fan-out
 
-Live mode can now seed Clawith and drive one bridge-mediated run, but the web UI still does not consume live state. That is deliberate. The demo remains first-class and judge-friendly on its own.
+Live mode can now seed Clawith, drive bridge-mediated runs, and the browser shell can consume configured read-model / alpha-loop exports. That is still deliberately narrow. Demo mode remains first-class and judge-friendly on its own.
 
 ## Where Clawith fits
 
@@ -131,7 +137,7 @@ Live mode can now seed Clawith and drive one bridge-mediated run, but the web UI
 - evaluation store and scorecards
 - approvals, scheduling, and audit trails
 
-For the hackathon MVP, Clawith integration is wired at the Docker layer but the web UI does not consume it yet. See `docs/runner-bridge.md` for the intended bridge pattern and `docs/clawith-integration.md` for live-mode setup.
+For the hackathon MVP, Clawith integration is wired at the Docker layer and the browser now has a narrow read-only shell for configured exports. It still does not claim native upstream parity or full live artifact browsing. See `docs/runner-bridge.md` for the bridge pattern and `docs/clawith-integration.md` for live-mode setup.
 
 ## Execution backends
 

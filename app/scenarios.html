@@ -6,21 +6,34 @@
   <title>Role Foundry — Curriculum & Holdouts</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
   <link rel="stylesheet" href="style.css">
+  <script src="config.js"></script>
   <script src="data.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
   <script src="app.js"></script>
 </head>
 <body>
 
-<div class="demo-banner">DEMO MODE — public curriculum is visible, hidden holdouts are shown only as judge previews.</div>
+<div class="mode-banner" :class="$store.app.modeBannerTone()" x-data>
+  <div class="mode-banner-inner">
+    <div class="mode-banner-copy">
+      <strong class="mode-banner-title" x-text="$store.app.modeBadgeLabel()"></strong>
+      <span x-text="$store.app.modeBannerText()"></span>
+      <small x-show="$store.app.liveShell.lastError" x-text="$store.app.liveShell.lastError"></small>
+    </div>
+    <div class="mode-banner-actions">
+      <button class="secondary outline" @click="$store.app.switchMode('demo')">Demo data</button>
+      <button class="contrast outline" @click="$store.app.switchMode('live')">Live shell</button>
+    </div>
+  </div>
+</div>
 
 <nav x-data="navComponent()">
   <ul>
-    <li><a class="brand" href="index.html">Role Foundry</a></li>
-    <li><a href="index.html" :class="isActive('index.html') && 'active'">Apprentice</a></li>
-    <li><a href="scenarios.html" :class="isActive('scenarios.html') && 'active'">Curriculum</a></li>
-    <li><a href="run.html" :class="isActive('run.html') && 'active'">Runs</a></li>
-    <li><a href="scorecard.html" :class="isActive('scorecard.html') && 'active'">Scorecard</a></li>
+    <li><a class="brand" :href="pageHref('index.html')">Role Foundry</a></li>
+    <li><a :href="pageHref('index.html')" :class="isActive('index.html') && 'active'">Apprentice</a></li>
+    <li><a :href="pageHref('scenarios.html')" :class="isActive('scenarios.html') && 'active'">Curriculum</a></li>
+    <li><a :href="pageHref('run.html')" :class="isActive('run.html') && 'active'">Runs</a></li>
+    <li><a :href="pageHref('scorecard.html')" :class="isActive('scorecard.html') && 'active'">Scorecard</a></li>
   </ul>
 </nav>
 
@@ -45,12 +58,33 @@
         <strong>Judge / teacher view</strong>
         <ul>
           <li>Sealed holdout prompts and rubrics</li>
-          <li>Score deltas across runs</li>
+          <li>Score deltas across scored runs</li>
           <li>Artifact receipts and policy snapshots</li>
         </ul>
       </div>
     </div>
   </article>
+
+  <div class="grid-2" style="margin-bottom: 1rem;" x-show="$store.app.latestStudentViewRunId()">
+    <article class="card" x-show="$store.app.getStudentView($store.app.latestStudentViewRunId())">
+      <h3>Student prompt pack</h3>
+      <p><small x-text="$store.app.getStudentView($store.app.latestStudentViewRunId())?.prompt_summary"></small></p>
+      <ul>
+        <template x-for="scenarioId in $store.app.getStudentView($store.app.latestStudentViewRunId())?.visible_scenarios || []" :key="scenarioId">
+          <li x-text="$store.app.getScenario(scenarioId)?.title || scenarioId"></li>
+        </template>
+      </ul>
+    </article>
+    <article class="card" x-show="$store.app.getStudentView($store.app.latestStudentViewRunId())">
+      <h3>Public curriculum themes from failures</h3>
+      <ul>
+        <template x-for="(theme, i) in $store.app.getStudentView($store.app.latestStudentViewRunId())?.public_curriculum_themes || []" :key="i">
+          <li x-text="theme"></li>
+        </template>
+      </ul>
+      <p><small x-text="($store.app.getStudentView($store.app.latestStudentViewRunId())?.sealed_holdout_count || 0) + ' sealed holdouts stay out of the student prompt pack.'"></small></p>
+    </article>
+  </div>
 
   <div class="grid-2">
     <section>
@@ -70,6 +104,11 @@
           </div>
         </div>
       </template>
+
+      <article class="card empty-state" x-show="$store.app.trainingScenarios().length === 0">
+        <strong>No public curriculum loaded yet.</strong>
+        <p>The live shell will render scenarios here once the configured export includes them.</p>
+      </article>
     </section>
 
     <section>
@@ -89,19 +128,24 @@
           </div>
         </div>
       </template>
+
+      <article class="card empty-state" x-show="$store.app.holdoutScenarios().length === 0">
+        <strong>No holdout preview is loaded.</strong>
+        <p>That is acceptable in live mode until a judge-facing scenario summary is exported.</p>
+      </article>
     </section>
   </div>
 
-  <template x-if="$store.app.iterations && $store.app.iterations[1]?.failure_themes">
+  <template x-if="$store.app.latestIteration()?.failure_themes?.length">
     <section>
       <h3>Failure themes promoted into the next curriculum</h3>
-      <p><small>After Run 1, the teachers exposed only these categories — not the hidden prompt text.</small></p>
+      <p><small x-text="'After ' + ($store.app.getRunShortLabel($store.app.latestIteration()?.from_run) || 'the previous run') + ', the teachers exposed only these categories — not the hidden prompt text.'"></small></p>
       <div class="grid-2">
-        <template x-for="ft in $store.app.iterations[1].failure_themes" :key="ft.theme">
+        <template x-for="ft in $store.app.latestIteration().failure_themes" :key="ft.theme">
           <div class="card theme-card">
             <h4 x-text="ft.theme"></h4>
             <p x-text="ft.description"></p>
-            <small>Sources: <span x-text="ft.source_scenarios.join(', ')"></span></small>
+            <small>Sources: <span x-text="(ft.source_scenarios || []).join(', ')"></span></small>
           </div>
         </template>
       </div>

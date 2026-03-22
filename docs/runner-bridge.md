@@ -274,6 +274,6 @@ The second command is not a claim that Clawith is running. It is just the fastes
 - no native consumer OAuth in Clawith
 - no claim that Clawith already ships these exact run-patch endpoints upstream
 - no ClaudeVibeRunner wired yet
-- no web UI reading live run state yet
+- no full browser fan-out across live run storage yet; the UI only consumes configured read-only exports / receipts
 
-That is fine. The slice is still useful because it proves one honest run lifecycle end to end, and now also proves a narrow teacher evaluation + iteration loop without leaking holdout prompt text into student-facing artifacts.
+That is fine. The slice is still useful because it proves one honest run lifecycle end to end, proves a narrow teacher evaluation + iteration loop without leaking holdout prompt text into student-facing artifacts, and now gives the browser a receipt-oriented live shell without pretending the whole native stack is done.

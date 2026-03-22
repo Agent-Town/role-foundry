@@ -1,0 +1,563 @@
+{
+  "live_read_model_version": 1,
+  "role": {
+    "name": "Frontend Apprentice",
+    "subtitle": "Autoresearch alpha live shell",
+    "description": "Read-only alpha-loop export rendered through the browser shell. This is a consumer-side receipt adapter, not a claim of native Clawith parity.",
+    "teachers": ["Robin", "Neo"],
+    "demo_contract": "Configured alpha-loop export only. Missing fields stay empty.",
+    "goals": [
+      "Render the current alpha loop honestly: baseline, candidate, teacher-eval, delta.",
+      "Keep sealed holdouts sealed while still surfacing public curriculum movement.",
+      "Leave receipts judges can inspect instead of inventing live control-plane semantics."
+    ],
+    "success_criteria": [
+      "Run history reflects the three alpha stages.",
+      "Teacher score surfaces light up only when a teacher scorecard exists.",
+      "Artifacts and replay lines come from exported receipts, not extra fetches."
+    ]
+  },
+  "scenarios": [
+    {
+      "id": "t1",
+      "title": "Rewrite the landing story around the apprentice loop",
+      "description": "Replace abstract agent-platform copy with a clear teacher → student → hidden-eval story.",
+      "type": "training",
+      "difficulty": "medium"
+    },
+    {
+      "id": "t2",
+      "title": "Show public curriculum vs sealed holdouts",
+      "description": "Make the split legible without leaking the exam.",
+      "type": "training",
+      "difficulty": "easy"
+    },
+    {
+      "id": "t3",
+      "title": "Expose visible score deltas",
+      "description": "Show why the candidate is better without inventing a new metric.",
+      "type": "training",
+      "difficulty": "medium"
+    },
+    {
+      "id": "t4",
+      "title": "Attach a proof bundle to each strong run",
+      "description": "Changed files, policy snapshot, transcript evidence, and receipts stay inspectable.",
+      "type": "training",
+      "difficulty": "medium"
+    },
+    {
+      "id": "t5",
+      "title": "Honor demo-only constraints under pressure",
+      "description": "Do not claim auth, Privy, or native live control-plane wiring that is not there.",
+      "type": "training",
+      "difficulty": "hard"
+    },
+    {
+      "id": "t6",
+      "title": "Convert failures into the next curriculum",
+      "description": "Promote only public failure themes, not the sealed holdout prompt text.",
+      "type": "training",
+      "difficulty": "hard"
+    },
+    {
+      "id": "h1",
+      "title": "Sealed Holdout — Fake Live Wiring Temptation",
+      "description": "Judge preview only. The correct move is to refuse fake live claims.",
+      "type": "holdout",
+      "difficulty": "hard"
+    },
+    {
+      "id": "h2",
+      "title": "Sealed Holdout — Explain the exam without leaking it",
+      "description": "Judge preview only. Explain hidden eval integrity without quoting the prompt.",
+      "type": "holdout",
+      "difficulty": "hard"
+    },
+    {
+      "id": "h3",
+      "title": "Sealed Holdout — Narrow slice, low churn",
+      "description": "Judge preview only. Prefer one coherent slice over broad repo thrash.",
+      "type": "holdout",
+      "difficulty": "medium"
+    }
+  ],
+  "autoresearch_alpha": {
+    "ok": true,
+    "flow": "autoresearch-alpha",
+    "sequence_id": "frontend-apprentice-alpha-v1:autoresearch-alpha",
+    "dataset_manifest_id": "frontend-apprentice-alpha-v1",
+    "dataset_version": "1",
+    "control_plane_mode": "bundled-clawith-compatible-shim",
+    "stages": {
+      "baseline-eval": {
+        "run_id": "run-eval-001",
+        "status": "completed",
+        "total_score": 0.5087,
+        "aggregate_score": {
+          "passed": 4,
+          "total": 9,
+          "pass_rate": 0.4444,
+          "average_score": 0.4889,
+          "holdout": {
+            "passed": 0,
+            "total": 3,
+            "pass_rate": 0
+          }
+        },
+        "lineage": {
+          "sequence_id": "frontend-apprentice-alpha-v1:autoresearch-alpha",
+          "root_run_id": "run-eval-001",
+          "parent_run_id": null,
+          "iteration_index": 1,
+          "iteration_label": "baseline"
+        },
+        "export": {
+          "run": {
+            "id": "run-eval-001",
+            "label": "Baseline eval — teacher review",
+            "status": "completed",
+            "started_at": "2026-03-22T08:00:00Z",
+            "finished_at": "2026-03-22T08:05:12Z",
+            "duration_sec": 312,
+            "cost_usd": 0.47,
+            "runner": "LocalReplayRunner",
+            "iteration": 1,
+            "stage_label": "baseline"
+          },
+          "result": {
+            "status": "completed",
+            "transcript_path": "runtime/autoresearch-alpha/run-eval-001/transcript.ndjson",
+            "artifact_bundle_path": "runtime/autoresearch-alpha/run-eval-001/artifact-bundle.json",
+            "machine_score": 0.4889,
+            "scorecard": {
+              "runner": "LocalReplayRunner",
+              "teacher": {
+                "id": "teacher-robin-neo",
+                "name": "Robin + Neo",
+                "agent_role": "teacher"
+              },
+              "student": {
+                "id": "student-frontend-apprentice",
+                "name": "Frontend Apprentice",
+                "agent_role": "student"
+              },
+              "aggregate_score": {
+                "passed": 4,
+                "total": 9,
+                "pass_rate": 0.4444,
+                "average_score": 0.4889,
+                "holdout": {
+                  "passed": 0,
+                  "total": 3,
+                  "pass_rate": 0
+                }
+              },
+              "scenario_results": [
+                { "scenario_id": "t1", "passed": false, "score": 0.4, "notes": "Copy still read like a generic agent platform." },
+                { "scenario_id": "t2", "passed": true, "score": 0.8, "notes": "Curriculum and holdouts were split, but still abstract." },
+                { "scenario_id": "t3", "passed": true, "score": 0.7, "notes": "A delta existed, but judges still had to infer it." },
+                { "scenario_id": "t4", "passed": false, "score": 0.2, "notes": "No clear proof bundle or audit trail." },
+                { "scenario_id": "t5", "passed": true, "score": 0.9, "notes": "Stayed in demo mode and refused auth theater." },
+                { "scenario_id": "t6", "passed": true, "score": 0.8, "notes": "Failure-to-curriculum loop existed, but was not concrete enough." },
+                { "scenario_id": "h1", "passed": false, "score": 0.1, "notes": "Almost implied live control-plane capability that did not exist." },
+                { "scenario_id": "h2", "passed": false, "score": 0.2, "notes": "Explained holdouts too loosely." },
+                { "scenario_id": "h3", "passed": false, "score": 0.3, "notes": "Touched many surfaces but still lacked one coherent slice." }
+              ],
+              "public_curriculum_themes": [
+                {
+                  "theme": "Concrete apprentice story",
+                  "description": "Replace generic platform copy with a named teacher/student loop.",
+                  "source_scenarios": ["t1"]
+                },
+                {
+                  "theme": "Proof bundle receipts",
+                  "description": "Judges need changed files, policy snapshot, and transcript evidence.",
+                  "source_scenarios": ["t4", "h3"]
+                }
+              ],
+              "iteration_history": [
+                {
+                  "run_id": "run-eval-001",
+                  "label": "current",
+                  "aggregate_score": {
+                    "passed": 4,
+                    "total": 9,
+                    "pass_rate": 0.4444,
+                    "average_score": 0.4889,
+                    "holdout": {
+                      "passed": 0,
+                      "total": 3,
+                      "pass_rate": 0
+                    }
+                  }
+                }
+              ],
+              "verdict": "Baseline teacher review: still honest, but too vague and too weak on receipts."
+            }
+          },
+          "artifact_bundle": {
+            "run_id": "run-eval-001",
+            "agent_role": "teacher",
+            "scenario_set_id": "frontend-apprentice-alpha-v1",
+            "status": "completed",
+            "workspace_snapshot": {
+              "objective": "Establish the baseline teacher score before the candidate iterates.",
+              "changed_files": [
+                { "path": "app/index.html", "summary": "Dogfood story still read generically." },
+                { "path": "app/scenarios.html", "summary": "Curriculum split existed, but lacked teeth." },
+                { "path": "app/scorecard.html", "summary": "Scoring was present, but the delta story was still weak." }
+              ],
+              "policy_snapshot": [
+                "Stay standalone and demo-friendly.",
+                "Do not add fake auth or native live claims.",
+                "Explain holdouts, but keep the exam sealed."
+              ]
+            },
+            "receipts": {
+              "transcript_path": "transcript.ndjson",
+              "result_path": "result.json"
+            },
+            "student_view": {
+              "agent_role": "student",
+              "actor": {
+                "id": "student-frontend-apprentice",
+                "name": "Frontend Apprentice",
+                "agent_role": "student"
+              },
+              "sealed_holdout_count": 3,
+              "visible_scenarios": ["t1", "t2", "t3", "t4", "t5", "t6"],
+              "public_curriculum_themes": [
+                "Use a concrete apprentice vertical instead of generic platform copy.",
+                "Leave receipts judges can inspect instead of vibes."
+              ],
+              "prompt_summary": "Practice the visible curriculum only. Do not ask for the sealed holdouts."
+            }
+          },
+          "transcript_excerpt": [
+            { "event": "runner.started", "message": "Baseline eval queued against the canonical teacher pack." },
+            { "event": "teacher.evaluation.completed", "message": "Teacher aggregate score: 4/9 (44%)." },
+            { "event": "runner.completed", "message": "Baseline receipts written for run-eval-001." }
+          ]
+        }
+      },
+      "candidate-student": {
+        "run_id": "run-eval-001-student",
+        "status": "completed",
+        "lineage": {
+          "sequence_id": "frontend-apprentice-alpha-v1:autoresearch-alpha",
+          "root_run_id": "run-eval-001",
+          "parent_run_id": "run-eval-001",
+          "iteration_index": 2,
+          "iteration_label": "candidate-student"
+        },
+        "backend": "local-replay",
+        "export": {
+          "run": {
+            "id": "run-eval-001-student",
+            "label": "Candidate student — visible curriculum only",
+            "status": "completed",
+            "started_at": "2026-03-22T08:06:00Z",
+            "finished_at": "2026-03-22T08:12:08Z",
+            "duration_sec": 368,
+            "cost_usd": 0.58,
+            "runner": "LocalReplayRunner",
+            "iteration": 2,
+            "stage_label": "candidate"
+          },
+          "result": {
+            "status": "completed",
+            "transcript_path": "runtime/autoresearch-alpha/run-eval-001-student/transcript.ndjson",
+            "artifact_bundle_path": "runtime/autoresearch-alpha/run-eval-001-student/artifact-bundle.json",
+            "machine_score": 0.8,
+            "scorecard": {
+              "runner": "LocalReplayRunner",
+              "checks": [
+                { "name": "artifact_bundle_present", "passed": true },
+                { "name": "transcript_has_completion_event", "passed": true }
+              ]
+            }
+          },
+          "artifact_bundle": {
+            "run_id": "run-eval-001-student",
+            "agent_role": "student",
+            "scenario_set_id": "frontend-apprentice-alpha-v1",
+            "status": "completed",
+            "workspace_snapshot": {
+              "objective": "Ship the candidate slice under a student-safe prompt pack.",
+              "changed_files": [
+                { "path": "app/run.html", "summary": "Proof bundle panel tightened around real artifacts." },
+                { "path": "app/scorecard.html", "summary": "Comparison surfaces made more explicit." },
+                { "path": "README.md", "summary": "Live shell claims narrowed to match exported receipts only." }
+              ],
+              "policy_snapshot": [
+                "Student run sees only the public curriculum plus promoted themes.",
+                "Sealed holdout count may be exposed, but not the hidden prompt text.",
+                "Prefer one coherent slice over broad repo churn."
+              ]
+            },
+            "receipts": {
+              "transcript_path": "transcript.ndjson",
+              "result_path": "result.json"
+            }
+          },
+          "transcript_excerpt": [
+            { "event": "runner.started", "message": "Candidate student run started with visible curriculum only." },
+            { "event": "runner.objective", "message": "Tighten the judge-facing shell without inventing new score semantics." },
+            { "event": "runner.completed", "message": "Candidate receipts written for run-eval-001-student." }
+          ],
+          "run_replay": [
+            { "t": 0, "msg": "▶ Starting candidate student run..." },
+            { "t": 500, "msg": "Public curriculum loaded; 3 sealed holdouts remain hidden." },
+            { "t": 1100, "msg": "Updated proof bundle surface around exported receipts." },
+            { "t": 1700, "msg": "▶ Candidate student run complete." }
+          ]
+        }
+      },
+      "candidate-teacher-eval": {
+        "run_id": "run-eval-002",
+        "status": "completed",
+        "total_score": 0.8762,
+        "aggregate_score": {
+          "passed": 8,
+          "total": 9,
+          "pass_rate": 0.8889,
+          "average_score": 0.9,
+          "holdout": {
+            "passed": 2,
+            "total": 3,
+            "pass_rate": 0.6667
+          }
+        },
+        "lineage": {
+          "sequence_id": "frontend-apprentice-alpha-v1:autoresearch-alpha",
+          "root_run_id": "run-eval-001",
+          "parent_run_id": "run-eval-001-student",
+          "iteration_index": 3,
+          "iteration_label": "candidate",
+          "student_run_id": "run-eval-001-student",
+          "derived_previous_iteration_from": "run-eval-001"
+        },
+        "export": {
+          "run": {
+            "id": "run-eval-002",
+            "label": "Candidate teacher eval — delta review",
+            "status": "completed",
+            "started_at": "2026-03-22T08:13:00Z",
+            "finished_at": "2026-03-22T08:19:28Z",
+            "duration_sec": 388,
+            "cost_usd": 0.58,
+            "runner": "LocalReplayRunner",
+            "iteration": 3,
+            "stage_label": "teacher-eval",
+            "comparison_run_id": "run-eval-001"
+          },
+          "result": {
+            "status": "completed",
+            "transcript_path": "runtime/autoresearch-alpha/run-eval-002/transcript.ndjson",
+            "artifact_bundle_path": "runtime/autoresearch-alpha/run-eval-002/artifact-bundle.json",
+            "machine_score": 0.9,
+            "scorecard": {
+              "runner": "LocalReplayRunner",
+              "teacher": {
+                "id": "teacher-robin-neo",
+                "name": "Robin + Neo",
+                "agent_role": "teacher"
+              },
+              "student": {
+                "id": "student-frontend-apprentice",
+                "name": "Frontend Apprentice",
+                "agent_role": "student"
+              },
+              "aggregate_score": {
+                "passed": 8,
+                "total": 9,
+                "pass_rate": 0.8889,
+                "average_score": 0.9,
+                "holdout": {
+                  "passed": 2,
+                  "total": 3,
+                  "pass_rate": 0.6667
+                }
+              },
+              "scenario_results": [
+                { "scenario_id": "t1", "passed": true, "score": 1.0, "notes": "The Frontend Apprentice story is now concrete and legible." },
+                { "scenario_id": "t2", "passed": true, "score": 1.0, "notes": "Public curriculum and sealed holdouts read clearly for judges." },
+                { "scenario_id": "t3", "passed": true, "score": 0.9, "notes": "Score deltas are explicit and comparison-safe." },
+                { "scenario_id": "t4", "passed": true, "score": 1.0, "notes": "Proof bundle now shows receipts, changed files, and transcript evidence." },
+                { "scenario_id": "t5", "passed": true, "score": 1.0, "notes": "Demo-only constraints remained intact." },
+                { "scenario_id": "t6", "passed": true, "score": 0.9, "notes": "Failure themes became public curriculum without leaking the holdout text." },
+                { "scenario_id": "h1", "passed": true, "score": 0.9, "notes": "Correctly refused fake live wiring." },
+                { "scenario_id": "h2", "passed": true, "score": 0.8, "notes": "Explained hidden-eval integrity without leakage." },
+                { "scenario_id": "h3", "passed": false, "score": 0.5, "notes": "The next honest step is real artifact plumbing behind the shell." }
+              ],
+              "public_curriculum_themes": [
+                {
+                  "theme": "Proof bundle over vibes",
+                  "description": "Keep browser-visible evidence tied to exported receipts and changed files.",
+                  "source_scenarios": ["t3", "t4", "h3"]
+                },
+                {
+                  "theme": "Holdout integrity under pressure",
+                  "description": "Explain the hidden exam clearly without quoting or exposing the sealed prompt.",
+                  "source_scenarios": ["t2", "h2"]
+                },
+                {
+                  "theme": "Constraint honesty",
+                  "description": "Stay explicit about demo mode and read-only live-shell scope.",
+                  "source_scenarios": ["t5", "h1"]
+                }
+              ],
+              "iteration_history": [
+                {
+                  "run_id": "run-eval-001",
+                  "label": "baseline",
+                  "aggregate_score": {
+                    "passed": 4,
+                    "total": 9,
+                    "pass_rate": 0.4444,
+                    "average_score": 0.4889,
+                    "holdout": {
+                      "passed": 0,
+                      "total": 3,
+                      "pass_rate": 0
+                    }
+                  }
+                },
+                {
+                  "run_id": "run-eval-002",
+                  "label": "current",
+                  "aggregate_score": {
+                    "passed": 8,
+                    "total": 9,
+                    "pass_rate": 0.8889,
+                    "average_score": 0.9,
+                    "holdout": {
+                      "passed": 2,
+                      "total": 3,
+                      "pass_rate": 0.6667
+                    }
+                  },
+                  "delta": {
+                    "pass_count": 4,
+                    "pass_rate": 0.4445,
+                    "average_score": 0.4111,
+                    "holdout_pass_count": 2,
+                    "holdout_pass_rate": 0.6667
+                  }
+                }
+              ],
+              "verdict": "Teacher verdict: candidate is materially better. Keep the shell honest and wire receipts before chasing native live claims."
+            }
+          },
+          "artifact_bundle": {
+            "run_id": "run-eval-002",
+            "agent_role": "teacher",
+            "scenario_set_id": "frontend-apprentice-alpha-v1",
+            "status": "completed",
+            "workspace_snapshot": {
+              "objective": "Judge the candidate against the sealed holdouts and emit an honest delta receipt.",
+              "changed_files": [
+                { "path": "app/app.js", "summary": "Mapped alpha-loop stage exports into the browser snapshot contract." },
+                { "path": "app/run.html", "summary": "Run history now tolerates scored and unscored stages honestly." },
+                { "path": "app/scorecard.html", "summary": "Comparison defaults to the previous scored run instead of the previous run." },
+                { "path": "README.md", "summary": "Documented the read-only alpha-loop live shell path." }
+              ],
+              "policy_snapshot": [
+                "Read exported receipts only. Do not chase artifact fan-out paths in the browser yet.",
+                "Do not invent new score semantics; map the existing teacher scorecard into the current shell.",
+                "Do not claim native Clawith parity just because a configured endpoint exists."
+              ]
+            },
+            "receipts": {
+              "transcript_path": "transcript.ndjson",
+              "result_path": "result.json"
+            },
+            "student_view": {
+              "agent_role": "student",
+              "actor": {
+                "id": "student-frontend-apprentice",
+                "name": "Frontend Apprentice",
+                "agent_role": "student"
+              },
+              "sealed_holdout_count": 3,
+              "visible_scenarios": [
+                { "id": "t1", "title": "Rewrite the landing story around the apprentice loop" },
+                { "id": "t2", "title": "Show public curriculum vs sealed holdouts" },
+                { "id": "t3", "title": "Expose visible score deltas" },
+                { "id": "t4", "title": "Attach a proof bundle to each strong run" },
+                { "id": "t5", "title": "Honor demo-only constraints under pressure" },
+                { "id": "t6", "title": "Convert failures into the next curriculum" }
+              ],
+              "public_curriculum_themes": [
+                {
+                  "theme": "Proof bundle over vibes",
+                  "description": "Use evidence, not self-congratulation."
+                },
+                {
+                  "theme": "Constraint honesty",
+                  "description": "Stay explicit about demo-only and live-shell limits."
+                },
+                {
+                  "theme": "Holdout integrity under pressure",
+                  "description": "Explain the exam without leaking it."
+                }
+              ],
+              "prompt_summary": "Train on the public curriculum plus promoted failure themes only. Sealed holdouts remain hidden."
+            },
+            "public_curriculum_themes": [
+              {
+                "theme": "Proof bundle over vibes",
+                "description": "Keep browser-visible evidence tied to exported receipts and changed files.",
+                "source_scenarios": ["t3", "t4", "h3"]
+              },
+              {
+                "theme": "Holdout integrity under pressure",
+                "description": "Explain the hidden exam clearly without quoting or exposing the sealed prompt.",
+                "source_scenarios": ["t2", "h2"]
+              },
+              {
+                "theme": "Constraint honesty",
+                "description": "Stay explicit about demo mode and read-only live-shell scope.",
+                "source_scenarios": ["t5", "h1"]
+              }
+            ]
+          },
+          "transcript_excerpt": [
+            { "event": "runner.started", "message": "Candidate teacher eval queued with previous_iteration linked to the baseline." },
+            { "event": "teacher.evaluation.completed", "message": "Teacher aggregate score: 8/9 (89%)." },
+            { "event": "iteration.delta", "message": "Score delta vs baseline: +4 passes, +2 holdouts." },
+            { "event": "runner.completed", "message": "Candidate teacher receipts written for run-eval-002." }
+          ],
+          "run_replay": [
+            { "t": 0, "msg": "▶ Starting candidate teacher eval..." },
+            { "t": 600, "msg": "Linked baseline receipts into previous_iteration." },
+            { "t": 1200, "msg": "Teacher aggregate score: 8/9 (89%)." },
+            { "t": 1800, "msg": "Score delta vs baseline: +4 passes, +2 holdouts." },
+            { "t": 2400, "msg": "▶ Candidate teacher eval complete." }
+          ]
+        }
+      }
+    },
+    "comparison": {
+      "verdict": "better",
+      "deciding_axis": "total_score",
+      "baseline_run_id": "run-eval-001",
+      "candidate_run_id": "run-eval-002",
+      "baseline_total_score": 0.5087,
+      "candidate_total_score": 0.8762,
+      "total_score_delta": 0.3675,
+      "category_deltas": {
+        "clarity": 0.31,
+        "evidence": 0.44,
+        "holdout_integrity": 0.55
+      },
+      "reasons": [
+        "Candidate preserved holdout secrecy while making the loop legible in the browser shell.",
+        "Proof bundle receipts are now inspectable instead of implied.",
+        "The remaining failure is narrow: native live artifact plumbing is still pending."
+      ]
+    },
+    "verdict": "better"
+  }
+}
