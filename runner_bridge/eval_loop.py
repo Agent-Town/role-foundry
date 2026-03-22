@@ -4,10 +4,68 @@ from copy import deepcopy
 from typing import Any
 
 TEACHER_EVALUATION_KEY = "teacher_evaluation"
+STUDENT_PROMPT_PACK_KEY = "student_prompt_pack"
 
 
 def has_teacher_evaluation(payload: dict[str, Any]) -> bool:
     return isinstance(payload.get(TEACHER_EVALUATION_KEY), dict)
+
+
+def has_student_prompt_pack(payload: dict[str, Any]) -> bool:
+    return isinstance(payload.get(STUDENT_PROMPT_PACK_KEY), dict)
+
+
+def build_student_prompt_pack(payload: dict[str, Any]) -> dict[str, Any]:
+    prompt_pack = payload.get(STUDENT_PROMPT_PACK_KEY) or {}
+    if not isinstance(prompt_pack, dict):
+        return {}
+
+    visible_scenarios = []
+    for scenario in prompt_pack.get("visible_scenarios", []):
+        if not isinstance(scenario, dict):
+            continue
+        title = scenario.get("title") or scenario.get("id") or "unknown"
+        visible_scenarios.append(
+            {
+                "id": scenario.get("id"),
+                "title": title,
+                "type": scenario.get("type", "training"),
+                "difficulty": scenario.get("difficulty"),
+                "student_prompt": scenario.get("student_prompt")
+                or scenario.get("prompt")
+                or scenario.get("description")
+                or "",
+            }
+        )
+
+    raw_themes = []
+    for theme in prompt_pack.get("public_curriculum_themes", []):
+        if isinstance(theme, str):
+            raw_themes.append(
+                {
+                    "theme": theme,
+                    "description": "",
+                    "source_scenarios": [],
+                }
+            )
+        elif isinstance(theme, dict):
+            raw_themes.append(
+                {
+                    "theme": theme.get("theme") or theme.get("title") or theme.get("label"),
+                    "description": theme.get("description") or theme.get("summary") or "",
+                    "source_scenarios": list(theme.get("source_scenarios", [])),
+                }
+            )
+
+    return {
+        "agent_role": "student",
+        "actor": _public_actor(prompt_pack.get("actor"), default_role="student"),
+        "sealed_holdout_count": int(prompt_pack.get("sealed_holdout_count", 0) or 0),
+        "visible_scenarios": visible_scenarios,
+        "public_curriculum_themes": _dedupe_failure_themes(raw_themes),
+        "prompt_summary": prompt_pack.get("prompt_summary")
+        or "Train on the public benchmark pack only. Teacher-only evaluation stays separate.",
+    }
 
 
 def redact_request_for_artifacts(payload: dict[str, Any]) -> dict[str, Any]:

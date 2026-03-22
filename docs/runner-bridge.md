@@ -46,6 +46,30 @@ If a request includes an optional `teacher_evaluation` payload, `LocalReplayRunn
 
 The important line: the teacher can know more than the student without the repo leaking the sealed exam into the student-facing bundle.
 
+## Autoresearch alpha public-loop slice
+
+There is now a first honest **executable alpha loop** on top of the bridge:
+
+```bash
+python3 -m runner_bridge.autoresearch_alpha \
+  --request runner_bridge/examples/autoresearch-alpha-public-loop.json
+```
+
+What it does:
+- runs a **baseline teacher eval**
+- derives a **candidate student prompt pack** from the public benchmark pack plus sanitized baseline failure themes
+- runs a **candidate teacher eval** with `previous_iteration` injected from the actual baseline result
+- emits a **better/equal/worse** comparison receipt
+- enforces an **integrity gate** so the loop can claim a public-regression result, but not a sealed-eval result
+
+Why the integrity gate matters:
+- `benchmarks/public-pack-v1` is a **public benchmark pack**, not a sealed certification exam
+- the current teacher-only families are explicitly marked `blocked_pending_rewrite`
+- so the alpha loop may honestly say **better on the current public/unsealed alpha rail**
+- it may **not** honestly say the repo has a fresh sealed holdout path yet
+
+That blocker is explicit instead of buried.
+
 ## Current bridge shape
 
 ```text

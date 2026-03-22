@@ -57,7 +57,7 @@ Principle: each milestone must have:
 
 ## Milestone 3 — Clawith Control Plane in Compose
 
-**Status:** active
+**Status:** done
 
 **Goal:** replace the current stub with a real control plane service that the repo can talk to honestly.
 
@@ -81,7 +81,7 @@ Principle: each milestone must have:
 
 ## Milestone 4 — Runner Bridge + First Live Run
 
-**Status:** active
+**Status:** done
 
 **Goal:** make one real teacher/student run happen without faking consumer OAuth inside Clawith.
 
@@ -103,7 +103,7 @@ Principle: each milestone must have:
 
 ## Milestone 5 — Teacher Evaluation + Iteration Loop
 
-**Status:** queued
+**Status:** done
 
 **Goal:** prove the actual moat: hidden holdout evaluation, failure themes, and score improvement.
 

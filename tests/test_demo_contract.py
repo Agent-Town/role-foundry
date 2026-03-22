@@ -1,3 +1,4 @@
+import json
 import re
 import unittest
 from pathlib import Path
@@ -8,6 +9,7 @@ DOCS = ROOT / 'docs'
 DATA_JS = APP / 'data.js'
 README = ROOT / 'README.md'
 COMPOSE = ROOT / 'docker-compose.yml'
+ALPHA_EXAMPLE = ROOT / 'runner_bridge' / 'examples' / 'autoresearch-alpha-public-loop.json'
 
 
 class DemoContractTests(unittest.TestCase):
@@ -41,9 +43,17 @@ class DemoContractTests(unittest.TestCase):
         self.assertIn("'run-002'", text)
         self.assertIn('iterations:', text)
         self.assertIn('failure_themes', text)
-        self.assertIn('student_views:', text)
-        self.assertIn("agent_role: 'student'", text)
-        self.assertIn("agent_role: 'teacher'", text)
+
+        alpha_request = json.loads(ALPHA_EXAMPLE.read_text())
+        self.assertIn('candidate-student', alpha_request['stages'])
+        self.assertEqual(
+            alpha_request['stages']['candidate-teacher-eval']['request']['teacher_evaluation']['student']['agent_role'],
+            'student',
+        )
+        self.assertEqual(
+            alpha_request['stages']['candidate-teacher-eval']['request']['teacher_evaluation']['teacher']['agent_role'],
+            'teacher',
+        )
 
     def test_apprentice_vertical_surfaces_exist(self):
         index_text = (APP / 'index.html').read_text()

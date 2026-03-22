@@ -5,7 +5,12 @@ import json
 from datetime import UTC, datetime
 from pathlib import Path
 
-from runner_bridge.eval_loop import build_teacher_evaluation, has_teacher_evaluation
+from runner_bridge.eval_loop import (
+    build_student_prompt_pack,
+    build_teacher_evaluation,
+    has_student_prompt_pack,
+    has_teacher_evaluation,
+)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -42,20 +47,25 @@ def main(argv: list[str] | None = None) -> int:
     ]
 
     evaluation = build_teacher_evaluation(request) if has_teacher_evaluation(request) else None
+    student_prompt_pack = build_student_prompt_pack(request) if has_student_prompt_pack(request) else None
+    student_view = evaluation["student_view"] if evaluation else student_prompt_pack
+
+    if student_view:
+        events.append(
+            {
+                "ts": _utc_now(),
+                "event": "student.prompt.loaded",
+                "message": f"Student prompt pack loaded with {len(student_view['visible_scenarios'])} visible scenarios and {student_view['sealed_holdout_count']} sealed holdouts.",
+            }
+        )
+
     if evaluation:
-        events.extend(
-            [
-                {
-                    "ts": _utc_now(),
-                    "event": "student.prompt.loaded",
-                    "message": f"Student prompt pack loaded with {len(evaluation['student_view']['visible_scenarios'])} visible scenarios and {evaluation['student_view']['sealed_holdout_count']} sealed holdouts.",
-                },
-                {
-                    "ts": _utc_now(),
-                    "event": "teacher.evaluation.started",
-                    "message": f"Teacher {evaluation['teacher_output']['actor']['name']} is scoring the run against public curriculum plus sealed holdouts.",
-                },
-            ]
+        events.append(
+            {
+                "ts": _utc_now(),
+                "event": "teacher.evaluation.started",
+                "message": f"Teacher {evaluation['teacher_output']['actor']['name']} is scoring the run against public curriculum plus sealed holdouts.",
+            }
         )
 
     if simulate_failure:
@@ -155,8 +165,9 @@ def main(argv: list[str] | None = None) -> int:
             "result_path": result_path.name,
         },
     }
+    if student_view:
+        artifact_bundle["student_view"] = student_view
     if evaluation:
-        artifact_bundle["student_view"] = evaluation["student_view"]
         artifact_bundle["teacher_output"] = evaluation["teacher_output"]
         artifact_bundle["iteration_history"] = evaluation["iteration_history"]
         artifact_bundle["public_curriculum_themes"] = evaluation["public_curriculum_themes"]

@@ -116,7 +116,24 @@ python3 -m runner_bridge.cli \
 
 Artifacts land under `runtime/runs/<run_id>/`.
 
-See `docs/runner-bridge.md` for the control-plane patch contract, teacher scorecard extension, and the local/mockable fallback path.
+See `docs/runner-bridge.md` for the control-plane patch contract, teacher scorecard extension, the public benchmark-pack prompt path, and the local/mockable fallback path.
+
+## Autoresearch alpha loop
+
+There is now a first honest **bridge-mediated autoresearch alpha loop**:
+
+```bash
+python3 -m runner_bridge.autoresearch_alpha \
+  --request runner_bridge/examples/autoresearch-alpha-public-loop.json
+```
+
+What it proves today:
+- a real **baseline → candidate student → candidate teacher-eval** lifecycle
+- a concrete **better/equal/worse** comparison receipt
+- artifact coverage across all three stages
+- an explicit **integrity gate** that allows public-regression claims while blocking fake sealed-eval claims
+
+That last point matters. The public benchmark pack is usable now, but the current teacher-only families are still marked `blocked_pending_rewrite`, so the repo cannot honestly claim a fresh sealed holdout path yet. The alpha loop says that plainly instead of faking it.
 
 ## What is still stubbed
 
