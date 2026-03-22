@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Role Foundry — Frontend Apprentice</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+  <link rel="stylesheet" href="style.css">
+  <script src="data.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+  <script src="app.js"></script>
+</head>
+<body>
+
+<div class="demo-banner">DEMO MODE — static, judge-friendly apprentice data. No auth theater. No fake live wiring.</div>
+
+<nav x-data="navComponent()">
+  <ul>
+    <li><a class="brand" href="index.html">Role Foundry</a></li>
+    <li><a href="index.html" :class="isActive('index.html') && 'active'">Apprentice</a></li>
+    <li><a href="scenarios.html" :class="isActive('scenarios.html') && 'active'">Curriculum</a></li>
+    <li><a href="run.html" :class="isActive('run.html') && 'active'">Runs</a></li>
+    <li><a href="scorecard.html" :class="isActive('scorecard.html') && 'active'">Scorecard</a></li>
+  </ul>
+</nav>
+
+<main class="container" x-data>
+  <div class="page-header">
+    <h1>Frontend Apprentice</h1>
+    <p>Robin + Neo are using Role Foundry to train its own first apprentice: a builder that implements Role Foundry product slices under hidden-eval review.</p>
+  </div>
+
+  <section class="hero-callout">
+    <div>
+      <span class="eyebrow">Dogfood vertical</span>
+      <div class="role-card-header" style="margin-top: 0.35rem;">
+        <h2 x-text="$store.app.role.name"></h2>
+        <span class="badge badge-training">Builder vertical</span>
+      </div>
+      <p class="role-description" x-text="$store.app.role.description"></p>
+    </div>
+    <div class="stack-list">
+      <div>
+        <span class="stack-label">Teachers</span>
+        <strong x-text="$store.app.role.teachers.join(' + ')"></strong>
+      </div>
+      <div>
+        <span class="stack-label">Contract</span>
+        <strong x-text="$store.app.role.demo_contract"></strong>
+      </div>
+      <div>
+        <span class="stack-label">Latest score</span>
+        <strong x-text="$store.app.scores['run-002'].overall + '/' + $store.app.scores['run-002'].total + ' (' + $store.app.formatPercent($store.app.scores['run-002'].pass_rate) + ')'"></strong>
+      </div>
+    </div>
+  </section>
+
+  <div class="meta-grid">
+    <article class="meta-card">
+      <span class="meta-label">Public curriculum</span>
+      <strong class="meta-value" x-text="$store.app.trainingScenarios().length"></strong>
+      <small>The apprentice can practice on these product slices.</small>
+    </article>
+    <article class="meta-card">
+      <span class="meta-label">Hidden holdouts</span>
+      <strong class="meta-value" x-text="$store.app.holdoutScenarios().length"></strong>
+      <small>Sealed from the apprentice. Judges use them for honest scoring.</small>
+    </article>
+    <article class="meta-card">
+      <span class="meta-label">Overall delta</span>
+      <strong class="meta-value improved" x-text="$store.app.formatSigned($store.app.scoreDelta('run-002'), 0)"></strong>
+      <small>Run 2 passes four more scenarios than Run 1.</small>
+    </article>
+    <article class="meta-card">
+      <span class="meta-label">Holdout delta</span>
+      <strong class="meta-value improved" x-text="$store.app.formatSigned($store.app.scoreDelta('run-002', 'run-001', 'holdout'), 0)"></strong>
+      <small>The hidden exam improved without revealing the prompts.</small>
+    </article>
+  </div>
+
+  <div class="grid-2">
+    <section>
+      <h3>Goals</h3>
+      <ul class="checklist">
+        <template x-for="(goal, i) in $store.app.role.goals" :key="i">
+          <li class="checklist-item">
+            <span class="checklist-icon">◉</span>
+            <span x-text="goal"></span>
+          </li>
+        </template>
+      </ul>
+    </section>
+
+    <section>
+      <h3>Success Criteria</h3>
+      <ul class="checklist">
+        <template x-for="(c, i) in $store.app.role.success_criteria" :key="i">
+          <li class="checklist-item">
+            <span class="checklist-icon criteria">✓</span>
+            <span x-text="c"></span>
+          </li>
+        </template>
+      </ul>
+    </section>
+  </div>
+
+  <div class="progress-strip">
+    <div class="progress-step completed">
+      <div class="step-num">1</div>
+      <div class="step-label">Apprentice defined</div>
+    </div>
+    <div class="progress-connector completed"></div>
+    <div class="progress-step completed">
+      <div class="step-num">2</div>
+      <div class="step-label">Curriculum visible</div>
+    </div>
+    <div class="progress-connector completed"></div>
+    <div class="progress-step completed">
+      <div class="step-num">3</div>
+      <div class="step-label">2 judged runs</div>
+    </div>
+    <div class="progress-connector completed"></div>
+    <div class="progress-step completed">
+      <div class="step-num">4</div>
+      <div class="step-label">Proof bundle ready</div>
+    </div>
+  </div>
+
+  <article class="judge-callout">
+    <h3>Why this reads stronger for judges</h3>
+    <ul>
+      <li><strong>Concrete student:</strong> the apprentice is implementing Role Foundry itself, not a vague “AI role”.</li>
+      <li><strong>Named teachers:</strong> Robin + Neo are the first instructors shaping the student.</li>
+      <li><strong>Honest exam:</strong> public curriculum stays visible, hidden holdouts stay sealed.</li>
+      <li><strong>Visible progress:</strong> Run 2 clearly improves on Run 1, especially on holdouts.</li>
+      <li><strong>Receipts:</strong> judges can inspect changed files, policy snapshot, and transcript evidence.</li>
+    </ul>
+  </article>
+
+  <article>
+    <h3>The loop in plain English</h3>
+    <ol>
+      <li><strong>Robin + Neo define the apprentice</strong> and what a good Role Foundry slice looks like.</li>
+      <li><strong>Role Foundry publishes a public curriculum</strong> the apprentice can train against.</li>
+      <li><strong>Separate hidden holdouts stay sealed</strong> so the apprentice cannot overfit the exam.</li>
+      <li><strong>The apprentice ships a slice</strong> — copy, UI, score surfaces, or proof artifacts.</li>
+      <li><strong>The teacher scores the run</strong> and turns failure themes into the next curriculum update.</li>
+    </ol>
+    <p>The result is not just a prettier demo. It is a visible teacher → student → hidden-eval → curriculum loop.</p>
+  </article>
+</main>
+
+</body>
+</html>

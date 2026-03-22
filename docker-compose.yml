@@ -1,0 +1,101 @@
+# Role Foundry — Local Development Stack
+#
+# Quick start:
+#   cp .env.example .env
+#   docker compose up
+#   open http://localhost:8080
+#
+# Architecture:
+#   - role-foundry-web: Static judge-facing UI (demo mode, no backend needed)
+#   - postgres: Persistent store for roles, scenarios, runs, scores (used by Clawith)
+#   - redis: Run queue and pub/sub for live events (used by Clawith)
+#   - clawith: Control plane for agent orchestration, run registry, evaluation store
+#   - bootstrap: One-shot service that seeds demo data (runs once, then exits)
+#
+# Current status:
+#   - role-foundry-web: WORKING (demo mode, serves static HTML)
+#   - postgres + redis: WORKING (standard images, ready for Clawith)
+#   - clawith: STUB — requires Clawith Docker image or build context
+#   - bootstrap: STUB — will seed Clawith with demo role/scenarios
+#
+# Clawith integration notes:
+#   Clawith is a separate project (github.com/openclaw/clawith). To integrate:
+#   1. Build the Clawith image: `docker build -t clawith:local /path/to/clawith`
+#   2. Or publish to a registry and reference it below
+#   3. The `clawith` service below is commented out until an image is available
+#   DO NOT reference ../Clawith or sibling paths — this repo must be portable.
+
+services:
+  # ─── Working Services ─────────────────────────────────────────────
+
+  role-foundry-web:
+    build: .
+    ports:
+      - "${WEB_PORT:-8080}:8080"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080')"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-rolefoundry}
+      POSTGRES_USER: ${POSTGRES_USER:-rf}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-rfdev}
+    # No host port binding in demo mode — keeps the standalone UI from colliding
+    # with any local Postgres already running on the judge's machine.
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-rf}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    # No host port binding in demo mode — Redis is only needed on the internal
+    # Docker network for future live-mode services.
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ─── Stubbed Services (uncomment when ready) ───────────────────────
+
+  # clawith:
+  #   image: clawith:local          # Build from Clawith repo, or use registry image
+  #   # build:
+  #   #   context: .                 # NOT ../Clawith — see notes above
+  #   #   dockerfile: Dockerfile.clawith
+  #   environment:
+  #     DATABASE_URL: postgres://${POSTGRES_USER:-rf}:${POSTGRES_PASSWORD:-rfdev}@postgres:5432/${POSTGRES_DB:-rolefoundry}
+  #     REDIS_URL: redis://redis:6379
+  #     CLAWITH_SECRET: ${CLAWITH_SECRET:-changeme}
+  #     # LLM provider keys — add the providers you want Clawith-native agents to use
+  #     # OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+  #     # ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+  #   ports:
+  #     - "${CLAWITH_PORT:-3000}:3000"
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+
+  # bootstrap:
+  #   image: clawith:local
+  #   command: ["node", "scripts/seed-demo.js"]  # Or whatever the seed entrypoint is
+  #   environment:
+  #     DATABASE_URL: postgres://${POSTGRES_USER:-rf}:${POSTGRES_PASSWORD:-rfdev}@postgres:5432/${POSTGRES_DB:-rolefoundry}
+  #   depends_on:
+  #     clawith:
+  #       condition: service_started
+  #   restart: "no"
+
+volumes:
+  pgdata:

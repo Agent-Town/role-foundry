@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Role Foundry — Runs & Proof Bundle</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+  <link rel="stylesheet" href="style.css">
+  <script src="data.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+  <script src="app.js"></script>
+</head>
+<body>
+
+<div class="demo-banner">DEMO MODE — replay static runs, inspect proof bundles, and compare hidden-eval progress.</div>
+
+<nav x-data="navComponent()">
+  <ul>
+    <li><a class="brand" href="index.html">Role Foundry</a></li>
+    <li><a href="index.html" :class="isActive('index.html') && 'active'">Apprentice</a></li>
+    <li><a href="scenarios.html" :class="isActive('scenarios.html') && 'active'">Curriculum</a></li>
+    <li><a href="run.html" :class="isActive('run.html') && 'active'">Runs</a></li>
+    <li><a href="scorecard.html" :class="isActive('scorecard.html') && 'active'">Scorecard</a></li>
+  </ul>
+</nav>
+
+<main class="container" x-data="{
+  running: false,
+  logLines: [],
+  detailRun: 'run-002',
+  async startDemoRun() {
+    this.running = true;
+    this.logLines = [];
+    const lines = $store.app.getRunReplay(this.detailRun);
+    for (const line of lines) {
+      await new Promise(r => setTimeout(r, line.t > 0 ? 350 : 0));
+      this.logLines.push(line.msg);
+      this.$refs.logBox.scrollTop = this.$refs.logBox.scrollHeight;
+    }
+    this.running = false;
+  }
+}">
+  <div class="page-header">
+    <h1>Runs &amp; Proof Bundle</h1>
+    <p>Each run trains the Frontend Apprentice on public curriculum, judges it on sealed holdouts, and leaves behind receipts that a human can inspect.</p>
+  </div>
+
+  <div class="toolbar-row">
+    <label style="margin-bottom: 0;">
+      Select run:
+      <select x-model="detailRun" style="width: auto; display: inline-block; margin-left: 0.5rem;">
+        <template x-for="run in $store.app.runs" :key="run.id">
+          <option :value="run.id" x-text="run.label"></option>
+        </template>
+      </select>
+    </label>
+    <button data-primary @click="startDemoRun()" :disabled="running">
+      <span x-show="!running">▶ Replay selected run</span>
+      <span x-show="running">Running...</span>
+    </button>
+  </div>
+
+  <template x-if="$store.app.getArtifact(detailRun)">
+    <article class="judge-callout compact-callout">
+      <strong>Run objective:</strong>
+      <span x-text="$store.app.getArtifact(detailRun).objective"></span>
+    </article>
+  </template>
+
+  <div x-show="logLines.length > 0" class="run-log" x-ref="logBox">
+    <template x-for="(line, i) in logLines" :key="i">
+      <div :class="{
+        'pass': line.includes('PASS'),
+        'fail': line.includes('FAIL')
+      }" x-text="line"></div>
+    </template>
+  </div>
+
+  <hr>
+
+  <h2>Run History</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Run</th>
+        <th>Status</th>
+        <th>Iteration</th>
+        <th>Runner</th>
+        <th>Duration</th>
+        <th>Cost</th>
+        <th>Score</th>
+      </tr>
+    </thead>
+    <tbody>
+      <template x-for="run in $store.app.runs" :key="run.id">
+        <tr>
+          <td>
+            <strong x-text="run.id"></strong><br>
+            <small x-text="run.label"></small>
+          </td>
+          <td><span class="badge badge-completed" x-text="run.status"></span></td>
+          <td x-text="'#' + run.iteration"></td>
+          <td x-text="run.runner"></td>
+          <td x-text="$store.app.formatDuration(run.duration_sec)"></td>
+          <td x-text="$store.app.formatCost(run.cost_usd)"></td>
+          <td x-text="$store.app.scores[run.id].overall + '/' + $store.app.scores[run.id].total"></td>
+        </tr>
+      </template>
+    </tbody>
+  </table>
+
+  <h2>Run Detail</h2>
+  <div class="score-summary detail-summary">
+    <div class="stat">
+      <div class="value" x-text="$store.app.getScorecard(detailRun).overall + '/' + $store.app.getScorecard(detailRun).total"></div>
+      <div class="label">Overall pass count</div>
+    </div>
+    <div class="stat">
+      <div class="value" x-text="$store.app.passCount(detailRun, 'training') + '/' + $store.app.resultsByType(detailRun, 'training').length"></div>
+      <div class="label">Public curriculum</div>
+    </div>
+    <div class="stat">
+      <div class="value" x-text="$store.app.passCount(detailRun, 'holdout') + '/' + $store.app.resultsByType(detailRun, 'holdout').length"></div>
+      <div class="label">Hidden holdouts</div>
+    </div>
+    <div class="stat" x-show="detailRun === 'run-002'">
+      <div class="value improved" x-text="$store.app.formatSigned($store.app.scoreDelta('run-002'), 0)"></div>
+      <div class="label">Total delta vs Run 1</div>
+    </div>
+  </div>
+
+  <div class="scenario-results-grid">
+    <template x-for="result in $store.app.getScorecard(detailRun).results" :key="result.scenario_id">
+      <div class="card scenario-result-card" :class="result.passed ? 'card-pass' : 'card-fail'">
+        <div class="card-header-row">
+          <h4 x-text="$store.app.getScenario(result.scenario_id)?.title || result.scenario_id"></h4>
+          <span class="badge" :class="result.passed ? 'badge-pass' : 'badge-fail'" x-text="result.passed ? 'PASS' : 'FAIL'"></span>
+        </div>
+        <div class="card-footer-row">
+          <span class="badge" :class="$store.app.getScenario(result.scenario_id)?.type === 'holdout' ? 'badge-holdout' : 'badge-training'" x-text="$store.app.getScenario(result.scenario_id)?.type"></span>
+          <span class="mini-note" x-text="'Score: ' + result.score.toFixed(1)"></span>
+        </div>
+        <p x-text="result.notes"></p>
+      </div>
+    </template>
+  </div>
+
+  <template x-if="$store.app.getArtifact(detailRun)">
+    <section class="artifact-panel">
+      <div class="section-header-row">
+        <div>
+          <h2>Proof Bundle</h2>
+          <p>What the apprentice actually left behind for judges to inspect.</p>
+        </div>
+        <span class="badge badge-training">artifact surface</span>
+      </div>
+
+      <div class="grid-2">
+        <article class="card">
+          <h3>Receipt Summary</h3>
+          <ul class="checklist dense-checklist">
+            <template x-for="(line, i) in $store.app.getArtifact(detailRun).judge_receipt" :key="i">
+              <li class="checklist-item">
+                <span class="checklist-icon criteria">✓</span>
+                <span x-text="line"></span>
+              </li>
+            </template>
+          </ul>
+        </article>
+
+        <article class="card">
+          <h3>Policy Snapshot</h3>
+          <ul class="pill-list">
+            <template x-for="(line, i) in $store.app.getArtifact(detailRun).policy_snapshot" :key="i">
+              <li x-text="line"></li>
+            </template>
+          </ul>
+        </article>
+      </div>
+
+      <div class="grid-2">
+        <article class="card">
+          <h3>Changed Files</h3>
+          <ul class="file-list">
+            <template x-for="file in $store.app.getArtifact(detailRun).changed_files" :key="file.path">
+              <li>
+                <strong x-text="file.path"></strong>
+                <small x-text="file.summary"></small>
+              </li>
+            </template>
+          </ul>
+        </article>
+
+        <article class="card">
+          <h3>Transcript Excerpt</h3>
+          <div class="quote-list">
+            <template x-for="(line, i) in $store.app.getArtifact(detailRun).transcript_excerpt" :key="i">
+              <blockquote>
+                <strong x-text="line.speaker + ':'"></strong>
+                <span x-text="' ' + line.text"></span>
+              </blockquote>
+            </template>
+          </div>
+        </article>
+      </div>
+    </section>
+  </template>
+
+  <article>
+    <h3>Why this matters</h3>
+    <p>A run without receipts is just theater. The proof bundle makes the apprentice’s work legible: what the task was, what policies governed it, what files changed, and what the teacher said afterward.</p>
+    <p>That is the difference between a vibes demo and a judgeable training system.</p>
+  </article>
+</main>
+
+</body>
+</html>

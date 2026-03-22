@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Role Foundry — Curriculum & Holdouts</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+  <link rel="stylesheet" href="style.css">
+  <script src="data.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+  <script src="app.js"></script>
+</head>
+<body>
+
+<div class="demo-banner">DEMO MODE — public curriculum is visible, hidden holdouts are shown only as judge previews.</div>
+
+<nav x-data="navComponent()">
+  <ul>
+    <li><a class="brand" href="index.html">Role Foundry</a></li>
+    <li><a href="index.html" :class="isActive('index.html') && 'active'">Apprentice</a></li>
+    <li><a href="scenarios.html" :class="isActive('scenarios.html') && 'active'">Curriculum</a></li>
+    <li><a href="run.html" :class="isActive('run.html') && 'active'">Runs</a></li>
+    <li><a href="scorecard.html" :class="isActive('scorecard.html') && 'active'">Scorecard</a></li>
+  </ul>
+</nav>
+
+<main class="container" x-data>
+  <div class="page-header">
+    <h1>Public Curriculum &amp; Sealed Holdouts</h1>
+    <p>Robin + Neo publish the curriculum the apprentice can practice on. Separate holdouts stay sealed and only surface here as judge-friendly previews.</p>
+  </div>
+
+  <article class="judge-callout">
+    <h3>What the apprentice sees vs what judges see</h3>
+    <div class="grid-2">
+      <div>
+        <strong>Apprentice view</strong>
+        <ul>
+          <li>Public product-slice scenarios</li>
+          <li>Acceptance criteria and demo constraints</li>
+          <li>Failure themes from prior runs</li>
+        </ul>
+      </div>
+      <div>
+        <strong>Judge / teacher view</strong>
+        <ul>
+          <li>Sealed holdout prompts and rubrics</li>
+          <li>Score deltas across runs</li>
+          <li>Artifact receipts and policy snapshots</li>
+        </ul>
+      </div>
+    </div>
+  </article>
+
+  <div class="grid-2">
+    <section>
+      <h2>Public Curriculum <span class="badge badge-training" x-text="$store.app.trainingScenarios().length"></span></h2>
+      <p><small>These are the slices the Frontend Apprentice can train on directly.</small></p>
+
+      <template x-for="s in $store.app.trainingScenarios()" :key="s.id">
+        <div class="card curriculum-card">
+          <div class="card-header-row">
+            <h4 x-text="s.title"></h4>
+            <span class="badge badge-training" x-text="s.id.toUpperCase()"></span>
+          </div>
+          <p x-text="s.description"></p>
+          <div class="card-footer-row">
+            <span class="badge" :class="'badge-' + s.difficulty" x-text="s.difficulty"></span>
+            <span class="mini-note">visible to apprentice</span>
+          </div>
+        </div>
+      </template>
+    </section>
+
+    <section>
+      <h2><span class="lock-icon">Sealed Holdouts</span> <span class="badge badge-holdout" x-text="$store.app.holdoutScenarios().length"></span></h2>
+      <p><small>These cards are judge previews. In the real loop, the apprentice does not see the hidden prompt text.</small></p>
+
+      <template x-for="s in $store.app.holdoutScenarios()" :key="s.id">
+        <div class="card holdout-card">
+          <div class="card-header-row">
+            <h4 x-text="s.title"></h4>
+            <span class="badge badge-holdout">judge preview</span>
+          </div>
+          <p class="redacted-copy" x-text="s.description"></p>
+          <div class="card-footer-row">
+            <span class="badge" :class="'badge-' + s.difficulty" x-text="s.difficulty"></span>
+            <span class="mini-note">sealed from apprentice</span>
+          </div>
+        </div>
+      </template>
+    </section>
+  </div>
+
+  <template x-if="$store.app.iterations && $store.app.iterations[1]?.failure_themes">
+    <section>
+      <h3>Failure themes promoted into the next curriculum</h3>
+      <p><small>After Run 1, the teachers exposed only these categories — not the hidden prompt text.</small></p>
+      <div class="grid-2">
+        <template x-for="ft in $store.app.iterations[1].failure_themes" :key="ft.theme">
+          <div class="card theme-card">
+            <h4 x-text="ft.theme"></h4>
+            <p x-text="ft.description"></p>
+            <small>Sources: <span x-text="ft.source_scenarios.join(', ')"></span></small>
+          </div>
+        </template>
+      </div>
+    </section>
+  </template>
+
+  <article>
+    <h3>Why this split matters</h3>
+    <p>Most demos let the model practice on the same prompts it gets judged on. That is homework, not an exam. Role Foundry keeps the exam sealed, then promotes failure themes into the next public curriculum round.</p>
+    <p>That is the whole point of this vertical: the Frontend Apprentice is learning to build Role Foundry itself without getting to peek at the hidden judge set.</p>
+  </article>
+</main>
+
+</body>
+</html>

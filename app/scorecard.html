@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Role Foundry — Judge Scorecard</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+  <link rel="stylesheet" href="style.css">
+  <script src="data.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+  <script src="app.js"></script>
+</head>
+<body>
+
+<div class="demo-banner">DEMO MODE — scorecards emphasize hidden-holdout improvement, not just public-curriculum success.</div>
+
+<nav x-data="navComponent()">
+  <ul>
+    <li><a class="brand" href="index.html">Role Foundry</a></li>
+    <li><a href="index.html" :class="isActive('index.html') && 'active'">Apprentice</a></li>
+    <li><a href="scenarios.html" :class="isActive('scenarios.html') && 'active'">Curriculum</a></li>
+    <li><a href="run.html" :class="isActive('run.html') && 'active'">Runs</a></li>
+    <li><a href="scorecard.html" :class="isActive('scorecard.html') && 'active'">Scorecard</a></li>
+  </ul>
+</nav>
+
+<main class="container" x-data="{ selectedRun: 'run-002', compareMode: true }">
+  <div class="page-header">
+    <h1>Judge Scorecard</h1>
+    <p>Passing public curriculum is nice. Passing sealed holdouts is the real signal that the Frontend Apprentice can ship Role Foundry slices without overfitting the demo.</p>
+  </div>
+
+  <div class="toolbar-row">
+    <label style="margin-bottom: 0;">
+      View run:
+      <select x-model="selectedRun" style="width: auto; display: inline-block; margin-left: 0.5rem;">
+        <template x-for="run in $store.app.runs" :key="run.id">
+          <option :value="run.id" x-text="run.label"></option>
+        </template>
+      </select>
+    </label>
+    <label style="margin-bottom: 0;">
+      <input type="checkbox" x-model="compareMode" role="switch"> Compare to Run 1
+    </label>
+  </div>
+
+  <div class="score-summary detail-summary">
+    <div class="stat">
+      <div class="value" x-text="$store.app.getScorecard(selectedRun)?.overall + '/' + $store.app.getScorecard(selectedRun)?.total"></div>
+      <div class="label">Overall pass count</div>
+    </div>
+    <div class="stat">
+      <div class="value" x-text="$store.app.formatPercent($store.app.passRate(selectedRun, 'training'))"></div>
+      <div class="label">Public curriculum</div>
+    </div>
+    <div class="stat">
+      <div class="value" x-text="$store.app.formatPercent($store.app.passRate(selectedRun, 'holdout'))"></div>
+      <div class="label">Hidden holdouts</div>
+    </div>
+    <div class="stat" x-show="compareMode && selectedRun === 'run-002'">
+      <div class="value improved" x-text="$store.app.formatSigned($store.app.passRateDelta('run-002') * 100, 0, ' pts')"></div>
+      <div class="label">Overall delta</div>
+    </div>
+    <div class="stat" x-show="compareMode && selectedRun === 'run-002'">
+      <div class="value improved" x-text="$store.app.formatSigned($store.app.passRateDelta('run-002', 'run-001', 'holdout') * 100, 0, ' pts')"></div>
+      <div class="label">Holdout delta</div>
+    </div>
+  </div>
+
+  <article class="judge-callout compact-callout" x-show="selectedRun === 'run-002'">
+    <strong>Teacher verdict:</strong>
+    Run 2 clearly improved because the apprentice now names the vertical, keeps holdouts sealed, shows receipts, and avoids fake live-integration claims.
+  </article>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Scenario</th>
+        <th>Type</th>
+        <th>Run</th>
+        <th>Score</th>
+        <th x-show="compareMode">Run 1</th>
+        <th x-show="compareMode">Delta</th>
+        <th>Notes</th>
+      </tr>
+    </thead>
+    <tbody>
+      <template x-for="result in $store.app.getScorecard(selectedRun)?.results || []" :key="result.scenario_id">
+        <tr>
+          <td x-text="$store.app.getScenario(result.scenario_id)?.title || result.scenario_id"></td>
+          <td>
+            <span class="badge"
+              :class="$store.app.getScenario(result.scenario_id)?.type === 'holdout' ? 'badge-holdout' : 'badge-training'"
+              x-text="$store.app.getScenario(result.scenario_id)?.type"></span>
+          </td>
+          <td>
+            <span class="badge" :class="result.passed ? 'badge-pass' : 'badge-fail'" x-text="result.passed ? 'PASS' : 'FAIL'"></span>
+          </td>
+          <td x-text="result.score.toFixed(1)"></td>
+          <td x-show="compareMode">
+            <template x-if="$store.app.getScorecard('run-001')">
+              <span x-text="($store.app.getScorecard('run-001').results.find(r => r.scenario_id === result.scenario_id)?.score || 0).toFixed(1)"></span>
+            </template>
+          </td>
+          <td x-show="compareMode">
+            <template x-if="$store.app.getScorecard('run-001')">
+              <span
+                :class="{
+                  'improved': result.score > ($store.app.getScorecard('run-001').results.find(r => r.scenario_id === result.scenario_id)?.score || 0),
+                  'regressed': result.score < ($store.app.getScorecard('run-001').results.find(r => r.scenario_id === result.scenario_id)?.score || 0)
+                }"
+                x-text="$store.app.formatSigned((result.score - ($store.app.getScorecard('run-001').results.find(r => r.scenario_id === result.scenario_id)?.score || 0)), 1)">
+              </span>
+            </template>
+          </td>
+          <td><small x-text="result.notes"></small></td>
+        </tr>
+      </template>
+    </tbody>
+  </table>
+
+  <div class="iteration-progress">
+    <h3>Iteration Progress</h3>
+    <div class="iteration-bars">
+      <template x-for="run in $store.app.runs" :key="run.id">
+        <div class="iter-bar-group">
+          <div class="iter-bar-label" x-text="'#' + run.iteration"></div>
+          <div class="iter-bar-track">
+            <div class="iter-bar-fill"
+              :style="'width:' + Math.round(($store.app.getScorecard(run.id)?.pass_rate || 0) * 100) + '%'"
+              :class="($store.app.getScorecard(run.id)?.pass_rate || 0) >= 0.7 ? 'bar-good' : 'bar-warn'">
+            </div>
+          </div>
+          <div class="iter-bar-value" x-text="$store.app.formatPercent($store.app.getScorecard(run.id)?.pass_rate || 0)"></div>
+        </div>
+      </template>
+    </div>
+  </div>
+
+  <template x-if="$store.app.getIteration('run-002')">
+    <section>
+      <h3>Failure Analysis → Next Curriculum</h3>
+      <p><small x-text="$store.app.getIteration('run-002').curriculum_notes"></small></p>
+
+      <div class="grid-2" style="margin-bottom: 1rem;">
+        <template x-for="ft in $store.app.getIteration('run-002').failure_themes" :key="ft.theme">
+          <div class="card theme-card">
+            <h4 x-text="ft.theme"></h4>
+            <p x-text="ft.description"></p>
+          </div>
+        </template>
+      </div>
+
+      <details open>
+        <summary>Policy changes applied before Run 2</summary>
+        <ul>
+          <template x-for="(change, i) in $store.app.getIteration('run-002').policy_changes" :key="i">
+            <li x-text="change"></li>
+          </template>
+        </ul>
+        <p><strong>Updated identity:</strong> <em x-text="$store.app.getIteration('run-002').identity_snapshot"></em></p>
+      </details>
+    </section>
+  </template>
+
+  <article>
+    <h3>How to read this scorecard</h3>
+    <ul>
+      <li><strong>Public curriculum</strong> tells you whether the apprentice can learn the visible lessons.</li>
+      <li><strong>Hidden holdouts</strong> tell you whether the apprentice can generalize when the exam stays sealed.</li>
+      <li><strong>Compare mode</strong> makes deltas explicit so judges can see improvement rather than infer it.</li>
+      <li><strong>Failure analysis</strong> shows the curriculum loop: bad hidden-eval results become the next public teaching themes.</li>
+    </ul>
+    <p>That is the point of Role Foundry: train apprentices with evidence, not self-congratulation.</p>
+  </article>
+</main>
+
+</body>
+</html>
