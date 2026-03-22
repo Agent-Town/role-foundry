@@ -62,13 +62,15 @@ class DemoContractTests(unittest.TestCase):
         self.assertIn('runner-bridge', text)
         self.assertIn('Clawith', text)
 
-    def test_compose_includes_demo_stack_and_clawith_stub(self):
+    def test_compose_includes_demo_stack_and_live_profile(self):
         text = COMPOSE.read_text()
         self.assertIn('role-foundry-web:', text)
         self.assertIn('postgres:', text)
         self.assertIn('redis:', text)
-        self.assertIn('# clawith:', text)
-        self.assertIn('# bootstrap:', text)
+        # M3: clawith and bootstrap are real services gated by the "live" profile
+        self.assertIn('clawith:', text)
+        self.assertIn('bootstrap:', text)
+        self.assertIn('profiles: ["live"]', text)
 
     def test_required_docs_exist(self):
         required = [

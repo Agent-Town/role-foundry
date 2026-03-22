@@ -15,15 +15,16 @@
 # Current status:
 #   - role-foundry-web: WORKING (demo mode, serves static HTML)
 #   - postgres + redis: WORKING (standard images, ready for Clawith)
-#   - clawith: STUB — requires Clawith Docker image or build context
-#   - bootstrap: STUB — will seed Clawith with demo role/scenarios
+#   - clawith: LIVE PROFILE — set CLAWITH_IMAGE in .env, start with --profile live
+#   - bootstrap: LIVE PROFILE — seeds role/scenarios into Clawith on first run
 #
 # Clawith integration notes:
 #   Clawith is a separate project (github.com/openclaw/clawith). To integrate:
-#   1. Build the Clawith image: `docker build -t clawith:local /path/to/clawith`
-#   2. Or publish to a registry and reference it below
-#   3. The `clawith` service below is commented out until an image is available
-#   DO NOT reference ../Clawith or sibling paths — this repo must be portable.
+#   1. Build the Clawith image: docker build -t clawith:local /path/to/clawith
+#   2. Or set CLAWITH_IMAGE to a registry image in .env
+#   3. Start live mode: docker compose --profile live up
+#   This repo must stay portable — no sibling path references allowed.
+#   See docs/clawith-integration.md for the full integration guide.
 
 services:
   # ─── Working Services ─────────────────────────────────────────────
@@ -65,37 +66,44 @@ services:
       timeout: 3s
       retries: 5
 
-  # ─── Stubbed Services (uncomment when ready) ───────────────────────
+  # ─── Live-Mode Services (activate with: docker compose --profile live up) ──
 
-  # clawith:
-  #   image: clawith:local          # Build from Clawith repo, or use registry image
-  #   # build:
-  #   #   context: .                 # NOT ../Clawith — see notes above
-  #   #   dockerfile: Dockerfile.clawith
-  #   environment:
-  #     DATABASE_URL: postgres://${POSTGRES_USER:-rf}:${POSTGRES_PASSWORD:-rfdev}@postgres:5432/${POSTGRES_DB:-rolefoundry}
-  #     REDIS_URL: redis://redis:6379
-  #     CLAWITH_SECRET: ${CLAWITH_SECRET:-changeme}
-  #     # LLM provider keys — add the providers you want Clawith-native agents to use
-  #     # OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-  #     # ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
-  #   ports:
-  #     - "${CLAWITH_PORT:-3000}:3000"
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #     redis:
-  #       condition: service_healthy
+  clawith:
+    image: ${CLAWITH_IMAGE:-clawith:local}
+    profiles: ["live"]
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-rf}:${POSTGRES_PASSWORD:-rfdev}@postgres:5432/${POSTGRES_DB:-rolefoundry}
+      REDIS_URL: redis://redis:6379
+      CLAWITH_SECRET: ${CLAWITH_SECRET:-changeme}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    ports:
+      - "${CLAWITH_PORT:-3000}:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 15s
 
-  # bootstrap:
-  #   image: clawith:local
-  #   command: ["node", "scripts/seed-demo.js"]  # Or whatever the seed entrypoint is
-  #   environment:
-  #     DATABASE_URL: postgres://${POSTGRES_USER:-rf}:${POSTGRES_PASSWORD:-rfdev}@postgres:5432/${POSTGRES_DB:-rolefoundry}
-  #   depends_on:
-  #     clawith:
-  #       condition: service_started
-  #   restart: "no"
+  bootstrap:
+    build: .
+    profiles: ["live"]
+    command: ["python3", "seed/bootstrap.py", "--seed", "--clawith-url", "http://clawith:3000"]
+    environment:
+      CLAWITH_URL: http://clawith:3000
+      CLAWITH_SECRET: ${CLAWITH_SECRET:-changeme}
+    volumes:
+      - ./seed:/srv/seed:ro
+    depends_on:
+      clawith:
+        condition: service_healthy
+    restart: "no"
 
 volumes:
   pgdata:
