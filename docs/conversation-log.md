@@ -165,3 +165,29 @@ See `docs/synthesis-hackathon-stack-architecture.md` for details.
 - This is still a deterministic/local bridge slice
 - Live model-backed teacher evaluation remains future wiring, not fake theater
 - No live integrations are faked or claimed
+
+---
+
+## 2026-03-22 — ClaudeVibeRunner landed as the next honest dogfood slice
+
+**Outcome:** Role Foundry can now drive one real Claude-backed **student/builder** run through the runner bridge without touching global `~/.claude/settings.json`.
+
+**What shipped:**
+- `runner_bridge/backends/claude_vibe.py` — narrow Claude shell adapter behind the existing bridge contract
+- `runner_bridge.cli --backend claude-vibe` selects the adapter without changing the bridge result/control-plane contract
+- repo-local Claude profile assets under `.claude/`:
+  - `.claude/agents/role-foundry-student.md`
+  - `.claude/templates/role-foundry-student-run.md`
+- explicit failure paths for missing Claude CLI, unauthenticated Claude state, timeout, and malformed Claude output
+- student-safe prompt construction: if `teacher_evaluation` exists, Claude only receives visible curriculum + public themes, not sealed holdout prompt text
+- `runner_bridge/examples/claude-vibe-smoke.json` provides a read-only smoke request
+
+**Evidence:**
+- `tests/test_claude_vibe_runner.py` covers command construction, project-local settings isolation, artifact receipts, holdout secrecy in the Claude prompt, and failure behavior
+- repo docs now describe the opt-in Claude path and its limits
+
+**What is NOT claimed:**
+- This is not the full dogfood loop yet
+- No Codex-backed teacher/evaluator runner is wired yet
+- No per-run isolated Claude home/sandbox is claimed yet
+- No fake Claude success is emitted when the CLI is missing or unauthenticated

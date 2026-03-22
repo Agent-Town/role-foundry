@@ -99,7 +99,7 @@ Principle: each milestone must have:
 - transcript and artifact bundle are stored and viewable
 - demo mode still works with zero secrets
 
-**Delivered slice:** `python3 -m runner_bridge.cli` + `LocalReplayRunner`, control-plane PATCH contract, persisted transcripts/artifact bundles, honest failure path, and local/mockable tests. Claude/Codex adapters are still future work.
+**Delivered slice:** `python3 -m runner_bridge.cli` + `LocalReplayRunner`, control-plane PATCH contract, persisted transcripts/artifact bundles, honest failure path, local/mockable tests, and now an opt-in `ClaudeVibeRunner` student adapter that shells out to local Claude with a repo-local `.claude/` profile. Codex-backed teacher/evaluator wiring is still future work.
 
 **Builds on:** Milestone 3
 

@@ -1,0 +1,27 @@
+{
+  "run_id": "run-claude-vibe-smoke-001",
+  "agent_role": "student",
+  "scenario_set_id": "frontend-apprentice-smoke",
+  "workspace_snapshot": {
+    "objective": "Inspect README.md and docs/runner-bridge.md, then return a short honest summary of the current bridge state. Do not edit files.",
+    "changed_files": [],
+    "notes": [
+      "This is a read-only smoke run for ClaudeVibeRunner.",
+      "Project-local Claude agent settings should be used instead of user-level hooks or agents."
+    ]
+  },
+  "time_budget": {
+    "seconds": 90
+  },
+  "cost_budget": {
+    "usd": 0.5
+  },
+  "claude_vibe": {
+    "agent": "role-foundry-student",
+    "tools": [
+      "Read",
+      "Grep",
+      "Glob"
+    ]
+  }
+}

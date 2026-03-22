@@ -89,13 +89,16 @@ If you want the fastest honest walkthrough:
 2. Run `docker compose up` and inspect `http://localhost:8080`.
 3. Read `docs/submission-proof-checklist.md` and `docs/conversation-log.md` for the curated build story and non-claims.
 4. Optionally run `python3 -m runner_bridge.cli --request runner_bridge/examples/first-live-run.json` to exercise the zero-secret receipt path locally.
+5. If Claude Code is installed and authenticated, optionally run `python3 -m runner_bridge.cli --backend claude-vibe --request runner_bridge/examples/claude-vibe-smoke.json` to exercise the new project-local Claude student path without touching global `~/.claude/settings.json`.
 
 ## First live run
 
 The first honest runner-bridge slice is now in the repo. It is intentionally small:
 - `python3 -m runner_bridge.cli` drives one run lifecycle
-- `LocalReplayRunner` is the zero-secret backend that writes a transcript and artifact bundle
-- optional `teacher_evaluation` input produces a teacher scorecard, public curriculum themes, and iteration history deltas
+- `LocalReplayRunner` remains the zero-secret backend that writes a transcript and artifact bundle
+- `ClaudeVibeRunner` is now available as an opt-in backend (`--backend claude-vibe`) for **student/builder** runs through the local `claude` CLI
+- the Claude path uses a **project-local** profile under `.claude/` (`.claude/agents/role-foundry-student.md` + `.claude/templates/role-foundry-student-run.md`) and `--setting-sources project`, so it does not depend on or modify global `~/.claude/settings.json`
+- optional `teacher_evaluation` input still produces a teacher scorecard, public curriculum themes, and iteration history deltas on the deterministic local path
 - the bridge stores a redacted `request.json` plus a raw `request.private.json` so sealed holdout prompts stay out of student-facing artifacts
 - if you pass `--clawith-url`, the bridge patches run state into a Clawith-compatible control plane
 - if you omit `--clawith-url`, you can still exercise the artifact/transcript contract locally
@@ -116,15 +119,21 @@ python3 -m runner_bridge.cli \
   --clawith-secret "$CLAWITH_SECRET"
 ```
 
+```bash
+python3 -m runner_bridge.cli \
+  --backend claude-vibe \
+  --request runner_bridge/examples/claude-vibe-smoke.json
+```
+
 Artifacts land under `runtime/runs/<run_id>/`.
 
-See `docs/runner-bridge.md` for the control-plane patch contract, teacher scorecard extension, and the local/mockable fallback path.
+See `docs/runner-bridge.md` for the control-plane patch contract, teacher scorecard extension, the project-local Claude adapter, and the local/mockable fallback path.
 
 ## What is still stubbed
 
 This repo is intentionally honest about what is not wired yet:
 - the **web app still serves demo data** — it does not read from a live Clawith API
-- only one **local/mockable runner path** is implemented today (`LocalReplayRunner`); teacher scorecards and iteration history are real contracts, but Claude/Codex-backed adapters still need wiring
+- `ClaudeVibeRunner` is a **narrow shell adapter**, not a full dogfood loop yet: it can launch a real Claude student run through the bridge and leave receipts, but teacher/evaluator model wiring still lives on the deterministic local path and Codex-backed judging is still future work
 - no auth, no Privy, no fake consumer OAuth path
 - no live artifact viewer backed by run storage
 
@@ -145,7 +154,7 @@ For the hackathon MVP, Clawith integration is wired at the Docker layer but the 
 
 | Runner | Role | Why |
 |---|---|---|
-| Claude + vibecosystem | Student / builder | Strong for implementation-heavy slices |
+| ClaudeVibeRunner (Claude + project-local vibecosystem profile) | Student / builder | Real Claude CLI execution path for repo-local student runs without global hook changes |
 | Codex | Teacher / critic / evaluator | Independent model family for judging |
 | Deterministic scripts | Verifier | Cheap pass/fail checks |
 

@@ -23,13 +23,21 @@ python3 -m runner_bridge.cli
   → patches final status back to the control plane
 ```
 
-The first adapter is **LocalReplayRunner**.
+The first adapter was **LocalReplayRunner**.
 
-That is deliberate:
+That remains deliberate:
 - it is **zero-secret**
 - it is **portable**
-- it proves the lifecycle and storage contract without claiming Claude/Codex wiring that is not finished yet
+- it proves the lifecycle and storage contract without requiring Claude/Codex credentials
 - it gives us a local/mockable path when a real Clawith image or provider credentials are unavailable
+
+The repo now also ships a narrow **ClaudeVibeRunner** slice for the student/builder lane.
+
+That Claude path is intentionally constrained:
+- it shells out to the local `claude` CLI in `--print` mode
+- it uses `--setting-sources project` plus repo-local `.claude/` assets instead of depending on or modifying global `~/.claude/settings.json`
+- it fails explicitly when the Claude CLI is missing, unauthenticated, or returns unusable output
+- it keeps teacher-only holdout prompts out of the student prompt even when the raw request contains `teacher_evaluation`
 
 This is not consumer OAuth. It is not pretending Clawith natively owns a Claude subscription. It is a narrow bridge.
 
@@ -52,12 +60,15 @@ The important line: the teacher can know more than the student without the repo 
 Operator / script
   → runner_bridge.cli
   → Clawith-compatible control plane
-  → LocalReplayRunner (today)
+  → LocalReplayRunner or ClaudeVibeRunner
   → transcript.ndjson + artifact-bundle.json + result.json
 ```
 
+Current adapters on the same bridge command:
+- `--backend local-replay` → deterministic zero-secret lifecycle + teacher-eval loop
+- `--backend claude-vibe` → real Claude student/builder shell adapter with project-local `.claude/` profile assets
+
 Future adapters can slot into the same bridge command:
-- ClaudeVibeRunner
 - CodexRunner
 - deterministic verifier scripts
 
@@ -122,6 +133,8 @@ Milestone 5 adds one optional extension:
 ```
 
 The backend may receive the raw teacher payload, but the artifact directory keeps a redacted student-safe request view.
+
+For `ClaudeVibeRunner`, the prompt sent to Claude is built from a **student-safe derived view**: visible training scenarios, public curriculum themes, and the sealed holdout count. The holdout prompt text itself never enters the Claude prompt.
 
 ## Result contract
 
@@ -209,6 +222,15 @@ runtime/runs/<run_id>/
   result.json
 ```
 
+`ClaudeVibeRunner` adds a few backend-specific receipts in the same run directory:
+
+```text
+claude-prompt.txt
+claude-invocation.json
+claude-response.json
+claude.stderr.log
+```
+
 `request.json` is the redacted artifact copy.
 
 `request.private.json` is the raw backend input. That split is what keeps holdout prompt text out of the student-facing bundle while still letting the teacher side evaluate the run.
@@ -240,13 +262,23 @@ python3 -m runner_bridge.cli \
   --request runner_bridge/examples/first-live-run.json
 ```
 
+Claude student smoke run (requires local `claude` auth, uses project-local `.claude/` assets only):
+
+```bash
+python3 -m runner_bridge.cli \
+  --backend claude-vibe \
+  --request runner_bridge/examples/claude-vibe-smoke.json
+```
+
 The second command is not a claim that Clawith is running. It is just the fastest zero-secret way to verify the transcript/artifact contract locally.
+The Claude smoke command is not a claim that the full dogfood loop is done. It only proves that Role Foundry can now drive one real Claude-backed student run through the bridge while keeping the profile repo-local and failure states explicit.
 
 ## What is still not done
 
 - no native consumer OAuth in Clawith
 - no claim that Clawith already ships these exact run-patch endpoints upstream
-- no ClaudeVibeRunner wired yet
+- no CodexRunner wired yet for the intended teacher/critic/evaluator split
 - no web UI reading live run state yet
+- `ClaudeVibeRunner` is still a narrow shell adapter, not a full autonomous dogfood pipeline with repeated builder iterations, sandboxed per-run Claude homes, or live teacher scoring
 
-That is fine. The slice is still useful because it proves one honest run lifecycle end to end, and now also proves a narrow teacher evaluation + iteration loop without leaking holdout prompt text into student-facing artifacts.
+That is fine. The slice is still useful because it now proves two honest paths: a deterministic local/mockable lifecycle for evaluation contracts, and a project-local Claude-backed student run path that leaves receipts without pretending the whole stack is finished.

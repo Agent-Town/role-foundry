@@ -62,24 +62,26 @@ _Ordered by dependency. Each slice should be demoable on its own._
 
 ## Slice 3 — Runner adapter (Claude)
 
-**Status:** shipped as the local/mockable bridge contract; Claude wiring is still future work.
+**Status:** the bridge contract is shipped; `ClaudeVibeRunner` now exists as a narrow real-Claude adapter, while the larger dogfood loop is still future work.
 
 **What:** Build the first runner adapter that dispatches a student run.
 
-**Current fast path:** Milestone 4 ships a local/mockable `LocalReplayRunner` through `python3 -m runner_bridge.cli` so the lifecycle, transcript storage, artifact bundle, and honest failure path are real before Claude wiring lands.
+**Current fast path:** Milestone 4 shipped a local/mockable `LocalReplayRunner` through `python3 -m runner_bridge.cli` so the lifecycle, transcript storage, artifact bundle, and honest failure path were real before Claude wiring landed. The repo now also has an opt-in `ClaudeVibeRunner` (`--backend claude-vibe`) that shells out to the authenticated local `claude` CLI using repo-local `.claude/` assets only.
 
 **Tasks:**
 - [x] Implement `LocalReplayRunner` matching the contract in `docs/runner-bridge.md`
 - [x] Persist transcript + artifact receipts for one end-to-end run
 - [x] Patch status back to a Clawith-compatible control plane
 - [x] Preserve an honest failure path with receipts
-- [ ] Implement `ClaudeVibeRunner` against the same contract
+- [x] Implement `ClaudeVibeRunner` against the same contract
+- [ ] Prove repeated builder dogfood runs with per-run isolation and the full teacher/backend split
 
 **Outputs:**
 - One completed student run with transcript and artifacts stored under `runtime/runs/<run_id>/`
 - One failed run path that still leaves receipts behind
+- One real Claude-backed student path that leaves explicit receipts or explicit failure state
 
-**Demo:** Trigger a local replay run → inspect transcript, artifact bundle, and control-plane patches
+**Demo:** Trigger a local replay run, then optionally run `python3 -m runner_bridge.cli --backend claude-vibe --request runner_bridge/examples/claude-vibe-smoke.json`
 
 ---
 
