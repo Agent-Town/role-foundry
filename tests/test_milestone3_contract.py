@@ -1,11 +1,12 @@
 """
-Milestone 3 contract tests — Clawith compose integration + seed model.
+Milestone 3 contract tests — Clawith compose wiring + honest probe lane.
 
-These tests verify the Milestone 3 acceptance criteria from docs/milestones.md:
+These tests verify the live-mode acceptance criteria from docs/milestones.md,
+plus the newer read-only probe lane:
   - docker compose can start a real Clawith service when an image is provided
-  - health check passes (documented, compose wiring present)
-  - bootstrap path can seed one role and one scenario set
-  - live mode remains optional and honest when config is absent
+  - compose health check targets the real upstream API path
+  - seed payload validation works without a live Clawith
+  - live-mode preflight stays read-only and honest when upstream parity is absent
 """
 
 import json
@@ -19,6 +20,7 @@ COMPOSE = ROOT / "docker-compose.yml"
 SEED_DIR = ROOT / "seed"
 SEED_FILE = SEED_DIR / "role-foundry-apprentice.json"
 BOOTSTRAP = SEED_DIR / "bootstrap.py"
+PROBE = SEED_DIR / "probe_clawith.py"
 DOCS = ROOT / "docs"
 ENV_EXAMPLE = ROOT / ".env.example"
 
@@ -79,10 +81,13 @@ class SeedDataModelTests(unittest.TestCase):
 
 
 class BootstrapScriptTests(unittest.TestCase):
-    """Bootstrap script must validate seed data without a live Clawith."""
+    """Bootstrap script must stay honest about what it can and cannot seed."""
 
     def test_bootstrap_script_exists(self):
         self.assertTrue(BOOTSTRAP.exists())
+
+    def test_probe_script_exists(self):
+        self.assertTrue(PROBE.exists())
 
     def test_bootstrap_validate_passes(self):
         result = subprocess.run(
@@ -104,10 +109,11 @@ class BootstrapScriptTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, f"bootstrap --dry-run failed:\n{result.stderr}")
         self.assertIn("[dry-run]", result.stdout)
         self.assertIn("Frontend Apprentice", result.stdout)
+        self.assertIn("legacy", result.stdout.lower())
 
 
 class ComposeIntegrationTests(unittest.TestCase):
-    """Spec 003 — Clawith Control Plane in Compose."""
+    """Spec 003 + Spec 009 — Clawith compose wiring and preflight probe."""
 
     @classmethod
     def setUpClass(cls):
@@ -115,11 +121,11 @@ class ComposeIntegrationTests(unittest.TestCase):
 
     def test_clawith_service_is_profile_gated(self):
         self.assertIn("clawith:", self.text)
-        # Must be behind the live profile so demo mode is unaffected
         self.assertIn('profiles: ["live"]', self.text)
 
-    def test_clawith_has_health_check(self):
-        self.assertIn("/health", self.text)
+    def test_clawith_has_real_health_check(self):
+        self.assertIn("/api/health", self.text)
+        self.assertNotIn("http://localhost:3000/health", self.text)
 
     def test_clawith_depends_on_postgres_and_redis(self):
         self.assertIn("postgres:", self.text)
@@ -129,15 +135,16 @@ class ComposeIntegrationTests(unittest.TestCase):
         self.assertIn("bootstrap:", self.text)
         self.assertIn("condition: service_healthy", self.text)
 
+    def test_bootstrap_runs_read_only_probe(self):
+        self.assertIn("seed/probe_clawith.py", self.text)
+        self.assertNotIn("seed/bootstrap.py --seed", self.text)
+
     def test_clawith_image_is_configurable(self):
-        """Image should come from env var, not a hardcoded sibling path."""
         self.assertIn("CLAWITH_IMAGE", self.text)
         self.assertNotIn("../Clawith", self.text)
         self.assertNotIn("../clawith", self.text)
 
     def test_demo_compose_up_does_not_require_clawith(self):
-        """Default 'docker compose up' must not try to pull/build clawith."""
-        # The live profile gate ensures this — clawith is only started with --profile live
         self.assertIn('profiles: ["live"]', self.text)
 
 
@@ -148,13 +155,18 @@ class DocumentationTests(unittest.TestCase):
         doc = DOCS / "clawith-integration.md"
         self.assertTrue(doc.exists())
 
-    def test_integration_doc_covers_key_topics(self):
+    def test_integration_doc_covers_probe_lane(self):
         text = (DOCS / "clawith-integration.md").read_text()
         self.assertIn("demo mode", text.lower())
         self.assertIn("live mode", text.lower())
-        self.assertIn("/health", text)
-        self.assertIn("bootstrap", text.lower())
-        self.assertIn("CLAWITH_IMAGE", text)
+        self.assertIn("/api/health", text)
+        self.assertIn("/api/auth/registration-config", text)
+        self.assertIn("/api/enterprise/llm-models", text)
+        self.assertIn("/api/admin/companies", text)
+        self.assertIn("probe_clawith.py", text)
+        self.assertIn("/api/roles", text)
+        self.assertIn("/api/scenarios", text)
+        self.assertIn("/api/runs/{run_id}", text)
 
     def test_env_example_has_clawith_image_var(self):
         text = ENV_EXAMPLE.read_text()

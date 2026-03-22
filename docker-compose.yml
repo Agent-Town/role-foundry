@@ -10,13 +10,13 @@
 #   - postgres: Persistent store for roles, scenarios, runs, scores (used by Clawith)
 #   - redis: Run queue and pub/sub for live events (used by Clawith)
 #   - clawith: Control plane for agent orchestration, run registry, evaluation store
-#   - bootstrap: One-shot service that seeds demo data (runs once, then exits)
+#   - bootstrap: Read-only preflight probe against a live Clawith instance
 #
 # Current status:
 #   - role-foundry-web: WORKING (demo mode, serves static HTML)
 #   - postgres + redis: WORKING (standard images, ready for Clawith)
 #   - clawith: LIVE PROFILE — set CLAWITH_IMAGE in .env, start with --profile live
-#   - bootstrap: LIVE PROFILE — seeds role/scenarios into Clawith on first run
+#   - bootstrap: LIVE PROFILE — read-only HTTP probe; no destructive upstream writes
 #
 # Clawith integration notes:
 #   Clawith is a separate project (github.com/openclaw/clawith). To integrate:
@@ -85,7 +85,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -94,10 +94,9 @@ services:
   bootstrap:
     build: .
     profiles: ["live"]
-    command: ["python3", "seed/bootstrap.py", "--seed", "--clawith-url", "http://clawith:3000"]
+    command: ["python3", "seed/probe_clawith.py", "--base-url", "http://clawith:3000"]
     environment:
       CLAWITH_URL: http://clawith:3000
-      CLAWITH_SECRET: ${CLAWITH_SECRET:-changeme}
     volumes:
       - ./seed:/srv/seed:ro
     depends_on:

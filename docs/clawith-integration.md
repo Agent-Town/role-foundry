@@ -1,95 +1,206 @@
-# Clawith Integration — Honest Status
+# Clawith Integration — Honest Probe Lane
 
-## What is Clawith?
+## What Clawith is in this repo
 
-Clawith is the control plane for agent orchestration, run registry, and evaluation storage. It is a separate project (`github.com/openclaw/clawith`) and is **not bundled in this repo**.
+Clawith is the external control plane Role Foundry can talk to in **live mode**.
+It is a separate project and image. This repo does **not** bundle Clawith source,
+and it does **not** claim native upstream support for Role Foundry roles,
+scenarios, or run-patch contracts.
 
-## Current state (Milestone 3)
+The practical fast lane is now:
+1. keep demo mode first-class
+2. bring up a real Clawith image
+3. run a **read-only probe**
+4. only then decide whether you need an adapter/shim for writes
 
-| Component | Status |
+## Current state
+
+| Concern | Honest status |
 |---|---|
-| Docker Compose wiring | Done — profile-gated under `live` |
-| Health check path | Documented: `GET /health` → 200 |
-| Seed data model | Done — `seed/role-foundry-apprentice.json` |
-| Bootstrap script | Done — `seed/bootstrap.py --validate` works now, `--seed` needs live Clawith |
-| Demo mode | Default, no Clawith needed |
-| Live mode | Requires a real Clawith image + config |
+| Demo mode | Works now, no Clawith required |
+| Live image wiring | Works behind `--profile live` |
+| Health contract | `GET /api/health` on upstream Clawith |
+| Public version/auth probe | `GET /api/version` and `GET /api/auth/registration-config` |
+| Admin surface | Upstream exposes `/api/admin/companies` but it is auth-gated |
+| Model pool surface | Upstream exposes `/api/enterprise/llm-models` but it is auth-gated |
+| First admin bootstrap | First successful `/api/auth/register` becomes `platform_admin` |
+| Native Role Foundry seed endpoints | **Not observed upstream** (`/api/roles`, `/api/scenarios`) |
+| Native run patch endpoint | **Not observed upstream** (`PATCH /api/runs/{run_id}` remains adapter-side) |
 
-## How demo mode works (default)
+## Demo mode (default)
 
-```
+```bash
 docker compose up
 ```
 
-This starts `role-foundry-web`, `postgres`, and `redis`. The web UI serves pre-baked data from `app/data.js`. No Clawith image, no API keys, no secrets needed.
+This starts `role-foundry-web`, `postgres`, and `redis`.
+The UI serves pre-baked data from `app/data.js`.
+No Clawith image, no model keys, no bootstrap writes.
 
-## How live mode works (opt-in)
+## Live mode (opt-in)
 
 ### Prerequisites
 
-1. A Clawith Docker image. Either:
-   - Build from source: `docker build -t clawith:local /path/to/clawith`
-   - Pull from your own published registry image
-2. Set `CLAWITH_IMAGE` in `.env` to point at your image (defaults to `clawith:local`)
-3. Optionally set LLM provider keys if you want Clawith-native agents
+1. A Clawith Docker image
+   - build your own: `docker build -t clawith:local /path/to/clawith`
+   - or point `CLAWITH_IMAGE` at a registry image
+2. A `.env` file with `CLAWITH_IMAGE` set
+3. Optional LLM provider keys if you want Clawith-native agents
 
-### Starting live mode
+### Start the stack
 
 ```bash
 cp .env.example .env
-# Edit .env: set CLAWITH_IMAGE, CLAWITH_SECRET, and any LLM keys
+# edit .env and set CLAWITH_IMAGE
 
 docker compose --profile live up
 ```
 
-This adds two services:
-- **clawith** — the control plane, listening on port 3000
-- **bootstrap** — one-shot service that seeds the apprentice role + scenarios, then exits
+This adds two live-only services:
+- **clawith** — the actual control plane on port 3000
+- **bootstrap** — now a **read-only preflight probe**, not a destructive seed step
 
-### Bootstrap dependency order
-
-```
-postgres (healthy) → redis (healthy) → clawith (healthy) → bootstrap (runs once, exits)
-```
-
-The bootstrap service runs `seed/bootstrap.py --seed` against the Clawith API. It depends on Clawith being healthy first.
-
-### Health check
+### Health check used by compose
 
 ```bash
-curl http://localhost:3000/health
+curl http://localhost:3000/api/health
 # Expected: 200 OK
 ```
 
-The compose health check uses this endpoint. Bootstrap will not start until Clawith reports healthy.
+That is the meaningful upstream health path.
+`/health` is not the contract to trust here.
 
-### Seeding without Docker
+## Read-only probe commands
 
-You can also validate or seed manually:
+### Minimal HTTP probe
 
 ```bash
-# Validate seed data (no Clawith needed):
-python3 seed/bootstrap.py --validate
-
-# Dry-run against a running Clawith:
-python3 seed/bootstrap.py --seed --dry-run
-
-# Seed for real:
-CLAWITH_SECRET=your-secret python3 seed/bootstrap.py --seed --clawith-url http://localhost:3000
+python3 seed/probe_clawith.py --base-url http://localhost:3000
 ```
 
-## What live mode does NOT include
+This checks:
+- `/api/health`
+- `/api/version`
+- `/api/auth/registration-config`
+- unauthenticated behavior for `/api/auth/me`
+- unauthenticated behavior for `/api/enterprise/llm-models`
+- unauthenticated behavior for `/api/admin/companies`
 
-- **Consumer OAuth** — Clawith authenticates runners via machine-to-machine secrets, not user logins. See `docs/runner-bridge.md`.
-- **Production hardening** — This is a hackathon stack, not a prod deployment.
-- **Bundled Clawith source** — This repo does not contain or reference sibling `../Clawith` paths.
+### Better local probe against running Docker containers
 
-## Image contract
+If you have a local Clawith stack and know the container names, use:
 
-The compose file expects the Clawith image to:
-1. Expose port 3000
-2. Accept `DATABASE_URL` and `REDIS_URL` environment variables
-3. Serve `GET /health` returning 200 when ready
-4. Accept `POST /api/roles` and `POST /api/scenarios` for seeding
+```bash
+python3 seed/probe_clawith.py \
+  --base-url http://localhost:3008 \
+  --backend-container clawith-backend-1 \
+  --postgres-container clawith-postgres-1
+```
 
-If the image does not exist or these contracts are not met, live mode will fail with clear errors. Demo mode is unaffected.
+That adds two useful read-only checks:
+- pulls backend OpenAPI directly from `localhost:8000/openapi.json` **inside** the backend container
+- runs read-only SQL counts inside Postgres to verify:
+  - user count
+  - `platform_admin` presence
+  - `llm_models` presence
+  - enabled model count
+
+### Authenticated probe (optional)
+
+If you already have a real user and want to inspect protected surfaces without using the UI:
+
+```bash
+python3 seed/probe_clawith.py \
+  --base-url http://localhost:3000 \
+  --username alice \
+  --password 'your-password'
+```
+
+Or provide a bearer token directly:
+
+```bash
+CLAWITH_BEARER_TOKEN=... python3 seed/probe_clawith.py --base-url http://localhost:3000
+```
+
+That lets the probe read:
+- `/api/auth/me`
+- `/api/enterprise/llm-providers`
+- `/api/enterprise/llm-models`
+- `/api/admin/companies` (200 for `platform_admin`, 403 otherwise)
+
+## How to read the probe output
+
+The probe reports three separate truths:
+
+1. **public upstream ready**
+   - can we reach the real Clawith health/version/auth surface at all?
+2. **adapter-first readiness**
+   - do we actually have an admin and at least one model-pool entry?
+3. **native Role Foundry parity**
+   - does upstream already expose Role Foundry's role/scenario/run contracts?
+
+Those are not the same thing.
+
+A healthy result can still honestly say:
+- Clawith is alive
+- admin/model pool are missing or unknown
+- Role Foundry still needs an adapter for roles/scenarios/run patches
+
+Good. That is the truth.
+
+## Local readiness gaps the probe is meant to catch
+
+### 1) Auth surface is present, but admin may not exist yet
+
+Upstream Clawith creates the first `platform_admin` during the **first successful registration**.
+If the local database still has zero users, there is no admin yet.
+
+### 2) Model pool may exist as schema only
+
+Upstream stores native models in `llm_models`.
+A healthy container can still be unusable for Clawith-native agents if that table is empty.
+
+### 3) Endpoint mismatch is real
+
+Role Foundry's older bring-up docs assumed:
+- `POST /api/roles`
+- `POST /api/scenarios`
+- `PATCH /api/runs/{run_id}`
+
+Those are **adapter-side assumptions**, not an upstream parity claim.
+The probe calls that out explicitly.
+
+### 4) `/health` is too weak / misleading
+
+For the upstream image we tested, `/health` can be swallowed by the frontend and return HTML.
+Use `/api/health` instead.
+
+## What `seed/bootstrap.py` still means
+
+`seed/bootstrap.py` still has value, but only for two narrow jobs:
+
+1. validating the Role Foundry seed payload
+2. showing the **legacy write plan** with `--dry-run`
+
+It should **not** be read as proof that stock upstream Clawith natively accepts Role Foundry seed writes.
+If you point `--seed` at a stock upstream instance, it now refuses the write when the legacy paths are absent.
+
+## What live mode does **not** claim
+
+- no native consumer OAuth inside Clawith
+- no native upstream Role Foundry role/scenario API parity
+- no claim that runner bridge patch endpoints already ship in upstream Clawith
+- no destructive seed writes during the default compose live preflight
+
+## Bottom line
+
+Use live mode to verify **real upstream Clawith readiness**, not to fake it.
+
+If the probe says:
+- health is good
+- auth surface is real
+- admin exists
+- model pool exists
+- Role Foundry-native endpoints are still missing
+
+then the next honest move is an **adapter/shim**, not wishful thinking.
