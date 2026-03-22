@@ -69,6 +69,29 @@
     </div>
   </section>
 
+  <div class="grid-2" style="margin-bottom: 1rem;">
+    <article class="card">
+      <h3>Student role</h3>
+      <p><strong x-text="$store.app.getActor('student').name"></strong> <span class="badge badge-training" x-text="$store.app.getActor('student').agent_role"></span></p>
+      <p><small x-text="$store.app.getActor('student').access"></small></p>
+      <ul>
+        <template x-for="(line, i) in $store.app.getActor('student').can_see" :key="i">
+          <li x-text="line"></li>
+        </template>
+      </ul>
+    </article>
+    <article class="card">
+      <h3>Teacher role</h3>
+      <p><strong x-text="$store.app.getActor('teacher').name"></strong> <span class="badge badge-holdout" x-text="$store.app.getActor('teacher').agent_role"></span></p>
+      <p><small x-text="$store.app.getActor('teacher').access"></small></p>
+      <ul>
+        <template x-for="(line, i) in $store.app.getActor('teacher').can_see" :key="i">
+          <li x-text="line"></li>
+        </template>
+      </ul>
+    </article>
+  </div>
+
   <div class="meta-grid">
     <article class="meta-card">
       <span class="meta-label">Public curriculum</span>

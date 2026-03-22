@@ -35,10 +35,10 @@ class ConversationLogTests(unittest.TestCase):
         self.assertIn("Milestones 1 and 2 landed", self.text)
         self.assertIn("Milestone 3 landed", self.text)
         self.assertIn("Milestone 4 landed", self.text)
+        self.assertIn("Milestone 5 landed", self.text)
 
     def test_conversation_log_does_not_claim_unshipped_milestones(self):
-        """M5 and M6 should not appear as landed entries."""
-        self.assertNotIn("Milestone 5 landed", self.text)
+        """M6 should not appear as a landed entry."""
         self.assertNotIn("Milestone 6 landed", self.text)
 
     def test_conversation_log_mentions_honest_stubs(self):
@@ -73,13 +73,13 @@ class MilestoneStatusTests(unittest.TestCase):
         ):
             statuses[int(m.group(1))] = m.group(2)
 
-        for m in (1, 2, 3, 4):
+        for m in (1, 2, 3, 4, 5):
             self.assertEqual(
                 statuses.get(m),
                 "done",
                 f"Milestone {m} should be marked done",
             )
-        for m in (5, 6):
+        for m in (6,):
             self.assertEqual(
                 statuses.get(m),
                 "queued",

@@ -145,7 +145,23 @@ See `docs/synthesis-hackathon-stack-architecture.md` for details.
 - `docs/submission-proof-checklist.md` added so judges can verify claims
 - `tests/test_submission_proof.py` locks the submission contract (conversation log currency, checklist existence, milestone status honesty)
 
-**What is explicitly out of scope on this branch:**
-- Milestone 5 (teacher evaluation loop) — queued, not started here
-- Milestone 6 (partner wiring) — queued
+---
+
+## 2026-03-22 — Milestone 5 landed (teacher evaluation loop)
+
+**Outcome:** Teacher and student roles are now explicit in the runner-bridge evaluation contract and demo copy. Holdout prompt text stays out of student-facing artifact files.
+
+**What shipped:**
+- `runner_bridge/eval_loop.py` — teacher evaluation logic with per-scenario notes, aggregate score, public curriculum themes, and iteration history deltas
+- `runner_bridge/examples/teacher-eval-loop.json` exercises the teacher/student split
+- The bridge now persists a redacted `request.json` plus a raw `request.private.json` so sealed holdout prompts stay out of student-facing artifacts
+- Demo data updated with teacher scorecards, iteration timeline, and curriculum themes
+- UI surfaces teacher verdict, iteration history table, and failure-to-curriculum themes
+
+**Evidence:**
+- `tests/test_milestone5_teacher_eval_loop.py` checks holdout secrecy, public theme promotion, teacher scorecards, and iteration deltas
+
+**What is NOT claimed:**
+- This is still a deterministic/local bridge slice
+- Live model-backed teacher evaluation remains future wiring, not fake theater
 - No live integrations are faked or claimed

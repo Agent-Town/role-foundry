@@ -21,92 +21,107 @@ _Ordered by dependency. Each slice should be demoable on its own._
 
 ## Slice 1 — Clawith integration
 
+**Status:** shipped as repo wiring; live image + model-pool configuration remain environment setup, not faked in repo.
+
 **What:** Get Clawith running as the control plane inside Docker Compose.
 
 **Tasks:**
-- [ ] Build or pull Clawith Docker image
-- [ ] Uncomment clawith service in docker-compose.yml, verify it boots against postgres + redis
-- [ ] Verify Clawith API is reachable from the web container
+- [x] Wire a profile-gated `clawith` service in `docker-compose.yml`
+- [x] Document and test the `/health` contract plus dependency order
+- [x] Keep demo mode as the default safe path with zero live requirements
+- [ ] Build or pull a real Clawith Docker image in the target environment
 - [ ] Add at least one LLM model entry to Clawith (for teacher/orchestration roles)
 
 **Outputs:**
-- Clawith API running at localhost:3000
-- Basic health check passing
+- Compose contract for Clawith at localhost:3000 when `CLAWITH_IMAGE` is provided
+- Basic health-check wiring and bootstrap dependency path
 
-**Demo:** `curl localhost:3000/health` returns OK
+**Demo:** `docker compose --profile live up` with a valid `CLAWITH_IMAGE` and configured model pool
 
 ---
 
 ## Slice 2 — Role + scenario data model
 
+**Status:** done
+
 **What:** Define and seed the core data: roles, scenarios, holdout splits.
 
 **Tasks:**
-- [ ] Define role schema (name, description, success criteria, domain)
-- [ ] Define scenario schema (prompt, expected behavior, rubric, is_holdout flag)
-- [ ] Write bootstrap seed script with 1 example role + 8-10 scenarios (6 public, 4 holdout)
-- [ ] Seed through Clawith API or direct DB insert
+- [x] Define role schema (name, description, goals, success criteria, domain)
+- [x] Define scenario schema (public training vs holdout, difficulty, titles, descriptions)
+- [x] Write bootstrap seed script with 1 example role + 9 scenarios (6 public, 3 holdout)
+- [x] Seed through a Clawith-compatible API path or dry-run bootstrap plan
 
 **Outputs:**
 - One seeded role with public and holdout scenario sets
 - Bootstrap service runs once and exits
 
-**Demo:** Query Clawith API → get role + scenarios back (holdouts hidden from student-facing endpoints)
+**Demo:** `python3 seed/bootstrap.py --validate` or `python3 seed/bootstrap.py --seed --dry-run`
 
 ---
 
 ## Slice 3 — Runner adapter (Claude)
 
-**What:** Build the first runner adapter that dispatches a student run to Claude.
+**Status:** shipped as the local/mockable bridge contract; Claude wiring is still future work.
 
-**Current fast path:** Milestone 4 now ships a local/mockable `LocalReplayRunner` through `python3 -m runner_bridge.cli` so the lifecycle, transcript storage, artifact bundle, and honest failure path are real before Claude wiring lands.
+**What:** Build the first runner adapter that dispatches a student run.
+
+**Current fast path:** Milestone 4 ships a local/mockable `LocalReplayRunner` through `python3 -m runner_bridge.cli` so the lifecycle, transcript storage, artifact bundle, and honest failure path are real before Claude wiring lands.
 
 **Tasks:**
-- [ ] Implement ClaudeVibeRunner adapter matching the contract in `docs/runner-bridge.md`
-- [ ] Runner takes a scenario, executes against Claude, captures transcript + artifacts
-- [ ] Runner reports back to Clawith with status and outputs
-- [ ] Test with one public scenario from Slice 2
+- [x] Implement `LocalReplayRunner` matching the contract in `docs/runner-bridge.md`
+- [x] Persist transcript + artifact receipts for one end-to-end run
+- [x] Patch status back to a Clawith-compatible control plane
+- [x] Preserve an honest failure path with receipts
+- [ ] Implement `ClaudeVibeRunner` against the same contract
 
 **Outputs:**
-- One completed student run with transcript and artifacts stored in Clawith
+- One completed student run with transcript and artifacts stored under `runtime/runs/<run_id>/`
+- One failed run path that still leaves receipts behind
 
-**Demo:** Trigger a run → see transcript and status in Clawith
+**Demo:** Trigger a local replay run → inspect transcript, artifact bundle, and control-plane patches
 
 ---
 
 ## Slice 4 — Teacher evaluation loop
 
+**Status:** done as a deterministic/local bridge slice.
+
 **What:** The teacher evaluates a student's output against holdout scenarios.
 
 **Tasks:**
-- [ ] Implement teacher evaluation flow (Codex or second Claude call with different system prompt)
-- [ ] Teacher runs holdout scenarios against the student's current identity/policy
-- [ ] Teacher produces a scorecard (per-scenario pass/fail + rubric scores)
-- [ ] Scorecard stored in Clawith evaluation store
+- [x] Implement teacher evaluation flow on the bridge via optional `teacher_evaluation` input
+- [x] Distinguish teacher vs student roles in stored data
+- [x] Keep holdout prompts sealed from student-facing artifact files
+- [x] Produce a scorecard (per-scenario pass/fail + teacher notes + aggregate score)
+- [x] Persist teacher output through the runner bridge result contract
 
 **Outputs:**
-- Scorecard for one student iteration against holdout set
+- Scorecard for one student iteration against a holdout set
+- Redacted `request.json` plus raw `request.private.json`
 
-**Demo:** Run evaluation → view scorecard showing holdout performance
+**Demo:** Run `python3 -m runner_bridge.cli --request runner_bridge/examples/teacher-eval-loop.json`
 
 ---
 
 ## Slice 5 — Iteration loop
 
+**Status:** done as the next honest local/mockable slice.
+
 **What:** Connect training and evaluation into a single loop.
 
 **Tasks:**
-- [ ] After teacher scores, extract failure analysis from failed holdouts
-- [ ] Failed holdout themes (not the holdouts themselves) become new public curriculum
-- [ ] Student iterates: updates SOUL.md / policies based on new curriculum
-- [ ] Re-evaluate on holdouts
-- [ ] Track score delta across iterations
+- [x] After teacher scores, extract failure analysis from failed holdouts
+- [x] Turn failed holdouts into public curriculum themes without leaking hidden prompt text
+- [x] Capture the student's updated policy/identity context in demo data and bridge artifacts
+- [x] Compare the current iteration against the prior run
+- [x] Track score delta across iterations in stored data and UI/demo surfaces
 
 **Outputs:**
-- At least 2 iterations showing score improvement (or honest plateau)
+- At least 2 iterations showing improvement (or honest plateau)
 - Iteration history with score deltas
 
-**Demo:** Show iteration feed — scores improving over 2-3 rounds
+**Demo:** Show the teacher scorecard plus iteration history deltas in demo mode and bridge artifacts
 
 ---
 

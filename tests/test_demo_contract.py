@@ -41,6 +41,9 @@ class DemoContractTests(unittest.TestCase):
         self.assertIn("'run-002'", text)
         self.assertIn('iterations:', text)
         self.assertIn('failure_themes', text)
+        self.assertIn('student_views:', text)
+        self.assertIn("agent_role: 'student'", text)
+        self.assertIn("agent_role: 'teacher'", text)
 
     def test_apprentice_vertical_surfaces_exist(self):
         index_text = (APP / 'index.html').read_text()

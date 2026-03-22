@@ -65,6 +65,27 @@
     </div>
   </article>
 
+  <div class="grid-2" style="margin-bottom: 1rem;">
+    <article class="card">
+      <h3>Student prompt pack</h3>
+      <p><small x-text="$store.app.getStudentView('run-002').prompt_summary"></small></p>
+      <ul>
+        <template x-for="scenarioId in $store.app.getStudentView('run-002').visible_scenarios" :key="scenarioId">
+          <li x-text="$store.app.getScenario(scenarioId)?.title || scenarioId"></li>
+        </template>
+      </ul>
+    </article>
+    <article class="card">
+      <h3>Public curriculum themes from failures</h3>
+      <ul>
+        <template x-for="(theme, i) in $store.app.getStudentView('run-002').public_curriculum_themes" :key="i">
+          <li x-text="theme"></li>
+        </template>
+      </ul>
+      <p><small x-text="$store.app.getStudentView('run-002').sealed_holdout_count + ' sealed holdouts stay out of the student prompt pack.'"></small></p>
+    </article>
+  </div>
+
   <div class="grid-2">
     <section>
       <h2>Public Curriculum <span class="badge badge-training" x-text="$store.app.trainingScenarios().length"></span></h2>

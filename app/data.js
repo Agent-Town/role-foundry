@@ -27,6 +27,25 @@ const DEMO_DATA = {
     ],
   },
 
+  actors: {
+    student: {
+      id: 'student-frontend-apprentice',
+      name: 'Frontend Apprentice',
+      agent_role: 'student',
+      access: 'Public curriculum only',
+      can_see: ['Public curriculum', 'Public failure themes', 'Latest policy snapshot'],
+      cannot_see: ['Sealed holdout prompts', 'Teacher-only grading context'],
+    },
+    teacher: {
+      id: 'teacher-robin-neo',
+      name: 'Robin + Neo',
+      agent_role: 'teacher',
+      access: 'Public curriculum + sealed holdouts',
+      can_see: ['Public curriculum', 'Sealed holdout results', 'Artifact receipts', 'Iteration history deltas'],
+      cannot_see: [],
+    },
+  },
+
   scenarios: [
     // Public curriculum — visible to the apprentice
     {
@@ -123,9 +142,18 @@ const DEMO_DATA = {
 
   scores: {
     'run-001': {
+      judged_by: 'teacher-robin-neo',
+      teacher_summary: 'Baseline teacher review: the apprentice stayed mostly honest, but the hidden-eval story and proof surfaces were still too weak.',
       overall: 4,
       total: 9,
       pass_rate: 0.44,
+      aggregate_score: {
+        passed: 4,
+        total: 9,
+        pass_rate: 0.44,
+        average_score: 0.49,
+        holdout: { passed: 0, total: 3, pass_rate: 0.0 },
+      },
       results: [
         { scenario_id: 't1', passed: false, score: 0.4, notes: 'Copy still reads like a generic agent platform, not an apprentice shipping Role Foundry slices.' },
         { scenario_id: 't2', passed: true, score: 0.8, notes: 'Curriculum and holdouts are separated, but the story is still too abstract.' },
@@ -139,9 +167,18 @@ const DEMO_DATA = {
       ],
     },
     'run-002': {
+      judged_by: 'teacher-robin-neo',
+      teacher_summary: 'Teacher verdict: Run 2 materially improved. The apprentice kept holdouts sealed, published receipts, and made the score delta legible.',
       overall: 8,
       total: 9,
       pass_rate: 0.89,
+      aggregate_score: {
+        passed: 8,
+        total: 9,
+        pass_rate: 0.89,
+        average_score: 0.9,
+        holdout: { passed: 2, total: 3, pass_rate: 0.67 },
+      },
       results: [
         { scenario_id: 't1', passed: true, score: 1.0, notes: 'The Frontend Apprentice story is clear and anchored in Role Foundry dogfooding itself.' },
         { scenario_id: 't2', passed: true, score: 1.0, notes: 'Public curriculum and sealed holdouts read clearly for judges.' },
@@ -153,6 +190,28 @@ const DEMO_DATA = {
         { scenario_id: 'h2', passed: true, score: 0.8, notes: 'Explained hidden-eval integrity well without exposing the sealed prompt.' },
         { scenario_id: 'h3', passed: false, score: 0.5, notes: 'Much tighter slice, but the ideal next step is a real artifact viewer backed by live run data.' },
       ],
+    },
+  },
+
+  student_views: {
+    'run-001': {
+      agent_role: 'student',
+      prompt_summary: 'Practice the visible curriculum only. Do not ask for the sealed holdout prompts.',
+      visible_scenarios: ['t1', 't2', 't3', 't4', 't5', 't6'],
+      public_curriculum_themes: [],
+      sealed_holdout_count: 3,
+    },
+    'run-002': {
+      agent_role: 'student',
+      prompt_summary: 'Train on the public curriculum plus promoted failure themes only. Sealed holdouts remain hidden.',
+      visible_scenarios: ['t1', 't2', 't3', 't4', 't5', 't6'],
+      public_curriculum_themes: [
+        'Use a concrete apprentice vertical instead of generic agent-platform copy.',
+        'Leave receipts judges can inspect: changed files, transcript evidence, and policy snapshot.',
+        'Explain hidden evaluation integrity without quoting the sealed exam.',
+        'Stay explicit about demo-only constraints under pressure.',
+      ],
+      sealed_holdout_count: 3,
     },
   },
 
@@ -181,6 +240,12 @@ const DEMO_DATA = {
       ],
       curriculum_notes:
         'Run 1 failures were collapsed into public training themes. Robin + Neo only exposed categories like “fake live wiring temptation” and “missing receipts”; the hidden holdout prompts themselves stayed sealed.',
+      score_delta: {
+        overall: 4,
+        holdout: 2,
+        pass_rate_points: 45,
+        holdout_pass_rate_points: 67,
+      },
       failure_themes: [
         {
           theme: 'Generic demo copy instead of a narrow apprentice vertical',

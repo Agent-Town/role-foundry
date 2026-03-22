@@ -85,10 +85,10 @@
         </div>
       </div>
 
-      <template x-if="$store.app.getIteration(selectedRun)">
+      <template x-if="$store.app.getScorecard(selectedRun)?.teacher_summary">
         <article class="judge-callout compact-callout">
           <strong>Teacher verdict:</strong>
-          <span x-text="$store.app.getIteration(selectedRun).identity_snapshot"></span>
+          <span x-text="$store.app.getScorecard(selectedRun)?.teacher_summary"></span>
         </article>
       </template>
 
@@ -164,6 +164,32 @@
       </template>
     </div>
   </div>
+
+  <section>
+    <h3>Iteration History</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Iteration</th>
+          <th>Overall</th>
+          <th>Holdouts</th>
+          <th>Pass-rate delta</th>
+        </tr>
+      </thead>
+      <tbody>
+        <template x-for="entry in $store.app.iterationTimeline()" :key="entry.run_id">
+          <tr>
+            <td x-text="'#' + entry.iteration"></td>
+            <td x-text="entry.aggregate_score?.passed + '/' + entry.aggregate_score?.total"></td>
+            <td x-text="entry.aggregate_score?.holdout?.passed + '/' + entry.aggregate_score?.holdout?.total"></td>
+            <td>
+              <span x-text="entry.delta ? $store.app.formatSigned(entry.delta.pass_rate_points, 0, ' pts') : '—'"></span>
+            </td>
+          </tr>
+        </template>
+      </tbody>
+    </table>
+  </section>
 
   <template x-if="$store.app.getIteration(selectedRun)">
     <section>

@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import argparse
 import json
-import sys
 from datetime import UTC, datetime
 from pathlib import Path
+
+from runner_bridge.eval_loop import build_teacher_evaluation, has_teacher_evaluation
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -40,6 +41,23 @@ def main(argv: list[str] | None = None) -> int:
         },
     ]
 
+    evaluation = build_teacher_evaluation(request) if has_teacher_evaluation(request) else None
+    if evaluation:
+        events.extend(
+            [
+                {
+                    "ts": _utc_now(),
+                    "event": "student.prompt.loaded",
+                    "message": f"Student prompt pack loaded with {len(evaluation['student_view']['visible_scenarios'])} visible scenarios and {evaluation['student_view']['sealed_holdout_count']} sealed holdouts.",
+                },
+                {
+                    "ts": _utc_now(),
+                    "event": "teacher.evaluation.started",
+                    "message": f"Teacher {evaluation['teacher_output']['actor']['name']} is scoring the run against public curriculum plus sealed holdouts.",
+                },
+            ]
+        )
+
     if simulate_failure:
         events.append(
             {
@@ -51,16 +69,77 @@ def main(argv: list[str] | None = None) -> int:
         status = "failed"
         machine_score = 0.0
         error = "simulated failure requested by workspace_snapshot"
+        scorecard = {
+            "runner": "LocalReplayRunner",
+            "checks": [
+                {
+                    "name": "artifact_bundle_present",
+                    "passed": True,
+                },
+                {
+                    "name": "failure_is_honest",
+                    "passed": True,
+                },
+            ],
+        }
     else:
-        events.append(
-            {
-                "ts": _utc_now(),
-                "event": "runner.completed",
-                "message": "LocalReplayRunner produced transcript and artifact receipts.",
+        if evaluation:
+            aggregate = evaluation["teacher_output"]["aggregate_score"]
+            delta = evaluation["iteration_history"][-1].get("delta", {}) if evaluation["iteration_history"] else {}
+            events.extend(
+                [
+                    {
+                        "ts": _utc_now(),
+                        "event": "teacher.evaluation.completed",
+                        "message": f"Teacher aggregate score: {aggregate['passed']}/{aggregate['total']} ({aggregate['pass_rate']:.0%}).",
+                    },
+                    {
+                        "ts": _utc_now(),
+                        "event": "iteration.delta",
+                        "message": f"Score delta vs previous iteration: {delta.get('pass_count', 0):+d} passes, {delta.get('holdout_pass_count', 0):+d} holdouts.",
+                    },
+                    {
+                        "ts": _utc_now(),
+                        "event": "runner.completed",
+                        "message": "LocalReplayRunner produced a teacher scorecard, public curriculum themes, and iteration receipts.",
+                    },
+                ]
+            )
+            machine_score = aggregate["average_score"]
+            scorecard = {
+                "runner": "LocalReplayRunner",
+                "teacher": evaluation["teacher_output"]["actor"],
+                "student": evaluation["student_view"]["actor"],
+                "aggregate_score": aggregate,
+                "scenario_results": evaluation["teacher_output"]["scenario_results"],
+                "public_curriculum_themes": evaluation["public_curriculum_themes"],
+                "iteration_history": evaluation["iteration_history"],
+                "verdict": evaluation["teacher_output"]["verdict"],
             }
-        )
+        else:
+            events.append(
+                {
+                    "ts": _utc_now(),
+                    "event": "runner.completed",
+                    "message": "LocalReplayRunner produced transcript and artifact receipts.",
+                }
+            )
+            machine_score = 0.8
+            scorecard = {
+                "runner": "LocalReplayRunner",
+                "checks": [
+                    {
+                        "name": "artifact_bundle_present",
+                        "passed": True,
+                    },
+                    {
+                        "name": "transcript_has_completion_event",
+                        "passed": True,
+                    },
+                ],
+            }
+
         status = "completed"
-        machine_score = 0.8
         error = None
 
     transcript_path.write_text("".join(json.dumps(event) + "\n" for event in events))
@@ -76,6 +155,11 @@ def main(argv: list[str] | None = None) -> int:
             "result_path": result_path.name,
         },
     }
+    if evaluation:
+        artifact_bundle["student_view"] = evaluation["student_view"]
+        artifact_bundle["teacher_output"] = evaluation["teacher_output"]
+        artifact_bundle["iteration_history"] = evaluation["iteration_history"]
+        artifact_bundle["public_curriculum_themes"] = evaluation["public_curriculum_themes"]
     if error:
         artifact_bundle["error"] = error
     artifact_bundle_path.write_text(json.dumps(artifact_bundle, indent=2))
@@ -85,24 +169,7 @@ def main(argv: list[str] | None = None) -> int:
         "transcript_path": transcript_path.name,
         "artifact_bundle_path": artifact_bundle_path.name,
         "machine_score": machine_score,
-        "scorecard": {
-            "runner": "LocalReplayRunner",
-            "checks": [
-                {
-                    "name": "artifact_bundle_present",
-                    "passed": True,
-                },
-                {
-                    "name": "failure_is_honest",
-                    "passed": bool(error),
-                }
-                if error
-                else {
-                    "name": "transcript_has_completion_event",
-                    "passed": True,
-                },
-            ],
-        },
+        "scorecard": scorecard,
     }
     if error:
         result["error"] = error

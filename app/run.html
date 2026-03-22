@@ -92,6 +92,33 @@
     </article>
   </template>
 
+  <div class="grid-2" style="margin-bottom: 1rem;">
+    <article class="card" x-show="$store.app.getStudentView(detailRun)">
+      <h3>Student Prompt Pack</h3>
+      <p><small x-text="$store.app.getStudentView(detailRun)?.prompt_summary"></small></p>
+      <ul>
+        <template x-for="scenarioId in $store.app.getStudentView(detailRun)?.visible_scenarios || []" :key="scenarioId">
+          <li x-text="$store.app.getScenario(scenarioId)?.title || scenarioId"></li>
+        </template>
+      </ul>
+      <p><small x-text="($store.app.getStudentView(detailRun)?.sealed_holdout_count || 0) + ' sealed holdouts stayed hidden from this prompt pack.'"></small></p>
+    </article>
+
+    <article class="card">
+      <h3>Teacher Evaluation</h3>
+      <p>
+        <strong x-text="$store.app.getTeacherForRun(detailRun)?.name || 'Teacher'"></strong>
+        <span class="badge badge-holdout" x-text="$store.app.getTeacherForRun(detailRun)?.agent_role || 'teacher'"></span>
+      </p>
+      <p><small x-text="$store.app.getScorecard(detailRun)?.teacher_summary || 'Teacher review pending.'"></small></p>
+      <ul>
+        <li>Aggregate: <strong x-text="$store.app.getScorecard(detailRun)?.aggregate_score?.passed + '/' + $store.app.getScorecard(detailRun)?.aggregate_score?.total"></strong></li>
+        <li>Holdouts: <strong x-text="$store.app.getScorecard(detailRun)?.aggregate_score?.holdout?.passed + '/' + $store.app.getScorecard(detailRun)?.aggregate_score?.holdout?.total"></strong></li>
+        <li>Average score: <strong x-text="$store.app.getScorecard(detailRun)?.aggregate_score?.average_score?.toFixed(2)"></strong></li>
+      </ul>
+    </article>
+  </div>
+
   <div x-show="logLines.length > 0" class="run-log" x-ref="logBox">
     <template x-for="(line, i) in logLines" :key="i">
       <div :class="{

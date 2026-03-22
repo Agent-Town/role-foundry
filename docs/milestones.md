@@ -75,6 +75,8 @@ Principle: each milestone must have:
 - bootstrap path can seed one role and one scenario set
 - live mode remains optional and honest when config is absent
 
+**Delivered slice:** compose wiring, profile-gated Clawith service, health contract, bootstrap seeding path, and executable seed/compose tests. Model-pool configuration is still an environment setup step, not faked in repo.
+
 **Builds on:** Milestones 1–2
 
 ---
@@ -97,13 +99,15 @@ Principle: each milestone must have:
 - transcript and artifact bundle are stored and viewable
 - demo mode still works with zero secrets
 
+**Delivered slice:** `python3 -m runner_bridge.cli` + `LocalReplayRunner`, control-plane PATCH contract, persisted transcripts/artifact bundles, honest failure path, and local/mockable tests. Claude/Codex adapters are still future work.
+
 **Builds on:** Milestone 3
 
 ---
 
 ## Milestone 5 — Teacher Evaluation + Iteration Loop
 
-**Status:** queued
+**Status:** done
 
 **Goal:** prove the actual moat: hidden holdout evaluation, failure themes, and score improvement.
 
@@ -118,6 +122,8 @@ Principle: each milestone must have:
 - teacher produces a scorecard with scenario-level results
 - failed holdouts become public curriculum themes, not leaked prompts
 - at least two iterations can be shown honestly
+
+**Delivered slice:** optional `teacher_evaluation` payload on the local/mockable bridge, redacted `request.json` plus raw `request.private.json`, teacher scorecards with per-scenario notes and aggregate score, public curriculum themes derived from failed holdouts, and stored iteration history with score deltas.
 
 **Builds on:** Milestone 4
 

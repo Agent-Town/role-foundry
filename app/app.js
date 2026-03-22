@@ -341,8 +341,16 @@ function createAppStore(config) {
       return Boolean(this.comparisonRunId(runId));
     },
 
+    getActor(role) {
+      return this.actors?.[role] || null;
+    },
+
     getScorecard(runId) {
       return this.scores?.[runId] || null;
+    },
+
+    getStudentView(runId) {
+      return this.student_views?.[runId] || null;
     },
 
     getIteration(runId) {
@@ -363,6 +371,34 @@ function createAppStore(config) {
 
     hasRunReplay(runId) {
       return this.getRunReplay(runId).length > 0;
+    },
+
+    getTeacherForRun(runId) {
+      const scorecard = this.getScorecard(runId);
+      if (!scorecard?.judged_by) return null;
+      return Object.values(this.actors || {}).find(actor => actor.id === scorecard.judged_by) || null;
+    },
+
+    iterationTimeline() {
+      return this.runs.map((run, index) => {
+        const scorecard = this.getScorecard(run.id);
+        const previousRun = index > 0 ? this.runs[index - 1] : null;
+        const previousScorecard = previousRun ? this.getScorecard(previousRun.id) : null;
+        return {
+          run_id: run.id,
+          iteration: run.iteration,
+          aggregate_score: scorecard?.aggregate_score || null,
+          delta: previousScorecard
+            ? {
+                overall: (scorecard?.aggregate_score?.passed || 0) - (previousScorecard?.aggregate_score?.passed || 0),
+                holdout:
+                  (scorecard?.aggregate_score?.holdout?.passed || 0)
+                  - (previousScorecard?.aggregate_score?.holdout?.passed || 0),
+                pass_rate_points: Math.round(((scorecard?.aggregate_score?.pass_rate || 0) - (previousScorecard?.aggregate_score?.pass_rate || 0)) * 100),
+              }
+            : null,
+        };
+      });
     },
 
     trainingScenarios() {

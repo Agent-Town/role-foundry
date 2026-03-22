@@ -22,8 +22,8 @@ This checklist maps every claim to verifiable repo evidence. Items marked with a
 | # | Claim | How to verify | Test |
 |---|-------|---------------|------|
 | 7 | Every milestone has a written spec | Check `specs/001`–`007` | `test_specs_exist_for_all_milestones` |
-| 8 | Milestones 1–4 are marked done | Read `docs/milestones.md` | `test_milestone_status_honesty` |
-| 9 | Milestone 5–6 are not falsely claimed as done | Same file | `test_milestone_status_honesty` |
+| 8 | Milestones 1–5 are marked done | Read `docs/milestones.md` | `test_milestone_status_honesty` |
+| 9 | Milestone 6 is not falsely claimed as done | Same file | `test_milestone_status_honesty` |
 
 ## Clawith integration (Milestone 3)
 
@@ -56,7 +56,6 @@ This checklist maps every claim to verifiable repo evidence. Items marked with a
 
 ## What is NOT claimed
 
-- Milestone 5 (teacher evaluation loop) is queued, not landed on this branch
 - Milestone 6 (partner wiring) is queued
 - No Claude/Codex runner adapter — only `LocalReplayRunner`
 - Web UI serves demo data, not live Clawith state
