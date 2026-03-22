@@ -121,6 +121,21 @@ Principle: each milestone must have:
 
 **Builds on:** Milestone 4
 
+**Landed support slices on this spine:**
+- `specs/008-public-benchmark-pack-v1.md` + `docs/public-benchmark-pack-v1.md` freeze the first public-safe benchmark pack v1.
+- additive receipt provenance now rides on top of the existing runner-bridge outputs; it does not change the teacher score semantics.
+- `specs/009-clawith-readiness-probe.md` + `docs/clawith-integration.md` keep the upstream Clawith path adapter-first and read-only.
+- `specs/011-live-ui-read-model.md` keeps the browser live shell read-only and payload-faithful for configured exports / fixtures.
+
+**Executable follow-through now landed on this branch:**
+- `specs/010-autoresearch-alpha-public-loop.md` + `tests/test_autoresearch_alpha_loop.py` deliver the first honest baseline → candidate-student → candidate-teacher-eval → better/equal/worse loop.
+- the integrity gate explicitly allows **public-regression** claims while blocking **sealed-eval** claims until fresh teacher-only families exist outside the public repo.
+
+**Local private holdout scaffold (contract only):**
+- `specs/012-private-holdout-pack.md` + `benchmarks/private-holdout-pack-template.json` + `tests/test_private_holdout_separation.py` define the teacher-only path without shipping any real teacher-only content.
+
+These slices are real. This branch now has an executable **public alpha loop**, but a truly sealed holdout path is still blocked pending fresh teacher-only rewrites stored only in the local gitignored private path.
+
 ---
 
 ## Milestone 6 — Submission Proof + Partner Wiring

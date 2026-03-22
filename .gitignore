@@ -10,3 +10,6 @@ runtime/
 .env
 .env.*
 !.env.example
+
+# Private holdout packs — teacher-only material must never be pushed publicly.
+benchmarks/private-holdout-pack/

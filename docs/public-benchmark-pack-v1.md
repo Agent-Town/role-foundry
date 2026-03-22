@@ -56,6 +56,16 @@ It does **not** yet give us a clean public sealed-eval pack, because the current
 
 That keeps the benchmark story honest.
 
+## Local private holdout path
+
+Fresh teacher-only holdouts now have a **local-only scaffold**:
+
+- public schema template: `benchmarks/private-holdout-pack-template.json`
+- private local manifest path: `benchmarks/private-holdout-pack/holdout-manifest.json`
+- git rule: `benchmarks/private-holdout-pack/` is ignored and should never be committed
+
+The template is only a contract shape. Actual teacher-only prompts and rubrics belong only in the gitignored local manifest, and this repo still makes **no sealed certification claim**.
+
 ## Suggested autoresearch loop
 
 Use the pack like this:
@@ -73,12 +83,16 @@ Run:
 
 ```bash
 python3 -m unittest tests/test_public_benchmark_pack_v1.py
-python3 -m unittest tests/test_milestone3_contract.py tests/test_milestone5_teacher_eval_loop.py
+python3 -m unittest tests/test_private_holdout_separation.py
+python3 -m unittest tests/test_milestone3_contract.py tests/test_milestone5_teacher_eval_loop.py tests/test_autoresearch_alpha_loop.py
 ```
 
 ## Files
 
 - `benchmarks/public-pack-v1/episode-family-registry.json`
 - `benchmarks/public-pack-v1/benchmark-pack.json`
+- `benchmarks/private-holdout-pack-template.json`
 - `specs/008-public-benchmark-pack-v1.md`
+- `specs/012-private-holdout-pack.md`
 - `tests/test_public_benchmark_pack_v1.py`
+- `tests/test_private_holdout_separation.py`

@@ -1,0 +1,38 @@
+{
+  "_template_note": "This is the PUBLIC schema template for private holdout packs. It contains NO actual teacher-only content. Copy this to benchmarks/private-holdout-pack/holdout-manifest.json and fill in real episodes locally.",
+  "meta": {
+    "id": "private-holdout-pack-v1",
+    "version": "0.0.0",
+    "visibility": "teacher_only",
+    "public_repo_safe": false,
+    "honesty_note": "This pack contains teacher-only evaluation material. It is not a sealed certification exam. It is a local holdout evaluation path for honest teacher-only scoring."
+  },
+  "execution_policy": {
+    "teacher_only": true,
+    "student_visible_fields_present": false,
+    "intended_use": [
+      "local teacher-only evaluation",
+      "holdout scoring against fresh (non-repo-visible) prompts",
+      "iteration delta measurement on sealed material"
+    ],
+    "not_for": [
+      "public distribution",
+      "student-visible curriculum",
+      "sealed certification claims",
+      "partner-track capability claims"
+    ]
+  },
+  "episodes": [
+    {
+      "_placeholder": true,
+      "_instructions": "Replace this placeholder with real teacher-only episodes. Each episode needs: id, family_id, title, teacher_prompt, scoring_rubric, difficulty, tags. Author FRESH wording — do not copy from the repo-visible h1/h2/h3 descriptions.",
+      "id": "REPLACE-ME",
+      "family_id": "REPLACE-ME",
+      "title": "REPLACE-ME",
+      "teacher_prompt": "REPLACE-ME — fill this only in the gitignored local manifest",
+      "scoring_rubric": {},
+      "difficulty": "medium",
+      "tags": []
+    }
+  ]
+}

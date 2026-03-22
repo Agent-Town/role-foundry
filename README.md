@@ -2,13 +2,13 @@
 
 Role Foundry is training its own first apprentice.
 
-The current demo is not a generic “AI agent” playground. It is a judge-facing dogfood vertical where **Robin + Neo** teach a **Frontend Apprentice** to implement small, visible **Role Foundry product slices** under hidden-eval review.
+The current demo is not a generic “AI agent” playground. It is a judge-facing dogfood vertical where **Robin + Neo** teach a **Frontend Apprentice** to implement small, visible **Role Foundry product slices** under holdout-aware review.
 
 That makes the core claim legible:
 - there is a named student
 - there are named teachers
 - there is a public curriculum
-- there is a sealed holdout exam
+- there is a teacher-only holdout lane with a public/private separation contract
 - there are visible score deltas between runs
 - there are receipts judges can inspect
 
@@ -18,10 +18,10 @@ That makes the core claim legible:
 
 1. **Apprentice definition** — the Frontend Apprentice is learning to build Role Foundry itself
 2. **Public curriculum** — visible training slices like rewriting the apprentice story, clarifying curriculum vs holdouts, exposing score deltas, and adding proof bundles
-3. **Sealed holdouts** — hidden-eval categories that test whether the apprentice keeps demo mode honest and avoids leaking the exam
+3. **Holdout integrity story** — judge-visible holdout categories in the demo plus a local-only scaffold for fresh teacher-only rewrites outside the public repo
 4. **Two judged runs** — Run 2 clearly improves over Run 1
-5. **Teacher scorecard** — per-scenario teacher notes plus aggregate score across public curriculum and sealed holdouts
-6. **Failure → curriculum loop** — failed holdouts become the next public teaching themes without exposing hidden prompts
+5. **Teacher scorecard** — per-scenario teacher notes plus aggregate score across public curriculum and holdout-facing review
+6. **Failure → curriculum loop** — failed holdout themes become the next public teaching themes without exposing hidden prompt text
 7. **Iteration history** — score deltas over time stay visible in both the UI and stored run data
 8. **Proof bundle** — receipt summary, changed files, policy snapshot, and transcript excerpt
 
@@ -38,11 +38,11 @@ This is the point of Role Foundry: make capability visible with honest evaluatio
 
 1. **Teachers define the apprentice** — what a good Role Foundry slice looks like
 2. **Role Foundry publishes public curriculum** — scenarios the apprentice can practice on
-3. **Role Foundry seals hidden holdouts** — separate judge-only tests the apprentice never sees during training
+3. **Role Foundry keeps fresh hidden holdouts teacher-only** — the public repo carries the contract/template/tests for that lane, not the private prompts themselves
 4. **The apprentice ships a slice** — copy, UI, scorecard, or artifact surface
 5. **Teacher judges the run** — a teacher scorecard records per-scenario notes plus an aggregate score
 6. **Failures become curriculum** — only the failure themes are promoted, never the hidden prompt text
-7. **Iteration history records deltas** — later runs show what improved overall and on sealed holdouts
+7. **Iteration history records deltas** — later runs show what improved overall and on holdout-facing review
 
 ## Why this demo reads stronger now
 
@@ -116,7 +116,7 @@ python3 -m runner_bridge.cli \
 
 Artifacts land under `runtime/runs/<run_id>/`.
 
-See `docs/runner-bridge.md` for the control-plane patch contract, teacher scorecard extension, the public benchmark-pack prompt path, and the local/mockable fallback path.
+See `docs/runner-bridge.md` for the control-plane patch contract, teacher scorecard extension, the public benchmark-pack prompt path, comparison receipt flow, and the local/mockable fallback path.
 
 ## Autoresearch alpha loop
 
@@ -135,11 +135,19 @@ What it proves today:
 
 That last point matters. The public benchmark pack is usable now, but the current teacher-only families are still marked `blocked_pending_rewrite`, so the repo cannot honestly claim a fresh sealed holdout path yet. The alpha loop says that plainly instead of faking it.
 
+There is also now a separate **local-only private holdout scaffold**:
+- `benchmarks/private-holdout-pack-template.json` defines the public-safe shape only
+- `benchmarks/private-holdout-pack/` is gitignored for real teacher-only material
+- `tests/test_private_holdout_separation.py` proves tracked artifacts stay clean
+
+That scaffold is a contract for future fresh holdouts. It is **not** proof that a sealed certification path already exists.
+
 ## What is still stubbed
 
 This repo is intentionally honest about what is not wired yet:
 - the browser **live shell is read-only** — it consumes configured exports / receipts, but it does not chase native run storage or claim upstream Clawith parity
 - only one **local/mockable runner path** is implemented today (`LocalReplayRunner`); teacher scorecards and iteration history are real contracts, but Claude/Codex-backed adapters still need wiring
+- the committed alpha-loop browser fixture is a **sample/read-model export**, not proof that a fully real baseline → candidate → teacher-eval loop has already executed end to end on this branch
 - no auth, no Privy, no fake consumer OAuth path
 - no live artifact viewer backed by run storage fan-out
 
@@ -168,13 +176,23 @@ Using different model families for building and judging reduces correlated self-
 
 ## Docs
 
+- `docs/milestones.md` — spec-first milestone rail and current delivery status
 - `docs/v1-mvp-plan.md` — build slices
-- `docs/clawith-integration.md` — live-mode setup, prerequisites, image contract
-- `docs/runner-bridge.md` — bridge path and explicit auth deferral
+- `docs/clawith-integration.md` — live-mode setup, prerequisites, image contract, and read-only probe lane
+- `docs/runner-bridge.md` — bridge path, teacher evaluation contract, comparison receipts, and explicit auth deferral
+- `docs/public-benchmark-pack-v1.md` — public-safe benchmark pack scope, blocked families, and local private-holdout path
 - `docs/conversation-log.md` — curated build log for the submission
 - `docs/agent-town-connection.md` — Agent Town relationship
 - `docs/synthesis-hackathon-ideation.md` — ideation and ranking
 - `docs/synthesis-hackathon-stack-architecture.md` — architecture notes
+
+## Supporting specs
+
+- `specs/008-public-benchmark-pack-v1.md` — public benchmark pack contract for the current alpha spine
+- `specs/009-clawith-readiness-probe.md` — adapter-first upstream readiness probe
+- `specs/010-autoresearch-alpha-public-loop.md` — the first executable public alpha loop with integrity gate
+- `specs/011-live-ui-read-model.md` — read-only browser adapter for configured live/read-model exports
+- `specs/012-private-holdout-pack.md` — local-only private holdout contract without shipping teacher material
 
 ## License
 
