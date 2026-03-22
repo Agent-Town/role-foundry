@@ -3,6 +3,7 @@
     "id": "public-benchmark-pack-v1",
     "version": "1.0.0",
     "role": "Frontend Apprentice",
+    "role_scope": "frontend-apprentice",
     "family_registry": "benchmarks/public-pack-v1/episode-family-registry.json",
     "description": "The first public-safe benchmark pack for Role Foundry's autoresearch loop. Every episode is student-visible and grounded in public curriculum only.",
     "honesty_note": "This pack is valid for public training, iteration, and regression checks. It is not a sealed certification pack. Teacher-only families are explicitly blocked pending rewrite.",

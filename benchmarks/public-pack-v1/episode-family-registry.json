@@ -12,7 +12,8 @@
   "policy": {
     "public_pack_rule": "Only benchmark_ready + student_visible families may appear in public-benchmark-pack-v1.",
     "blocked_rule": "Any family rooted in repo-visible holdout or teacher-only material is blocked_pending_rewrite until a fresh teacher-only version exists outside the public pack.",
-    "certification_note": "public-benchmark-pack-v1 is suitable for public training and regression checks. It is not a sealed certification exam."
+    "certification_note": "public-benchmark-pack-v1 is suitable for public training and regression checks. It is not a sealed certification exam.",
+    "promotion_policy": "Every candidate family must have explicit promotion_criteria. A family with zero criteria is not promotable. Blocked families document what must change before promotion. Benchmark-ready families document which criteria were satisfied."
   },
   "families": [
     {
@@ -20,6 +21,13 @@
       "status": "benchmark_ready",
       "visibility": "student_visible",
       "role": "Frontend Apprentice",
+      "role_scope": "frontend-apprentice",
+      "promotion_criteria": {
+        "source_is_public_curriculum": true,
+        "no_teacher_only_inputs": true,
+        "rubric_template_exists": true,
+        "not_repo_visible_holdout": true
+      },
       "source_seed_scenarios": ["t1"],
       "title": "Landing story rewrite",
       "benchmark_goal": "Make the apprentice loop obvious in the first screenful instead of sounding like a generic agent platform.",
@@ -49,6 +57,13 @@
       "status": "benchmark_ready",
       "visibility": "student_visible",
       "role": "Frontend Apprentice",
+      "role_scope": "frontend-apprentice",
+      "promotion_criteria": {
+        "source_is_public_curriculum": true,
+        "no_teacher_only_inputs": true,
+        "rubric_template_exists": true,
+        "not_repo_visible_holdout": true
+      },
       "source_seed_scenarios": ["t2"],
       "title": "Curriculum split clarity",
       "benchmark_goal": "Make student-visible curriculum versus teacher-only evaluation surfaces legible without disclosing teacher prompts.",
@@ -76,6 +91,13 @@
       "status": "benchmark_ready",
       "visibility": "student_visible",
       "role": "Frontend Apprentice",
+      "role_scope": "frontend-apprentice",
+      "promotion_criteria": {
+        "source_is_public_curriculum": true,
+        "no_teacher_only_inputs": true,
+        "rubric_template_exists": true,
+        "not_repo_visible_holdout": true
+      },
       "source_seed_scenarios": ["t3"],
       "title": "Visible score deltas",
       "benchmark_goal": "Make improvement legible with concrete iteration deltas instead of vague better/worse claims.",
@@ -103,6 +125,13 @@
       "status": "benchmark_ready",
       "visibility": "student_visible",
       "role": "Frontend Apprentice",
+      "role_scope": "frontend-apprentice",
+      "promotion_criteria": {
+        "source_is_public_curriculum": true,
+        "no_teacher_only_inputs": true,
+        "rubric_template_exists": true,
+        "not_repo_visible_holdout": true
+      },
       "source_seed_scenarios": ["t4"],
       "title": "Proof bundle legibility",
       "benchmark_goal": "Attach receipts that let a judge inspect what changed, what policy applied, and what evidence exists.",
@@ -131,6 +160,13 @@
       "status": "benchmark_ready",
       "visibility": "student_visible",
       "role": "Frontend Apprentice",
+      "role_scope": "frontend-apprentice",
+      "promotion_criteria": {
+        "source_is_public_curriculum": true,
+        "no_teacher_only_inputs": true,
+        "rubric_template_exists": true,
+        "not_repo_visible_holdout": true
+      },
       "source_seed_scenarios": ["t5"],
       "title": "Demo-mode honesty",
       "benchmark_goal": "Keep the slice narrow and honest: no fake live OAuth, no fake control-plane UI state, no decorative partner work.",
@@ -158,6 +194,13 @@
       "status": "benchmark_ready",
       "visibility": "student_visible",
       "role": "Frontend Apprentice",
+      "role_scope": "frontend-apprentice",
+      "promotion_criteria": {
+        "source_is_public_curriculum": true,
+        "no_teacher_only_inputs": true,
+        "rubric_template_exists": true,
+        "not_repo_visible_holdout": true
+      },
       "source_seed_scenarios": ["t6"],
       "title": "Failure-to-curriculum promotion",
       "benchmark_goal": "Promote sanitized public failure themes into curriculum without leaking teacher-only prompt text or grading internals.",
@@ -185,6 +228,15 @@
       "status": "blocked_pending_rewrite",
       "visibility": "teacher_only",
       "role": "Frontend Apprentice",
+      "role_scope": "frontend-apprentice",
+      "promotion_criteria": {
+        "source_is_public_curriculum": false,
+        "no_teacher_only_inputs": false,
+        "rubric_template_exists": false,
+        "not_repo_visible_holdout": false,
+        "fresh_non_disclosed_wording": false,
+        "stored_outside_public_pack": false
+      },
       "source_seed_scenarios": ["h1"],
       "title": "Teacher-only family derived from current holdout h1",
       "blocked_reason": "The current repo already discloses this holdout family's framing, so it cannot honestly be promoted as a public-safe benchmark or sealed evaluation family.",
@@ -199,6 +251,15 @@
       "status": "blocked_pending_rewrite",
       "visibility": "teacher_only",
       "role": "Frontend Apprentice",
+      "role_scope": "frontend-apprentice",
+      "promotion_criteria": {
+        "source_is_public_curriculum": false,
+        "no_teacher_only_inputs": false,
+        "rubric_template_exists": false,
+        "not_repo_visible_holdout": false,
+        "fresh_non_disclosed_wording": false,
+        "stored_outside_public_pack": false
+      },
       "source_seed_scenarios": ["h2"],
       "title": "Teacher-only family derived from current holdout h2",
       "blocked_reason": "The exam-integrity framing is already visible in the public repo, so a public benchmark pack cannot claim this family is sealed. It needs a rewrite and separate teacher-only storage.",
@@ -213,6 +274,15 @@
       "status": "blocked_pending_rewrite",
       "visibility": "teacher_only",
       "role": "Frontend Apprentice",
+      "role_scope": "frontend-apprentice",
+      "promotion_criteria": {
+        "source_is_public_curriculum": false,
+        "no_teacher_only_inputs": false,
+        "rubric_template_exists": false,
+        "not_repo_visible_holdout": false,
+        "fresh_non_disclosed_wording": false,
+        "stored_outside_public_pack": false
+      },
       "source_seed_scenarios": ["h3"],
       "title": "Teacher-only family derived from current holdout h3",
       "blocked_reason": "This adversarial low-churn family is already described in the public repo, so it is teacher-only at best and should not ship in a public benchmark pack until rewritten.",

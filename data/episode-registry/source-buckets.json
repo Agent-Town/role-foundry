@@ -1,0 +1,56 @@
+{
+  "meta": {
+    "id": "role-foundry-source-buckets",
+    "version": "1.0.0",
+    "description": "Enumerates every internal source bucket in the episode registry. G001 requires all current buckets to be represented.",
+    "honesty_note": "This index is descriptive, not aspirational. It records what exists now, including buckets that are blocked or local-only."
+  },
+  "buckets": [
+    {
+      "id": "public-training",
+      "label": "Public training curriculum",
+      "visibility": "student_visible",
+      "status": "active",
+      "scenario_ids": ["t1", "t2", "t3", "t4", "t5", "t6"],
+      "family_id_prefix": "rf.frontend-apprentice.public.",
+      "family_count": 6,
+      "pack_refs": ["benchmarks/public-pack-v1/benchmark-pack.json"],
+      "registry_refs": ["data/episode-registry/public-benchmark-pack-v1.json"],
+      "notes": "All six public families are benchmark_ready and ship in public-benchmark-pack-v1."
+    },
+    {
+      "id": "blocked-teacher-only",
+      "label": "Blocked teacher-only families (repo-visible, pending rewrite)",
+      "visibility": "teacher_only",
+      "status": "blocked_pending_rewrite",
+      "scenario_ids": ["h1", "h2", "h3"],
+      "family_id_prefix": "rf.frontend-apprentice.blocked.",
+      "family_count": 3,
+      "pack_refs": [],
+      "registry_refs": ["benchmarks/public-pack-v1/episode-family-registry.json"],
+      "blocked_reason": "Current repo already discloses framing for h1/h2/h3. Cannot honestly claim these as sealed or promote to teacher-only benchmark status until rewritten with fresh non-repo-visible wording.",
+      "notes": "Listed in the family registry as blocked_pending_rewrite. Not included in any benchmark pack."
+    },
+    {
+      "id": "local-private-holdout",
+      "label": "Local-only private holdout evaluation path",
+      "visibility": "teacher_only",
+      "status": "local_only",
+      "scenario_ids": [],
+      "family_id_prefix": "rf.frontend-apprentice.holdout.",
+      "family_count": 0,
+      "pack_refs": ["benchmarks/private-holdout-pack-template.json"],
+      "registry_refs": [],
+      "notes": "Template exists at benchmarks/private-holdout-pack-template.json. Actual holdout episodes are authored locally in a gitignored manifest. No episodes are committed to the repo. This bucket has zero committed families."
+    }
+  ],
+  "completeness": {
+    "total_buckets": 3,
+    "active_buckets": 1,
+    "blocked_buckets": 1,
+    "local_only_buckets": 1,
+    "all_seed_scenarios_covered": true,
+    "seed_scenario_ids": ["t1", "t2", "t3", "t4", "t5", "t6", "h1", "h2", "h3"],
+    "notes": "Every scenario in seed/role-foundry-apprentice.json maps to exactly one bucket."
+  }
+}
