@@ -133,6 +133,7 @@ Principle: each milestone must have:
 
 **Local private holdout scaffold (contract only):**
 - `specs/012-private-holdout-pack.md` + `benchmarks/private-holdout-pack-template.json` + `tests/test_private_holdout_separation.py` define the teacher-only path without shipping any real teacher-only content.
+- `scripts/holdout_author.py` + `docs/private-holdout-authoring.md` make that path locally authorable and auditable without changing the public alpha-loop claims.
 
 These slices are real. This branch now has an executable **public alpha loop**, but a truly sealed holdout path is still blocked pending fresh teacher-only rewrites stored only in the local gitignored private path.
 

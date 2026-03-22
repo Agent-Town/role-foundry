@@ -78,10 +78,13 @@ The private holdout manifest must conform to this shape:
 
 To create a private holdout pack locally:
 
-1. Copy `benchmarks/private-holdout-pack-template.json` to `benchmarks/private-holdout-pack/holdout-manifest.json`.
-2. Author fresh teacher-only episodes with new wording (not derived from repo-visible holdout framing).
-3. Run `python3 -m unittest tests/test_private_holdout_separation.py` to verify no leakage.
-4. Use the manifest with the existing local evaluation flow for teacher-only scoring.
+1. Run `python3 scripts/holdout_author.py init` to scaffold a manifest from the public template.
+2. Author fresh teacher-only episodes with new wording (not derived from repo-visible h1/h2/h3 framing).
+3. Run `python3 scripts/holdout_author.py audit` to check for leaks and schema conformance.
+4. Run `python3 -m unittest tests/test_private_holdout_separation.py` to verify no leakage.
+5. Use the manifest with the existing local evaluation flow for teacher-only scoring.
+
+See `docs/private-holdout-authoring.md` for the full workflow guide.
 
 ## Acceptance criteria
 

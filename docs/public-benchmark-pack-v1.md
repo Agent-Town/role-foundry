@@ -66,6 +66,8 @@ Fresh teacher-only holdouts now have a **local-only scaffold**:
 
 The template is only a contract shape. Actual teacher-only prompts and rubrics belong only in the gitignored local manifest, and this repo still makes **no sealed certification claim**.
 
+For the full authoring workflow (init → author → audit → status), see `scripts/holdout_author.py` and `docs/private-holdout-authoring.md`.
+
 ## Suggested autoresearch loop
 
 Use the pack like this:
@@ -84,6 +86,7 @@ Run:
 ```bash
 python3 -m unittest tests/test_public_benchmark_pack_v1.py
 python3 -m unittest tests/test_private_holdout_separation.py
+python3 scripts/holdout_author.py audit
 python3 -m unittest tests/test_milestone3_contract.py tests/test_milestone5_teacher_eval_loop.py tests/test_autoresearch_alpha_loop.py
 ```
 
@@ -96,3 +99,5 @@ python3 -m unittest tests/test_milestone3_contract.py tests/test_milestone5_teac
 - `specs/012-private-holdout-pack.md`
 - `tests/test_public_benchmark_pack_v1.py`
 - `tests/test_private_holdout_separation.py`
+- `scripts/holdout_author.py`
+- `docs/private-holdout-authoring.md`
