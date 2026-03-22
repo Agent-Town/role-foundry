@@ -58,7 +58,7 @@ The current version is stronger because it is:
 | **What runs** | Static UI with pre-baked apprentice data | Real Clawith control plane + runner backends |
 | **Requirements** | Docker (web container + local services) | Docker + Clawith image + model credentials |
 | **Good for** | Judges, walkthroughs, design review | Actual training and evaluation |
-| **Current status** | Shipping now | Still stubbed |
+| **Current status** | Shipping now | Opt-in via `docker compose --profile live up` |
 
 ## Local quickstart
 
@@ -68,28 +68,36 @@ docker compose up
 open http://localhost:8080
 ```
 
-This starts the static web demo plus Postgres and Redis. Clawith and bootstrap services remain stubbed in `docker-compose.yml` until a live control-plane image is available.
+This starts the static web demo plus Postgres and Redis.
+
+To start **live mode** (requires an external Clawith image):
+
+```bash
+docker compose --profile live up
+```
+
+See `docs/clawith-integration.md` for prerequisites and the full integration guide.
 
 ## What is still stubbed
 
 This repo is intentionally honest about what is not wired yet:
-- no live Clawith API integration in the web app
-- no real runner dispatch
+- the **web app still serves demo data** — it does not read from a live Clawith API
+- no real runner dispatch (see `docs/runner-bridge.md` for the intended bridge)
 - no auth, no Privy, no fake consumer OAuth path
 - no live artifact viewer backed by run storage
 
-That is deliberate. The demo is first-class and judge-friendly on its own.
+Live mode starts and seeds a real Clawith control plane, but the web UI does not consume it yet. That is deliberate. The demo is first-class and judge-friendly on its own.
 
 ## Where Clawith fits
 
-[Clawith](https://github.com/openclaw/clawith) is the planned live control plane. In the full system it would own:
+[Clawith](https://github.com/openclaw/clawith) is the live control plane. It is profile-gated in `docker-compose.yml` and can be started with `--profile live`. In the full system it owns:
 - agent registry
 - run registry
 - scenario and holdout storage
 - evaluation store and scorecards
 - approvals, scheduling, and audit trails
 
-For the hackathon MVP, this repo does **not** pretend that path already exists. See `docs/runner-bridge.md` for the intended bridge pattern.
+For the hackathon MVP, Clawith integration is wired at the Docker layer but the web UI does not consume it yet. See `docs/runner-bridge.md` for the intended bridge pattern and `docs/clawith-integration.md` for live-mode setup.
 
 ## Execution backends
 
@@ -104,6 +112,7 @@ Using different model families for building and judging reduces correlated self-
 ## Docs
 
 - `docs/v1-mvp-plan.md` — build slices
+- `docs/clawith-integration.md` — live-mode setup, prerequisites, image contract
 - `docs/runner-bridge.md` — bridge path and explicit auth deferral
 - `docs/conversation-log.md` — curated build log for the submission
 - `docs/agent-town-connection.md` — Agent Town relationship
