@@ -1,7 +1,7 @@
 {
   "run_id": "run-live-001",
   "agent_role": "student",
-  "scenario_set_id": "public-curriculum-v1",
+  "scenario_set_id": "frontend-apprentice-alpha-v1",
   "workspace_snapshot": {
     "objective": "Ship one honest first live run with transcript and artifact receipts.",
     "changed_files": [
@@ -18,5 +18,9 @@
   },
   "cost_budget": {
     "usd": 1.5
+  },
+  "meta": {
+    "generated_from": "datasets/frontend-apprentice/alpha-pack.json#requests.first_live_run",
+    "dataset_manifest_id": "frontend-apprentice-alpha-v1"
   }
 }

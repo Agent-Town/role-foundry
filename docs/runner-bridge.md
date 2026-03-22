@@ -72,6 +72,40 @@ Future adapters can slot into the same bridge command:
 - CodexRunner
 - deterministic verifier scripts
 
+## Canonical Frontend Apprentice pack
+
+The Frontend Apprentice alpha path now has one canonical pack:
+
+- `datasets/frontend-apprentice/alpha-pack.json`
+
+That manifest is the source of truth for:
+- the seed payload used by `seed/bootstrap.py`
+- `runner_bridge/examples/first-live-run.json`
+- `runner_bridge/examples/teacher-eval-loop.json`
+
+Those committed JSON files remain in the repo as compatibility exports, but they are derived from the canonical pack and can be checked with:
+
+```bash
+python3 -m runner_bridge.dataset_pack check
+```
+
+## Bundled control-plane alpha demo
+
+The repo now also ships one evidence-producing alpha script:
+
+```bash
+python3 -m runner_bridge.alpha_demo
+```
+
+That script is deliberately honest:
+- by default it starts a repo-local **Clawith-compatible shim**
+- it seeds the canonical role + scenarios over HTTP
+- it creates a **queued** run record first
+- the bridge then patches `running` and final status
+- it reads the final run record back and writes `control-plane-summary.json`
+
+This proves the control-plane/data-loop spine without claiming native upstream Clawith support for the exact same endpoints.
+
 ## Request contract
 
 Each run request must include:
@@ -270,8 +304,15 @@ python3 -m runner_bridge.cli \
   --request runner_bridge/examples/claude-vibe-smoke.json
 ```
 
+Canonical alpha path with inspectable queued → running → completed state:
+
+```bash
+python3 -m runner_bridge.alpha_demo
+```
+
 The second command is not a claim that Clawith is running. It is just the fastest zero-secret way to verify the transcript/artifact contract locally.
 The Claude smoke command is not a claim that the full dogfood loop is done. It only proves that Role Foundry can now drive one real Claude-backed student run through the bridge while keeping the profile repo-local and failure states explicit.
+The alpha-demo command is not a claim that upstream Clawith already exposes this exact API. It proves the repo can now write and read a real run lifecycle through an honestly named Clawith-compatible seam.
 
 ## What is still not done
 

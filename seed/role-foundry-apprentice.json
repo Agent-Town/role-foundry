@@ -1,8 +1,10 @@
 {
   "meta": {
     "seed_version": "1.0.0",
-    "description": "Canonical seed data for the Frontend Apprentice vertical. This is the live-mode equivalent of app/data.js demo data.",
-    "spec": "specs/004-role-scenario-seed.md"
+    "description": "Derived seed export for the Frontend Apprentice canonical alpha pack.",
+    "spec": "specs/004-role-scenario-seed.md",
+    "generated_from": "datasets/frontend-apprentice/alpha-pack.json#seed_payload",
+    "dataset_manifest_id": "frontend-apprentice-alpha-v1"
   },
   "role": {
     "id": "role-frontend-apprentice",
@@ -21,7 +23,10 @@
       "Judges can see score improvement between runs, especially on holdouts",
       "Every strong run emits a proof bundle that makes the work auditable"
     ],
-    "teachers": ["Robin", "Neo"],
+    "teachers": [
+      "Robin",
+      "Neo"
+    ],
     "domain": "product-development"
   },
   "scenarios": [

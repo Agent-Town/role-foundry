@@ -191,3 +191,26 @@ See `docs/synthesis-hackathon-stack-architecture.md` for details.
 - No Codex-backed teacher/evaluator runner is wired yet
 - No per-run isolated Claude home/sandbox is claimed yet
 - No fake Claude success is emitted when the CLI is missing or unauthenticated
+
+---
+
+## 2026-03-22 — Control-plane alpha path landed
+
+**Outcome:** The repo now has one honest canonical dataset pack and one inspectable control-plane-backed alpha run path.
+
+**What shipped:**
+- `datasets/frontend-apprentice/alpha-pack.json` is now the canonical Frontend Apprentice pack
+- `seed/role-foundry-apprentice.json`, `runner_bridge/examples/first-live-run.json`, and `runner_bridge/examples/teacher-eval-loop.json` are now derived compatibility exports from that pack
+- `runner_bridge.dataset_pack` can check/export those derived files
+- `runner_bridge.control_plane_shim` provides an honestly named **Clawith-compatible shim** with `POST /api/runs`, `PATCH /api/runs/{run_id}`, and `GET /api/runs/{run_id}`
+- `runner_bridge.alpha_demo` now seeds the canonical pack, creates a **queued** run, lets the bridge patch `running` and `completed`, then reads the final run record back and writes `control-plane-summary.json`
+- run evidence now includes `dataset-manifest.json` and `control-plane-summary.json`
+
+**Evidence:**
+- `tests/test_clawith_alpha_path.py` verifies pack/export sync plus queued → running → completed state history on the bundled shim path
+- the alpha demo leaves an inspectable control-plane state file under `runtime/control-plane-shim/control-plane-state.json`
+
+**What is NOT claimed:**
+- The bundled shim is not claimed as native upstream Clawith behavior
+- Native Clawith model-pool execution and OAuth remain unfinished/unconfigured
+- The web UI still does not read live run state

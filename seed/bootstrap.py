@@ -2,13 +2,14 @@
 """
 Role Foundry — Seed Bootstrap
 
-Validates and optionally seeds the apprentice role + scenarios into Clawith.
+Validates and optionally seeds the Frontend Apprentice canonical dataset pack into a
+Clawith-compatible control plane.
 
 Usage:
-  # Validate seed data only (no Clawith needed):
+  # Validate canonical pack only (no control plane needed):
     python3 seed/bootstrap.py --validate
 
-  # Seed into a running Clawith instance:
+  # Seed into a running Clawith-compatible endpoint:
     python3 seed/bootstrap.py --seed --clawith-url http://localhost:3000
 
   # Dry-run (show what would be sent):
@@ -23,81 +24,33 @@ import argparse
 import json
 import os
 import sys
-import urllib.request
 import urllib.error
+import urllib.request
 from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from runner_bridge.dataset_pack import (  # noqa: E402
+    DEFAULT_PACK_PATH,
+    check_holdout_exclusion,
+    export_seed_payload,
+    load_pack,
+    manifest,
+    validate_seed_payload,
+)
 
 SEED_FILE = Path(__file__).parent / "role-foundry-apprentice.json"
 
 
-def load_seed():
-    with open(SEED_FILE) as f:
-        return json.load(f)
-
-
-def validate(data):
-    errors = []
-
-    role = data.get("role")
-    if not role:
-        errors.append("missing 'role' key")
-    else:
-        for field in ("id", "name", "description", "goals", "success_criteria"):
-            if not role.get(field):
-                errors.append(f"role missing '{field}'")
-
-    scenarios = data.get("scenarios", [])
-    training = [s for s in scenarios if s.get("type") == "training"]
-    holdouts = [s for s in scenarios if s.get("type") == "holdout"]
-
-    if len(training) < 6:
-        errors.append(f"need >= 6 training scenarios, got {len(training)}")
-    if len(holdouts) < 3:
-        errors.append(f"need >= 3 holdout scenarios, got {len(holdouts)}")
-
-    for s in scenarios:
-        for field in ("id", "title", "description", "type", "difficulty"):
-            if not s.get(field):
-                errors.append(f"scenario {s.get('id', '?')} missing '{field}'")
-        if s.get("type") not in ("training", "holdout"):
-            errors.append(f"scenario {s['id']} has invalid type '{s['type']}'")
-
-    ids = [s["id"] for s in scenarios if "id" in s]
-    if len(ids) != len(set(ids)):
-        errors.append("duplicate scenario IDs found")
-
-    return errors
-
-
-def student_facing_payload(data):
-    """Return the payload a student-facing endpoint would serve (no holdout details)."""
-    return {
-        "role": data["role"],
-        "scenarios": [
-            {
-                "id": s["id"],
-                "title": s["title"],
-                "description": s["description"],
-                "type": s["type"],
-                "difficulty": s["difficulty"],
-            }
-            for s in data["scenarios"]
-            if s["type"] == "training"
-        ],
-    }
-
-
-def check_holdout_exclusion(data):
-    """Verify holdout prompts are excluded from student-facing payload."""
-    payload = student_facing_payload(data)
-    payload_str = json.dumps(payload)
-    holdout_titles = [s["title"] for s in data["scenarios"] if s["type"] == "holdout"]
-    leaked = [t for t in holdout_titles if t in payload_str]
-    return leaked
+def load_seed(pack_path: str | Path = DEFAULT_PACK_PATH):
+    pack = load_pack(pack_path)
+    return export_seed_payload(pack), manifest(pack)
 
 
 def seed_clawith(data, base_url, secret, dry_run=False):
-    """Seed role + scenarios into Clawith API."""
+    """Seed role + scenarios into a Clawith-compatible API."""
     headers = {
         "Content-Type": "application/json",
     }
@@ -105,14 +58,14 @@ def seed_clawith(data, base_url, secret, dry_run=False):
         headers["Authorization"] = f"Bearer {secret}"
 
     role_payload = json.dumps(data["role"]).encode()
-    scenario_payloads = [json.dumps(s).encode() for s in data["scenarios"]]
+    scenario_payloads = [json.dumps(scenario).encode() for scenario in data["scenarios"]]
 
     if dry_run:
         print(f"[dry-run] Would POST role to {base_url}/api/roles")
         print(f"[dry-run]   {data['role']['name']}")
-        for s in data["scenarios"]:
+        for scenario in data["scenarios"]:
             print(f"[dry-run] Would POST scenario to {base_url}/api/scenarios")
-            print(f"[dry-run]   {s['id']}: {s['title']} ({s['type']})")
+            print(f"[dry-run]   {scenario['id']}: {scenario['title']} ({scenario['type']})")
         return True
 
     try:
@@ -124,12 +77,12 @@ def seed_clawith(data, base_url, secret, dry_run=False):
         )
         urllib.request.urlopen(req, timeout=10)
         print(f"  Seeded role: {data['role']['name']}")
-    except urllib.error.URLError as e:
-        print(f"  FAILED to seed role: {e}", file=sys.stderr)
+    except urllib.error.URLError as exc:
+        print(f"  FAILED to seed role: {exc}", file=sys.stderr)
         return False
 
     ok = True
-    for s, payload in zip(data["scenarios"], scenario_payloads):
+    for scenario, payload in zip(data["scenarios"], scenario_payloads):
         try:
             req = urllib.request.Request(
                 f"{base_url}/api/scenarios",
@@ -138,9 +91,9 @@ def seed_clawith(data, base_url, secret, dry_run=False):
                 method="POST",
             )
             urllib.request.urlopen(req, timeout=10)
-            print(f"  Seeded scenario: {s['id']} ({s['type']})")
-        except urllib.error.URLError as e:
-            print(f"  FAILED to seed {s['id']}: {e}", file=sys.stderr)
+            print(f"  Seeded scenario: {scenario['id']} ({scenario['type']})")
+        except urllib.error.URLError as exc:
+            print(f"  FAILED to seed {scenario['id']}: {exc}", file=sys.stderr)
             ok = False
 
     return ok
@@ -155,23 +108,28 @@ def main():
         "--clawith-url",
         default=os.environ.get("CLAWITH_URL", "http://localhost:3000"),
     )
+    parser.add_argument(
+        "--pack",
+        default=str(DEFAULT_PACK_PATH),
+        help="Path to the canonical Frontend Apprentice dataset pack",
+    )
     args = parser.parse_args()
 
     if not args.validate and not args.seed:
         args.validate = True
 
-    data = load_seed()
+    data, pack_manifest = load_seed(args.pack)
 
-    # Always validate first
-    print(f"Validating {SEED_FILE.name}...")
-    errors = validate(data)
+    print(f"Validating {Path(args.pack).name}...")
+    errors = validate_seed_payload(data)
     if errors:
-        for e in errors:
-            print(f"  ERROR: {e}", file=sys.stderr)
+        for error in errors:
+            print(f"  ERROR: {error}", file=sys.stderr)
         sys.exit(1)
 
-    training = [s for s in data["scenarios"] if s["type"] == "training"]
-    holdouts = [s for s in data["scenarios"] if s["type"] == "holdout"]
+    training = [scenario for scenario in data["scenarios"] if scenario["type"] == "training"]
+    holdouts = [scenario for scenario in data["scenarios"] if scenario["type"] == "holdout"]
+    print(f"  Dataset manifest: {pack_manifest.get('id')}")
     print(f"  Role: {data['role']['name']}")
     print(f"  Training scenarios: {len(training)}")
     print(f"  Holdout scenarios: {len(holdouts)}")

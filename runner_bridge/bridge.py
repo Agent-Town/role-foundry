@@ -23,23 +23,50 @@ class ClawithRunClient:
     def patch_run(self, run_id: str, payload: dict[str, Any]) -> None:
         if not self.base_url:
             return
+        self.request_json("PATCH", f"/api/runs/{run_id}", payload, error_prefix="failed to patch run state")
+
+    def create_run(self, payload: dict[str, Any]) -> dict[str, Any]:
+        return self.request_json("POST", "/api/runs", payload, error_prefix="failed to create run")
+
+    def get_run(self, run_id: str) -> dict[str, Any]:
+        return self.request_json("GET", f"/api/runs/{run_id}", error_prefix="failed to fetch run state")
+
+    def post_json(self, path: str, payload: dict[str, Any]) -> dict[str, Any]:
+        return self.request_json("POST", path, payload, error_prefix=f"failed to POST {path}")
+
+    def request_json(
+        self,
+        method: str,
+        path: str,
+        payload: dict[str, Any] | None = None,
+        *,
+        error_prefix: str,
+    ) -> dict[str, Any]:
+        if not self.base_url:
+            raise ContractError("control plane base URL is not configured")
 
         headers = {"Content-Type": "application/json"}
         if self.secret:
             headers["Authorization"] = f"Bearer {self.secret}"
 
         request = urllib.request.Request(
-            f"{self.base_url}/api/runs/{run_id}",
-            data=json.dumps(payload).encode(),
+            f"{self.base_url}{path}",
+            data=json.dumps(payload).encode() if payload is not None else None,
             headers=headers,
-            method="PATCH",
+            method=method,
         )
         try:
             with urllib.request.urlopen(request, timeout=10) as response:
                 if response.status >= 400:
-                    raise ContractError(f"control plane rejected run patch: HTTP {response.status}")
+                    raise ContractError(f"{error_prefix}: HTTP {response.status}")
+                body = response.read().decode() or "{}"
         except urllib.error.URLError as exc:
-            raise ContractError(f"failed to patch run state: {exc}") from exc
+            raise ContractError(f"{error_prefix}: {exc}") from exc
+
+        try:
+            return json.loads(body)
+        except json.JSONDecodeError as exc:
+            raise ContractError(f"{error_prefix}: invalid JSON response: {exc}") from exc
 
 
 class RunBridge:
