@@ -12,7 +12,7 @@ Principle: each milestone must have:
 
 ## Milestone 1 — Spec Backbone + Demo Contract
 
-**Status:** in progress
+**Status:** done
 
 **Goal:** lock the product/story contract so later implementation does not drift.
 
@@ -35,7 +35,7 @@ Principle: each milestone must have:
 
 ## Milestone 2 — Frontend Apprentice Vertical
 
-**Status:** active
+**Status:** done
 
 **Goal:** make the dogfood vertical legible: Role Foundry is training its own first builder apprentice.
 
@@ -57,7 +57,7 @@ Principle: each milestone must have:
 
 ## Milestone 3 — Clawith Control Plane in Compose
 
-**Status:** queued
+**Status:** active
 
 **Goal:** replace the current stub with a real control plane service that the repo can talk to honestly.
 

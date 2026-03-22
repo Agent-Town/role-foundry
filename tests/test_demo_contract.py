@@ -42,6 +42,20 @@ class DemoContractTests(unittest.TestCase):
         self.assertIn('iterations:', text)
         self.assertIn('failure_themes', text)
 
+    def test_apprentice_vertical_surfaces_exist(self):
+        index_text = (APP / 'index.html').read_text()
+        scenarios_text = (APP / 'scenarios.html').read_text()
+        run_text = (APP / 'run.html').read_text()
+        scorecard_text = (APP / 'scorecard.html').read_text()
+
+        self.assertIn('Frontend Apprentice', index_text)
+        self.assertIn('Public Curriculum &amp; Sealed Holdouts', scenarios_text)
+        self.assertIn('Proof Bundle', run_text)
+        self.assertIn('Policy Snapshot', run_text)
+        self.assertIn('Transcript Excerpt', run_text)
+        self.assertIn('Failure Analysis → Next Curriculum', scorecard_text)
+        self.assertIn('Compare to Run 1', scorecard_text)
+
     def test_readme_explains_demo_vs_live_mode(self):
         text = README.read_text()
         self.assertIn('Demo mode vs live mode', text)

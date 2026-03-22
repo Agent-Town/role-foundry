@@ -72,3 +72,18 @@ See `docs/synthesis-hackathon-stack-architecture.md` for details.
 - Added `tests/test_demo_contract.py` so the current demo shell has an executable baseline contract
 
 **Why:** The hackathon is moving too fast for vague TODOs. Each slice now needs a written spec, explicit acceptance criteria, and a runnable check before later slices build on top of it.
+
+**GitHub tracking:** Repo milestones `M1`–`M6` were created along with issues #1–#7 so the hackathon roadmap is public and inspectable.
+
+---
+
+## 2026-03-22 — Milestones 1 and 2 landed
+
+**Outcome:**
+- Milestone 1 (spec backbone + demo contract) is now in the repo with executable tests.
+- Milestone 2 (Frontend Apprentice vertical) is now committed as the first coherent judge-facing product slice.
+
+**Evidence:**
+- `tests/test_demo_contract.py` passes
+- app pages now show the apprentice story, sealed holdouts, proof bundle, score deltas, and failure-to-curriculum loop
+- GitHub history now includes milestone/spec commits rather than only ideation docs
