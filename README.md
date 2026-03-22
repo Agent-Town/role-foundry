@@ -78,6 +78,15 @@ docker compose --profile live up
 
 See `docs/clawith-integration.md` for prerequisites and the full integration guide.
 
+## Judge inspection path
+
+If you want the fastest honest walkthrough:
+
+1. Run `python3 -m pytest tests/ -v` to verify the repo contracts.
+2. Run `docker compose up` and inspect `http://localhost:8080`.
+3. Read `docs/submission-proof-checklist.md` and `docs/conversation-log.md` for the curated build story and non-claims.
+4. Optionally run `python3 -m runner_bridge.cli --request runner_bridge/examples/first-live-run.json` to exercise the zero-secret receipt path locally.
+
 ## First live run
 
 The first honest runner-bridge slice is now in the repo. It is intentionally small:
@@ -136,6 +145,7 @@ Using different model families for building and judging reduces correlated self-
 - `docs/clawith-integration.md` — live-mode setup, prerequisites, image contract
 - `docs/runner-bridge.md` — bridge path and explicit auth deferral
 - `docs/conversation-log.md` — curated build log for the submission
+- `docs/submission-proof-checklist.md` — judge walkthrough and claim checklist
 - `docs/agent-town-connection.md` — Agent Town relationship
 - `docs/synthesis-hackathon-ideation.md` — ideation and ranking
 - `docs/synthesis-hackathon-stack-architecture.md` — architecture notes
