@@ -214,3 +214,23 @@ See `docs/synthesis-hackathon-stack-architecture.md` for details.
 - The bundled shim is not claimed as native upstream Clawith behavior
 - Native Clawith model-pool execution and OAuth remain unfinished/unconfigured
 - The web UI still does not read live run state
+
+---
+
+## 2026-03-22 — Eval scorecard contract added to the deterministic lane
+
+**Outcome:** The local teacher-eval path now emits a real machine-readable `role-foundry-eval/v1` contract on top of the existing scorecard and lineage slice.
+
+**What shipped:**
+- `runner_bridge/eval_scorecard.py` defines hard integrity gates, weighted categories, and explicit `better / equal / worse` comparison semantics
+- `LocalReplayRunner` now emits that contract into `result.json`, `artifact-bundle.json`, and the final control-plane patch payload
+- the canonical alpha baseline/candidate flow can now carry the baseline eval scorecard forward into the candidate's `previous_iteration` block instead of only aggregate scores
+- docs/spec/tests were updated to keep the claim narrow: real today on deterministic local replay, later live producer/consumer wiring still not claimed
+
+**Evidence:**
+- `tests/test_eval_scorecard_contract.py` covers integrity-gate overrides and weighted comparisons
+- `tests/test_clawith_alpha_path.py` now verifies the baseline scorecard is reused by the candidate iteration in the alpha flow
+
+**What is NOT claimed:**
+- no live native Clawith/UI consumer for the contract yet
+- no fake autonomous autoresearch loop beyond the current deterministic + shimmed slice

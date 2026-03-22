@@ -174,7 +174,8 @@ def _execute_baseline_candidate_flow(
         control_plane_url=control_plane_url,
     )
 
-    baseline_aggregate = baseline_summary["result"].get("scorecard", {}).get("aggregate_score", {})
+    baseline_scorecard = baseline_summary["result"].get("scorecard", {})
+    baseline_aggregate = baseline_scorecard.get("aggregate_score", {})
     candidate_request = export_request(pack, "teacher_eval_loop")
     candidate_lineage = {
         "sequence_id": sequence_id,
@@ -191,6 +192,9 @@ def _execute_baseline_candidate_flow(
         "index": baseline_lineage["iteration_index"],
         "aggregate_score": baseline_aggregate,
     }
+    baseline_eval_scorecard = _extract_eval_scorecard(baseline_scorecard)
+    if baseline_eval_scorecard:
+        evaluation["previous_iteration"]["eval_scorecard"] = baseline_eval_scorecard
     candidate_summary = _execute_request(
         bridge=bridge,
         client=client,
@@ -349,6 +353,20 @@ def _artifact_groups(run_dir: Path, result: dict[str, Any]) -> dict[str, Any]:
 
 def _path_if_exists(path: Path) -> str | None:
     return str(path) if path.exists() else None
+
+
+def _extract_eval_scorecard(scorecard: dict[str, Any]) -> dict[str, Any] | None:
+    if not isinstance(scorecard, dict) or not scorecard.get("contract_version"):
+        return None
+
+    extracted = {
+        "contract_version": scorecard["contract_version"],
+        "integrity_passed": scorecard.get("integrity_passed"),
+        "integrity_gates": scorecard.get("integrity_gates", []),
+        "weighted_categories": scorecard.get("weighted_categories", {}),
+        "total_score": scorecard.get("total_score"),
+    }
+    return extracted
 
 
 def _apply_iteration_metadata(payload: dict[str, Any], lineage: dict[str, Any]) -> None:

@@ -121,12 +121,25 @@ class AlphaDemoTests(unittest.TestCase):
             )
 
             baseline_result = json.loads((baseline_dir / "result.json").read_text())
+            candidate_result = json.loads((candidate_dir / "result.json").read_text())
             candidate_private_request = json.loads((candidate_dir / "request.private.json").read_text())
+            self.assertEqual(baseline_result["scorecard"]["contract_version"], "role-foundry-eval/v1")
+            self.assertAlmostEqual(baseline_result["scorecard"]["total_score"], 0.5087, places=4)
             self.assertEqual(
                 candidate_private_request["teacher_evaluation"]["previous_iteration"]["aggregate_score"],
                 baseline_result["scorecard"]["aggregate_score"],
             )
+            self.assertEqual(
+                candidate_private_request["teacher_evaluation"]["previous_iteration"]["eval_scorecard"]["contract_version"],
+                baseline_result["scorecard"]["contract_version"],
+            )
+            self.assertAlmostEqual(
+                candidate_private_request["teacher_evaluation"]["previous_iteration"]["eval_scorecard"]["total_score"],
+                baseline_result["scorecard"]["total_score"],
+                places=4,
+            )
             self.assertEqual(candidate_private_request["teacher_evaluation"]["previous_iteration"]["run_id"], "run-eval-001")
+            self.assertEqual(candidate_result["scorecard"]["comparison"]["verdict"], "better")
 
             baseline_redacted_request = (baseline_dir / "request.json").read_text()
             candidate_redacted_request = (candidate_dir / "request.json").read_text()

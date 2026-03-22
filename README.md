@@ -101,7 +101,7 @@ The first honest runner-bridge slice is now in the repo. It is intentionally sma
 - `ClaudeVibeRunner` is now available as an opt-in backend (`--backend claude-vibe`) for **student/builder** runs through the local `claude` CLI
 - the Claude path uses a **project-local** profile under `.claude/` (`.claude/agents/role-foundry-student.md` + `.claude/templates/role-foundry-student-run.md`) and `--setting-sources project`, so it does not depend on or modify global `~/.claude/settings.json`
 - the canonical pack now includes both `runner_bridge/examples/teacher-eval-baseline.json` and `runner_bridge/examples/teacher-eval-loop.json`, so the repo has an honest baseline plus candidate iteration pair
-- optional `teacher_evaluation` input still produces a teacher scorecard, public curriculum themes, and iteration history deltas on the deterministic local path
+- optional `teacher_evaluation` input still produces a teacher scorecard, public curriculum themes, iteration history deltas, and now a machine-readable `role-foundry-eval/v1` scorecard: hard integrity gates first, then weighted category scoring, then explicit `better / equal / worse` comparison output on the deterministic local path
 - the bridge stores a redacted `request.json` plus a raw `request.private.json`, and evaluation runs now also emit `student-view.json` plus `teacher-scorecard.json`, so student-safe versus teacher/judge context is explicit in the artifacts
 - if you pass `--clawith-url`, the bridge patches run state into a Clawith-compatible control plane
 - `python3 -m runner_bridge.alpha_demo` now proves a baseline → candidate sequence against the bundled Clawith-compatible shim, derives the candidate iteration link from the actual baseline receipts, and reads both final run records back for inspection
@@ -146,6 +146,7 @@ See `docs/runner-bridge.md` for the bridge contract, project-local Claude adapte
 This repo is intentionally honest about what is not wired yet:
 - the **web app still serves demo data** — it does not read from a live Clawith API
 - `ClaudeVibeRunner` is a **narrow shell adapter**, not a full dogfood loop yet: it can launch a real Claude student run through the bridge and leave receipts, but teacher/evaluator model wiring still lives on the deterministic local path and Codex-backed judging is still future work
+- `role-foundry-eval/v1` is real on the deterministic local path today, but later live wiring still needs a real producer/consumer chain around that contract
 - no auth, no Privy, no fake consumer OAuth path
 - no live artifact viewer backed by run storage
 
@@ -177,6 +178,7 @@ Using different model families for building and judging reduces correlated self-
 - `docs/v1-mvp-plan.md` — build slices
 - `docs/clawith-integration.md` — live-mode setup, prerequisites, image contract
 - `docs/runner-bridge.md` — bridge path and explicit auth deferral
+- `specs/008-eval-scorecard-contract.md` — exact `role-foundry-eval/v1` scorecard + comparison semantics
 - `docs/clawith-autoresearch-alpha.md` — canonical dataset pack + Clawith-compatible alpha seam
 - `docs/conversation-log.md` — curated build log for the submission
 - `docs/submission-proof-checklist.md` — judge walkthrough and claim checklist

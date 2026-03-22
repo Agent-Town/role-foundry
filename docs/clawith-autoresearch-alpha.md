@@ -102,10 +102,12 @@ What stays true:
 - explicit lineage in run records (`root_run_id`, `parent_run_id`, `iteration_index`)
 - judge-visible receipts for dataset manifest, run state, transcript, student view, teacher scorecard, and artifact bundle
 - optional Claude student execution through the same bridge seam
+- a deterministic `role-foundry-eval/v1` scorecard on `LocalReplayRunner`, including hard integrity gates, weighted category totals, and explicit `better / equal / worse` comparison reasons
 
 ### Still local/mockable
 - the bundled control-plane server is a **Clawith-compatible shim**, not a claim about native upstream Clawith endpoints
 - the default backend is still deterministic local replay
+- later live wiring still needs a real teacher/evaluator backend to generate the eval-contract inputs automatically
 - the web UI still serves static demo data
 
 ### Not claimed

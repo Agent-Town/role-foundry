@@ -170,6 +170,13 @@ Milestone 5 adds one optional extension:
 
 The backend may receive the raw teacher payload, but the artifact directory keeps a redacted student-safe request view. The alpha-demo iteration flow now also derives the candidate `previous_iteration` block from the actual baseline receipts instead of hard-coding a fake historical success.
 
+For the current `role-foundry-eval/v1` scorecard, the teacher payload may also include:
+- `teacher_evaluation.eval_contract.integrity_checks`
+- `teacher_evaluation.eval_contract.category_scores`
+- `teacher_evaluation.previous_iteration.eval_scorecard`
+
+That is the machine-readable comparison seam the later autoresearch loop can consume.
+
 For `ClaudeVibeRunner`, the prompt sent to Claude is built from a **student-safe derived view**: visible training scenarios, public curriculum themes, and the sealed holdout count. The holdout prompt text itself never enters the Claude prompt.
 
 ## Result contract
@@ -204,6 +211,60 @@ When `teacher_evaluation` is present, the scorecard now carries:
 - iteration history with score deltas
 
 That is the Milestone 5 storage contract.
+
+### `role-foundry-eval/v1` contract
+
+The current deterministic teacher lane now also emits a narrow machine-readable promotion contract for the dogfood autoresearch loop.
+
+Hard integrity gates are checked first, in this order:
+- `no_holdout_leakage`
+- `no_fake_claims`
+- `demo_tests_still_work`
+- `required_artifacts_present`
+
+If candidate and baseline differ on any gate, the **first differing gate decides** the verdict. Weighted scoring only matters when both runs pass every integrity gate.
+
+Weighted categories and weights:
+- `spec_correctness` → `0.25`
+- `sealed_holdout_performance` → `0.25`
+- `public_curriculum_performance` → `0.20`
+- `proof_artifact_completeness` → `0.15`
+- `judge_clarity` → `0.10`
+- `efficiency` → `0.05`
+
+`sealed_holdout_performance` and `public_curriculum_performance` are derived from teacher scenario scores. The other categories are explicit teacher/verifier inputs inside `teacher_evaluation.eval_contract.category_scores`.
+
+When both runs pass integrity, the comparison semantics are explicit **better / equal / worse** semantics:
+- `total_score_delta >= +0.03` → `better`
+- `total_score_delta <= -0.03` → `worse`
+- otherwise → `equal`
+
+Current score output shape:
+
+```json
+{
+  "contract_version": "role-foundry-eval/v1",
+  "integrity_passed": true,
+  "integrity_gates": [],
+  "weighted_categories": {
+    "spec_correctness": {
+      "weight": 0.25,
+      "score": 0.92,
+      "weighted_score": 0.23
+    }
+  },
+  "total_score": 0.8762,
+  "comparison": {
+    "verdict": "better",
+    "deciding_axis": "weighted_total",
+    "reasons": []
+  }
+}
+```
+
+That contract is **real now** on `LocalReplayRunner`. It is stored in `result.json`, mirrored into the teacher output inside `artifact-bundle.json`, and included in the final control-plane patch payload.
+
+What is **not** claimed yet: later live wiring still needs a real teacher/evaluator backend to generate these inputs automatically, and the web UI still does not consume this contract live.
 
 ## Control-plane patch contract
 

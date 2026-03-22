@@ -47,6 +47,126 @@
           "total": 2,
           "pass_rate": 0.0
         }
+      },
+      "eval_scorecard": {
+        "contract_version": "role-foundry-eval/v1",
+        "integrity_passed": true,
+        "integrity_gates": [
+          {
+            "id": "no_holdout_leakage",
+            "label": "No holdout leakage",
+            "description": "Sealed holdout prompts stay out of student-visible prompts and receipts.",
+            "passed": true,
+            "reason": "Baseline kept sealed prompts out of student-facing receipts, even though the separation was less explicit than the improved run.",
+            "evidence": [
+              "request.json",
+              "request.private.json",
+              "artifact-bundle.json",
+              "transcript.ndjson"
+            ]
+          },
+          {
+            "id": "no_fake_claims",
+            "label": "No fake claims",
+            "description": "The run does not claim capabilities or live wiring that are not real.",
+            "passed": true,
+            "reason": "Baseline stayed honest about demo-only constraints and did not claim native live OAuth or upstream Clawith behavior.",
+            "evidence": [
+              "README.md",
+              "docs/runner-bridge.md",
+              "docs/clawith-autoresearch-alpha.md"
+            ]
+          },
+          {
+            "id": "demo_tests_still_work",
+            "label": "Demo/tests still work",
+            "description": "The demo contract and relevant tests still pass for the judged slice.",
+            "passed": true,
+            "reason": "The judged slice keeps the demo contract and bridge tests green for the baseline lane too.",
+            "evidence": [
+              "tests/test_demo_contract.py",
+              "tests/test_milestone5_teacher_eval_loop.py",
+              "tests/test_clawith_alpha_path.py"
+            ]
+          },
+          {
+            "id": "required_artifacts_present",
+            "label": "Receipts / artifacts required",
+            "description": "The run leaves behind the required transcript, artifact bundle, and proof receipts.",
+            "passed": true,
+            "reason": "Baseline still leaves behind the required transcript, result, redacted request, private request, and artifact bundle receipts.",
+            "evidence": [
+              "request.json",
+              "request.private.json",
+              "artifact-bundle.json",
+              "result.json",
+              "transcript.ndjson"
+            ]
+          }
+        ],
+        "weighted_categories": {
+          "spec_correctness": {
+            "id": "spec_correctness",
+            "label": "Spec correctness",
+            "description": "How closely the implementation matches the intended product and contract slice.",
+            "weight": 0.25,
+            "score": 0.58,
+            "weighted_score": 0.145,
+            "reason": "The baseline frames the apprentice loop honestly, but the contract is still thinner and less complete than the improved run.",
+            "source": "teacher_evaluation.eval_contract.category_scores.spec_correctness"
+          },
+          "sealed_holdout_performance": {
+            "id": "sealed_holdout_performance",
+            "label": "Sealed holdout performance",
+            "description": "How well the candidate performs on sealed holdouts.",
+            "weight": 0.25,
+            "score": 0.35,
+            "weighted_score": 0.0875,
+            "reason": "Derived from the sealed holdout scenario results in this run.",
+            "source": "derived_from_holdout_scenarios"
+          },
+          "public_curriculum_performance": {
+            "id": "public_curriculum_performance",
+            "label": "Public curriculum performance",
+            "description": "How well the candidate performs on visible training scenarios.",
+            "weight": 0.2,
+            "score": 0.5333,
+            "weighted_score": 0.1067,
+            "reason": "Derived from the public curriculum scenario results in this run.",
+            "source": "derived_from_training_scenarios"
+          },
+          "proof_artifact_completeness": {
+            "id": "proof_artifact_completeness",
+            "label": "Proof / artifact completeness",
+            "description": "How complete and inspectable the receipts are.",
+            "weight": 0.15,
+            "score": 0.55,
+            "weighted_score": 0.0825,
+            "reason": "There are receipts, but the proof bundle is still sparse and less obviously tied to the judged run.",
+            "source": "teacher_evaluation.eval_contract.category_scores.proof_artifact_completeness"
+          },
+          "judge_clarity": {
+            "id": "judge_clarity",
+            "label": "Judge clarity",
+            "description": "How legible the result is for a judge or later control-plane consumer.",
+            "weight": 0.1,
+            "score": 0.52,
+            "weighted_score": 0.052,
+            "reason": "The baseline is understandable, but judges still have to do extra work to see the improvement story.",
+            "source": "teacher_evaluation.eval_contract.category_scores.judge_clarity"
+          },
+          "efficiency": {
+            "id": "efficiency",
+            "label": "Efficiency",
+            "description": "How much useful progress landed per unit of complexity / cost / churn.",
+            "weight": 0.05,
+            "score": 0.7,
+            "weighted_score": 0.035,
+            "reason": "The baseline lands a narrow honest slice with limited churn, even if the result is still weak.",
+            "source": "teacher_evaluation.eval_contract.category_scores.efficiency"
+          }
+        },
+        "total_score": 0.5087
       }
     },
     "scenarios": [
@@ -106,6 +226,73 @@
     "iteration": {
       "index": 2,
       "label": "candidate"
+    },
+    "eval_contract": {
+      "integrity_checks": {
+        "no_holdout_leakage": {
+          "passed": true,
+          "reason": "Sealed holdout prompts stay in request.private.json only; student-facing receipts expose counts and public themes, not hidden prompt text.",
+          "evidence": [
+            "request.json",
+            "request.private.json",
+            "artifact-bundle.json",
+            "transcript.ndjson"
+          ]
+        },
+        "no_fake_claims": {
+          "passed": true,
+          "reason": "The run stays explicit about demo-only and shimmed paths instead of inventing native live wiring or OAuth support.",
+          "evidence": [
+            "README.md",
+            "docs/runner-bridge.md",
+            "docs/clawith-autoresearch-alpha.md"
+          ]
+        },
+        "demo_tests_still_work": {
+          "passed": true,
+          "reason": "The judged slice keeps the demo contract, runner bridge contract, and teacher-eval tests green.",
+          "evidence": [
+            "tests/test_demo_contract.py",
+            "tests/test_milestone5_teacher_eval_loop.py",
+            "tests/test_clawith_alpha_path.py"
+          ]
+        },
+        "required_artifacts_present": {
+          "passed": true,
+          "reason": "The run leaves behind transcript, result, redacted request, private request, and artifact bundle receipts.",
+          "evidence": [
+            "request.json",
+            "request.private.json",
+            "artifact-bundle.json",
+            "result.json",
+            "transcript.ndjson"
+          ]
+        }
+      },
+      "category_scores": {
+        "spec_correctness": {
+          "score": 0.92,
+          "reason": "The slice matches the intended scorecard contract, comparison semantics, and explicit non-claims."
+        },
+        "sealed_holdout_performance": {
+          "reason": "Derived from the sealed holdout scenario results in this run."
+        },
+        "public_curriculum_performance": {
+          "reason": "Derived from the public curriculum scenario results in this run."
+        },
+        "proof_artifact_completeness": {
+          "score": 0.96,
+          "reason": "Receipts cover the request split, transcript, artifact bundle, result, and control-plane patch path."
+        },
+        "judge_clarity": {
+          "score": 0.91,
+          "reason": "Teachers, judges, and later control-plane consumers can see gates, weights, totals, deltas, and non-claims directly in the score output."
+        },
+        "efficiency": {
+          "score": 0.74,
+          "reason": "The change is tight and high-signal, though still on deterministic local replay rather than a full live evaluator lane."
+        }
+      }
     }
   },
   "meta": {

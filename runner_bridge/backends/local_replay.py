@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from runner_bridge.eval_loop import build_teacher_evaluation, has_teacher_evaluation
+from runner_bridge.eval_scorecard import build_eval_scorecard
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -88,6 +89,14 @@ def main(argv: list[str] | None = None) -> int:
         if evaluation:
             aggregate = evaluation["teacher_output"]["aggregate_score"]
             delta = evaluation["iteration_history"][-1].get("delta", {}) if evaluation["iteration_history"] else {}
+            eval_scorecard = build_eval_scorecard(request, evaluation)
+            evaluation["teacher_output"]["contract_version"] = eval_scorecard["contract_version"]
+            evaluation["teacher_output"]["integrity_passed"] = eval_scorecard["integrity_passed"]
+            evaluation["teacher_output"]["integrity_gates"] = eval_scorecard["integrity_gates"]
+            evaluation["teacher_output"]["weighted_categories"] = eval_scorecard["weighted_categories"]
+            evaluation["teacher_output"]["total_score"] = eval_scorecard["total_score"]
+            if "comparison" in eval_scorecard:
+                evaluation["teacher_output"]["comparison"] = eval_scorecard["comparison"]
             events.extend(
                 [
                     {
@@ -102,12 +111,20 @@ def main(argv: list[str] | None = None) -> int:
                     },
                     {
                         "ts": _utc_now(),
+                        "event": "eval.contract.completed",
+                        "message": (
+                            f"Eval contract total: {eval_scorecard['total_score']:.4f}; "
+                            f"comparison verdict: {eval_scorecard.get('comparison', {}).get('verdict', 'n/a')}."
+                        ),
+                    },
+                    {
+                        "ts": _utc_now(),
                         "event": "runner.completed",
-                        "message": "LocalReplayRunner produced a teacher scorecard, public curriculum themes, and iteration receipts.",
+                        "message": "LocalReplayRunner produced a teacher scorecard, integrity gates, weighted scoring, and iteration receipts.",
                     },
                 ]
             )
-            machine_score = aggregate["average_score"]
+            machine_score = eval_scorecard["total_score"]
             scorecard = {
                 "runner": "LocalReplayRunner",
                 "teacher": evaluation["teacher_output"]["actor"],
@@ -117,7 +134,15 @@ def main(argv: list[str] | None = None) -> int:
                 "public_curriculum_themes": evaluation["public_curriculum_themes"],
                 "iteration_history": evaluation["iteration_history"],
                 "verdict": evaluation["teacher_output"]["verdict"],
+                "contract_version": eval_scorecard["contract_version"],
+                "integrity_passed": eval_scorecard["integrity_passed"],
+                "integrity_gates": eval_scorecard["integrity_gates"],
+                "weighted_categories": eval_scorecard["weighted_categories"],
+                "total_score": eval_scorecard["total_score"],
+                "thresholds": eval_scorecard["thresholds"],
             }
+            if "comparison" in eval_scorecard:
+                scorecard["comparison"] = eval_scorecard["comparison"]
         else:
             events.append(
                 {

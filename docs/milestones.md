@@ -123,7 +123,7 @@ Principle: each milestone must have:
 - failed holdouts become public curriculum themes, not leaked prompts
 - at least two iterations can be shown honestly
 
-**Delivered slice:** optional `teacher_evaluation` payload on the local/mockable bridge, redacted `request.json` plus raw `request.private.json`, explicit `student-view.json` and `teacher-scorecard.json` receipts, teacher scorecards with per-scenario notes and aggregate score, public curriculum themes derived from failed holdouts, stored iteration history with score deltas, and now a control-plane-backed baseline → candidate alpha path that records lineage honestly.
+**Delivered slice:** optional `teacher_evaluation` payload on the local/mockable bridge, redacted `request.json` plus raw `request.private.json`, explicit `student-view.json` and `teacher-scorecard.json` receipts, teacher scorecards with per-scenario notes and aggregate score, public curriculum themes derived from failed holdouts, stored iteration history with score deltas, a machine-readable `role-foundry-eval/v1` scorecard contract with hard integrity gates plus weighted comparison semantics, and now a control-plane-backed baseline → candidate alpha path that records lineage honestly.
 
 **Builds on:** Milestone 4
 

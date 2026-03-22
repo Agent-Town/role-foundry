@@ -159,6 +159,31 @@ class TeacherEvalLoopContractTests(unittest.TestCase):
             self.assertEqual(history[1]["delta"]["pass_count"], 2)
             self.assertAlmostEqual(history[1]["delta"]["holdout_pass_rate"], 0.5)
 
+            self.assertEqual(teacher_output["contract_version"], "role-foundry-eval/v1")
+            self.assertTrue(teacher_output["integrity_passed"])
+            self.assertEqual(
+                [gate["id"] for gate in teacher_output["integrity_gates"]],
+                [
+                    "no_holdout_leakage",
+                    "no_fake_claims",
+                    "demo_tests_still_work",
+                    "required_artifacts_present",
+                ],
+            )
+            self.assertAlmostEqual(
+                teacher_output["weighted_categories"]["sealed_holdout_performance"]["score"],
+                0.75,
+            )
+            self.assertAlmostEqual(
+                teacher_output["weighted_categories"]["public_curriculum_performance"]["score"],
+                0.9333,
+                places=4,
+            )
+            self.assertAlmostEqual(teacher_output["total_score"], 0.8762, places=4)
+            self.assertEqual(teacher_output["comparison"]["verdict"], "better")
+            self.assertEqual(teacher_output["comparison"]["deciding_axis"], "weighted_total")
+            self.assertGreater(teacher_output["comparison"]["total_score_delta"], 0.03)
+
             patch_statuses = [patch["payload"]["status"] for patch in server.patches]
             self.assertEqual(patch_statuses, ["running", "completed"])
             self.assertTrue(
@@ -169,6 +194,10 @@ class TeacherEvalLoopContractTests(unittest.TestCase):
             self.assertEqual(final_patch["scorecard"]["student"]["agent_role"], "student")
             self.assertEqual(final_patch["scorecard"]["aggregate_score"]["passed"], 4)
             self.assertEqual(final_patch["scorecard"]["iteration_history"][-1]["delta"]["pass_count"], 2)
+            self.assertEqual(final_patch["scorecard"]["contract_version"], "role-foundry-eval/v1")
+            self.assertTrue(final_patch["scorecard"]["integrity_passed"])
+            self.assertEqual(final_patch["scorecard"]["comparison"]["verdict"], "better")
+            self.assertAlmostEqual(final_patch["machine_score"], 0.8762, places=4)
 
 
 class TeacherEvalDocumentationTests(unittest.TestCase):
