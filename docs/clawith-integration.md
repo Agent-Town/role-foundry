@@ -29,8 +29,8 @@ This starts `role-foundry-web`, `postgres`, and `redis`. The web UI serves pre-b
 
 1. A Clawith Docker image. Either:
    - Build from source: `docker build -t clawith:local /path/to/clawith`
-   - Pull from a registry: `docker pull ghcr.io/openclaw/clawith:latest`
-2. Set `CLAWITH_IMAGE` in `.env` (defaults to `clawith:local`)
+   - Pull from your own published registry image
+2. Set `CLAWITH_IMAGE` in `.env` to point at your image (defaults to `clawith:local`)
 3. Optionally set LLM provider keys if you want Clawith-native agents
 
 ### Starting live mode
