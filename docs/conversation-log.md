@@ -87,3 +87,73 @@ See `docs/synthesis-hackathon-stack-architecture.md` for details.
 - `tests/test_demo_contract.py` passes
 - app pages now show the apprentice story, sealed holdouts, proof bundle, score deltas, and failure-to-curriculum loop
 - GitHub history now includes milestone/spec commits rather than only ideation docs
+
+---
+
+## 2026-03-22 — Milestone 3 landed honestly
+
+**Outcome:** The repo now has a real live-mode compose lane without pretending upstream/native parity is solved.
+
+**What changed:**
+- `docker-compose.yml` gained a profile-gated Clawith service path
+- the bootstrap lane became a **read-only probe** instead of a destructive seed shortcut
+- `docs/clawith-integration.md` now explains the real upstream surface, the adapter-first gaps, and the honest next step when parity is absent
+
+**Evidence:**
+- `tests/test_milestone3_contract.py` passes
+- `seed/probe_clawith.py` exists and stays read-only
+- the probe/docs explicitly call out `/api/runs/{run_id}` as an adapter-side contract, not an observed native upstream write path
+
+---
+
+## 2026-03-22 — Milestone 4 landed as the first bridge-backed run slice
+
+**Outcome:** Role Foundry can now execute one narrow run lifecycle end to end without fake consumer OAuth.
+
+**What changed:**
+- `python3 -m runner_bridge.cli` validates a request, marks the run running, executes `LocalReplayRunner`, stores transcript/artifact outputs, and patches final state back to a Clawith-compatible surface
+- the bridge supports a zero-secret local/mockable path when a real control plane or provider credentials are unavailable
+- failure remains first-class and still emits inspectable receipts
+
+**Evidence:**
+- `tests/test_milestone4_runner_bridge.py` passes
+- `runner_bridge/examples/first-live-run.json` exercises the contract
+- `docs/runner-bridge.md` documents the request/result/patch shape honestly
+
+---
+
+## 2026-03-22 — Milestone 5 + alpha support slices landed
+
+**Outcome:** The repo now carries a coherent teacher-eval/iteration spine plus the minimum support work for the next alpha step.
+
+**What changed:**
+- teacher evaluation now produces a scorecard with scenario notes, aggregate score, public curriculum themes, and iteration deltas
+- the bridge writes redacted/public and raw/private request artifacts separately so holdouts stay sealed from the student bundle
+- additive receipt provenance files make the baseline/candidate/evaluation lineage easier to audit without changing scoring semantics
+- a public-safe benchmark pack v1 was frozen from student-visible families only; holdout-derived families remain blocked pending rewrite
+- the browser can consume configured read-only live/read-model exports, including an alpha-loop-shaped fixture
+
+**Important honesty line:** the committed alpha-loop export is a **consumer-side sample/fixture**. It is not a claim that the first fully real baseline → candidate → teacher-eval loop has already run end to end on this branch.
+
+**Evidence:**
+- `tests/test_milestone5_teacher_eval_loop.py` passes
+- `tests/test_public_benchmark_pack_v1.py` passes
+- `tests/test_live_ui_read_model.py` passes
+- `docs/public-benchmark-pack-v1.md` and `specs/008-public-benchmark-pack-v1.md` define the public-safe benchmark scope
+- `specs/010-live-ui-read-model.md` defines the read-only browser adapter contract
+
+---
+
+## 2026-03-23 — Clean spine promotion pass
+
+**Outcome:** The review branch was tightened so the docs tell one coherent story instead of needing oral patch notes.
+
+**What changed:**
+- `docs/milestones.md` now marks Milestones 3–5 done and keeps Milestone 6 queued
+- README now links the benchmark/probe/live-read-model support docs and says plainly that the alpha-loop browser export is still a sample fixture
+- demo data now includes explicit teacher/student actors and student-view metadata so the UI contract matches the teacher-eval story already present elsewhere
+- the duplicate “Spec 009” numbering was resolved by moving the live UI read-model spec to `specs/010-live-ui-read-model.md`
+
+**Evidence:**
+- clean targeted/full test pass on the promotion branch
+- no broad `runner_bridge` contract rewrite was needed for this cleanup

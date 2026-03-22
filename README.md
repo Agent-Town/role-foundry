@@ -123,6 +123,7 @@ See `docs/runner-bridge.md` for the control-plane patch contract, teacher scorec
 This repo is intentionally honest about what is not wired yet:
 - the browser **live shell is read-only** — it consumes configured exports / receipts, but it does not chase native run storage or claim upstream Clawith parity
 - only one **local/mockable runner path** is implemented today (`LocalReplayRunner`); teacher scorecards and iteration history are real contracts, but Claude/Codex-backed adapters still need wiring
+- the committed alpha-loop browser fixture is a **sample/read-model export**, not proof that a fully real baseline → candidate → teacher-eval loop has already executed end to end on this branch
 - no auth, no Privy, no fake consumer OAuth path
 - no live artifact viewer backed by run storage fan-out
 
@@ -151,13 +152,21 @@ Using different model families for building and judging reduces correlated self-
 
 ## Docs
 
+- `docs/milestones.md` — spec-first milestone rail and current delivery status
 - `docs/v1-mvp-plan.md` — build slices
-- `docs/clawith-integration.md` — live-mode setup, prerequisites, image contract
-- `docs/runner-bridge.md` — bridge path and explicit auth deferral
+- `docs/clawith-integration.md` — live-mode setup, prerequisites, image contract, and read-only probe lane
+- `docs/runner-bridge.md` — bridge path, teacher evaluation contract, and explicit auth deferral
+- `docs/public-benchmark-pack-v1.md` — public-safe benchmark pack scope and blocked families
 - `docs/conversation-log.md` — curated build log for the submission
 - `docs/agent-town-connection.md` — Agent Town relationship
 - `docs/synthesis-hackathon-ideation.md` — ideation and ranking
 - `docs/synthesis-hackathon-stack-architecture.md` — architecture notes
+
+## Supporting specs
+
+- `specs/008-public-benchmark-pack-v1.md` — public benchmark pack contract for the current alpha spine
+- `specs/009-clawith-readiness-probe.md` — adapter-first upstream readiness probe
+- `specs/010-live-ui-read-model.md` — read-only browser adapter for configured live/read-model exports
 
 ## License
 

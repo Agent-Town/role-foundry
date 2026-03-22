@@ -1,4 +1,4 @@
-# Spec 009 — Live UI Read-Model Adapter
+# Spec 010 — Live UI Read-Model Adapter
 
 ## Goal
 

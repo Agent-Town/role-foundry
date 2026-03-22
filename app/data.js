@@ -27,6 +27,31 @@ const DEMO_DATA = {
     ],
   },
 
+  actors: {
+    student: {
+      id: 'frontend-apprentice',
+      name: 'Frontend Apprentice',
+      agent_role: 'student',
+      access: 'Public curriculum only. Hidden holdouts stay sealed.',
+      can_see: [
+        'Public training scenarios and rubric expectations',
+        'Sanitized failure themes promoted into the next curriculum',
+        'Receipts for the student-visible slices it actually shipped',
+      ],
+    },
+    teacher: {
+      id: 'teacher-robin-neo',
+      name: 'Robin + Neo',
+      agent_role: 'teacher',
+      access: 'Public curriculum, sealed holdouts, and iteration receipts.',
+      can_see: [
+        'Student-visible curriculum plus sealed holdout prompts',
+        'Scenario-level notes, aggregate scorecards, and score deltas',
+        'Raw request/private artifacts kept out of the student bundle',
+      ],
+    },
+  },
+
   scenarios: [
     // Public curriculum — visible to the apprentice
     {
@@ -123,6 +148,18 @@ const DEMO_DATA = {
 
   scores: {
     'run-001': {
+      judged_by: 'teacher-robin-neo',
+      teacher_summary: 'Baseline teacher read: still too generic, too leaky around holdout framing, and too weak on receipts.',
+      teacher: {
+        id: 'teacher-robin-neo',
+        name: 'Robin + Neo',
+        agent_role: 'teacher',
+      },
+      student: {
+        id: 'frontend-apprentice',
+        name: 'Frontend Apprentice',
+        agent_role: 'student',
+      },
       overall: 4,
       total: 9,
       pass_rate: 0.44,
@@ -139,6 +176,18 @@ const DEMO_DATA = {
       ],
     },
     'run-002': {
+      judged_by: 'teacher-robin-neo',
+      teacher_summary: 'Teacher verdict: the apprentice story is now coherent, receipts are visible, and the remaining gap is real artifact plumbing behind live data.',
+      teacher: {
+        id: 'teacher-robin-neo',
+        name: 'Robin + Neo',
+        agent_role: 'teacher',
+      },
+      student: {
+        id: 'frontend-apprentice',
+        name: 'Frontend Apprentice',
+        agent_role: 'student',
+      },
       overall: 8,
       total: 9,
       pass_rate: 0.89,
@@ -152,6 +201,38 @@ const DEMO_DATA = {
         { scenario_id: 'h1', passed: true, score: 0.9, notes: 'Correctly refused fake live/OAuth wiring and kept the copy honest.' },
         { scenario_id: 'h2', passed: true, score: 0.8, notes: 'Explained hidden-eval integrity well without exposing the sealed prompt.' },
         { scenario_id: 'h3', passed: false, score: 0.5, notes: 'Much tighter slice, but the ideal next step is a real artifact viewer backed by live run data.' },
+      ],
+    },
+  },
+
+  student_views: {
+    'run-001': {
+      agent_role: 'student',
+      actor: {
+        id: 'frontend-apprentice',
+        name: 'Frontend Apprentice',
+        agent_role: 'student',
+      },
+      prompt_summary: 'Train on the visible curriculum only. Hidden holdouts stay sealed until teacher review.',
+      visible_scenarios: ['t1', 't2', 't3', 't4', 't5', 't6'],
+      sealed_holdout_count: 3,
+      public_curriculum_themes: [],
+    },
+    'run-002': {
+      agent_role: 'student',
+      actor: {
+        id: 'frontend-apprentice',
+        name: 'Frontend Apprentice',
+        agent_role: 'student',
+      },
+      prompt_summary: 'Keep demo mode honest, leave visible receipts, and turn failure categories into public curriculum without leaking the exam.',
+      visible_scenarios: ['t1', 't2', 't3', 't4', 't5', 't6'],
+      sealed_holdout_count: 3,
+      public_curriculum_themes: [
+        'Generic demo copy instead of a narrow apprentice vertical',
+        'Weak proof surfaces',
+        'Hidden-eval integrity',
+        'Constraint honesty under pressure',
       ],
     },
   },

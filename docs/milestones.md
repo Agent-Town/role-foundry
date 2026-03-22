@@ -57,7 +57,7 @@ Principle: each milestone must have:
 
 ## Milestone 3 — Clawith Control Plane in Compose
 
-**Status:** active
+**Status:** done
 
 **Goal:** replace the current stub with a real control plane service that the repo can talk to honestly.
 
@@ -81,7 +81,7 @@ Principle: each milestone must have:
 
 ## Milestone 4 — Runner Bridge + First Live Run
 
-**Status:** active
+**Status:** done
 
 **Goal:** make one real teacher/student run happen without faking consumer OAuth inside Clawith.
 
@@ -103,7 +103,7 @@ Principle: each milestone must have:
 
 ## Milestone 5 — Teacher Evaluation + Iteration Loop
 
-**Status:** queued
+**Status:** done
 
 **Goal:** prove the actual moat: hidden holdout evaluation, failure themes, and score improvement.
 
@@ -120,6 +120,14 @@ Principle: each milestone must have:
 - at least two iterations can be shown honestly
 
 **Builds on:** Milestone 4
+
+**Landed support slices on this spine:**
+- `specs/008-public-benchmark-pack-v1.md` + `docs/public-benchmark-pack-v1.md` freeze the first public-safe benchmark pack v1.
+- additive receipt provenance now rides on top of the existing runner-bridge outputs; it does not change the teacher score semantics.
+- `specs/009-clawith-readiness-probe.md` + `docs/clawith-integration.md` keep the upstream Clawith path adapter-first and read-only.
+- `specs/010-live-ui-read-model.md` keeps the browser live shell read-only and payload-faithful for configured exports / fixtures.
+
+These support slices are real. They do **not** mean the first fully real alpha loop has already executed end to end on this branch.
 
 ---
 
