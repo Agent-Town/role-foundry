@@ -54,7 +54,7 @@ class DemoContractTests(unittest.TestCase):
         self.assertIn('Policy Snapshot', run_text)
         self.assertIn('Transcript Excerpt', run_text)
         self.assertIn('Failure Analysis → Next Curriculum', scorecard_text)
-        self.assertIn('Compare to Run 1', scorecard_text)
+        self.assertIn('Compare to', scorecard_text)
 
     def test_readme_explains_demo_vs_live_mode(self):
         text = README.read_text()

@@ -6,32 +6,49 @@
   <title>Role Foundry — Runs & Proof Bundle</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
   <link rel="stylesheet" href="style.css">
+  <script src="config.js"></script>
   <script src="data.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
   <script src="app.js"></script>
 </head>
 <body>
 
-<div class="demo-banner">DEMO MODE — replay static runs, inspect proof bundles, and compare hidden-eval progress.</div>
+<div class="mode-banner" :class="$store.app.modeBannerTone()" x-data>
+  <div class="mode-banner-inner">
+    <div class="mode-banner-copy">
+      <strong class="mode-banner-title" x-text="$store.app.modeBadgeLabel()"></strong>
+      <span x-text="$store.app.modeBannerText()"></span>
+      <small x-show="$store.app.liveShell.lastError" x-text="$store.app.liveShell.lastError"></small>
+    </div>
+    <div class="mode-banner-actions">
+      <button class="secondary outline" @click="$store.app.switchMode('demo')">Demo data</button>
+      <button class="contrast outline" @click="$store.app.switchMode('live')">Live shell</button>
+    </div>
+  </div>
+</div>
 
 <nav x-data="navComponent()">
   <ul>
-    <li><a class="brand" href="index.html">Role Foundry</a></li>
-    <li><a href="index.html" :class="isActive('index.html') && 'active'">Apprentice</a></li>
-    <li><a href="scenarios.html" :class="isActive('scenarios.html') && 'active'">Curriculum</a></li>
-    <li><a href="run.html" :class="isActive('run.html') && 'active'">Runs</a></li>
-    <li><a href="scorecard.html" :class="isActive('scorecard.html') && 'active'">Scorecard</a></li>
+    <li><a class="brand" :href="pageHref('index.html')">Role Foundry</a></li>
+    <li><a :href="pageHref('index.html')" :class="isActive('index.html') && 'active'">Apprentice</a></li>
+    <li><a :href="pageHref('scenarios.html')" :class="isActive('scenarios.html') && 'active'">Curriculum</a></li>
+    <li><a :href="pageHref('run.html')" :class="isActive('run.html') && 'active'">Runs</a></li>
+    <li><a :href="pageHref('scorecard.html')" :class="isActive('scorecard.html') && 'active'">Scorecard</a></li>
   </ul>
 </nav>
 
 <main class="container" x-data="{
   running: false,
   logLines: [],
-  detailRun: 'run-002',
+  detailRun: null,
+  init() {
+    this.detailRun = $store.app.latestRunId();
+  },
   async startDemoRun() {
+    const lines = $store.app.getRunReplay(this.detailRun);
+    if (!lines.length) return;
     this.running = true;
     this.logLines = [];
-    const lines = $store.app.getRunReplay(this.detailRun);
     for (const line of lines) {
       await new Promise(r => setTimeout(r, line.t > 0 ? 350 : 0));
       this.logLines.push(line.msg);
@@ -40,25 +57,33 @@
     this.running = false;
   }
 }">
+  <div x-effect="if (!detailRun || !$store.app.getRun(detailRun)) { detailRun = $store.app.latestRunId(); logLines = []; }"></div>
+
   <div class="page-header">
     <h1>Runs &amp; Proof Bundle</h1>
     <p>Each run trains the Frontend Apprentice on public curriculum, judges it on sealed holdouts, and leaves behind receipts that a human can inspect.</p>
   </div>
 
   <div class="toolbar-row">
-    <label style="margin-bottom: 0;">
+    <label style="margin-bottom: 0;" x-show="$store.app.runs.length > 0">
       Select run:
-      <select x-model="detailRun" style="width: auto; display: inline-block; margin-left: 0.5rem;">
-        <template x-for="run in $store.app.runs" :key="run.id">
+      <select x-model="detailRun" @change="logLines = []" style="width: auto; display: inline-block; margin-left: 0.5rem;">
+        <template x-for="run in $store.app.orderedRuns()" :key="run.id">
           <option :value="run.id" x-text="run.label"></option>
         </template>
       </select>
     </label>
-    <button data-primary @click="startDemoRun()" :disabled="running">
-      <span x-show="!running">▶ Replay selected run</span>
+    <button data-primary @click="startDemoRun()" :disabled="running || !$store.app.hasRunReplay(detailRun)">
+      <span x-show="!running && $store.app.hasRunReplay(detailRun)">▶ Replay selected run</span>
       <span x-show="running">Running...</span>
+      <span x-show="!running && !$store.app.hasRunReplay(detailRun)">Replay unavailable</span>
     </button>
   </div>
+
+  <article class="judge-callout compact-callout">
+    <strong>Replay status:</strong>
+    <span x-text="$store.app.replayStatusText(detailRun)"></span>
+  </article>
 
   <template x-if="$store.app.getArtifact(detailRun)">
     <article class="judge-callout compact-callout">
@@ -79,71 +104,87 @@
   <hr>
 
   <h2>Run History</h2>
-  <table>
-    <thead>
-      <tr>
-        <th>Run</th>
-        <th>Status</th>
-        <th>Iteration</th>
-        <th>Runner</th>
-        <th>Duration</th>
-        <th>Cost</th>
-        <th>Score</th>
-      </tr>
-    </thead>
-    <tbody>
-      <template x-for="run in $store.app.runs" :key="run.id">
+  <template x-if="$store.app.runs.length > 0">
+    <table>
+      <thead>
         <tr>
-          <td>
-            <strong x-text="run.id"></strong><br>
-            <small x-text="run.label"></small>
-          </td>
-          <td><span class="badge badge-completed" x-text="run.status"></span></td>
-          <td x-text="'#' + run.iteration"></td>
-          <td x-text="run.runner"></td>
-          <td x-text="$store.app.formatDuration(run.duration_sec)"></td>
-          <td x-text="$store.app.formatCost(run.cost_usd)"></td>
-          <td x-text="$store.app.scores[run.id].overall + '/' + $store.app.scores[run.id].total"></td>
+          <th>Run</th>
+          <th>Status</th>
+          <th>Iteration</th>
+          <th>Runner</th>
+          <th>Duration</th>
+          <th>Cost</th>
+          <th>Score</th>
         </tr>
-      </template>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        <template x-for="run in $store.app.orderedRuns()" :key="run.id">
+          <tr>
+            <td>
+              <strong x-text="run.id"></strong><br>
+              <small x-text="run.label"></small>
+            </td>
+            <td><span class="badge" :class="'badge-' + (run.status || 'running')" x-text="run.status || 'unknown'"></span></td>
+            <td x-text="run.iteration ? '#' + run.iteration : '—'"></td>
+            <td x-text="run.runner || '—'"></td>
+            <td x-text="$store.app.formatDuration(run.duration_sec)"></td>
+            <td x-text="$store.app.formatCost(run.cost_usd)"></td>
+            <td x-text="$store.app.getScorecard(run.id) ? $store.app.getScorecard(run.id).overall + '/' + $store.app.getScorecard(run.id).total : 'pending'"></td>
+          </tr>
+        </template>
+      </tbody>
+    </table>
+  </template>
 
-  <h2>Run Detail</h2>
-  <div class="score-summary detail-summary">
-    <div class="stat">
-      <div class="value" x-text="$store.app.getScorecard(detailRun).overall + '/' + $store.app.getScorecard(detailRun).total"></div>
-      <div class="label">Overall pass count</div>
-    </div>
-    <div class="stat">
-      <div class="value" x-text="$store.app.passCount(detailRun, 'training') + '/' + $store.app.resultsByType(detailRun, 'training').length"></div>
-      <div class="label">Public curriculum</div>
-    </div>
-    <div class="stat">
-      <div class="value" x-text="$store.app.passCount(detailRun, 'holdout') + '/' + $store.app.resultsByType(detailRun, 'holdout').length"></div>
-      <div class="label">Hidden holdouts</div>
-    </div>
-    <div class="stat" x-show="detailRun === 'run-002'">
-      <div class="value improved" x-text="$store.app.formatSigned($store.app.scoreDelta('run-002'), 0)"></div>
-      <div class="label">Total delta vs Run 1</div>
-    </div>
-  </div>
+  <article class="card empty-state" x-show="$store.app.runs.length === 0">
+    <strong>No runs are loaded yet.</strong>
+    <p>The live shell will render run history here once the control plane exposes scored runs or artifact receipts.</p>
+  </article>
 
-  <div class="scenario-results-grid">
-    <template x-for="result in $store.app.getScorecard(detailRun).results" :key="result.scenario_id">
-      <div class="card scenario-result-card" :class="result.passed ? 'card-pass' : 'card-fail'">
-        <div class="card-header-row">
-          <h4 x-text="$store.app.getScenario(result.scenario_id)?.title || result.scenario_id"></h4>
-          <span class="badge" :class="result.passed ? 'badge-pass' : 'badge-fail'" x-text="result.passed ? 'PASS' : 'FAIL'"></span>
+  <template x-if="detailRun">
+    <section>
+      <h2>Run Detail</h2>
+      <div class="score-summary detail-summary">
+        <div class="stat">
+          <div class="value" x-text="$store.app.getScorecard(detailRun) ? $store.app.getScorecard(detailRun).overall + '/' + $store.app.getScorecard(detailRun).total : 'pending'"></div>
+          <div class="label">Overall pass count</div>
         </div>
-        <div class="card-footer-row">
-          <span class="badge" :class="$store.app.getScenario(result.scenario_id)?.type === 'holdout' ? 'badge-holdout' : 'badge-training'" x-text="$store.app.getScenario(result.scenario_id)?.type"></span>
-          <span class="mini-note" x-text="'Score: ' + result.score.toFixed(1)"></span>
+        <div class="stat">
+          <div class="value" x-text="$store.app.resultsByType(detailRun, 'training').length ? $store.app.passCount(detailRun, 'training') + '/' + $store.app.resultsByType(detailRun, 'training').length : '—'"></div>
+          <div class="label">Public curriculum</div>
         </div>
-        <p x-text="result.notes"></p>
+        <div class="stat">
+          <div class="value" x-text="$store.app.resultsByType(detailRun, 'holdout').length ? $store.app.passCount(detailRun, 'holdout') + '/' + $store.app.resultsByType(detailRun, 'holdout').length : '—'"></div>
+          <div class="label">Hidden holdouts</div>
+        </div>
+        <div class="stat" x-show="$store.app.hasComparisonRun(detailRun)">
+          <div class="value improved" x-text="$store.app.formatSigned($store.app.scoreDelta(detailRun), 0)"></div>
+          <div class="label" x-text="'Total delta vs ' + $store.app.getRunShortLabel($store.app.comparisonRunId(detailRun))"></div>
+        </div>
       </div>
-    </template>
-  </div>
+
+      <div class="scenario-results-grid" x-show="$store.app.resultsForRun(detailRun).length > 0">
+        <template x-for="result in $store.app.resultsForRun(detailRun)" :key="result.scenario_id">
+          <div class="card scenario-result-card" :class="result.passed ? 'card-pass' : 'card-fail'">
+            <div class="card-header-row">
+              <h4 x-text="$store.app.getScenario(result.scenario_id)?.title || result.scenario_id"></h4>
+              <span class="badge" :class="result.passed ? 'badge-pass' : 'badge-fail'" x-text="result.passed ? 'PASS' : 'FAIL'"></span>
+            </div>
+            <div class="card-footer-row">
+              <span class="badge" :class="$store.app.getScenario(result.scenario_id)?.type === 'holdout' ? 'badge-holdout' : 'badge-training'" x-text="$store.app.getScenario(result.scenario_id)?.type"></span>
+              <span class="mini-note" x-text="result.score !== null && result.score !== undefined ? 'Score: ' + result.score.toFixed(1) : 'Score pending'"></span>
+            </div>
+            <p x-text="result.notes"></p>
+          </div>
+        </template>
+      </div>
+
+      <article class="card empty-state" x-show="$store.app.resultsForRun(detailRun).length === 0">
+        <strong>No scenario-level scorecard is attached to this run yet.</strong>
+        <p>That is acceptable while the live shell is waiting for real scorecard exports.</p>
+      </article>
+    </section>
+  </template>
 
   <template x-if="$store.app.getArtifact(detailRun)">
     <section class="artifact-panel">
@@ -205,6 +246,11 @@
       </div>
     </section>
   </template>
+
+  <article class="card empty-state" x-show="detailRun && !$store.app.getArtifact(detailRun)">
+    <strong>No proof bundle is attached to this run yet.</strong>
+    <p>The live shell is ready to render changed files, transcript excerpts, and policy snapshots as soon as they exist.</p>
+  </article>
 
   <article>
     <h3>Why this matters</h3>
