@@ -65,7 +65,7 @@
         "docs/erc8004-base-agent0-adapter.md",
         "specs/013-erc8004-base-agent0-adapter.md",
         "runner_bridge/product_integrations.py",
-        "app/agent0_base_adapter.mjs",
+        "runner_bridge/erc8004_agent0.py",
         "tests/test_erc8004_base_agent0_adapter.py"
       ],
       "visibility": "public",

@@ -2,7 +2,7 @@
 
 ## The framework
 
-Role Foundry is a **framework for training AI apprentices under honest, holdout-aware evaluation**. The core unit is a **generation**: each evaluated generation leaves an inspectable provenance chain — receipt bundle, evaluation context, score deltas, and a promotion decision. Promoted public generations can then be staged for **ERC-8004** issuance on **Base** through a thin Role Foundry-owned adapter.
+Role Foundry is a **framework for training AI apprentices under honest, holdout-aware evaluation**. The core unit is a **generation**: each evaluated generation leaves an inspectable provenance chain — receipt bundle, evaluation context, score deltas, and a promotion decision. Promoted public generations can then be staged for **ERC-8004** issuance on **Base** through a thin Role Foundry-owned Python mint path.
 
 The framework handles the training loop. The role defines what the apprentice learns.
 
@@ -154,18 +154,20 @@ python3 -m runner_bridge.autoresearch_alpha \
 
 That request file stays local-only, points `private_holdout_manifest` at the gitignored manifest, and references holdout episodes by id so the bridge can hydrate teacher-only prompts into `request.private.json` only.
 
-## ERC-8004 / Base / agent0-sdk adapter
+## ERC-8004 / Base / agent0-sdk Python mint path
 
-The repo now ships a narrow adapter that turns the generation-provenance chain into a portable identity path on **Base** through the `agent0-sdk` mint shape:
+The repo now ships a narrow **Python-native** path that turns the generation-provenance chain into a portable identity handoff on **Base** through the `agent0-sdk` / `agent0-py` flow:
 
-- `runner_bridge/product_integrations.py` — after each evaluated generation, writes a local ERC-8004 registration draft, completion template, and agent0 Base adapter contract tied back to the existing receipt/scorecard artifacts. No onchain writes.
-- `app/agent0_base_adapter.mjs` — thin browser adapter following the agent0 mint shape: `discoverEip6963Providers` → `connectEip1193` → `SDK({ chainId, rpcUrl, walletProvider })` → `createAgent(...)` → `registerHTTP(tokenUri)`.
+- `runner_bridge/product_integrations.py` — after each evaluated generation, writes a local ERC-8004 registration draft, completion template, and a canonical Python mint contract tied back to the existing receipt/scorecard artifacts. No onchain writes.
+- `runner_bridge/erc8004_agent0.py` — explicit live-mint helper: `SDK(chainId, rpcUrl, signer, registryOverrides?)` → `createAgent(...)` → `setMetadata(...)` → `register(tokenUri)` → `wait_confirmed()`.
 
-**Target chains:** Base Sepolia (chain id 84532, review/demo default) and Base Mainnet (chain id 8453, explicit submission target). Both are env-driven via `BASE_SEPOLIA_RPC_URL` / `BASE_MAINNET_RPC_URL`.
+**Target chains:** Base Sepolia (chain id 84532, review/demo default) and Base Mainnet (chain id 8453, explicit submission target). Both are env-driven via `BASE_SEPOLIA_RPC_URL` / `BASE_MAINNET_RPC_URL`. Registry overrides remain optional via `BASE_SEPOLIA_REGISTRY` / `BASE_MAINNET_REGISTRY` if the SDK defaults ever need to be overridden.
 
-**What is real now:** registration drafts, completion templates, the browser adapter module, wired-vs-pending diagnostics, and a reviewer-visible story that promoted/public generations are the ones eligible for public issuance.
+**What is real now:** registration drafts, completion templates, the Python mint helper module, wired-vs-pending diagnostics, and a reviewer-visible story that promoted/public generations are the ones eligible for public issuance.
 
-**What is pending:** agent0-sdk availability, configured Base RPC URL + registry override, a human promotion/public-issuance decision, and an actual wallet-approved mint. No minting has been claimed or faked.
+**What is pending:** `agent0-sdk` availability in the Python environment, a configured Base RPC URL, a hosted public token URI for the draft JSON, an explicit promoted/public decision, and a real confirmed mint. Live mint stays off by default behind `ROLE_FOUNDRY_ERC8004_ENABLE_LIVE_MINT=1`. No minting has been claimed or faked.
+
+`app/agent0_base_adapter.mjs` remains in-repo as a historical browser-side experiment, but it is no longer the canonical repo path.
 
 See `docs/erc8004-base-agent0-adapter.md` for usage and `specs/013-erc8004-base-agent0-adapter.md` for the full spec.
 

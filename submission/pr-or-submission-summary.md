@@ -5,7 +5,7 @@ Canonical final packet artifact for this branch.
 
 ## Plain-English summary
 
-This branch takes the frozen submission packet and makes the core story cleaner: Role Foundry is a **generation provenance** system for role-scoped apprentices. Each evaluated generation leaves inspectable receipts, evaluation context, score deltas, and a promotion decision. Promoted public generations can then be staged for **ERC-8004 issuance on Base** through a thin Role Foundry-owned adapter.
+This branch takes the frozen submission packet and makes the core story cleaner: Role Foundry is a **generation provenance** system for role-scoped apprentices. Each evaluated generation leaves inspectable receipts, evaluation context, score deltas, and a promotion decision. Promoted public generations can then be staged for **ERC-8004 issuance on Base** through a thin Role Foundry-owned Python mint path.
 
 The first concrete role remains a **Software Engineer apprentice** improving Role Foundry itself. The shipped public slice is still frontend/product-heavy, and this branch keeps saying that plainly instead of pretending broader completed coverage.
 
