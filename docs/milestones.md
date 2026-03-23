@@ -140,7 +140,8 @@ These slices are real. This branch now has an executable **public alpha loop** p
 
 **Public-safe sealing boundary:**
 - `specs/015-sealed-receipt-surface.md` + `tests/test_sealed_receipt_surface.py` add a top-level `sealing_receipt` block that records the current claim ceiling, blocked stronger claims, and unmet prerequisites without leaking teacher-only content.
-- This keeps the branch honest: local private-holdout alpha execution is real, but stronger sealing / certification / tamper-proof / audited language remains blocked until new controls actually land.
+- `specs/011-live-ui-read-model.md` + `app/live-read-model.alpha-loop.sample.json` + `tests/test_live_ui_read_model.py` now let the read-only live shell render that same boundary record verbatim when it is exported, without relabeling it as a seal, certification, or tamper-proof proof.
+- This keeps the branch honest: local private-holdout alpha execution is real, the committed browser sample remains a public-regression fixture, and stronger sealing / certification / tamper-proof / audited language remains blocked until new controls actually land.
 
 **Phase F adapter-readiness hardening (F001-F004):**
 - `scripts/check_clawith_adapter_prereqs.py` — GET-only prereq checker covering all 6 required F001 categories with explicit ready/blocked/unknown output

@@ -32,6 +32,7 @@ That is the first clean proof that the Phase G promotion surface can move a real
 
 - `specs/015-sealed-receipt-surface.md` and the alpha-loop receipt now add a top-level `sealing_receipt` block as a **public-safe honesty boundary, not a seal**.
 - That block records the current claim ceiling (`local private-holdout alpha execution with public-safe receipts` when the local manifest lane is used), the current status tier, blocked stronger claims, and the unmet prerequisites for any stronger sealing / tamper-evidence language.
+- The read-only live UI/read-model shell now renders the same boundary when a `sealing_receipt` is exported. The committed browser sample stays at **public-regression alpha**, so it still blocks stronger sealed/certified/tamper-proof claims instead of inventing them.
 - If a private manifest is loaded, the receipt can include a SHA-256 fingerprint labeled **local operator correlation only**. That is explicitly not third-party proof or tamper-proofing.
 
 ## What remains blocked / not claimable

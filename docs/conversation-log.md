@@ -199,18 +199,20 @@ See `docs/synthesis-hackathon-stack-architecture.md` for details.
 
 ---
 
-## 2026-03-24 — Public-safe sealing receipt boundary folded into the overnight handoff
+## 2026-03-24 — Public-safe sealing receipt boundary + live-shell surfacing folded into the overnight handoff
 
-**Outcome:** The freshest overnight handoff branch now carries a machine-readable receipt surface that says exactly what the local private-holdout lane can and cannot claim.
+**Outcome:** The freshest overnight handoff branch now carries both a machine-readable receipt surface and a read-only live-shell rendering path that say exactly what the current alpha/read-model export can and cannot claim.
 
 **What changed:**
 - `specs/015-sealed-receipt-surface.md` defines a top-level `sealing_receipt` block on the alpha receipt as a public-safe boundary record, not a seal
 - `runner_bridge.autoresearch_alpha` now emits the claim ceiling, status tier, blocked stronger claims, unmet prerequisites, and a private-manifest fingerprint labeled `local_operator_correlation_only` when the local manifest lane is used
+- `specs/011-live-ui-read-model.md`, `app/live-read-model.alpha-loop.sample.json`, and the scorecard live shell now surface the same boundary when a `sealing_receipt` is exported, while keeping the committed browser sample at public-regression alpha rather than inventing a stronger seal/certification story
 - README + handoff/status docs now say plainly that the local private-holdout alpha lane is real, but stronger sealing / certification / tamper-proof language is still blocked
 
 **Evidence:**
 - `tests/test_sealed_receipt_surface.py` passes
 - `tests/test_autoresearch_alpha_loop.py` now pins the local private-holdout `sealing_receipt` behavior
+- `tests/test_live_ui_read_model.py` now pins the read-model/browser surfacing of the sealing boundary
 - no private holdout content was added to git
 
-**Important honesty line:** the new `sealing_receipt` explains the next claim boundary. It does **not** itself create sealing, certification, tamper-proofing, or third-party audit.
+**Important honesty line:** the new `sealing_receipt` and its live-shell rendering explain the next claim boundary. They do **not** themselves create sealing, certification, tamper-proofing, or third-party audit.
