@@ -78,24 +78,62 @@ Frontend/Product Engineer apprentice that:
 ## Teacher-authored curriculum -> student execution flow
 
 ```text
-┌─────────────┐     ┌──────────────┐     ┌─────────────┐
-│   Teacher    │     │  Task Packet │     │   Student    │
-│  authors     │────>│  (frozen)    │────>│  executes    │
-│  task packet │     │              │     │  in isolated │
-└─────────────┘     └──────────────┘     │  workspace   │
-                                         └──────┬──────┘
-                                                │
-                                         ┌──────▼──────┐
-                                         │  Receipts   │
-                                         │  (auto)     │
-                                         └──────┬──────┘
-                                                │
-┌─────────────┐     ┌──────────────┐     ┌──────▼──────┐
-│   Teacher    │<────│  Scorecard   │<────│  Evaluation │
-│  reviews &   │     │  (weighted)  │     │  contract   │
-│  promotes    │     │              │     │  scores run │
-└─────────────┘     └──────────────┘     └─────────────┘
+┌─────────────┐     ┌──────────────┐     ┌─────────────────────┐
+│   Teacher    │     │  Task Packet │     │  runner_bridge CLI   │
+│  authors     │────>│  (frozen in  │────>│  --packet A001       │
+│  task packet │     │   registry)  │     │                     │
+└─────────────┘     └──────────────┘     └──────────┬──────────┘
+                                                    │
+                                         ┌──────────▼──────────┐
+                                         │  PacketRunObject     │
+                                         │  (validated, self-   │
+                                         │   contained)         │
+                                         └──────────┬──────────┘
+                                                    │
+                                         ┌──────────▼──────────┐
+                                         │  RunBridge.run()     │
+                                         │  → run-object.json   │
+                                         │  → request.private   │
+                                         │  → backend execution │
+                                         └──────────┬──────────┘
+                                                    │
+                                         ┌──────────▼──────────┐
+                                         │  Receipts + result   │
+                                         │  (auto-generated)    │
+                                         │  + execution_honesty │
+                                         └──────────┬──────────┘
+                                                    │
+┌─────────────┐     ┌──────────────┐     ┌──────────▼──────────┐
+│   Teacher    │<────│  Scorecard   │<────│  Evaluation contract │
+│  reviews &   │     │  (weighted)  │     │  scores the run      │
+│  promotes    │     │              │     │                      │
+└─────────────┘     └──────────────┘     └──────────────────────┘
 ```
+
+### Runtime path (concrete)
+
+The actual bridge command for a packet-driven run:
+
+```bash
+python3 -m runner_bridge.cli --packet A001 --run-id my-run
+```
+
+This produces:
+
+```text
+runtime/runs/my-run/
+  run-object.json          ← materialized runtime artifact with full contract metadata
+  request.json             ← redacted, student-safe
+  request.private.json     ← full request with packet_runtime block
+  transcript.ndjson        ← execution log
+  artifact-bundle.json     ← structured result
+  result.json              ← status + execution_honesty block
+  receipts/                ← provenance chain
+```
+
+The `run-object.json` carries the packet id, version, content hash, role id, eval contract ref, mutation budget, allowed/blocked paths, expected checks, evidence contract, and receipt locations — everything needed to verify the run was set up correctly without re-reading the registry.
+
+The `execution_honesty` block in `result.json` makes it machine-readable whether the backend actually executed commands. `LocalReplayRunner` truthfully reports `executes_commands: false` and `executes_checks: false`.
 
 ## What is implemented now
 
@@ -128,6 +166,7 @@ Frontend/Product Engineer apprentice that:
 |------|--------|-------|
 | Public seed registry (A001-E004 packets) | Implemented as contract surface | All 20 public packets exist and are versioned. |
 | Phase 2 teacher operating system | Packet-defined, runtime not yet live | Authoring/promotion workflow is described in packets, but not wired as an end-to-end teacher system. |
+| Task-packet → runtime bridge | Implemented | CLI `--packet` path loads by acceptance_test_id, materializes `run-object.json`, and runs end-to-end through the bridge. `execution_honesty` block makes backend non-execution machine-readable. |
 | Phase 3 execution | Partial | Autoresearch alpha receipts exist, and Step C verifier-contract / verifier-gate honesty landed; live verifier execution is still pending. |
 | Phase 4 evaluation | Packet-defined, runtime not yet live | Public scoring contract exists; teacher console and promotion-gate enforcement do not. |
 | Phase 5 compounding | Packet-defined, runtime not yet live | Lineage and weekly-cycle packets exist, but the operating loop is not live. |

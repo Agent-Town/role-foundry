@@ -137,6 +137,161 @@ In the local-replay alpha path, `gate_status` is always `not_executed` and every
 
 The candidate receipt at `receipts/candidate.json` also includes a `verifier_gate` block with the same honesty contract.
 
+## Task-packet → runtime bridge
+
+The `runner_bridge.packet_runtime` module is the bridge from versioned curriculum task packets to executable runtime objects. It closes the gap between "the curriculum defines 20 tasks" and "a runner backend can pick one up and execute it."
+
+### How it works
+
+```text
+Teacher authors frozen task packet (in public seed registry)
+  → CLI: python3 -m runner_bridge.cli --packet A001
+  → load_run_object("A001") validates against frozen contract
+  → cross-references evaluation contract + role manifest
+  → produces a PacketRunObject
+  → .to_run_request() → RunRequest the bridge can execute
+  → RunBridge.run() → materializes run-object.json + request.private.json
+  → LocalReplayRunner (today) produces transcript + receipts
+  → result.json includes machine-readable execution_honesty block
+```
+
+### Packet-driven CLI path
+
+The CLI now supports loading a task packet directly by acceptance_test_id:
+
+```bash
+# Run a specific task packet end-to-end through the bridge
+python3 -m runner_bridge.cli --packet A001
+
+# With explicit run-id and artifacts directory
+python3 -m runner_bridge.cli \
+  --packet C001 \
+  --run-id my-run-001 \
+  --artifacts-root runtime/runs
+
+# With control plane
+python3 -m runner_bridge.cli \
+  --packet A001 \
+  --clawith-url http://localhost:3000 \
+  --clawith-secret "$CLAWITH_SECRET"
+```
+
+The `--packet` flag and `--request` flag are alternatives. `--packet` loads from the frozen public seed registry by acceptance_test_id, builds a `PacketRunObject`, converts it to a `RunRequest`, and feeds it to the bridge. `--request` loads a pre-built request JSON as before.
+
+### run-object.json — runtime artifact export
+
+When a run is driven by a task packet (i.e. the request carries a `packet_runtime` block), the bridge materializes a `run-object.json` in the run directory. This is the concrete runtime artifact that proves the bridge consumed the versioned contract surface:
+
+```text
+runtime/runs/<run_id>/run-object.json
+```
+
+Contents:
+
+| Field | Source | Purpose |
+|-------|--------|---------|
+| `run_id` | bridge-assigned | This run's identity |
+| `packet_id` | task packet `task_id` | Stable task identity |
+| `packet_version` | task packet `packet_version` | Version of the packet definition |
+| `packet_content_hash` | SHA-256 of canonical JSON | Detect packet drift without version bump |
+| `acceptance_test_id` | task packet `acceptance_test_id` | Human-readable test ref (A001–E004) |
+| `role_id` | role manifest | Frozen role identity |
+| `phase_index` | task packet | Which curriculum phase |
+| `eval_contract_ref` | evaluation contract | Dimensions, weights, thresholds |
+| `mutation_budget` | task packet | Max tracked files and net lines |
+| `allowed_paths`, `blocked_paths` | task packet | Path constraints for the student workspace |
+| `expected_checks` | task packet | Commands the student must run |
+| `evidence_contract` | task packet | Required artifacts and provenance rules |
+| `execution_status` | always `"not_started"` at creation | Honest: no claim of execution at construction time |
+| `execution_backend` | always `"pending"` at creation | Honest: backend not yet wired |
+| `receipt_output_dir` | bridge | Where receipts will be written |
+| `artifact_locations` | bridge | Paths to request.json, request.private.json, run-object.json, receipts/ |
+
+### execution_honesty — machine-readable backend status
+
+When `LocalReplayRunner` processes a packet-driven request, `result.json` includes an `execution_honesty` block that makes the non-execution status machine-readable:
+
+```json
+{
+  "execution_honesty": {
+    "backend": "LocalReplayRunner",
+    "executes_commands": false,
+    "executes_checks": false,
+    "check_results": [
+      {
+        "id": "check-1",
+        "command": "python3 -m pytest tests/...",
+        "execution_status": "not_executed",
+        "exit_code": null,
+        "reason": "LocalReplayRunner does not execute packet commands"
+      }
+    ],
+    "mutation_enforcement": "not_enforced",
+    "path_constraint_enforcement": "not_enforced",
+    "honesty_note": "LocalReplayRunner is a zero-secret replay backend..."
+  }
+}
+```
+
+This makes it explicit that LocalReplayRunner does not execute task commands, enforce mutation budgets, or enforce path constraints. A live execution backend will replace these with actual results.
+
+### PacketRunObject contents
+
+Each run object is a frozen, self-contained snapshot:
+
+| Field | Source | Purpose |
+|-------|--------|---------|
+| `packet_id` | task packet `task_id` | Stable task identity |
+| `packet_version` | task packet `packet_version` | Version of the packet definition |
+| `packet_content_hash` | SHA-256 of canonical JSON | Detect packet drift without version bump |
+| `acceptance_test_id` | task packet `acceptance_test_id` | Human-readable test ref (A001–E004) |
+| `role_id`, `role_name` | role manifest | Frozen role identity |
+| `allowed_paths`, `blocked_paths` | task packet | Path constraints for the student workspace |
+| `mutation_budget` | task packet | Max tracked files and net lines |
+| `expected_checks` | task packet | Commands the student must run |
+| `eval_contract_ref` | evaluation contract | Dimensions, weights, thresholds |
+| `evidence_contract` | task packet | Required artifacts and provenance rules |
+| `execution_status` | always `"not_started"` | Honest: no claim of execution at construction time |
+| `execution_backend` | always `"pending"` | Honest: backend not yet wired |
+
+### Usage
+
+```python
+from runner_bridge.packet_runtime import load_run_object
+
+# Load by acceptance test id
+obj = load_run_object("C001", run_id="my-run-001")
+
+# Inspect contract constraints
+print(obj.mutation_budget.tracked_files_max)  # 6
+print(obj.eval_contract_ref.dimensions)       # frozen 5 dimensions
+
+# Convert to a RunRequest for the bridge
+request = obj.to_run_request(
+    workspace_snapshot={"changed_files": ["app/run.html"]},
+    cost_budget_usd=1.50,
+)
+
+# The request carries the full packet_runtime block in extras
+print(request.extras["packet_runtime"]["acceptance_test_id"])  # "C001"
+```
+
+### Batch loading
+
+```python
+from runner_bridge.packet_runtime import load_all_run_objects
+
+# Load all 20 public seed tasks as run objects
+objects = load_all_run_objects()
+for obj in objects:
+    req = obj.to_run_request()
+    # each req is ready for RunBridge.run()
+```
+
+### Honesty note
+
+The run object describes the *input shape* — what the run should do, which constraints apply, and what evidence is required. It does **not** claim that execution has happened. `execution_status` starts as `"not_started"` and `execution_backend` starts as `"pending"`. These fields become meaningful when a live backend is wired. The `execution_honesty` block in `result.json` makes the backend's actual capabilities machine-readable.
+
 ## Current bridge shape
 
 ```text

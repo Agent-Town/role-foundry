@@ -69,6 +69,14 @@ class RunBridge:
         request_path.write_text(json.dumps(redact_request_for_artifacts(raw_request), indent=2))
         private_request_path.write_text(json.dumps(raw_request, indent=2))
 
+        packet_runtime = raw_request.get("packet_runtime")
+        if packet_runtime:
+            run_object_path = run_dir / "run-object.json"
+            run_object_path.write_text(json.dumps(
+                _build_run_object_export(packet_runtime, request, run_dir),
+                indent=2,
+            ))
+
         started_at = _utc_now()
         self.control_plane.patch_run(
             request.run_id,
@@ -159,6 +167,8 @@ class RunBridge:
             normalized["scorecard"] = payload["scorecard"]
         if payload.get("error"):
             normalized["error"] = payload["error"]
+        if "execution_honesty" in payload:
+            normalized["execution_honesty"] = payload["execution_honesty"]
         return normalized
 
     def _resolve_existing_path(self, run_dir: Path, raw_path: Any, field_name: str) -> Path:
@@ -235,3 +245,42 @@ def _coerce_text(value: Any) -> str:
     if isinstance(value, bytes):
         return value.decode(errors="replace")
     return str(value)
+
+
+def _build_run_object_export(
+    packet_runtime: dict[str, Any],
+    request: RunRequest,
+    run_dir: Path,
+) -> dict[str, Any]:
+    """Build the run-object.json export from a packet_runtime block.
+
+    This is the concrete runtime artifact that proves the bridge consumed
+    the versioned curriculum contract surface for this run.  It carries
+    every field a reviewer or downstream tool needs to verify the run
+    was set up correctly without re-reading the registry or contract files.
+    """
+    return {
+        "run_object_version": packet_runtime.get("run_object_version", "1.0.0"),
+        "run_id": request.run_id,
+        "packet_id": packet_runtime.get("packet_id", ""),
+        "packet_version": packet_runtime.get("packet_version", "1.0.0"),
+        "packet_content_hash": packet_runtime.get("packet_content_hash", ""),
+        "acceptance_test_id": packet_runtime.get("acceptance_test_id", ""),
+        "role_id": packet_runtime.get("role_id", ""),
+        "phase_index": packet_runtime.get("phase_index", 0),
+        "eval_contract_ref": packet_runtime.get("eval_contract_ref", {}),
+        "mutation_budget": packet_runtime.get("mutation_budget", {}),
+        "allowed_paths": packet_runtime.get("allowed_paths", []),
+        "blocked_paths": packet_runtime.get("blocked_paths", []),
+        "expected_checks": packet_runtime.get("expected_checks", []),
+        "evidence_contract": packet_runtime.get("evidence_contract", {}),
+        "execution_status": packet_runtime.get("execution_status", "not_started"),
+        "execution_backend": packet_runtime.get("execution_backend", "pending"),
+        "receipt_output_dir": str(run_dir / "receipts"),
+        "artifact_locations": {
+            "request_public": str(run_dir / "request.json"),
+            "request_private": str(run_dir / "request.private.json"),
+            "run_object": str(run_dir / "run-object.json"),
+            "receipts_dir": str(run_dir / "receipts"),
+        },
+    }
