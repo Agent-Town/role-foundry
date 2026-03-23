@@ -30,6 +30,7 @@
 <nav x-data="navComponent()">
   <ul>
     <li><a class="brand" :href="pageHref('index.html')">Role Foundry</a></li>
+    <li><a :href="pageHref('vision.html')" :class="isActive('vision.html') && 'active'">Vision</a></li>
     <li><a :href="pageHref('index.html')" :class="isActive('index.html') && 'active'">Apprentice</a></li>
     <li><a :href="pageHref('scenarios.html')" :class="isActive('scenarios.html') && 'active'">Curriculum</a></li>
     <li><a :href="pageHref('run.html')" :class="isActive('run.html') && 'active'">Runs</a></li>
@@ -42,7 +43,7 @@
 
   <div class="page-header">
     <h1>Judge Scorecard</h1>
-    <p>Passing public curriculum is nice. Passing sealed holdouts is the real signal that the Frontend Apprentice can ship Role Foundry slices without overfitting the demo.</p>
+    <p>Passing public curriculum is nice. Passing sealed holdouts is the real signal that the Software Engineer apprentice can ship Role Foundry slices without overfitting the demo.</p>
   </div>
 
   <div class="toolbar-row">

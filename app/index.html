@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Role Foundry — Frontend Apprentice</title>
+  <title>Role Foundry — Software Engineer Apprentice</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
   <link rel="stylesheet" href="style.css">
   <script src="config.js"></script>
@@ -30,6 +30,7 @@
 <nav x-data="navComponent()">
   <ul>
     <li><a class="brand" :href="pageHref('index.html')">Role Foundry</a></li>
+    <li><a :href="pageHref('vision.html')" :class="isActive('vision.html') && 'active'">Vision</a></li>
     <li><a :href="pageHref('index.html')" :class="isActive('index.html') && 'active'">Apprentice</a></li>
     <li><a :href="pageHref('scenarios.html')" :class="isActive('scenarios.html') && 'active'">Curriculum</a></li>
     <li><a :href="pageHref('run.html')" :class="isActive('run.html') && 'active'">Runs</a></li>
@@ -39,8 +40,8 @@
 
 <main class="container" x-data>
   <div class="page-header">
-    <h1>Frontend Apprentice</h1>
-    <p>Robin + Neo are using Role Foundry to train its own first apprentice: a builder that implements Role Foundry product slices under hidden-eval review.</p>
+    <h1>Software Engineer Apprentice</h1>
+    <p>Role Foundry is a framework for training AI apprentices under holdout-aware evaluation. The current concrete example: Robin + Neo are training a Software Engineer apprentice to implement Role Foundry product slices under hidden-eval review.</p>
   </div>
 
   <section class="hero-callout">

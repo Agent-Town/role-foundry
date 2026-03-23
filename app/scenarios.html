@@ -30,6 +30,7 @@
 <nav x-data="navComponent()">
   <ul>
     <li><a class="brand" :href="pageHref('index.html')">Role Foundry</a></li>
+    <li><a :href="pageHref('vision.html')" :class="isActive('vision.html') && 'active'">Vision</a></li>
     <li><a :href="pageHref('index.html')" :class="isActive('index.html') && 'active'">Apprentice</a></li>
     <li><a :href="pageHref('scenarios.html')" :class="isActive('scenarios.html') && 'active'">Curriculum</a></li>
     <li><a :href="pageHref('run.html')" :class="isActive('run.html') && 'active'">Runs</a></li>
@@ -89,7 +90,7 @@
   <div class="grid-2">
     <section>
       <h2>Public Curriculum <span class="badge badge-training" x-text="$store.app.trainingScenarios().length"></span></h2>
-      <p><small>These are the slices the Frontend Apprentice can train on directly.</small></p>
+      <p><small>These are the slices the Software Engineer apprentice can train on directly.</small></p>
 
       <template x-for="s in $store.app.trainingScenarios()" :key="s.id">
         <div class="card curriculum-card">
@@ -155,7 +156,7 @@
   <article>
     <h3>Why this split matters</h3>
     <p>Most demos let the model practice on the same prompts it gets judged on. That is homework, not an exam. Role Foundry keeps the exam sealed, then promotes failure themes into the next public curriculum round.</p>
-    <p>That is the whole point of this vertical: the Frontend Apprentice is learning to build Role Foundry itself without getting to peek at the hidden judge set.</p>
+    <p>That is the whole point of this vertical: the Software Engineer apprentice is learning to build Role Foundry itself without getting to peek at the hidden judge set.</p>
   </article>
 </main>
 
