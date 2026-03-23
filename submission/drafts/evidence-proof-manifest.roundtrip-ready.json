@@ -1,0 +1,91 @@
+{
+  "status": "draft-fill-on-roundtrip-fold",
+  "final_review_branch": "FILL_FINAL_REVIEW_BRANCH",
+  "final_review_commit": "FILL_FINAL_REVIEW_COMMIT",
+  "artifacts": [
+    {
+      "id": "framework-story",
+      "kind": "repo-doc",
+      "status": "ready",
+      "path": "README.md",
+      "visibility": "public",
+      "notes": "Frames Role Foundry as a role-training, evaluation, and promotion system."
+    },
+    {
+      "id": "software-engineer-apprentice-story",
+      "kind": "repo-doc",
+      "status": "ready",
+      "path": "README.md",
+      "visibility": "public",
+      "notes": "Defines the first concrete role as the Software Engineer apprentice."
+    },
+    {
+      "id": "public-alpha-loop-proof",
+      "kind": "contract-plus-test",
+      "status": "ready",
+      "paths": [
+        "specs/010-autoresearch-alpha-public-loop.md",
+        "runner_bridge/examples/autoresearch-alpha-public-loop.json",
+        "tests/test_autoresearch_alpha_loop.py"
+      ],
+      "visibility": "public",
+      "notes": "Executable public alpha loop proof with better/equal/worse comparison contract."
+    },
+    {
+      "id": "local-private-holdout-boundary",
+      "kind": "contract-plus-test",
+      "status": "ready",
+      "paths": [
+        "docs/private-holdout-authoring.md",
+        "specs/012-private-holdout-pack.md",
+        "benchmarks/private-holdout-pack-template.json",
+        "tests/test_private_holdout_separation.py"
+      ],
+      "visibility": "public-plus-local-only-boundary",
+      "notes": "Proves the authoring and leak-separation contract without shipping teacher-only prompts."
+    },
+    {
+      "id": "judge-demo-packet-drafts",
+      "kind": "submission-packet",
+      "status": "ready",
+      "paths": [
+        "submission/drafts/judge-demo-script.md",
+        "submission/drafts/pr-or-submission-summary.md",
+        "submission/drafts/conversation-log.roundtrip-ready.md",
+        "submission/drafts/evidence-proof-manifest.roundtrip-ready.json",
+        "submission/drafts/submission-metadata.roundtrip-ready.json",
+        "submission/checklists/final-go-no-go.md",
+        "submission/checklists/proof-fold-merge-fill.md"
+      ],
+      "visibility": "public",
+      "notes": "Additive packaging materials prepared while the active proof-fold lane is still in progress."
+    },
+    {
+      "id": "external-roundtrip-proof",
+      "kind": "live-proof",
+      "status": "fill_after_roundtrip_fold",
+      "branch": "FILL_ROUNDTRIP_BRANCH",
+      "commit": "FILL_ROUNDTRIP_COMMIT",
+      "artifact_path": "FILL_ROUNDTRIP_ARTIFACT_PATH",
+      "entrypoint": "FILL_ROUNDTRIP_ENTRYPOINT",
+      "visibility": "proof-artifact",
+      "notes": "Expected to show an external Clawith -> OpenClaw -> Claude/vibecosystem roundtrip path. This is not native parity proof."
+    },
+    {
+      "id": "native-clawith-parity",
+      "kind": "claim-boundary",
+      "status": "blocked_not_claimed",
+      "path": null,
+      "visibility": "blocked",
+      "notes": "Do not claim native Clawith parity or native model-pool completion without separate direct proof."
+    },
+    {
+      "id": "sealed-certification",
+      "kind": "claim-boundary",
+      "status": "blocked_not_claimed",
+      "path": null,
+      "visibility": "blocked",
+      "notes": "Do not claim sealed certification, tamper-proof evaluation, or third-party-sealed holdouts."
+    }
+  ]
+}

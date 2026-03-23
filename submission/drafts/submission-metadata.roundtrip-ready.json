@@ -1,0 +1,72 @@
+{
+  "status": "draft-fill-on-roundtrip-fold",
+  "project": {
+    "name": "Role Foundry",
+    "repo_url": "https://github.com/Agent-Town/role-foundry",
+    "final_review_branch": "FILL_FINAL_REVIEW_BRANCH",
+    "final_review_commit": "FILL_FINAL_REVIEW_COMMIT"
+  },
+  "summary": {
+    "one_liner": "Role Foundry is a role-training, evaluation, and promotion system for AI apprentices; the current submission proves a Software Engineer apprentice public alpha loop, a local private-holdout honesty boundary, and an external Clawith -> OpenClaw -> Claude/vibecosystem roundtrip path without claiming native parity or sealed certification.",
+    "current_role": "Software Engineer apprentice",
+    "scope_note": "The shipped public curriculum remains frontend/product-heavy even though the role framing is broader software engineering.",
+    "public_alpha_loop_status": "proven",
+    "local_private_holdout_boundary_status": "proven",
+    "external_roundtrip_status": "fill_after_roundtrip_fold",
+    "native_clawith_parity_status": "not_claimed",
+    "sealed_certification_status": "not_claimed"
+  },
+  "stack": {
+    "agent_framework": "OpenClaw",
+    "agent_harness": "openclaw",
+    "control_plane": "Clawith",
+    "execution_backends": [
+      "Claude + vibecosystem",
+      "Codex",
+      "deterministic scripts"
+    ]
+  },
+  "proof": {
+    "public_alpha_loop": {
+      "status": "ready",
+      "paths": [
+        "specs/010-autoresearch-alpha-public-loop.md",
+        "runner_bridge/examples/autoresearch-alpha-public-loop.json",
+        "tests/test_autoresearch_alpha_loop.py"
+      ]
+    },
+    "local_private_holdout_boundary": {
+      "status": "ready",
+      "paths": [
+        "docs/private-holdout-authoring.md",
+        "specs/012-private-holdout-pack.md",
+        "benchmarks/private-holdout-pack-template.json",
+        "tests/test_private_holdout_separation.py"
+      ]
+    },
+    "external_roundtrip": {
+      "status": "fill_after_roundtrip_fold",
+      "branch": "FILL_ROUNDTRIP_BRANCH",
+      "commit": "FILL_ROUNDTRIP_COMMIT",
+      "artifact_path": "FILL_ROUNDTRIP_ARTIFACT_PATH",
+      "entrypoint": "FILL_ROUNDTRIP_ENTRYPOINT",
+      "note": "Expected proof target is an external Clawith -> OpenClaw -> Claude/vibecosystem roundtrip path."
+    }
+  },
+  "claim_boundary": {
+    "allowed": [
+      "Role-training, evaluation, and promotion framing",
+      "Software Engineer apprentice as the first concrete shipped role",
+      "Executable public alpha loop proof",
+      "Local private-holdout honesty boundary",
+      "External Clawith -> OpenClaw -> Claude/vibecosystem roundtrip proof once the exact artifact is filled"
+    ],
+    "not_claimed": [
+      "Native Clawith parity",
+      "Native model-pool completion",
+      "Sealed certification",
+      "Tamper-proof evaluation",
+      "Third-party-sealed holdouts"
+    ]
+  }
+}
