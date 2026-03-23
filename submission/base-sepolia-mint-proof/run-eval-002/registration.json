@@ -1,0 +1,54 @@
+{
+  "type": "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
+  "name": "Role Foundry Frontend Apprentice \u2014 run-eval-002",
+  "description": "Tighten the judge-facing scorecard, keep holdouts sealed from the student prompt pack, and show iteration deltas honestly. Teacher score 4/5. This draft backs a one-off Base Sepolia mint proof for a promoted public generation and is not yet minted onchain.",
+  "image": "about:blank",
+  "target_chain": {
+    "chain_id": 84532,
+    "label": "Base Sepolia (review/demo default)"
+  },
+  "services": [
+    {
+      "name": "role-foundry-run",
+      "type": "web",
+      "endpoint": "https://raw.githubusercontent.com/Agent-Town/role-foundry/review/base-sepolia-live-mint-proof-20260323-1325/submission/base-sepolia-mint-proof/run-eval-002/artifact-bundle.json",
+      "description": "Tracked public artifact bundle for this promoted generation."
+    },
+    {
+      "name": "proof-bundle",
+      "type": "receipt-bundle",
+      "endpoint": "https://raw.githubusercontent.com/Agent-Town/role-foundry/review/base-sepolia-live-mint-proof-20260323-1325/submission/base-sepolia-mint-proof/run-eval-002/receipts/summary.md",
+      "description": "Human-readable receipt summary for the run."
+    },
+    {
+      "name": "teacher-scorecard",
+      "type": "scorecard",
+      "endpoint": "https://raw.githubusercontent.com/Agent-Town/role-foundry/review/base-sepolia-live-mint-proof-20260323-1325/submission/base-sepolia-mint-proof/run-eval-002/result.json",
+      "description": "Normalized teacher scorecard receipt."
+    },
+    {
+      "name": "evidence-index",
+      "type": "receipt-index",
+      "endpoint": "https://raw.githubusercontent.com/Agent-Town/role-foundry/review/base-sepolia-live-mint-proof-20260323-1325/submission/base-sepolia-mint-proof/run-eval-002/receipts/evidence-index.json",
+      "description": "Evidence index for the public-safe provenance bundle."
+    }
+  ],
+  "registrations": [],
+  "extensions": {
+    "role_foundry": {
+      "run_id": "run-eval-002",
+      "agent_role": "student",
+      "scenario_set_id": "frontend-apprentice-v2",
+      "receipt_manifest_path": "receipts/manifest.json",
+      "scorecard_hash": {
+        "sha256": "794c227ee304f26e964501d60f6529565796c9358457a80d9a2405e9877468c0",
+        "bytes": 2488
+      },
+      "status": "completed",
+      "public_bundle_root": "https://raw.githubusercontent.com/Agent-Town/role-foundry/review/base-sepolia-live-mint-proof-20260323-1325/submission/base-sepolia-mint-proof/run-eval-002",
+      "token_uri_branch": "review/base-sepolia-live-mint-proof-20260323-1325",
+      "promotion_decision": "promoted_public_generation",
+      "mint_status": "awaiting_wallet_confirmation"
+    }
+  }
+}

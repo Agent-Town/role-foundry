@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "status": "awaiting_wallet_confirmation",
+  "run_id": "run-eval-002",
+  "recommended_path": "agent0-sdk",
+  "target_chain": {
+    "chain_id": 84532,
+    "label": "Base Sepolia (review/demo default)"
+  },
+  "draft_path": "submission/base-sepolia-mint-proof/run-eval-002/registration.json",
+  "required_after_mint": [
+    "namespace",
+    "chain_id",
+    "identity_registry",
+    "agent_id",
+    "tx_hash",
+    "minted_at",
+    "minted_by"
+  ],
+  "write_guardrail": "Do not mark ERC-8004 as registered until all required fields are filled from a confirmed wallet transaction.",
+  "links": {
+    "scorecard_hash": {
+      "sha256": "794c227ee304f26e964501d60f6529565796c9358457a80d9a2405e9877468c0",
+      "bytes": 2488
+    },
+    "receipt_manifest_path": "receipts/manifest.json"
+  },
+  "token_uri": "https://raw.githubusercontent.com/Agent-Town/role-foundry/review/base-sepolia-live-mint-proof-20260323-1325/submission/base-sepolia-mint-proof/run-eval-002/registration.json",
+  "public_bundle_root": "https://raw.githubusercontent.com/Agent-Town/role-foundry/review/base-sepolia-live-mint-proof-20260323-1325/submission/base-sepolia-mint-proof/run-eval-002"
+}

@@ -1,0 +1,7 @@
+{"ts": "2026-03-23T06:23:42Z", "event": "runner.started", "message": "Starting run-eval-002 for student on frontend-apprentice-v2"}
+{"ts": "2026-03-23T06:23:42Z", "event": "runner.objective", "message": "Tighten the judge-facing scorecard, keep holdouts sealed from the student prompt pack, and show iteration deltas honestly."}
+{"ts": "2026-03-23T06:23:42Z", "event": "student.prompt.loaded", "message": "Student prompt pack loaded with 3 visible scenarios and 2 sealed holdouts."}
+{"ts": "2026-03-23T06:23:42Z", "event": "teacher.evaluation.started", "message": "Teacher Robin + Neo is scoring the run against public curriculum plus sealed holdouts."}
+{"ts": "2026-03-23T06:23:42Z", "event": "teacher.evaluation.completed", "message": "Teacher aggregate score: 4/5 (80%)."}
+{"ts": "2026-03-23T06:23:42Z", "event": "iteration.delta", "message": "Score delta vs previous iteration: +2 passes, +1 holdouts."}
+{"ts": "2026-03-23T06:23:42Z", "event": "runner.completed", "message": "LocalReplayRunner produced a teacher scorecard, public curriculum themes, and iteration receipts."}

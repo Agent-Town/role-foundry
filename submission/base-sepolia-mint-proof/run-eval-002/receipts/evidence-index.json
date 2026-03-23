@@ -1,0 +1,399 @@
+{
+  "version": 1,
+  "run_id": "run-eval-002",
+  "generated_at": "2026-03-23T06:23:42Z",
+  "receipts": [
+    {
+      "receipt_id": "candidate:run-eval-002",
+      "kind": "candidate",
+      "path": "receipts/candidate.json",
+      "visibility": "public"
+    },
+    {
+      "receipt_id": "baseline:run-eval-001",
+      "kind": "baseline",
+      "path": "receipts/baseline.json",
+      "visibility": "public"
+    },
+    {
+      "receipt_id": "evaluation:run-eval-002",
+      "kind": "evaluation",
+      "path": "receipts/evaluation.json",
+      "visibility": "public"
+    }
+  ],
+  "entries": [
+    {
+      "evidence_id": "candidate-workspace",
+      "receipt_id": "candidate:run-eval-002",
+      "kind": "workspace_snapshot",
+      "label": "Current candidate workspace snapshot",
+      "summary": "Tighten the judge-facing scorecard, keep holdouts sealed from the student prompt pack, and show iteration deltas honestly.",
+      "sources": [
+        {
+          "artifact_path": "request.json",
+          "json_pointer": "/workspace_snapshot",
+          "visibility": "public"
+        },
+        {
+          "artifact_path": "artifact-bundle.json",
+          "json_pointer": "/workspace_snapshot",
+          "visibility": "public"
+        }
+      ]
+    },
+    {
+      "evidence_id": "candidate-transcript-objective",
+      "receipt_id": "candidate:run-eval-002",
+      "kind": "transcript_event",
+      "label": "Run objective logged in transcript",
+      "summary": "Tighten the judge-facing scorecard, keep holdouts sealed from the student prompt pack, and show iteration deltas honestly.",
+      "sources": [
+        {
+          "artifact_path": "transcript.ndjson",
+          "line": 2,
+          "event": "runner.objective",
+          "visibility": "public"
+        }
+      ]
+    },
+    {
+      "evidence_id": "candidate-prompt-pack",
+      "receipt_id": "candidate:run-eval-002",
+      "kind": "prompt_pack",
+      "label": "Student-visible prompt pack",
+      "summary": "3 visible scenarios and 2 sealed holdouts.",
+      "sources": [
+        {
+          "artifact_path": "request.json",
+          "json_pointer": "/teacher_evaluation/scenario_manifest",
+          "visibility": "public"
+        },
+        {
+          "artifact_path": "artifact-bundle.json",
+          "json_pointer": "/student_view",
+          "visibility": "public"
+        },
+        {
+          "artifact_path": "transcript.ndjson",
+          "line": 3,
+          "event": "student.prompt.loaded",
+          "visibility": "public"
+        }
+      ]
+    },
+    {
+      "evidence_id": "candidate-file-1",
+      "receipt_id": "candidate:run-eval-002",
+      "kind": "changed_file",
+      "label": "Changed file: app/data.js",
+      "summary": "app/data.js",
+      "sources": [
+        {
+          "artifact_path": "request.json",
+          "json_pointer": "/workspace_snapshot/changed_files/0",
+          "visibility": "public"
+        }
+      ]
+    },
+    {
+      "evidence_id": "candidate-file-2",
+      "receipt_id": "candidate:run-eval-002",
+      "kind": "changed_file",
+      "label": "Changed file: app/run.html",
+      "summary": "app/run.html",
+      "sources": [
+        {
+          "artifact_path": "request.json",
+          "json_pointer": "/workspace_snapshot/changed_files/1",
+          "visibility": "public"
+        }
+      ]
+    },
+    {
+      "evidence_id": "candidate-file-3",
+      "receipt_id": "candidate:run-eval-002",
+      "kind": "changed_file",
+      "label": "Changed file: app/scorecard.html",
+      "summary": "app/scorecard.html",
+      "sources": [
+        {
+          "artifact_path": "request.json",
+          "json_pointer": "/workspace_snapshot/changed_files/2",
+          "visibility": "public"
+        }
+      ]
+    },
+    {
+      "evidence_id": "candidate-file-4",
+      "receipt_id": "candidate:run-eval-002",
+      "kind": "changed_file",
+      "label": "Changed file: runner_bridge/backends/local_replay.py",
+      "summary": "runner_bridge/backends/local_replay.py",
+      "sources": [
+        {
+          "artifact_path": "request.json",
+          "json_pointer": "/workspace_snapshot/changed_files/3",
+          "visibility": "public"
+        }
+      ]
+    },
+    {
+      "evidence_id": "baseline-aggregate",
+      "receipt_id": "baseline:run-eval-001",
+      "kind": "aggregate_score",
+      "label": "Baseline aggregate score",
+      "summary": "2/5 passed before the current run.",
+      "sources": [
+        {
+          "artifact_path": "request.private.json",
+          "json_pointer": "/teacher_evaluation/previous_iteration",
+          "visibility": "private"
+        },
+        {
+          "artifact_path": "artifact-bundle.json",
+          "json_pointer": "/iteration_history/0",
+          "visibility": "public"
+        },
+        {
+          "artifact_path": "result.json",
+          "json_pointer": "/scorecard/iteration_history/0",
+          "visibility": "public"
+        }
+      ]
+    },
+    {
+      "evidence_id": "evaluation-aggregate",
+      "receipt_id": "evaluation:run-eval-002",
+      "kind": "aggregate_score",
+      "label": "Teacher aggregate score",
+      "summary": "4/5 passed.",
+      "sources": [
+        {
+          "artifact_path": "artifact-bundle.json",
+          "json_pointer": "/teacher_output/aggregate_score",
+          "visibility": "public"
+        },
+        {
+          "artifact_path": "result.json",
+          "json_pointer": "/scorecard/aggregate_score",
+          "visibility": "public"
+        },
+        {
+          "artifact_path": "transcript.ndjson",
+          "line": 5,
+          "event": "teacher.evaluation.completed",
+          "visibility": "public"
+        }
+      ]
+    },
+    {
+      "evidence_id": "evaluation-verdict",
+      "receipt_id": "evaluation:run-eval-002",
+      "kind": "verdict",
+      "label": "Teacher verdict",
+      "summary": "Run 2 materially improved. The apprentice kept holdouts sealed, published receipts, and made iteration deltas legible.",
+      "sources": [
+        {
+          "artifact_path": "artifact-bundle.json",
+          "json_pointer": "/teacher_output/verdict",
+          "visibility": "public"
+        },
+        {
+          "artifact_path": "result.json",
+          "json_pointer": "/scorecard/verdict",
+          "visibility": "public"
+        }
+      ]
+    },
+    {
+      "evidence_id": "evaluation-iteration-delta",
+      "receipt_id": "evaluation:run-eval-002",
+      "kind": "iteration_delta",
+      "label": "Iteration delta vs previous run",
+      "summary": "+2 passes and +1 holdouts.",
+      "sources": [
+        {
+          "artifact_path": "artifact-bundle.json",
+          "json_pointer": "/iteration_history/1",
+          "visibility": "public"
+        },
+        {
+          "artifact_path": "result.json",
+          "json_pointer": "/scorecard/iteration_history/1",
+          "visibility": "public"
+        },
+        {
+          "artifact_path": "transcript.ndjson",
+          "line": 6,
+          "event": "iteration.delta",
+          "visibility": "public"
+        }
+      ]
+    },
+    {
+      "evidence_id": "evaluation-scenario-t3",
+      "receipt_id": "evaluation:run-eval-002",
+      "kind": "scenario_result",
+      "label": "Scenario t3",
+      "summary": "passed at 0.900",
+      "tags": [
+        "scenario:t3",
+        "type:training",
+        "visibility:student-visible"
+      ],
+      "sources": [
+        {
+          "artifact_path": "artifact-bundle.json",
+          "json_pointer": "/teacher_output/scenario_results/0",
+          "visibility": "public"
+        },
+        {
+          "artifact_path": "result.json",
+          "json_pointer": "/scorecard/scenario_results/0",
+          "visibility": "public"
+        },
+        {
+          "artifact_path": "request.private.json",
+          "json_pointer": "/teacher_evaluation/scenarios/0",
+          "visibility": "private"
+        }
+      ]
+    },
+    {
+      "evidence_id": "evaluation-scenario-t4",
+      "receipt_id": "evaluation:run-eval-002",
+      "kind": "scenario_result",
+      "label": "Scenario t4",
+      "summary": "passed at 1.000",
+      "tags": [
+        "scenario:t4",
+        "type:training",
+        "visibility:student-visible"
+      ],
+      "sources": [
+        {
+          "artifact_path": "artifact-bundle.json",
+          "json_pointer": "/teacher_output/scenario_results/1",
+          "visibility": "public"
+        },
+        {
+          "artifact_path": "result.json",
+          "json_pointer": "/scorecard/scenario_results/1",
+          "visibility": "public"
+        },
+        {
+          "artifact_path": "request.private.json",
+          "json_pointer": "/teacher_evaluation/scenarios/1",
+          "visibility": "private"
+        }
+      ]
+    },
+    {
+      "evidence_id": "evaluation-scenario-t6",
+      "receipt_id": "evaluation:run-eval-002",
+      "kind": "scenario_result",
+      "label": "Scenario t6",
+      "summary": "passed at 0.900",
+      "tags": [
+        "scenario:t6",
+        "type:training",
+        "visibility:student-visible"
+      ],
+      "sources": [
+        {
+          "artifact_path": "artifact-bundle.json",
+          "json_pointer": "/teacher_output/scenario_results/2",
+          "visibility": "public"
+        },
+        {
+          "artifact_path": "result.json",
+          "json_pointer": "/scorecard/scenario_results/2",
+          "visibility": "public"
+        },
+        {
+          "artifact_path": "request.private.json",
+          "json_pointer": "/teacher_evaluation/scenarios/2",
+          "visibility": "private"
+        }
+      ]
+    },
+    {
+      "evidence_id": "evaluation-scenario-h1",
+      "receipt_id": "evaluation:run-eval-002",
+      "kind": "scenario_result",
+      "label": "Scenario h1",
+      "summary": "passed at 0.900",
+      "tags": [
+        "scenario:h1",
+        "type:holdout",
+        "visibility:sealed"
+      ],
+      "sources": [
+        {
+          "artifact_path": "artifact-bundle.json",
+          "json_pointer": "/teacher_output/scenario_results/3",
+          "visibility": "public"
+        },
+        {
+          "artifact_path": "result.json",
+          "json_pointer": "/scorecard/scenario_results/3",
+          "visibility": "public"
+        },
+        {
+          "artifact_path": "request.private.json",
+          "json_pointer": "/teacher_evaluation/scenarios/3",
+          "visibility": "private"
+        }
+      ]
+    },
+    {
+      "evidence_id": "evaluation-scenario-h2",
+      "receipt_id": "evaluation:run-eval-002",
+      "kind": "scenario_result",
+      "label": "Scenario h2",
+      "summary": "failed at 0.600",
+      "tags": [
+        "scenario:h2",
+        "type:holdout",
+        "visibility:sealed"
+      ],
+      "sources": [
+        {
+          "artifact_path": "artifact-bundle.json",
+          "json_pointer": "/teacher_output/scenario_results/4",
+          "visibility": "public"
+        },
+        {
+          "artifact_path": "result.json",
+          "json_pointer": "/scorecard/scenario_results/4",
+          "visibility": "public"
+        },
+        {
+          "artifact_path": "request.private.json",
+          "json_pointer": "/teacher_evaluation/scenarios/4",
+          "visibility": "private"
+        }
+      ]
+    },
+    {
+      "evidence_id": "evaluation-theme-1",
+      "receipt_id": "evaluation:run-eval-002",
+      "kind": "public_curriculum_theme",
+      "label": "Explain evaluation integrity without leaking the exam",
+      "summary": "Teach the apprentice to describe the teacher loop and scoring logic without quoting the hidden holdout text.",
+      "sources": [
+        {
+          "artifact_path": "artifact-bundle.json",
+          "json_pointer": "/public_curriculum_themes/0",
+          "visibility": "public"
+        },
+        {
+          "artifact_path": "result.json",
+          "json_pointer": "/scorecard/public_curriculum_themes/0",
+          "visibility": "public"
+        }
+      ]
+    }
+  ]
+}

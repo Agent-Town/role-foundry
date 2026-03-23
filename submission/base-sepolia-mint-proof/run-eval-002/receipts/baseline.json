@@ -1,0 +1,21 @@
+{
+  "receipt_id": "baseline:run-eval-001",
+  "kind": "baseline",
+  "run_id": "run-eval-001",
+  "source_run_id": "run-eval-002",
+  "label": "baseline",
+  "aggregate_score": {
+    "passed": 2,
+    "total": 5,
+    "pass_rate": 0.4,
+    "average_score": 0.46,
+    "holdout": {
+      "passed": 0,
+      "total": 2,
+      "pass_rate": 0.0
+    }
+  },
+  "evidence_refs": [
+    "baseline-aggregate"
+  ]
+}

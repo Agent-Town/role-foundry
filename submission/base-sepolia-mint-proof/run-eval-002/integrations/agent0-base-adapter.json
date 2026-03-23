@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "owner": "Role Foundry",
+  "adapter_id": "role-foundry.agent0-base-adapter.v1",
+  "sdk_module": "agent0-sdk",
+  "target_chain": {
+    "chain_id": 84532,
+    "label": "Base Sepolia (review/demo default)",
+    "rpc_url_configured": false
+  },
+  "wallet_discovery": "discoverEip6963Providers",
+  "wallet_connect": "connectEip1193",
+  "mint_method": "registerHTTP",
+  "registration_strategy": "Write local registration draft first, then let a human-approved wallet mint with registerHTTP(tokenUri) on Base.",
+  "browser_adapter_path": "app/agent0_base_adapter.mjs",
+  "browser_flow": [
+    "Import agent0_base_adapter.mjs (Role Foundry-owned thin adapter).",
+    "Call discoverProviders() to find EIP-6963 wallets.",
+    "Call connectWallet(provider) to establish an EIP-1193 session.",
+    "Call initSDK({ chainId: 84532, rpcUrl, walletProvider, registryOverrides }).",
+    "Call createAgentFromDraft(sdk, registrationDraft) to build the agent profile.",
+    "Call mintAgent(agent, tokenUri) which calls agent.registerHTTP(tokenUri).",
+    "On confirmed tx, fill the completion template with chain_id, registry, agent_id, tx_hash."
+  ],
+  "env_requirements": {
+    "rpc_url": "BASE_SEPOLIA_RPC_URL",
+    "registry_override": "BASE_SEPOLIA_REGISTRY",
+    "subgraph_override": "BASE_SEPOLIA_SUBGRAPH_URL"
+  },
+  "draft_path": "integrations/erc8004-registration-draft.json",
+  "completion_path": "integrations/erc8004-completion-template.json",
+  "blocking_requirements": [
+    "agent0-sdk must be available (npm or vendored ESM bundle).",
+    "An EIP-6963/EIP-1193 compatible wallet must be present in the browser.",
+    "RPC URL for chain 84532 must be configured via BASE_SEPOLIA_RPC_URL.",
+    "Identity registry address must be configured via BASE_SEPOLIA_REGISTRY (agent0-sdk does not reliably default for Base).",
+    "Human wallet approval is required before any onchain write."
+  ]
+}

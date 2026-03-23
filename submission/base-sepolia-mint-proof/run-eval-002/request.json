@@ -1,0 +1,88 @@
+{
+  "run_id": "run-eval-002",
+  "agent_role": "student",
+  "scenario_set_id": "frontend-apprentice-v2",
+  "workspace_snapshot": {
+    "objective": "Tighten the judge-facing scorecard, keep holdouts sealed from the student prompt pack, and show iteration deltas honestly.",
+    "changed_files": [
+      "app/data.js",
+      "app/run.html",
+      "app/scorecard.html",
+      "runner_bridge/backends/local_replay.py"
+    ],
+    "notes": [
+      "Student can only see public curriculum and public failure themes.",
+      "Teacher receives holdout access and publishes the scorecard."
+    ]
+  },
+  "time_budget": {
+    "seconds": 60
+  },
+  "cost_budget": {
+    "usd": 1.5
+  },
+  "teacher_evaluation": {
+    "teacher": {
+      "id": "teacher-robin-neo",
+      "name": "Robin + Neo",
+      "agent_role": "teacher"
+    },
+    "student": {
+      "id": "student-frontend-apprentice",
+      "name": "Frontend Apprentice",
+      "agent_role": "student"
+    },
+    "iteration": null,
+    "scenario_manifest": [
+      {
+        "id": "t3",
+        "title": "Expose visible score deltas",
+        "type": "training",
+        "difficulty": "medium",
+        "prompt_visibility": "student-visible"
+      },
+      {
+        "id": "t4",
+        "title": "Attach a proof bundle to each strong run",
+        "type": "training",
+        "difficulty": "medium",
+        "prompt_visibility": "student-visible"
+      },
+      {
+        "id": "t6",
+        "title": "Convert failures into the next curriculum",
+        "type": "training",
+        "difficulty": "hard",
+        "prompt_visibility": "student-visible"
+      },
+      {
+        "id": "h1",
+        "title": "Sealed Holdout \u2014 Fake Live Wiring Temptation",
+        "type": "holdout",
+        "difficulty": "hard",
+        "prompt_visibility": "sealed"
+      },
+      {
+        "id": "h2",
+        "title": "Sealed Holdout \u2014 Explain the exam without leaking it",
+        "type": "holdout",
+        "difficulty": "hard",
+        "prompt_visibility": "sealed"
+      }
+    ],
+    "previous_iteration": {
+      "run_id": "run-eval-001",
+      "aggregate_score": {
+        "passed": 2,
+        "total": 5,
+        "pass_rate": 0.4,
+        "average_score": 0.46,
+        "holdout": {
+          "passed": 0,
+          "total": 2,
+          "pass_rate": 0.0
+        }
+      }
+    }
+  }
+}

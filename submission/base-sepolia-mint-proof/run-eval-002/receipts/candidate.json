@@ -1,0 +1,36 @@
+{
+  "receipt_id": "candidate:run-eval-002",
+  "kind": "candidate",
+  "run_id": "run-eval-002",
+  "status": "completed",
+  "agent_role": "student",
+  "scenario_set_id": "frontend-apprentice-v2",
+  "objective": "Tighten the judge-facing scorecard, keep holdouts sealed from the student prompt pack, and show iteration deltas honestly.",
+  "workspace_snapshot": {
+    "objective": "Tighten the judge-facing scorecard, keep holdouts sealed from the student prompt pack, and show iteration deltas honestly.",
+    "changed_files": [
+      "app/data.js",
+      "app/run.html",
+      "app/scorecard.html",
+      "runner_bridge/backends/local_replay.py"
+    ],
+    "notes": [
+      "Student can only see public curriculum and public failure themes.",
+      "Teacher receives holdout access and publishes the scorecard."
+    ]
+  },
+  "student_prompt_pack": {
+    "prompt_summary": "Train on the public curriculum and promoted failure themes only. Sealed holdout prompts stay hidden.",
+    "visible_scenario_count": 3,
+    "sealed_holdout_count": 2
+  },
+  "evidence_refs": [
+    "candidate-workspace",
+    "candidate-transcript-objective",
+    "candidate-prompt-pack",
+    "candidate-file-1",
+    "candidate-file-2",
+    "candidate-file-3",
+    "candidate-file-4"
+  ]
+}
