@@ -228,7 +228,64 @@
         "alpha_receipt": "autoresearch-alpha.json",
         "alpha_request_copy": "autoresearch-alpha.request.json"
       },
-      "honesty_note": "This is a public-safe boundary record, not a seal. It records what the run can honestly claim and what controls are missing before stronger language becomes honest."
+      "honesty_note": "This is a public-safe boundary record, not a seal. It records what the run can honestly claim and what controls are missing before stronger language becomes honest.",
+      "execution_backend": {
+        "aggregate_status": "consistent",
+        "backend_id": "local_replay",
+        "mode": "zero_secret_replay",
+        "stage_backends": {
+          "baseline-eval": {
+            "backend_id": "local_replay",
+            "runner_name": "LocalReplayRunner",
+            "mode": "zero_secret_replay",
+            "selection_source": "artifact_bundle.execution_backend_contract"
+          },
+          "candidate-student": {
+            "backend_id": "local_replay",
+            "runner_name": "LocalReplayRunner",
+            "mode": "zero_secret_replay",
+            "selection_source": "artifact_bundle.execution_backend_contract"
+          },
+          "candidate-teacher-eval": {
+            "backend_id": "local_replay",
+            "runner_name": "LocalReplayRunner",
+            "mode": "zero_secret_replay",
+            "selection_source": "artifact_bundle.execution_backend_contract"
+          }
+        },
+        "execution_backend_contract": {
+          "backend_id": "local_replay",
+          "entrypoint": "python3 -m runner_bridge.backends.local_replay",
+          "module": "runner_bridge.backends.local_replay",
+          "mode": "zero_secret_replay",
+          "claim_boundary": {
+            "executes_commands": "false",
+            "native_clawith_parity": "not_claimed",
+            "independent_executor_isolation": "not_claimed"
+          }
+        },
+        "execution_honesty": {
+          "backend": "LocalReplayRunner",
+          "mode": "zero_secret_replay",
+          "executes_commands": false,
+          "executes_checks": false,
+          "mutation_enforcement": "not_enforced",
+          "path_constraint_enforcement": "not_enforced",
+          "claim_boundary": {
+            "executes_commands": "false",
+            "native_clawith_parity": "not_claimed",
+            "independent_executor_isolation": "not_claimed"
+          },
+          "honesty_note": "LocalReplayRunner is a zero-secret replay backend. It validates the request contract and produces receipts, but does not execute task commands, enforce mutation budgets, or enforce path constraints. These remain not executed / not enforced until a live execution backend is wired.",
+          "check_result_count": 0,
+          "not_executed_check_count": 0
+        },
+        "intended_executor_path": {
+          "entrypoint": "python3 -m runner_bridge.backends.local_replay",
+          "module": "runner_bridge.backends.local_replay"
+        },
+        "honesty_note": "This block records backend provenance and current execution honesty across alpha stages only. It does not by itself prove live execution, independent executor isolation, sealed evaluation, certification, tamper-proofing, or native Clawith parity."
+      }
     },
     "stages": {
       "baseline-eval": {
@@ -789,6 +846,44 @@
               "result_provenance_has_audit_bundle": true
             }
           }
+        },
+        "execution_backend": {
+          "backend_id": "local_replay",
+          "runner_name": "LocalReplayRunner",
+          "selection_source": "artifact_bundle.execution_backend_contract",
+          "mode": "zero_secret_replay",
+          "execution_backend_contract": {
+            "backend_id": "local_replay",
+            "entrypoint": "python3 -m runner_bridge.backends.local_replay",
+            "module": "runner_bridge.backends.local_replay",
+            "mode": "zero_secret_replay",
+            "claim_boundary": {
+              "executes_commands": "false",
+              "native_clawith_parity": "not_claimed",
+              "independent_executor_isolation": "not_claimed"
+            }
+          },
+          "execution_honesty": {
+            "backend": "LocalReplayRunner",
+            "mode": "zero_secret_replay",
+            "executes_commands": false,
+            "executes_checks": false,
+            "mutation_enforcement": "not_enforced",
+            "path_constraint_enforcement": "not_enforced",
+            "claim_boundary": {
+              "executes_commands": "false",
+              "native_clawith_parity": "not_claimed",
+              "independent_executor_isolation": "not_claimed"
+            },
+            "honesty_note": "LocalReplayRunner is a zero-secret replay backend. It validates the request contract and produces receipts, but does not execute task commands, enforce mutation budgets, or enforce path constraints. These remain not executed / not enforced until a live execution backend is wired.",
+            "check_result_count": 0,
+            "not_executed_check_count": 0
+          },
+          "intended_executor_path": {
+            "entrypoint": "python3 -m runner_bridge.backends.local_replay",
+            "module": "runner_bridge.backends.local_replay"
+          },
+          "honesty_note": "This block records backend provenance and the current execution honesty boundary only. It does not by itself prove live execution, independent executor isolation, sealed evaluation, certification, tamper-proofing, or native Clawith parity."
         }
       },
       "candidate-student": {
@@ -1209,6 +1304,44 @@
               "result_provenance_has_audit_bundle": true
             }
           }
+        },
+        "execution_backend": {
+          "backend_id": "local_replay",
+          "runner_name": "LocalReplayRunner",
+          "selection_source": "artifact_bundle.execution_backend_contract",
+          "mode": "zero_secret_replay",
+          "execution_backend_contract": {
+            "backend_id": "local_replay",
+            "entrypoint": "python3 -m runner_bridge.backends.local_replay",
+            "module": "runner_bridge.backends.local_replay",
+            "mode": "zero_secret_replay",
+            "claim_boundary": {
+              "executes_commands": "false",
+              "native_clawith_parity": "not_claimed",
+              "independent_executor_isolation": "not_claimed"
+            }
+          },
+          "execution_honesty": {
+            "backend": "LocalReplayRunner",
+            "mode": "zero_secret_replay",
+            "executes_commands": false,
+            "executes_checks": false,
+            "mutation_enforcement": "not_enforced",
+            "path_constraint_enforcement": "not_enforced",
+            "claim_boundary": {
+              "executes_commands": "false",
+              "native_clawith_parity": "not_claimed",
+              "independent_executor_isolation": "not_claimed"
+            },
+            "honesty_note": "LocalReplayRunner is a zero-secret replay backend. It validates the request contract and produces receipts, but does not execute task commands, enforce mutation budgets, or enforce path constraints. These remain not executed / not enforced until a live execution backend is wired.",
+            "check_result_count": 0,
+            "not_executed_check_count": 0
+          },
+          "intended_executor_path": {
+            "entrypoint": "python3 -m runner_bridge.backends.local_replay",
+            "module": "runner_bridge.backends.local_replay"
+          },
+          "honesty_note": "This block records backend provenance and the current execution honesty boundary only. It does not by itself prove live execution, independent executor isolation, sealed evaluation, certification, tamper-proofing, or native Clawith parity."
         }
       },
       "candidate-teacher-eval": {
@@ -1813,6 +1946,44 @@
               "result_provenance_has_audit_bundle": true
             }
           }
+        },
+        "execution_backend": {
+          "backend_id": "local_replay",
+          "runner_name": "LocalReplayRunner",
+          "selection_source": "artifact_bundle.execution_backend_contract",
+          "mode": "zero_secret_replay",
+          "execution_backend_contract": {
+            "backend_id": "local_replay",
+            "entrypoint": "python3 -m runner_bridge.backends.local_replay",
+            "module": "runner_bridge.backends.local_replay",
+            "mode": "zero_secret_replay",
+            "claim_boundary": {
+              "executes_commands": "false",
+              "native_clawith_parity": "not_claimed",
+              "independent_executor_isolation": "not_claimed"
+            }
+          },
+          "execution_honesty": {
+            "backend": "LocalReplayRunner",
+            "mode": "zero_secret_replay",
+            "executes_commands": false,
+            "executes_checks": false,
+            "mutation_enforcement": "not_enforced",
+            "path_constraint_enforcement": "not_enforced",
+            "claim_boundary": {
+              "executes_commands": "false",
+              "native_clawith_parity": "not_claimed",
+              "independent_executor_isolation": "not_claimed"
+            },
+            "honesty_note": "LocalReplayRunner is a zero-secret replay backend. It validates the request contract and produces receipts, but does not execute task commands, enforce mutation budgets, or enforce path constraints. These remain not executed / not enforced until a live execution backend is wired.",
+            "check_result_count": 0,
+            "not_executed_check_count": 0
+          },
+          "intended_executor_path": {
+            "entrypoint": "python3 -m runner_bridge.backends.local_replay",
+            "module": "runner_bridge.backends.local_replay"
+          },
+          "honesty_note": "This block records backend provenance and the current execution honesty boundary only. It does not by itself prove live execution, independent executor isolation, sealed evaluation, certification, tamper-proofing, or native Clawith parity."
         }
       }
     },

@@ -13,7 +13,7 @@ from .contract import ContractError, RunRequest
 from .eval_loop import redact_request_for_artifacts
 from .mutation_surface import audit_packet_mutation_surface, write_mutation_surface_audit_receipt
 from .product_integrations import write_product_integrations
-from .provenance import write_receipt_provenance
+from .provenance import build_execution_backend_surface, write_receipt_provenance
 
 ALLOWED_STATUSES = {"completed", "failed", "timeout"}
 
@@ -133,6 +133,14 @@ class RunBridge:
                 run_dir / "artifact-bundle.json",
                 mutation_surface_audit,
                 mutation_surface_audit_path,
+            )
+
+        execution_backend = build_execution_backend_surface(raw_request, result)
+        if execution_backend:
+            result["execution_backend"] = execution_backend
+            _patch_artifact_bundle_execution_backend(
+                run_dir / "artifact-bundle.json",
+                execution_backend,
             )
 
         result_path = run_dir / "result.json"
@@ -268,6 +276,31 @@ def _patch_artifact_bundle_mutation_surface_audit(
     receipts["mutation_surface_audit_path"] = mutation_surface_audit_path
     artifact_bundle["receipts"] = receipts
     artifact_bundle["mutation_surface_audit"] = mutation_surface_audit
+    artifact_bundle_path.write_text(json.dumps(artifact_bundle, indent=2))
+
+
+def _patch_artifact_bundle_execution_backend(
+    artifact_bundle_path: Path,
+    execution_backend: dict[str, Any],
+) -> None:
+    if not artifact_bundle_path.exists():
+        return
+    artifact_bundle = json.loads(artifact_bundle_path.read_text())
+    if not isinstance(artifact_bundle, dict):
+        return
+
+    backend_id = execution_backend.get("backend_id")
+    if backend_id:
+        artifact_bundle["execution_backend"] = backend_id
+
+    backend_contract = execution_backend.get("execution_backend_contract")
+    if isinstance(backend_contract, dict) and backend_contract:
+        artifact_bundle["execution_backend_contract"] = backend_contract
+
+    execution_honesty = execution_backend.get("execution_honesty")
+    if isinstance(execution_honesty, dict) and execution_honesty:
+        artifact_bundle["execution_honesty"] = execution_honesty
+
     artifact_bundle_path.write_text(json.dumps(artifact_bundle, indent=2))
 
 

@@ -234,6 +234,7 @@ Role Foundry now carries a thin, explicit **`claude_vibecosystem` runner backend
 - the run object records `execution_backend: "claude_vibecosystem"`
 - the run object and private request can carry an `execution_backend_contract` block with executor mode + claim boundary
 - the backend stub writes `execution_honesty` and provenance surfaces without invoking live Claude/network work in tests
+- public-safe artifact/receipt exports can preserve that seam via `artifact-bundle.json` backend fields, receipt `execution_backend` blocks, and alpha `sealing_receipt.execution_backend` summaries when present
 
 What this beta seam does **not** do yet:
 - it does not shell out to Claude Code for live execution

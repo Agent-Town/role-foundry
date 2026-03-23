@@ -184,6 +184,7 @@ What it carries:
 - `operator_checklist` — which controls are present vs missing, with reasons
 - `blocked_claims` — stronger claims that are explicitly blocked, each with a reason and prerequisite
 - `stronger_claim_prerequisites` — machine-readable list of what would need to be true before each blocked claim could be unblocked, each with `prerequisite`, `enables`, and `met` fields
+- `execution_backend` — backend provenance summary across the alpha stages, including backend id / mode, per-stage backend ids, optional `execution_backend_contract`, and summarized `execution_honesty`; this is **claim-boundary evidence only**, not proof of live execution or isolation
 - `private_manifest_fingerprint` — if a private holdout manifest was loaded, a SHA-256 of its canonical JSON bytes labeled as **local operator correlation only** (not independent tamper-proofing)
 - `pre_run_manifest_commitment` — when the run actually uses the local private-holdout lane, a local-only summary of the `pre-run-manifest-commitment.json` artifact written before stage execution, including the canonical manifest hash, timestamp, sequence linkage, and honesty note
 - `linked_receipt_paths` — relative paths to the alpha receipt, request copy, and (when present) the pre-run commitment artifact
@@ -253,7 +254,7 @@ For the hackathon MVP, Clawith integration is wired at the Docker layer and the 
 
 Using different model families for building and judging reduces correlated self-grading.
 
-A contract-first `claude_vibecosystem` external-executor beta seam is now wired through `python3 -m runner_bridge.cli --runner-backend claude_vibecosystem`. It records backend selection, executor intent, and claim boundaries, but it does not claim sealed evaluation, live isolation, or native Clawith parity.
+A contract-first `claude_vibecosystem` external-executor beta seam is now wired through `python3 -m runner_bridge.cli --runner-backend claude_vibecosystem`. It records backend selection, executor intent, and claim boundaries into `run-object.json`, `artifact-bundle.json`, receipt provenance, and alpha-loop `sealing_receipt.execution_backend` summaries when those surfaces are exported, but it does not claim sealed evaluation, live isolation, or native Clawith parity.
 
 ## Docs
 

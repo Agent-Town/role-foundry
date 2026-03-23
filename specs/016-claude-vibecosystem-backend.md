@@ -13,6 +13,7 @@ This slice should:
 - let packet-driven runs stamp `execution_backend: "claude_vibecosystem"` into `run-object.json`
 - carry a machine-readable `execution_backend_contract` block in the runtime/request surface
 - provide a tiny non-destructive backend stub that records executor intent + honesty boundaries in `result.json`
+- preserve that backend provenance into `artifact-bundle.json`, receipt provenance files, and the alpha-loop `sealing_receipt` surface when present
 - keep the current Clawith/OpenClaw/Claude proof lane framed as an **external-executor beta seam** only
 
 ## Required contract surface
@@ -55,6 +56,13 @@ The backend stub should leave a transcript/artifact bundle/result trio so review
 - which backend was selected
 - which executor path would be used later
 - what honesty boundary applies today
+
+At minimum, when this seam is present the public-safe artifact/receipt surfaces should preserve:
+- `artifact-bundle.json.execution_backend`
+- `artifact-bundle.json.execution_backend_contract`
+- summarized `artifact-bundle.json.execution_honesty`
+- receipt-level `execution_backend` provenance blocks (for example in `receipts/candidate.json`)
+- alpha-loop `sealing_receipt.execution_backend` summaries when an alpha-style surface is exported from runs carrying this seam
 
 ## Non-goals
 

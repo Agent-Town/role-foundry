@@ -35,6 +35,7 @@ class SealedReceiptSurfaceSpecTests(unittest.TestCase):
             "operator_checklist",
             "blocked_claims",
             "stronger_claim_prerequisites",
+            "execution_backend",
             "private_manifest_fingerprint",
             "pre_run_manifest_commitment",
             "local operator correlation only",
@@ -173,6 +174,23 @@ class SealedReceiptSurfacePublicRegressionTests(unittest.TestCase):
             self.assertIn("enables", p)
             self.assertIn("met", p)
 
+    def test_execution_backend_summary_is_present_and_honest(self):
+        sr = self.receipt["sealing_receipt"]
+        backend = sr["execution_backend"]
+        self.assertEqual(backend["aggregate_status"], "consistent")
+        self.assertEqual(backend["backend_id"], "local_replay")
+        self.assertEqual(backend["mode"], "zero_secret_replay")
+        self.assertEqual(
+            backend["execution_backend_contract"]["claim_boundary"]["independent_executor_isolation"],
+            "not_claimed",
+        )
+        self.assertFalse(backend["execution_honesty"]["executes_commands"])
+        self.assertFalse(backend["execution_honesty"]["executes_checks"])
+        self.assertEqual(
+            set(backend["stage_backends"].keys()),
+            {"baseline-eval", "candidate-student", "candidate-teacher-eval"},
+        )
+
     def test_public_regression_has_no_manifest_fingerprint(self):
         """A public-regression run should not have a private manifest fingerprint."""
         sr = self.receipt["sealing_receipt"]
@@ -255,6 +273,60 @@ class SealedReceiptFingerprintUnitTests(unittest.TestCase):
             artifacts_root=Path("/tmp/fake"),
         )
         self.assertIsNone(sr["private_manifest_fingerprint"])
+
+
+class SealingReceiptExecutionBackendUnitTests(unittest.TestCase):
+    def test_named_backend_summary_stays_claim_boundary_only(self):
+        from runner_bridge.autoresearch_alpha import _build_sealing_receipt
+        from runner_bridge.backends import backend_contract_for_runner
+
+        backend_contract = backend_contract_for_runner("claude_vibecosystem")
+        stage_execution_backend = {
+            "backend_id": "claude_vibecosystem",
+            "runner_name": "claude_vibecosystem",
+            "mode": "external_executor_beta",
+            "selection_source": "packet_runtime.execution_backend",
+            "execution_backend_contract": backend_contract,
+            "execution_honesty": {
+                "backend": "claude_vibecosystem",
+                "mode": "external_executor_beta",
+                "beta_status": "adapter_first_contract_stub",
+                "executes_commands": False,
+                "executes_checks": False,
+                "claim_boundary": backend_contract["claim_boundary"],
+                "honesty_note": "Contract/provenance seam only.",
+            },
+            "intended_executor_path": {
+                "entrypoint": backend_contract["entrypoint"],
+                "runtime": backend_contract["executor"]["runtime"],
+                "agent_selection": backend_contract["executor"]["agent_selection"],
+                "control_plane_path": backend_contract["control_plane"]["path"],
+            },
+        }
+
+        stages = {
+            "baseline-eval": {"execution_backend": stage_execution_backend},
+            "candidate-student": {"execution_backend": stage_execution_backend},
+            "candidate-teacher-eval": {"execution_backend": stage_execution_backend},
+        }
+        sr = _build_sealing_receipt(
+            integrity_gate={"status": "pass", "mode": "public_regression", "summary": "test"},
+            private_holdout_pack=None,
+            artifacts_root=Path("/tmp/fake"),
+            stages=stages,
+        )
+
+        backend = sr["execution_backend"]
+        self.assertEqual(backend["aggregate_status"], "consistent")
+        self.assertEqual(backend["backend_id"], "claude_vibecosystem")
+        self.assertEqual(backend["mode"], "external_executor_beta")
+        self.assertEqual(
+            backend["execution_backend_contract"]["claim_boundary"]["sealed_evaluation"],
+            "not_claimed",
+        )
+        self.assertFalse(backend["execution_honesty"]["executes_commands"])
+        self.assertFalse(sr["operator_checklist"]["independent_executor_sandbox"]["present"])
+        self.assertIn("not a seal", sr["honesty_note"])
 
 
 class PreRunManifestCommitmentUnitTests(unittest.TestCase):

@@ -15,7 +15,7 @@ The autoresearch alpha loop can today:
 - Produce a `better` / `equal` / `worse` comparison receipt
 - Keep teacher-only content out of tracked and student-visible artifacts
 - Record an integrity gate that distinguishes `public_regression` from `local_private_holdout` mode
-- Emit a `sealing_receipt` block in the alpha receipt that records the claim ceiling, operator checklist states, and blocked stronger claims with explicit reasons
+- Emit a `sealing_receipt` block in the alpha receipt that records the claim ceiling, operator checklist states, blocked stronger claims, and a public-safe `execution_backend` provenance summary with explicit reasons/honesty notes
 
 The **claim ceiling** for this tier is: *local private-holdout alpha execution with public-safe receipts*.
 
@@ -47,6 +47,7 @@ The `sealing_receipt` block in the alpha receipt is designed to be **public-safe
 - `operator_checklist` — which controls are present vs missing, each with a boolean and a reason
 - `blocked_claims` — list of stronger claims that are explicitly blocked, each with a reason
 - `stronger_claim_prerequisites` — what would need to be true before each blocked claim could be unblocked
+- `execution_backend` — backend provenance summary across alpha stages, including backend id / mode, per-stage backend ids, optional `execution_backend_contract`, and summarized `execution_honesty`; this is claim-boundary evidence only, not proof of live execution or isolation
 - `private_manifest_fingerprint` — if a private holdout manifest was loaded, a SHA-256 of its canonical JSON bytes; labeled as **local operator correlation only**, not independent tamper-proofing
 - `pre_run_manifest_commitment` — if a private holdout manifest was loaded, a commitment artifact written **before** any stage execution begins, recording the manifest hash, timestamp, and sequence linkage (see below)
 - `linked_receipt_paths` — relative paths to the alpha receipt, request copy, and (when present) pre-run commitment within the artifacts root

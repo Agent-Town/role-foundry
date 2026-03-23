@@ -12,6 +12,7 @@ from typing import Any
 
 from .bridge import ClawithRunClient, RunBridge
 from .contract import ContractError, RunRequest
+from .provenance import build_execution_backend_surface
 
 STAGE_ORDER = (
     ("baseline-eval", {"iteration": 1, "iteration_label": "baseline"}),
@@ -210,26 +211,24 @@ def run_alpha_loop(
         comparison_policy=config.get("comparison_policy") if isinstance(config.get("comparison_policy"), dict) else {},
         integrity_gate=integrity_gate,
     )
-    artifact_coverage = _build_artifact_coverage(
-        artifacts_root,
-        {
-            "baseline-eval": baseline_stage,
-            "candidate-student": candidate_student_stage,
-            "candidate-teacher-eval": candidate_teacher_stage,
-        },
-    )
-
-    verifier_gate_summary = _build_verifier_gate_summary({
+    stages = {
         "baseline-eval": baseline_stage,
         "candidate-student": candidate_student_stage,
         "candidate-teacher-eval": candidate_teacher_stage,
-    })
+    }
+    artifact_coverage = _build_artifact_coverage(
+        artifacts_root,
+        stages,
+    )
+
+    verifier_gate_summary = _build_verifier_gate_summary(stages)
 
     sealing_receipt = _build_sealing_receipt(
         integrity_gate=integrity_gate,
         private_holdout_pack=private_holdout_pack,
         artifacts_root=artifacts_root,
         pre_run_commitment=pre_run_commitment,
+        stages=stages,
     )
 
     outputs = {
@@ -251,11 +250,7 @@ def run_alpha_loop(
         "dataset_version": benchmark_pack.get("meta", {}).get("version"),
         "control_plane_mode": "runner-bridge-local-replay",
         "integrity_gate": integrity_gate,
-        "stages": {
-            "baseline-eval": baseline_stage,
-            "candidate-student": candidate_student_stage,
-            "candidate-teacher-eval": candidate_teacher_stage,
-        },
+        "stages": stages,
         "comparison": comparison,
         "verdict": comparison.get("verdict"),
         "verifier_gate": verifier_gate_summary,
@@ -637,6 +632,7 @@ def _build_stage_receipt(
     stored_result = _load_json(run_dir / "result.json")
     transcript_excerpt = _transcript_excerpt(run_dir / "transcript.ndjson")
 
+    execution_backend = build_execution_backend_surface(request, stored_result, artifact_bundle)
     scorecard = stored_result.get("scorecard") if isinstance(stored_result.get("scorecard"), dict) else None
     aggregate_score = scorecard.get("aggregate_score") if isinstance(scorecard, dict) and isinstance(scorecard.get("aggregate_score"), dict) else None
 
@@ -700,6 +696,7 @@ def _build_stage_receipt(
         "status": result.get("status"),
         "total_score": export_result.get("machine_score"),
         "aggregate_score": aggregate_score,
+        "execution_backend": execution_backend,
         "verifier_contract": verifier_contract,
         "lineage": lineage,
         "traceability": traceability,
@@ -1291,12 +1288,65 @@ def _write_pre_run_manifest_commitment(
     return commitment
 
 
+def _build_alpha_execution_backend_summary(
+    stages: dict[str, dict[str, Any]] | None,
+) -> dict[str, Any] | None:
+    if not isinstance(stages, dict) or not stages:
+        return None
+
+    stage_backends: dict[str, dict[str, Any]] = {}
+    primary_backend: dict[str, Any] | None = None
+    consistent = True
+
+    for stage_key, stage in stages.items():
+        execution_backend = stage.get("execution_backend") if isinstance(stage.get("execution_backend"), dict) else None
+        if not execution_backend:
+            continue
+        stage_backends[stage_key] = {
+            "backend_id": execution_backend.get("backend_id"),
+            "runner_name": execution_backend.get("runner_name"),
+            "mode": execution_backend.get("mode"),
+            "selection_source": execution_backend.get("selection_source"),
+        }
+        if primary_backend is None:
+            primary_backend = execution_backend
+            continue
+        if (
+            execution_backend.get("backend_id") != primary_backend.get("backend_id")
+            or execution_backend.get("mode") != primary_backend.get("mode")
+        ):
+            consistent = False
+
+    if not stage_backends or primary_backend is None:
+        return None
+
+    return {
+        "aggregate_status": "consistent" if consistent else "mixed",
+        "backend_id": primary_backend.get("backend_id") if consistent else None,
+        "mode": primary_backend.get("mode") if consistent else None,
+        "stage_backends": stage_backends,
+        "execution_backend_contract": (
+            primary_backend.get("execution_backend_contract") if consistent else None
+        ),
+        "execution_honesty": primary_backend.get("execution_honesty") if consistent else None,
+        "intended_executor_path": (
+            primary_backend.get("intended_executor_path") if consistent else None
+        ),
+        "honesty_note": (
+            "This block records backend provenance and current execution honesty across alpha stages only. "
+            "It does not by itself prove live execution, independent executor isolation, sealed evaluation, "
+            "certification, tamper-proofing, or native Clawith parity."
+        ),
+    }
+
+
 def _build_sealing_receipt(
     *,
     integrity_gate: dict[str, Any],
     private_holdout_pack: dict[str, Any] | None,
     artifacts_root: Path,
     pre_run_commitment: dict[str, Any] | None = None,
+    stages: dict[str, dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Build a public-safe sealing receipt surface (Spec 015).
 
@@ -1314,6 +1364,8 @@ def _build_sealing_receipt(
     else:
         claim_ceiling = "public-regression alpha execution with public-safe receipts"
         status = "public_regression_alpha"
+
+    execution_backend = _build_alpha_execution_backend_summary(stages)
 
     operator_checklist = {
         "public_benchmark_pack_loaded": {
@@ -1441,6 +1493,7 @@ def _build_sealing_receipt(
         "operator_checklist": operator_checklist,
         "blocked_claims": blocked_claims,
         "stronger_claim_prerequisites": stronger_claim_prerequisites,
+        "execution_backend": execution_backend,
         "private_manifest_fingerprint": private_manifest_fingerprint,
         "pre_run_manifest_commitment": pre_run_commitment,
         "linked_receipt_paths": linked_receipt_paths,

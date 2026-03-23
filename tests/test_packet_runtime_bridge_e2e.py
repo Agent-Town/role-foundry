@@ -275,6 +275,30 @@ class TestClaudeVibecosystemBetaSeam(unittest.TestCase):
         self.assertIn("did not invoke Claude Code", eh["honesty_note"])
         self.assertIn("adapter.stub.completed", transcript)
 
+    def test_artifact_bundle_and_candidate_receipt_preserve_backend_provenance(self):
+        _, _, _ = self._run_and_load("claude-beta-provenance")
+        run_dir = self.artifacts_root / "claude-beta-provenance"
+
+        artifact_bundle = json.loads((run_dir / "artifact-bundle.json").read_text())
+        self.assertEqual(artifact_bundle["execution_backend"], "claude_vibecosystem")
+        self.assertEqual(artifact_bundle["execution_backend_contract"]["mode"], "external_executor_beta")
+        self.assertFalse(artifact_bundle["execution_honesty"]["executes_commands"])
+        self.assertEqual(
+            artifact_bundle["execution_honesty"]["claim_boundary"]["sealed_evaluation"],
+            "not_claimed",
+        )
+
+        candidate_receipt = json.loads((run_dir / "receipts" / "candidate.json").read_text())
+        backend = candidate_receipt["execution_backend"]
+        self.assertEqual(backend["backend_id"], "claude_vibecosystem")
+        self.assertEqual(backend["mode"], "external_executor_beta")
+        self.assertEqual(
+            backend["execution_backend_contract"]["claim_boundary"]["sealed_evaluation"],
+            "not_claimed",
+        )
+        self.assertFalse(backend["execution_honesty"]["executes_checks"])
+        self.assertIn("candidate-execution-backend", candidate_receipt["evidence_refs"])
+
 
 class TestRequestPrivateJsonCarriesPacketRuntime(unittest.TestCase):
     """request.private.json carries the packet_runtime block when run via --packet."""

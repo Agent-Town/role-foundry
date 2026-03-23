@@ -212,6 +212,55 @@ class AutoresearchAlphaLoopContractTests(unittest.TestCase):
                 2,
             )
 
+    def test_alpha_receipt_surfaces_execution_backend_provenance(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            artifacts_root = Path(tmpdir) / "artifacts"
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "runner_bridge.autoresearch_alpha",
+                    "--request",
+                    str(EXAMPLE_REQUEST),
+                    "--artifacts-root",
+                    str(artifacts_root),
+                ],
+                capture_output=True,
+                text=True,
+                cwd=ROOT,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            receipt = json.loads((artifacts_root / "autoresearch-alpha.json").read_text())
+
+            for stage_key in ("baseline-eval", "candidate-student", "candidate-teacher-eval"):
+                backend = receipt["stages"][stage_key]["execution_backend"]
+                self.assertEqual(backend["backend_id"], "local_replay")
+                self.assertEqual(backend["runner_name"], "LocalReplayRunner")
+                self.assertEqual(backend["mode"], "zero_secret_replay")
+                self.assertEqual(backend["execution_backend_contract"]["mode"], "zero_secret_replay")
+                self.assertFalse(backend["execution_honesty"]["executes_commands"])
+                self.assertFalse(backend["execution_honesty"]["executes_checks"])
+                self.assertEqual(
+                    backend["execution_honesty"]["claim_boundary"]["independent_executor_isolation"],
+                    "not_claimed",
+                )
+
+            sealing_backend = receipt["sealing_receipt"]["execution_backend"]
+            self.assertEqual(sealing_backend["aggregate_status"], "consistent")
+            self.assertEqual(sealing_backend["backend_id"], "local_replay")
+            self.assertEqual(sealing_backend["mode"], "zero_secret_replay")
+            self.assertEqual(
+                set(sealing_backend["stage_backends"].keys()),
+                {"baseline-eval", "candidate-student", "candidate-teacher-eval"},
+            )
+            self.assertEqual(
+                sealing_backend["execution_backend_contract"]["claim_boundary"]["independent_executor_isolation"],
+                "not_claimed",
+            )
+            self.assertFalse(sealing_backend["execution_honesty"]["executes_commands"])
+            self.assertIn("backend provenance", sealing_backend["honesty_note"])
+
     def test_integrity_gate_blocks_when_sealed_holdout_is_required(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             temp_root = Path(tmpdir)
@@ -437,6 +486,8 @@ class AutoresearchAlphaLoopContractTests(unittest.TestCase):
 
             # Status must reflect the private-holdout lane
             self.assertEqual(sr["status"], "local_private_holdout_alpha")
+            self.assertEqual(sr["execution_backend"]["backend_id"], "local_replay")
+            self.assertFalse(sr["execution_backend"]["execution_honesty"]["executes_commands"])
 
             # Claim ceiling must stay honest — no sealed/certified/tamper-proof language
             ceiling = sr["claim_ceiling"]

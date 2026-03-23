@@ -138,6 +138,18 @@ In the local-replay alpha path, `gate_status` is always `not_executed` and every
 
 The candidate receipt at `receipts/candidate.json` also includes a `verifier_gate` block with the same honesty contract.
 
+### Backend provenance in artifact bundles and alpha receipts
+
+When a run exposes backend provenance, the bridge now preserves that seam in public-safe audit surfaces:
+
+- `artifact-bundle.json.execution_backend` — selected/observed backend id
+- `artifact-bundle.json.execution_backend_contract` — backend mode / intended executor path / claim boundary when available
+- `artifact-bundle.json.execution_honesty` — summarized non-execution or boundary status
+- receipt-level `execution_backend` blocks (for example `receipts/candidate.json`)
+- alpha-loop `sealing_receipt.execution_backend` — per-stage backend summary plus the current claim-boundary note
+
+These are provenance / honesty surfaces only. They do **not** by themselves prove live execution, independent executor isolation, sealed evaluation, certification, tamper-proofing, or native Clawith parity.
+
 ## Task-packet → runtime bridge
 
 The `runner_bridge.packet_runtime` module is the bridge from versioned curriculum task packets to executable runtime objects. It closes the gap between "the curriculum defines 20 tasks" and "a runner backend can pick one up and execute it."

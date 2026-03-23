@@ -5,6 +5,7 @@ import json
 from datetime import UTC, datetime
 from pathlib import Path
 
+from runner_bridge.backends import backend_contract_for_runner
 from runner_bridge.eval_loop import (
     build_student_prompt_pack,
     build_teacher_evaluation,
@@ -185,33 +186,36 @@ def main(argv: list[str] | None = None) -> int:
     if error:
         result["error"] = error
 
-    packet_runtime = request.get("packet_runtime")
-    if packet_runtime:
-        expected_checks = packet_runtime.get("expected_checks", [])
-        result["execution_honesty"] = {
-            "backend": "LocalReplayRunner",
-            "executes_commands": False,
-            "executes_checks": False,
-            "check_results": [
-                {
-                    "id": check.get("id", ""),
-                    "command": check.get("command", ""),
-                    "execution_status": "not_executed",
-                    "exit_code": None,
-                    "reason": "LocalReplayRunner does not execute packet commands",
-                }
-                for check in expected_checks
-            ],
-            "mutation_enforcement": "not_enforced",
-            "path_constraint_enforcement": "not_enforced",
-            "honesty_note": (
-                "LocalReplayRunner is a zero-secret replay backend. "
-                "It validates the request contract and produces receipts, "
-                "but does not execute task commands, enforce mutation budgets, "
-                "or enforce path constraints. These become meaningful when a "
-                "live execution backend is wired."
-            ),
-        }
+    packet_runtime = request.get("packet_runtime") if isinstance(request.get("packet_runtime"), dict) else {}
+    expected_checks = packet_runtime.get("expected_checks", []) if isinstance(packet_runtime.get("expected_checks"), list) else []
+    local_replay_contract = backend_contract_for_runner("local_replay")
+    result["execution_honesty"] = {
+        "backend": "LocalReplayRunner",
+        "mode": local_replay_contract.get("mode", "zero_secret_replay"),
+        "claim_boundary": local_replay_contract.get("claim_boundary", {}),
+        "executes_commands": False,
+        "executes_checks": False,
+        "check_results": [
+            {
+                "id": check.get("id", ""),
+                "command": check.get("command", ""),
+                "execution_status": "not_executed",
+                "exit_code": None,
+                "reason": "LocalReplayRunner does not execute packet commands",
+            }
+            for check in expected_checks
+            if isinstance(check, dict)
+        ],
+        "mutation_enforcement": "not_enforced",
+        "path_constraint_enforcement": "not_enforced",
+        "honesty_note": (
+            "LocalReplayRunner is a zero-secret replay backend. "
+            "It validates the request contract and produces receipts, "
+            "but does not execute task commands, enforce mutation budgets, "
+            "or enforce path constraints. These remain not executed / not enforced "
+            "until a live execution backend is wired."
+        ),
+    }
 
     result_path.write_text(json.dumps(result, indent=2))
 
