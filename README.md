@@ -192,6 +192,7 @@ Using different model families for building and judging reduces correlated self-
 - `docs/clawith-adapter-bringup.md` — seam-to-upstream mapping matrix and adapter-first bring-up prereqs
 - `docs/runner-bridge.md` — bridge path, teacher evaluation contract, comparison receipts, and explicit auth deferral
 - `docs/public-benchmark-pack-v1.md` — public-safe benchmark pack scope, blocked families, and local private-holdout path
+- `docs/software-engineer-curriculum-sources.md` — narrow public source inventory for the software-engineering apprentice
 - `docs/private-holdout-authoring.md` — local-only teacher workflow for authoring and auditing fresh holdouts
 - `docs/conversation-log.md` — curated build log for the submission
 - `docs/agent-town-connection.md` — Agent Town relationship
