@@ -18,7 +18,7 @@ This adapter does not fake wallet sessions, onchain transactions, or minting rec
 - `app/agent0_base_adapter.mjs` — thin browser adapter following the agent0 mint shape: `discoverEip6963Providers` → `connectEip1193` → `SDK({ chainId, rpcUrl, walletProvider })` → `createAgent(...)` → `registerHTTP(tokenUri)`.
 - Base Sepolia (chain id 84532) as the review/demo default.
 - Base Mainnet (chain id 8453) as the explicit submission target.
-- Env-driven chain config (RPC URL, optional registry/subgraph overrides).
+- Env-driven chain config (RPC URL + explicit registry address required for live minting; subgraph optional).
 - Honest claim-boundary checklist update.
 
 ### Out of scope
@@ -58,7 +58,7 @@ app/agent0_base_adapter.mjs
 | Base Sepolia | 84532 | review/demo | `BASE_SEPOLIA_RPC_URL` |
 | Base Mainnet | 8453 | submission | `BASE_MAINNET_RPC_URL` |
 
-Registry and subgraph overrides are optional env vars. The adapter uses agent0-sdk defaults when not overridden.
+Registry address is required (the local agent0-ts checkout does not reliably ship Base defaults). Subgraph URL is optional.
 
 ## Wired vs pending
 
@@ -66,6 +66,7 @@ The adapter makes this explicit at every layer:
 
 | Layer | Wired now? | What makes it live |
 |---|---|---|
+| Bridge integration | Yes | `RunBridge.run()` calls `write_product_integrations` after provenance |
 | Registration draft generation | Yes | Runs after every `write_product_integrations` call |
 | Completion template generation | Yes | Same |
 | Browser adapter module | Yes (code exists) | Requires agent0-sdk + wallet + RPC URL at runtime |
@@ -94,8 +95,9 @@ The adapter makes this explicit at every layer:
   - Completion template stays in awaiting_wallet_confirmation.
   - Adapter contract references correct chain and env vars.
   - Trust bundle status reflects wired-vs-pending.
-  - Locus guardrails pass/fail correctly.
-- `node --check app/agent0_base_adapter.mjs` — syntax validation for the browser adapter.
+  - Verifiable receipt hashing excludes mutable files (artifact-bundle.json, result.json).
+  - No Locus or MetaMask Delegation references in output.
+  - CLI integration test exercises `python3 -m runner_bridge.cli` and asserts integration files exist.
 
 ## Dependencies
 

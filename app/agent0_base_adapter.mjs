@@ -13,7 +13,9 @@
  * Environment:
  *   - Requires agent0-sdk to be available (vendored bundle or CDN).
  *   - Requires an EIP-6963 / EIP-1193 compatible wallet in the browser.
- *   - Chain config (chainId, rpcUrl) must be provided explicitly.
+ *   - Chain config (chainId, rpcUrl, registryOverrides) must be provided explicitly.
+ *   - The local agent0-ts checkout does NOT reliably ship Base defaults,
+ *     so an explicit registry address is required for write-mode init.
  *   - Base Sepolia (84532) is the review/demo default.
  *   - Base Mainnet (8453) is the explicit submission target.
  */
@@ -117,7 +119,7 @@ export async function connectWallet(provider, agent0sdk) {
  * @param {number} opts.chainId        - 84532 (Base Sepolia) or 8453 (Base Mainnet).
  * @param {string} opts.rpcUrl         - Base RPC endpoint (required).
  * @param {object} opts.walletProvider - Connected EIP-1193 provider.
- * @param {object} [opts.registryOverrides]  - Optional registry address override.
+ * @param {object} opts.registryOverrides   - Registry address (required — agent0-sdk does not reliably default for Base).
  * @param {object} [opts.subgraphOverrides]  - Optional subgraph URL override.
  *
  * Returns { ok, data: sdkInstance } or { ok: false, error }.
@@ -132,16 +134,17 @@ export function initSDK(agent0sdk, opts) {
   if (!opts.walletProvider) {
     return fail('walletProvider is required for write operations.');
   }
+  if (!opts.registryOverrides) {
+    return fail('registryOverrides is required — agent0-sdk does not reliably default for Base.');
+  }
 
   const chainId = opts.chainId || BASE_SEPOLIA_CHAIN_ID;
   const sdkOpts = {
     chainId,
     rpcUrl: opts.rpcUrl,
     walletProvider: opts.walletProvider,
+    registryOverrides: opts.registryOverrides,
   };
-  if (opts.registryOverrides) {
-    sdkOpts.registryOverrides = opts.registryOverrides;
-  }
   if (opts.subgraphOverrides) {
     sdkOpts.subgraphOverrides = opts.subgraphOverrides;
   }
@@ -248,7 +251,7 @@ export function buildCompletionRecord(mintResult, opts) {
     namespace: 'erc8004',
     chain_id: chainId,
     chain_label: preset.label || `chain ${chainId}`,
-    identity_registry: opts?.registry || 'agent0-sdk-default',
+    identity_registry: opts?.registry || null,
     agent_id: agentId,
     agent_uri: agentURI,
     tx_hash: txHash,
@@ -273,6 +276,7 @@ export function checkReadiness(opts) {
     agent0_sdk_available: !!(opts?.agent0sdk && typeof opts.agent0sdk.SDK === 'function'),
     wallet_provider_present: !!opts?.walletProvider,
     rpc_url_configured: !!opts?.rpcUrl,
+    registry_configured: !!opts?.registryOverrides,
     chain_id_valid: [BASE_SEPOLIA_CHAIN_ID, BASE_MAINNET_CHAIN_ID].includes(opts?.chainId),
   };
   const ready = Object.values(checks).every(Boolean);

@@ -11,6 +11,7 @@ from typing import Any
 
 from .contract import ContractError, RunRequest
 from .eval_loop import redact_request_for_artifacts
+from .product_integrations import write_product_integrations
 from .provenance import write_receipt_provenance
 
 ALLOWED_STATUSES = {"completed", "failed", "timeout"}
@@ -112,6 +113,10 @@ class RunBridge:
 
         provenance = write_receipt_provenance(run_dir, raw_request, result)
         result["provenance"] = provenance
+        result_path.write_text(json.dumps(result, indent=2))
+
+        integrations = write_product_integrations(run_dir, raw_request, result)
+        result["integrations"] = integrations
         result_path.write_text(json.dumps(result, indent=2))
 
         final_payload = {
