@@ -32,6 +32,7 @@ without inventing new score semantics:
 - `candidate-student` → visible run row + artifact row, but **no fake teacher scorecard**
 - `candidate-teacher-eval` → scored run + comparison target
 - `comparison` / `verdict` → iteration notes and comparison context
+- exact comparison fields (`verdict`, `deciding_axis`, `baseline_total_score`, `candidate_total_score`, `total_score_delta`, `category_deltas`, `reasons`) stay source-faithful when present
 
 ### Important rules
 

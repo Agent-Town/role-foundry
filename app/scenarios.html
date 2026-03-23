@@ -72,8 +72,8 @@
       <h3>Student prompt pack</h3>
       <p><small x-text="$store.app.getStudentView($store.app.latestStudentViewRunId())?.prompt_summary"></small></p>
       <ul>
-        <template x-for="scenarioId in $store.app.getStudentView($store.app.latestStudentViewRunId())?.visible_scenarios || []" :key="scenarioId">
-          <li x-text="$store.app.getScenario(scenarioId)?.title || scenarioId"></li>
+        <template x-for="scenarioRef in $store.app.getStudentView($store.app.latestStudentViewRunId())?.visible_scenarios || []" :key="$store.app.visibleScenarioId(scenarioRef)">
+          <li x-text="$store.app.visibleScenarioLabel(scenarioRef)"></li>
         </template>
       </ul>
     </article>
