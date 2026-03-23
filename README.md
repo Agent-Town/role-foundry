@@ -223,6 +223,8 @@ Using different model families for building and judging reduces correlated self-
 - `docs/teacher-source-curriculum-workflow.md` — discover → curate → promote workflow for teacher-driven curriculum extension
 - `docs/frontend-product-engineer-seed-curriculum.md` — public seed-task registry, packet schema, and audit commands for the frozen Frontend/Product Engineer role
 - `docs/curriculum-operating-split.md` — teacher vs student responsibilities, canonical contract surface, and honest implemented-vs-future status
+- `docs/phase5-lineage-cycle-ops.md` — Phase 5 generation lineage, weekly training cycles, and cross-artifact linkage (contract/fixture level, not live automation)
+- `docs/teacher-review-console.md` — D001 fixture-backed teacher review shell/read-model over stored exports only
 - `docs/private-holdout-authoring.md` — local-only teacher workflow for authoring and auditing fresh holdouts
 - `docs/swe-bench-holdout-extension.md` — teacher-only process for small manually curated SWE-bench-derived holdout episodes
 - `docs/conversation-log.md` — curated build log for the submission

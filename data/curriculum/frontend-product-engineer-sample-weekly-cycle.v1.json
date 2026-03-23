@@ -1,0 +1,65 @@
+{
+  "meta": {
+    "id": "frontend-product-engineer-sample-weekly-cycle-v1",
+    "version": "1.0.0",
+    "role_id": "role-frontend-product-engineer",
+    "example_only": true,
+    "schema_version": "1.0.0",
+    "notes": "Sample/fixture weekly training cycle receipt showing one end-to-end cycle: task selection -> baseline -> candidate -> teacher review -> promotion decision -> regression gate -> curriculum update. This is NOT proof of live weekly automation. Run-object references use the sample fixtures. Private holdout scores are referenced by availability only."
+  },
+  "cycle": {
+    "cycle_id": "cycle-fpe-2026-w12",
+    "cycle_week": "2026-03-16",
+    "example_only": true,
+    "task_selection": {
+      "method": "fixture",
+      "task_ids": ["A001", "B001", "C001"],
+      "selection_reason": "Sample fixture: one task from each of the first three phases to illustrate cross-phase coverage in a single cycle."
+    },
+    "baseline": {
+      "run_id": "sample-fpe-a001-baseline",
+      "available": false,
+      "weighted_score": 0.62,
+      "run_object_path": null
+    },
+    "candidate": {
+      "run_id": "sample-fpe-a001-candidate",
+      "available": false,
+      "weighted_score": 0.8975,
+      "run_object_path": null
+    },
+    "teacher_review": {
+      "reviewed": true,
+      "review_method": "fixture",
+      "notes": "Sample teacher review: candidate showed clear improvement over baseline. Role manifest properly frozen, evaluation contract matches spec."
+    },
+    "promotion_decision": {
+      "decision": "promoted",
+      "reason": "Candidate public score 0.925 cleared the 0.85 promotion threshold. Teacher confirmed the generation matches spec requirements.",
+      "public_score": 0.925,
+      "holdout_score_available": false,
+      "stability_check_passed": null,
+      "regression_gate_passed": null
+    },
+    "regression_gate": {
+      "enforced": false,
+      "tasks_checked": null,
+      "regressions_found": null,
+      "gate_passed": null
+    },
+    "curriculum_update": {
+      "updates_made": true,
+      "actions": [
+        {
+          "action": "modified_existing_task",
+          "task_id": "fpe.seed.b004.add-weekly-holdout-refresh",
+          "description": "Clarified holdout refresh cadence constraint based on teacher review feedback."
+        }
+      ]
+    },
+    "generation_ref": {
+      "generation_id": "gen-fpe-003",
+      "generation_index": 3
+    }
+  }
+}

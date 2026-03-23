@@ -21,17 +21,26 @@ The public curriculum lane now has one canonical, versioned surface:
 - `data/curriculum/frontend-product-engineer-public-seed-registry.v1.json`
 - `data/curriculum/frontend-product-engineer-teacher-task-lifecycle.v1.json`
 - `data/curriculum/frontend-product-engineer-private-holdout-refresh-receipt.schema.v1.json`
+- `data/curriculum/generation-lineage-registry.schema.v1.json`
+- `data/curriculum/weekly-training-cycle-receipt.schema.v1.json`
+- `data/curriculum/frontend-product-engineer-generation-lineage.v1.json`
+- `data/curriculum/frontend-product-engineer-sample-weekly-cycle.v1.json`
 - `runner_bridge/curriculum.py`
+- `runner_bridge/lineage.py`
 - `scripts/holdout_author.py`
 - `tests/test_frontend_product_engineer_seed_registry.py`
 - `tests/test_curriculum_contract.py`
 - `tests/test_teacher_ops_lifecycle.py`
+- `tests/test_phase5_lineage_cycle_contracts.py`
+- `docs/phase5-lineage-cycle-ops.md`
 
 There is intentionally no separate generic `seed/frontend-product-engineer.json`,
 `data/curriculum/evaluation-contract.json`,
 `data/curriculum/task-packet-schema.json`, or
 `data/curriculum/curriculum-index.json` in this lane. The versioned
 Frontend/Product Engineer files above are the single public source of truth.
+The teacher review console shell is a consumer of these contracts plus stored
+sample exports; it does not create a second curriculum truth surface.
 
 ## Teacher responsibilities
 
@@ -145,13 +154,19 @@ The `execution_honesty` block in `result.json` makes it machine-readable whether
   `data/curriculum/frontend-product-engineer-public-seed-registry.v1.json`.
 - The versioned role manifest, evaluation contract, task-packet schema,
   source records, promotion records, sample scorecard, sample run
-  objects, teacher task lifecycle contract, and private-holdout refresh
-  receipt schema are all checked in and machine-readable.
+  objects, teacher task lifecycle contract, private-holdout refresh
+  receipt schema, lineage schema, weekly cycle schema, lineage sample,
+  and sample weekly cycle receipt are all checked in and machine-readable.
 - `runner_bridge/curriculum.py` validates task packets, scorecards, and
   evaluation-contract invariants against frozen Spec 014 constants.
+- `runner_bridge/lineage.py` validates lineage registries and weekly
+  cycle receipts against the same frozen curriculum contract surface.
 - `scripts/holdout_author.py` now includes a local-only `refresh`
   command that scaffolds weekly holdout refresh receipts without tracking
   teacher-only content in git.
+- The teacher review console shell renders stored exports through a
+  fixture-backed read-model only. It is honest about missing live data
+  and does not pretend promotion gating or holdout scoring is live.
 - Step C eval-contract honesty landed in the alpha loop: stage receipts
   now include `verifier_contract`, the top-level alpha receipt includes
   `verifier_gate`, and local replay truthfully reports `not_executed`
@@ -160,13 +175,18 @@ The `execution_honesty` block in `result.json` makes it machine-readable whether
 ## What is still future work
 
 - The public seed packets define the curriculum. They are **not** proof
-  that every Phase 2-5 runtime surface already exists.
+  that every Phase 2-5 runtime surface already exists. Some surfaces are
+  still **Packet-defined, runtime not yet live** until their real loops
+  are wired.
 - Private holdout content is still teacher-authored and local-only.
 - `LocalReplayRunner` still does not execute verifier commands, so the
   verifier gate is a truthful contract surface, not a live green check.
-- Teacher review console, promotion gating app flows, stability gates,
-  regression gates, lineage registry, and weekly cycle automation are
-  still future runtime work.
+- The teacher review console is still a fixture-backed shell. Live
+  transcript fetch, live scorecard wiring, holdout scoring, stability
+  checks, and regression history remain future runtime work.
+- The lineage registry and weekly cycle receipt are still sample/fixture
+  artifacts. Live weekly automation, enforced regression gates, and real
+  promoted-generation ops remain future runtime work.
 
 ## Honest status by area
 
@@ -176,11 +196,11 @@ The `execution_honesty` block in `result.json` makes it machine-readable whether
 | Phase 2 teacher operating system | Contract-defined, partially operational | Authoring/promotion lifecycle plus local holdout refresh receipts are machine-readable and tested, but the end-to-end teacher runtime is still not live. |
 | Task-packet → runtime bridge | Implemented | CLI `--packet` path loads by acceptance_test_id, materializes `run-object.json`, and runs end-to-end through the bridge. `execution_honesty` block makes backend non-execution machine-readable. |
 | Phase 3 execution | Partial | Autoresearch alpha receipts exist, and Step C verifier-contract / verifier-gate honesty landed; live verifier execution is still pending. |
-| Phase 4 evaluation | Packet-defined, runtime not yet live | Public scoring contract exists; teacher console and promotion-gate enforcement do not. |
-| Phase 5 compounding | Packet-defined, runtime not yet live | Lineage and weekly-cycle packets exist, but the operating loop is not live. |
+| Phase 4 evaluation | Contract-defined with fixture-backed shell | Public scoring contract exists and the teacher review console renders stored exports only; promotion-gate enforcement and live evaluation wiring remain future work. |
+| Phase 5 compounding | Contract surface landed (fixture/sample) | Generation lineage registry (3 sample promoted generations), weekly cycle receipt schema and sample, cross-artifact linkage tests. All marked `example_only`; not live automation. See `docs/phase5-lineage-cycle-ops.md`. |
 | Private holdout pool | Local-only scaffold | Teacher authors locally; zero teacher-only content is tracked by git. |
-| Teacher review console | Not started | Requires Phase 4 app / export surface. |
-| Generation lineage | Not started | Requires Phase 5 registry and real promoted generations. |
+| Teacher review console | Fixture-backed shell/read-model | D001 surface renders stored exports only; no live transcript fetch, holdout scoring, stability checks, or regression history yet. See `docs/teacher-review-console.md`. |
+| Generation lineage | Contract surface landed (fixture/sample) | 3 sample promoted generations with parent chain, failure follow-up, and curriculum-contract linkage. Run-object refs may be present but `available=false` where no real artifact is tracked. |
 
 This is the honest split: the public curriculum contract is real now,
 while much of the teacher OS and live runtime remains future work.
