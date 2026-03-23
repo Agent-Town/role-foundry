@@ -1,26 +1,34 @@
 # Overnight handoff — 2026-03-23 late refresh
 
-This note supersedes the earlier Phase G snapshot on the pre-promotion head. It reflects the repo state after the Google Eng Practices promotion plus a small docs-only reconcile pass.
+This note supersedes the earlier Phase G snapshot on the pre-promotion head. It reflects the repo state after the Google Eng Practices promotion, the Alpine docs/examples promotion, and a small docs-only reconcile pass.
 
 ## What landed cleanly tonight
 
-- Kept the clean public-alpha + Phase G dataset-registry spine intact, then carried a real source-backed family promotion on top without widening scope into new runtime/UI/integration work.
+- Kept the clean public-alpha + Phase G dataset-registry spine intact, then carried real source-backed family promotions on top without widening scope into new runtime/UI/integration work.
 - Promoted `intake-google-eng-practices` from curated intake to shipped public family `rf.frontend-apprentice.public.code-review-discipline`.
-- Added 2 RF-authored public episodes (`pbpv1-e15`, `pbpv1-e16`) plus a fresh 4-dimension rubric for diff critique, test/doc expectations, and scope control.
-- Grew the Frontend Apprentice public benchmark pack from 14 to 16 episodes and from 7 to 8 public families.
-- Kept the shared Phase G registry surfaces coherent: source intake, source buckets, family registry, benchmark pack, episode registry, and teacher-source tests all agree on the promoted family.
+- Promoted `intake-alpinejs-curation` from a manual-curation-only docs/examples seam to shipped public family `rf.frontend-apprentice.public.alpine-state-patterns`.
+- Added 4 RF-authored public episodes across those two promotions (`pbpv1-e15`–`pbpv1-e18`) plus fresh public rubrics for review-discipline and Alpine state-pattern work.
+- Grew the Frontend Apprentice public benchmark pack from 14 to 18 episodes and from 7 to 9 public families.
+- Kept the shared Phase G registry surfaces coherent: source intake, source buckets, family registry, benchmark pack, episode registry, and teacher-source tests all agree on the promoted families.
 
 ## Why Phase G is now operational, not just documented
 
-A tracked public source seam completed the full repo-visible path tonight:
+Tracked public source seams have now completed the full repo-visible path:
 
 - `discover` → `curate` → `promote` on `intake-google-eng-practices`
+- `discover` → `manual rewrite from docs/examples only` → `promote` on `intake-alpinejs-curation`
 - promoted source bucket linkage in `data/episode-registry/source-buckets.json`
-- promoted family entry in `benchmarks/public-pack-v1/episode-family-registry.json`
-- shipped episodes + rubric in `benchmarks/public-pack-v1/benchmark-pack.json` and `data/episode-registry/public-benchmark-pack-v1.json`
+- promoted family entries in `benchmarks/public-pack-v1/episode-family-registry.json`
+- shipped episodes + rubrics in `benchmarks/public-pack-v1/benchmark-pack.json` and `data/episode-registry/public-benchmark-pack-v1.json`
 - regression coverage in `tests/test_teacher_source_curriculum.py` and the existing Phase G dataset-flywheel suite
 
-That is the first clean proof that the Phase G promotion surface can move a real tracked source into RF-authored public curriculum, not just describe the policy in prose.
+That is now repeated proof that the Phase G promotion surface can move real tracked sources into RF-authored public curriculum, including a docs/examples-only manual-curation seam, not just describe the policy in prose.
+
+## Alpine promotion boundary now
+
+- `rf.frontend-apprentice.public.alpine-state-patterns` is public-safe only because it was authored as original RF work grounded in Alpine public docs/examples.
+- The family ships 2 RF-authored episodes (`pbpv1-e17`, `pbpv1-e18`), bringing the Frontend Apprentice pack to **9 families / 18 episodes**.
+- Raw Alpine GitHub issue / PR / review text remains excluded from the public pack and is **not** part of the promotion claim here.
 
 ## Local private-holdout status now
 
@@ -50,7 +58,7 @@ That is the first clean proof that the Phase G promotion surface can move a real
 - This branch still does **not** justify sealed-eval, sealed-certification, tamper-proof, or independently sealed claims.
 - The repo-visible holdout family entries (`h1` / `h2` / `h3`) remain `blocked_pending_rewrite` in the tracked public registry and are still not promotable as public or sealed families.
 - Local private holdouts remain gitignored and local-only; the new pre-run commitment improves local operator auditability/correlation before stage execution, but the honest claim ceiling is still **local private-holdout alpha execution with public-safe receipts**, not sealed certification.
-- Manual-curation-only seams (for example Alpine.js) are still not public benchmark families.
+- The unpromoted manual-curation-only bucket is currently empty. Alpine.js moved out only after a docs/examples-only manual rewrite into `rf.frontend-apprentice.public.alpine-state-patterns`; raw Alpine GitHub issue/PR/review text remains excluded from the public pack and would still have to re-enter through manual teacher curation, not direct promotion.
 - No new native-live, partner-integration, wallet/chain-runtime, or broad runner-bridge readiness claims were added here beyond the narrow `claude_vibecosystem` contract/provenance seam described above.
 
 ## Next single most important move

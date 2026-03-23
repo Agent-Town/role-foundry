@@ -123,6 +123,8 @@ Principle: each milestone must have:
 
 **Landed support slices on this spine:**
 - `specs/008-public-benchmark-pack-v1.md` + `docs/public-benchmark-pack-v1.md` freeze the first public-safe benchmark pack v1.
+- the Frontend Apprentice public pack now stands at **9 families / 18 episodes** after promoting `intake-alpinejs-curation` into `rf.frontend-apprentice.public.alpine-state-patterns` with 2 RF-authored episodes.
+- the Alpine promotion keeps a strict provenance boundary: it is grounded in Alpine public docs/examples only, while raw Alpine GitHub issue/PR/review text remains excluded from the public pack.
 - additive receipt provenance now rides on top of the existing runner-bridge outputs; it does not change the teacher score semantics.
 - `specs/009-clawith-readiness-probe.md` + `docs/clawith-integration.md` keep the upstream Clawith path adapter-first and read-only.
 - `specs/011-live-ui-read-model.md` keeps the browser live shell read-only and payload-faithful for configured exports / fixtures.

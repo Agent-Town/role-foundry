@@ -219,6 +219,23 @@ See `docs/synthesis-hackathon-stack-architecture.md` for details.
 
 ---
 
+## 2026-03-24 — Alpine docs/examples promotion surfaced in public-safe status docs
+
+**Outcome:** The overnight handoff and milestone/status surfaces now reflect the newly landed Alpine promotion instead of stopping at the earlier Google-only pack counts.
+
+**What changed:**
+- `intake-alpinejs-curation` is now surfaced as promoted into `rf.frontend-apprentice.public.alpine-state-patterns`
+- the family ships 2 RF-authored public episodes (`pbpv1-e17`, `pbpv1-e18`), bringing the Frontend Apprentice public benchmark pack to **9 families / 18 episodes**
+- status docs now say plainly that this promotion is grounded in Alpine public docs/examples only; raw Alpine GitHub issue/PR/review text remains excluded from the public pack
+
+**Evidence:**
+- `docs/public-benchmark-pack-v1.md`, `data/episode-registry/public-benchmark-pack-v1.json`, and `benchmarks/public-pack-v1/episode-family-registry.json` all show the promoted family and pack counts
+- `tests/test_public_benchmark_pack_v1.py`, `tests/test_teacher_source_curriculum.py`, and `tests/test_dataset_flywheel_phase_g.py` remain the contract checks for the public-pack, source-intake, and Phase G surfaces
+
+**Important honesty line:** Alpine is public-safe here only because the promoted family was manually rewritten from Alpine public docs/examples into original RF-authored episodes. Raw Alpine GitHub issue/PR/review text is still excluded.
+
+---
+
 ## 2026-03-24 — `claude_vibecosystem` external-executor beta seam surfaced in the overnight status spine
 
 **Outcome:** The repo now tells one coherent public-safe story about the newly landed `claude_vibecosystem` backend seam instead of stopping at the pre-run manifest commitment layer.
