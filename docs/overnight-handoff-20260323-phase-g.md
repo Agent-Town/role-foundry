@@ -22,14 +22,20 @@ A tracked public source seam completed the full repo-visible path tonight:
 
 That is the first clean proof that the Phase G promotion surface can move a real tracked source into RF-authored public curriculum, not just describe the policy in prose.
 
+## Local private-holdout status now
+
+- The gitignored private lane is no longer just a first-rewrite scaffold: fresh local-only replacement coverage now exists for all three previously blocked teacher-only families (`h1` / `h2` / `h3`).
+- The latest local private-holdout alpha rerun loaded **6/6** holdouts from the manifest and recorded a `better` comparison verdict.
+- None of that teacher-only material is committed here. The tracked repo still contains zero teacher-only prompts, rubrics, or episode bodies.
+
 ## What remains blocked / not claimable
 
 - This branch still does **not** justify sealed-eval, sealed-certification, tamper-proof, or independently sealed claims.
-- The repo-visible holdout families (`h1` / `h2` / `h3`) remain `blocked_pending_rewrite` and are still not promotable.
-- Local private holdouts remain gitignored and local-only; there are still zero committed teacher-only families.
+- The repo-visible holdout family entries (`h1` / `h2` / `h3`) remain `blocked_pending_rewrite` in the tracked public registry and are still not promotable as public or sealed families.
+- Local private holdouts remain gitignored and local-only; the honest claim ceiling is now **local private-holdout alpha execution**, not sealed certification.
 - Manual-curation-only seams (for example Alpine.js) are still not public benchmark families.
 - No new native-live, partner-integration, wallet/chain-runtime, or broad runner-bridge readiness claims were added here.
 
 ## Next single most important move
 
-Author the first fresh teacher-only holdout rewrite in the local gitignored private path and score it honestly. The public source-backed promotion path is now proven; the remaining honest blocker is turning the private holdout seam into a real teacher-only workflow without leaking it into the tracked repo.
+Define and land the smallest credible step above local private-holdout alpha execution — a public-safe receipt / control surface that explains what extra sealing or tamper-evidence is required before any sealed-certification language becomes honest.

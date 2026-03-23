@@ -131,11 +131,12 @@ Principle: each milestone must have:
 - `specs/010-autoresearch-alpha-public-loop.md` + `tests/test_autoresearch_alpha_loop.py` deliver the first honest baseline → candidate-student → candidate-teacher-eval → better/equal/worse loop.
 - the integrity gate explicitly allows **public-regression** claims while blocking **sealed-eval** claims until fresh teacher-only families exist outside the public repo.
 
-**Local private holdout scaffold (contract only):**
-- `specs/012-private-holdout-pack.md` + `benchmarks/private-holdout-pack-template.json` + `tests/test_private_holdout_separation.py` define the teacher-only path without shipping any real teacher-only content.
+**Local private holdout scaffold + verified local status:**
+- `specs/012-private-holdout-pack.md` + `benchmarks/private-holdout-pack-template.json` + `tests/test_private_holdout_separation.py` define the tracked public contract without shipping any real teacher-only content.
 - `scripts/holdout_author.py` + `docs/private-holdout-authoring.md` make that path locally authorable and auditable without changing the public alpha-loop claims.
+- Local-only status now: fresh replacement coverage exists for all three previously blocked teacher-only families (`h1` / `h2` / `h3`), and the latest private alpha rerun loaded **6/6** manifest holdouts with a `better` comparison verdict.
 
-These slices are real. This branch now has an executable **public alpha loop**, but a truly sealed holdout path is still blocked pending fresh teacher-only rewrites stored only in the local gitignored private path.
+These slices are real. This branch now has an executable **public alpha loop** plus evidence that the local private-holdout lane can run honestly with full replacement coverage. The claim ceiling still stops at local private-holdout alpha execution; sealed/certified/tamper-proof claims remain blocked.
 
 **Phase F adapter-readiness hardening (F001-F004):**
 - `scripts/check_clawith_adapter_prereqs.py` — GET-only prereq checker covering all 6 required F001 categories with explicit ready/blocked/unknown output

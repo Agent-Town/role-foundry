@@ -140,7 +140,7 @@ What it proves today:
 - an explicit **integrity gate** that allows public-regression claims while blocking fake sealed-eval claims
 - a **repo-task-shaped student prompt pack** with per-scenario metadata (`suggested_files`, `mutation_budget`, `constraints`, `public_checks`) derived from the public benchmark episodes, making the candidate-student stage less canned and more like real software-engineering teaching
 
-That last point matters. The public benchmark pack is usable now, but the current teacher-only families are still marked `blocked_pending_rewrite`, so the repo cannot honestly claim a fresh sealed holdout path yet. The alpha loop says that plainly instead of faking it.
+That last point matters. The repo-visible teacher-only families are still marked `blocked_pending_rewrite` in the tracked public registry, so the repo cannot pretend those public entries are suddenly sealed. But the local private-holdout lane has now moved beyond “first rewrite pending”: fresh local-only replacement coverage exists for all three previously blocked teacher-only families (`h1` / `h2` / `h3`), and the latest local rerun loaded 6/6 holdouts from the manifest with a `better` comparison verdict. Those claims still stop at local private-holdout alpha execution, and the docs say that plainly instead of faking a stronger certification story.
 
 A second **Frontend/Product Engineer** benchmark pack is now also available:
 
@@ -153,15 +153,15 @@ This pack ships **20 public episodes across 5 families** (one per curriculum pha
 
 All 20 episodes are **public-safe and alpha-consumable** — packets, rubrics, and provenance are complete. However, **runtime readiness varies by phase**: Phase 1 contract surface is complete, Phase 3 execution is partial (verifier-gate landed, live execution pending), and Phases 2/4/5 are packet-defined only with runtime not yet live. See `docs/curriculum-operating-split.md` for the honest status-by-area table and per-family `readiness` fields in the family registry for machine-readable detail.
 
-There is also now a separate **local-only private holdout scaffold**:
+There is also now a separate **local-only private holdout scaffold / execution lane**:
 - `benchmarks/private-holdout-pack-template.json` defines the public-safe shape only
 - `benchmarks/private-holdout-pack/` is gitignored for real teacher-only material
 - `tests/test_private_holdout_separation.py` proves tracked artifacts stay clean
 - `runner_bridge.autoresearch_alpha` can now hydrate a **local private-holdout** teacher lane from `private_holdout_manifest` while keeping student-visible artifacts redacted
 
-That scaffold is now enough for a **local private-holdout** alpha run once fresh episodes are authored locally.
+The tracked repo still ships only the public-safe scaffold. Separately, the gitignored local lane now has fresh replacement coverage for all three previously blocked teacher-only families (`h1` / `h2` / `h3`), and the latest local private-holdout alpha rerun loaded 6/6 holdouts from the manifest.
 
-**Allowed now:** fresh hidden holdouts in a gitignored local manifest, real reruns, and receipts that keep teacher-only content out of tracked and student-visible artifacts.
+**Allowed now:** fresh hidden holdouts in a gitignored local manifest, honest local reruns, and receipts that keep teacher-only content out of tracked and student-visible artifacts.
 
 **Still blocked:** sealed-eval claims, sealed certification, tamper-proof evaluation, and any claim that a third party independently sealed the holdouts.
 
