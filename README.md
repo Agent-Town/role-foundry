@@ -167,6 +167,7 @@ Using different model families for building and judging reduces correlated self-
 - `specs/008-public-benchmark-pack-v1.md` — public benchmark pack contract for the current alpha spine
 - `specs/009-clawith-readiness-probe.md` — adapter-first upstream readiness probe
 - `specs/010-live-ui-read-model.md` — read-only browser adapter for configured live/read-model exports
+- `specs/014-frontend-product-engineer-20-task-curriculum.md` — TDD-first 20-task curriculum contract for the first Frontend/Product Engineer apprentice
 
 ## License
 
