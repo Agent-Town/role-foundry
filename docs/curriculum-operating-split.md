@@ -156,9 +156,14 @@ The `execution_honesty` block in `result.json` makes it machine-readable whether
 - Private holdout content is still teacher-authored and local-only.
 - `LocalReplayRunner` still does not execute verifier commands, so the
   verifier gate is a truthful contract surface, not a live green check.
-- Teacher review console, promotion gating app flows, stability gates,
-  regression gates, lineage registry, and weekly cycle automation are
-  still future runtime work.
+- Teacher review console, promotion gating app flows, lineage registry,
+  and weekly cycle automation are still future runtime work.
+- Promotion gate **evaluation logic** (D002/D003/D004) is now
+  contract-defined in `runner_bridge/promotion_gates.py` with
+  machine-readable verdicts.  However, **live enforcement** — real
+  holdout scoring, automated rerun scheduling, and regression-pack
+  execution — is still future runtime work.  See
+  `docs/promotion-gate-contracts.md` for the explicit split.
 
 ## Honest status by area
 
@@ -168,7 +173,7 @@ The `execution_honesty` block in `result.json` makes it machine-readable whether
 | Phase 2 teacher operating system | Packet-defined, runtime not yet live | Authoring/promotion workflow is described in packets, but not wired as an end-to-end teacher system. |
 | Task-packet → runtime bridge | Implemented | CLI `--packet` path loads by acceptance_test_id, materializes `run-object.json`, and runs end-to-end through the bridge. `execution_honesty` block makes backend non-execution machine-readable. |
 | Phase 3 execution | Partial | Autoresearch alpha receipts exist, and Step C verifier-contract / verifier-gate honesty landed; live verifier execution is still pending. |
-| Phase 4 evaluation | Packet-defined, runtime not yet live | Public scoring contract exists; teacher console and promotion-gate enforcement do not. |
+| Phase 4 evaluation | Contract surface implemented, live enforcement pending | Gate evaluation logic (D002/D003/D004) in `runner_bridge/promotion_gates.py`; teacher console and live gate enforcement do not yet exist. |
 | Phase 5 compounding | Packet-defined, runtime not yet live | Lineage and weekly-cycle packets exist, but the operating loop is not live. |
 | Private holdout pool | Local-only scaffold | Teacher authors locally; zero teacher-only content is tracked by git. |
 | Teacher review console | Not started | Requires Phase 4 app / export surface. |
