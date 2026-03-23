@@ -474,21 +474,67 @@ class AutoresearchAlphaLoopContractTests(unittest.TestCase):
             ]:
                 self.assertIn(required, blocked_names, f"missing blocked claim: {required}")
 
-            # Operator checklist: private holdout loaded, but stronger controls absent
+            # Operator checklist: private holdout loaded, pre-run commitment present,
+            # but stronger controls absent.
             checklist = sr["operator_checklist"]
             self.assertTrue(checklist["private_holdout_manifest_loaded"]["present"])
             self.assertTrue(checklist["integrity_gate_passed"]["present"])
+            self.assertTrue(
+                checklist["pre_run_manifest_commitment"]["present"],
+                "pre_run_manifest_commitment should be True when a private holdout manifest is loaded",
+            )
+            self.assertIn("not independently published", checklist["pre_run_manifest_commitment"]["reason"])
             for must_be_false in [
                 "independent_executor_sandbox",
                 "third_party_holdout_auditor",
                 "hardware_attestation_or_enclave",
                 "external_audit",
-                "pre_run_manifest_commitment",
             ]:
                 self.assertFalse(
                     checklist[must_be_false]["present"],
                     f"{must_be_false} must be False on local private-holdout",
                 )
+
+            # Pre-run manifest commitment artifact exists and is threaded.
+            prmc = sr.get("pre_run_manifest_commitment")
+            self.assertIsNotNone(prmc, "private-holdout run must have pre_run_manifest_commitment")
+            self.assertEqual(prmc["status"], "recorded_local_only")
+            self.assertEqual(prmc["integrity_gate_mode"], "local_private_holdout")
+            self.assertEqual(prmc["manifest_hash"]["algorithm"], "sha256")
+            self.assertEqual(len(prmc["manifest_hash"]["hex_digest"]), 64)
+            self.assertEqual(prmc["private_holdout_manifest_id"], "private-holdout-pack-vtest")
+            self.assertEqual(prmc["sequence_id"], payload["sequence_id"])
+            self.assertEqual(prmc["artifact_path"], "pre-run-manifest-commitment.json")
+            self.assertEqual(prmc["linked_receipt_paths"]["alpha_receipt"], "autoresearch-alpha.json")
+            self.assertEqual(
+                prmc["linked_receipt_paths"]["alpha_request_copy"],
+                "autoresearch-alpha.request.json",
+            )
+            self.assertIn("not independently published", prmc["honesty_note"])
+            self.assertTrue(prmc["recorded_at"].endswith("Z"))
+
+            # The commitment artifact file exists on disk and matches the receipt copy.
+            commitment_file = artifacts_root / "pre-run-manifest-commitment.json"
+            self.assertTrue(commitment_file.exists(), "pre-run-manifest-commitment.json must exist on disk")
+            commitment_on_disk = json.loads(commitment_file.read_text())
+            self.assertEqual(commitment_on_disk, prmc)
+            self.assertEqual(
+                receipt["outputs"]["pre_run_manifest_commitment_path"],
+                "pre-run-manifest-commitment.json",
+            )
+
+            # Commitment hash matches the fingerprint in sealing receipt.
+            self.assertEqual(
+                prmc["manifest_hash"]["hex_digest"],
+                fp["hex_digest"],
+                "pre-run commitment hash must match the private_manifest_fingerprint",
+            )
+
+            # Linked receipt paths include the commitment.
+            self.assertEqual(
+                sr["linked_receipt_paths"]["pre_run_manifest_commitment"],
+                "pre-run-manifest-commitment.json",
+            )
 
     def _example_payload_with_absolute_paths(self):
         payload = json.loads(EXAMPLE_REQUEST.read_text())

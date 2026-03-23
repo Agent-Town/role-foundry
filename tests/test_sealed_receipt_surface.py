@@ -36,6 +36,7 @@ class SealedReceiptSurfaceSpecTests(unittest.TestCase):
             "blocked_claims",
             "stronger_claim_prerequisites",
             "private_manifest_fingerprint",
+            "pre_run_manifest_commitment",
             "local operator correlation only",
         ]:
             self.assertIn(required, text, f"spec missing required content: {required}")
@@ -191,6 +192,13 @@ class SealedReceiptSurfacePublicRegressionTests(unittest.TestCase):
         self.assertIn("not a seal", note)
         self.assertIn("public-safe boundary record", note)
 
+    def test_public_regression_has_no_pre_run_commitment(self):
+        """A public-regression run has no private holdout, so no pre-run commitment."""
+        sr = self.receipt["sealing_receipt"]
+        if sr["status"] == "public_regression_alpha":
+            self.assertIsNone(sr["pre_run_manifest_commitment"])
+            self.assertNotIn("pre_run_manifest_commitment", sr["linked_receipt_paths"])
+
     def test_integrity_gate_still_blocks_sealed_eval(self):
         """The existing integrity gate must also still block overclaiming."""
         ig = self.receipt["integrity_gate"]
@@ -249,6 +257,124 @@ class SealedReceiptFingerprintUnitTests(unittest.TestCase):
         self.assertIsNone(sr["private_manifest_fingerprint"])
 
 
+class PreRunManifestCommitmentUnitTests(unittest.TestCase):
+    """Unit-test the pre-run manifest commitment artifact."""
+
+    def test_commitment_written_with_private_holdout(self):
+        from runner_bridge.autoresearch_alpha import _write_pre_run_manifest_commitment
+
+        mock_manifest = {
+            "meta": {"id": "test-pack", "visibility": "teacher_only", "public_repo_safe": False},
+            "episodes": [{"id": "e1", "family_id": "f1", "title": "Test"}],
+        }
+        mock_pack = {
+            "manifest": mock_manifest,
+            "meta": mock_manifest["meta"],
+            "episodes_by_id": {},
+            "episode_ids": [],
+            "family_ids": [],
+        }
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            artifacts_root = Path(tmpdir)
+            result = _write_pre_run_manifest_commitment(
+                integrity_gate_mode="local_private_holdout",
+                private_holdout_pack=mock_pack,
+                artifacts_root=artifacts_root,
+                sequence_id="test-seq",
+            )
+
+            self.assertIsNotNone(result)
+            self.assertEqual(result["type"], "pre_run_manifest_commitment")
+            self.assertEqual(result["status"], "recorded_local_only")
+            self.assertEqual(result["integrity_gate_mode"], "local_private_holdout")
+            self.assertEqual(result["manifest_hash"]["algorithm"], "sha256")
+            self.assertEqual(len(result["manifest_hash"]["hex_digest"]), 64)
+            self.assertEqual(result["private_holdout_manifest_id"], "test-pack")
+            self.assertEqual(result["sequence_id"], "test-seq")
+            self.assertEqual(result["artifact_path"], "pre-run-manifest-commitment.json")
+            self.assertEqual(result["linked_receipt_paths"]["alpha_receipt"], "autoresearch-alpha.json")
+            self.assertEqual(result["linked_receipt_paths"]["alpha_request_copy"], "autoresearch-alpha.request.json")
+            self.assertIn("not independently published", result["honesty_note"])
+            self.assertTrue(result["recorded_at"].endswith("Z"))
+
+            # File was written.
+            commitment_file = artifacts_root / "pre-run-manifest-commitment.json"
+            self.assertTrue(commitment_file.exists())
+            on_disk = json.loads(commitment_file.read_text())
+            self.assertEqual(on_disk, result)
+
+            # Hash matches what we'd compute directly.
+            canonical = json.dumps(mock_manifest, sort_keys=True, separators=(",", ":"))
+            expected = hashlib.sha256(canonical.encode()).hexdigest()
+            self.assertEqual(result["manifest_hash"]["hex_digest"], expected)
+
+    def test_no_commitment_without_local_private_holdout_mode(self):
+        from runner_bridge.autoresearch_alpha import _write_pre_run_manifest_commitment
+
+        mock_manifest = {
+            "meta": {"id": "test-pack", "visibility": "teacher_only", "public_repo_safe": False},
+            "episodes": [{"id": "e1", "family_id": "f1", "title": "Test"}],
+        }
+        mock_pack = {
+            "manifest": mock_manifest,
+            "meta": mock_manifest["meta"],
+            "episodes_by_id": {},
+            "episode_ids": [],
+            "family_ids": [],
+        }
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            result = _write_pre_run_manifest_commitment(
+                integrity_gate_mode="public_regression",
+                private_holdout_pack=mock_pack,
+                artifacts_root=Path(tmpdir),
+                sequence_id="test",
+            )
+            self.assertIsNone(result)
+            self.assertFalse((Path(tmpdir) / "pre-run-manifest-commitment.json").exists())
+
+    def test_commitment_hash_matches_sealing_receipt_fingerprint(self):
+        """The commitment hash must match the private_manifest_fingerprint."""
+        from runner_bridge.autoresearch_alpha import (
+            _build_sealing_receipt,
+            _write_pre_run_manifest_commitment,
+        )
+
+        mock_manifest = {
+            "meta": {"id": "test", "visibility": "teacher_only", "public_repo_safe": False},
+            "episodes": [{"id": "e1", "family_id": "f1", "title": "Test"}],
+        }
+        mock_pack = {
+            "manifest": mock_manifest,
+            "meta": mock_manifest["meta"],
+            "episodes_by_id": {},
+            "episode_ids": [],
+            "family_ids": [],
+        }
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            artifacts_root = Path(tmpdir)
+            commitment = _write_pre_run_manifest_commitment(
+                integrity_gate_mode="local_private_holdout",
+                private_holdout_pack=mock_pack,
+                artifacts_root=artifacts_root,
+                sequence_id="test",
+            )
+            sr = _build_sealing_receipt(
+                integrity_gate={"status": "pass", "mode": "local_private_holdout", "summary": "test"},
+                private_holdout_pack=mock_pack,
+                artifacts_root=artifacts_root,
+                pre_run_commitment=commitment,
+            )
+
+            self.assertEqual(
+                sr["pre_run_manifest_commitment"]["manifest_hash"]["hex_digest"],
+                sr["private_manifest_fingerprint"]["hex_digest"],
+            )
+            self.assertTrue(sr["operator_checklist"]["pre_run_manifest_commitment"]["present"])
+
+
 class ReadmeHonestyBoundaryTests(unittest.TestCase):
     """README mentions the receipt surface and unmet prerequisites."""
 
@@ -256,6 +382,13 @@ class ReadmeHonestyBoundaryTests(unittest.TestCase):
         text = (ROOT / "README.md").read_text()
         self.assertIn("sealing_receipt", text)
         self.assertIn("Sealing receipt surface", text)
+
+    def test_readme_mentions_local_pre_run_commitment(self):
+        text = (ROOT / "README.md").read_text()
+        self.assertIn("pre_run_manifest_commitment", text)
+        self.assertIn("pre-run-manifest-commitment.json", text)
+        self.assertIn("external publication", text)
+        self.assertIn("third-party witnessing", text)
 
     def test_readme_lists_unmet_prerequisites(self):
         text = (ROOT / "README.md").read_text()

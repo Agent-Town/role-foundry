@@ -93,6 +93,8 @@ python3 -m runner_bridge.autoresearch_alpha \
   --artifacts-root runtime/autoresearch-alpha/local-private-holdout
 ```
 
+When the run actually enters the local private-holdout lane, the artifacts root now also gets `pre-run-manifest-commitment.json` **before** stage execution starts. That file records only public-safe metadata: the canonical manifest hash, timestamp, sequence linkage, and artifact path. It improves local operator auditability, but it is **not** external publication, third-party proof, or tamper-proofing.
+
 Honest claim boundary:
 - **allowed now:** fresh hidden holdouts in a gitignored local manifest, a real local private-holdout rerun, and receipts that keep teacher-only content out of tracked and student-visible artifacts
 - **still blocked:** sealed-eval claims, sealed certification, tamper-proof evaluation, and any claim that a third party independently sealed the holdouts

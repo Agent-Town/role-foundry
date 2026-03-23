@@ -185,7 +185,10 @@ What it carries:
 - `blocked_claims` — stronger claims that are explicitly blocked, each with a reason and prerequisite
 - `stronger_claim_prerequisites` — machine-readable list of what would need to be true before each blocked claim could be unblocked, each with `prerequisite`, `enables`, and `met` fields
 - `private_manifest_fingerprint` — if a private holdout manifest was loaded, a SHA-256 of its canonical JSON bytes labeled as **local operator correlation only** (not independent tamper-proofing)
-- `linked_receipt_paths` — relative paths to the alpha receipt and request copy
+- `pre_run_manifest_commitment` — when the run actually uses the local private-holdout lane, a local-only summary of the `pre-run-manifest-commitment.json` artifact written before stage execution, including the canonical manifest hash, timestamp, sequence linkage, and honesty note
+- `linked_receipt_paths` — relative paths to the alpha receipt, request copy, and (when present) the pre-run commitment artifact
+
+On a local private-holdout run, `runner_bridge.autoresearch_alpha` writes `pre-run-manifest-commitment.json` **before** stage execution begins. That improves local operator auditability and later correlation, but it is still **not** external publication, third-party witnessing, signing, or tamper-proofing.
 
 **Unmet prerequisites for stronger claims:**
 
@@ -195,7 +198,7 @@ What it carries:
 | Third-party holdout auditor signs the manifest before the run | "sealed certification" language |
 | Hardware attestation or remote enclave execution with verifiable logs | "tamper-proof" language |
 | External audit of scoring pipeline, holdout manifest, and run artifacts | "independently audited" language |
-| Cryptographic commitment to manifest hash published before the run | Stronger tamper-evidence beyond local correlation |
+| Independently published or third-party-witnessed cryptographic commitment to manifest hash before the run | Stronger tamper-evidence beyond local correlation |
 
 None of these prerequisites are met today. The `sealing_receipt` makes this explicit so future branches cannot overclaim without first landing the missing controls.
 
