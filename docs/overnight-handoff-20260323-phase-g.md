@@ -36,13 +36,22 @@ That is the first clean proof that the Phase G promotion surface can move a real
 - The same boundary can still include a SHA-256 fingerprint labeled **local operator correlation only**; together these surfaces improve local auditability and operator correlation only, not publication, third-party witnessing, signing, tamper-proofing, certification, or independent audit.
 - The read-only live UI/read-model shell now renders the same boundary when a `sealing_receipt` is exported. The committed browser sample stays at **public-regression alpha**, so it still blocks stronger sealed/certified/tamper-proof claims instead of inventing them.
 
+## `claude_vibecosystem` external-executor beta seam now landed
+
+- `specs/016-claude-vibecosystem-backend.md` formalizes a named `claude_vibecosystem` runner backend as a narrow **external-executor beta seam**.
+- `python3 -m runner_bridge.cli --packet A001 --runner-backend claude_vibecosystem` now stamps `execution_backend: "claude_vibecosystem"` into `run-object.json` and can carry a machine-readable `execution_backend_contract` block through the packet/runtime surface.
+- The tiny backend stub writes `execution_honesty` plus provenance/inspectability surfaces so reviewers can see the backend id, intended executor path, and current claim boundary in machine-readable form.
+- This is the honest extension of the existing `docs/clawith-vibecosystem-real-path.md` proof lane: the contract/provenance seam is now explicit in the public runner surfaces, without pretending the stub is live execution.
+
+**Important honesty line:** this is a contract/provenance-real external-executor beta seam only. It remains a non-destructive stub. It does **not** create live execution, independent executor isolation, sealed evaluation, certification, tamper-proofing, or native Clawith parity.
+
 ## What remains blocked / not claimable
 
 - This branch still does **not** justify sealed-eval, sealed-certification, tamper-proof, or independently sealed claims.
 - The repo-visible holdout family entries (`h1` / `h2` / `h3`) remain `blocked_pending_rewrite` in the tracked public registry and are still not promotable as public or sealed families.
 - Local private holdouts remain gitignored and local-only; the new pre-run commitment improves local operator auditability/correlation before stage execution, but the honest claim ceiling is still **local private-holdout alpha execution with public-safe receipts**, not sealed certification.
 - Manual-curation-only seams (for example Alpine.js) are still not public benchmark families.
-- No new native-live, partner-integration, wallet/chain-runtime, or broad runner-bridge readiness claims were added here.
+- No new native-live, partner-integration, wallet/chain-runtime, or broad runner-bridge readiness claims were added here beyond the narrow `claude_vibecosystem` contract/provenance seam described above.
 
 ## Next single most important move
 

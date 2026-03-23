@@ -216,3 +216,22 @@ See `docs/synthesis-hackathon-stack-architecture.md` for details.
 - no private holdout content was added to git
 
 **Important honesty line:** the new `sealing_receipt` and local-only `pre_run_manifest_commitment` explain the next claim boundary and improve local operator auditability/correlation. They do **not** themselves create publication, witnessing, signing, tamper-proofing, certification, or independent audit.
+
+---
+
+## 2026-03-24 — `claude_vibecosystem` external-executor beta seam surfaced in the overnight status spine
+
+**Outcome:** The repo now tells one coherent public-safe story about the newly landed `claude_vibecosystem` backend seam instead of stopping at the pre-run manifest commitment layer.
+
+**What changed:**
+- `specs/016-claude-vibecosystem-backend.md` formalizes a named `claude_vibecosystem` runner-backend as a narrow external-executor beta seam
+- `runner_bridge.cli`, `runner_bridge.packet_runtime`, and `runner_bridge.backends.claude_vibecosystem` let packet-driven runs stamp `execution_backend: "claude_vibecosystem"` plus a machine-readable `execution_backend_contract` block into the run/runtime surfaces
+- the backend stub emits `execution_honesty` in `result.json`, keeping backend naming, intended executor path, and claim boundaries machine-readable
+- `docs/overnight-handoff-20260323-phase-g.md` and `docs/milestones.md` now say plainly that this seam is real as a contract/provenance surface, but still a non-destructive stub
+
+**Evidence:**
+- `tests/test_claude_vibecosystem_beta_seam.py` pins the backend registry, contract, and docs surfacing
+- `tests/test_packet_runtime_bridge_e2e.py` pins `execution_backend: "claude_vibecosystem"`, `execution_backend_contract`, and the conservative `execution_honesty` block
+- `docs/clawith-vibecosystem-real-path.md` remains the reference for the separate real gateway/executor proof lane
+
+**Important honesty line:** this is a contract/provenance-real external-executor beta seam only. It does **not** create live execution, independent executor isolation, sealed evaluation, certification, tamper-proofing, or native Clawith parity.
