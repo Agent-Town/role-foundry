@@ -126,8 +126,33 @@ python3 scripts/holdout_author.py audit
 python3 -m unittest tests/test_milestone3_contract.py tests/test_milestone5_teacher_eval_loop.py tests/test_autoresearch_alpha_loop.py
 ```
 
+## Frontend/Product Engineer benchmark pack (new)
+
+A second public benchmark pack now exists for the **Frontend/Product Engineer** 20-task curriculum:
+
+- `benchmarks/public-pack-v1-fpe/benchmark-pack.json` — 20 episodes across 5 families (one per curriculum phase)
+- `benchmarks/public-pack-v1-fpe/episode-family-registry.json` — family registry
+- `data/episode-registry/fpe-public-benchmark-pack-v1.json` — episode registry with rubric templates and provenance
+- `runner_bridge/examples/fpe-autoresearch-alpha-public-loop.json` — example alpha-loop request
+- `tests/test_fpe_public_benchmark_pack_v1.py` — contract tests (B001–B006 + alpha-loop consumability)
+
+All 20 episodes are **public-safe, benchmark-ready, and alpha-consumable** — packets, rubrics, and provenance are complete. No teacher-only families are blocked because no holdout framing has been disclosed for this curriculum. Rubric templates use the frozen FPE evaluation contract dimensions (5 dimensions, weights sum to 1.0).
+
+However, **runtime readiness varies by phase**: Phase 1 contract surface is complete, Phase 3 execution is partial (verifier-gate landed, live execution pending), and Phases 2/4/5 are packet-defined only with runtime not yet live. See `docs/curriculum-operating-split.md` for the honest status-by-area table and per-family `readiness` fields in the family registry for machine-readable detail.
+
+The pack is immediately consumable by `runner_bridge.autoresearch_alpha`:
+
+```bash
+python3 -m runner_bridge.autoresearch_alpha \
+  --request runner_bridge/examples/fpe-autoresearch-alpha-public-loop.json \
+  --artifacts-root runtime/fpe-alpha
+```
+
+This is **not a sealed certification pack**. It is valid for public training, regression, and alpha-loop consumption.
+
 ## Files
 
+### Legacy Frontend Apprentice pack
 - `benchmarks/public-pack-v1/episode-family-registry.json`
 - `benchmarks/public-pack-v1/benchmark-pack.json`
 - `data/episode-registry/public-benchmark-pack-v1.json`
@@ -139,3 +164,10 @@ python3 -m unittest tests/test_milestone3_contract.py tests/test_milestone5_teac
 - `tests/test_private_holdout_separation.py`
 - `scripts/holdout_author.py`
 - `docs/private-holdout-authoring.md`
+
+### Frontend/Product Engineer pack
+- `benchmarks/public-pack-v1-fpe/benchmark-pack.json`
+- `benchmarks/public-pack-v1-fpe/episode-family-registry.json`
+- `data/episode-registry/fpe-public-benchmark-pack-v1.json`
+- `runner_bridge/examples/fpe-autoresearch-alpha-public-loop.json`
+- `tests/test_fpe_public_benchmark_pack_v1.py`

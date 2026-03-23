@@ -1,0 +1,262 @@
+{
+  "meta": {
+    "registry_id": "fpe-episode-family-registry",
+    "version": "1.0.0",
+    "benchmark_pack_version": "fpe-public-benchmark-pack-v1",
+    "generated_from": [
+      "seed/frontend-product-engineer-role.v1.json",
+      "data/curriculum/frontend-product-engineer-public-seed-registry.v1.json",
+      "specs/014-frontend-product-engineer-20-task-curriculum.md"
+    ],
+    "honesty_note": "All families are public-safe and benchmark-ready. No teacher-only holdout families exist in this pack because the FPE curriculum has no disclosed holdout framing to block. Benchmark readiness means the task packets, rubrics, and provenance are complete — it does NOT mean every phase's runtime systems are live. See per-family readiness fields for the honest split."
+  },
+  "policy": {
+    "public_pack_rule": "Only benchmark_ready + student_visible families may appear in fpe-public-benchmark-pack-v1.",
+    "blocked_rule": "No families are currently blocked. If teacher-only holdout families are authored in the future, they must be stored outside this pack.",
+    "certification_note": "This pack is suitable for public training, regression checks, and alpha-loop consumption. It is not a sealed certification exam.",
+    "promotion_policy": "Every candidate family must have explicit promotion_criteria. A family with zero criteria is not promotable."
+  },
+  "families": [
+    {
+      "id": "rf.fpe.public.phase-1",
+      "status": "benchmark_ready",
+      "visibility": "student_visible",
+      "role": "Frontend/Product Engineer",
+      "role_scope": "frontend-product-engineer",
+      "promotion_criteria": {
+        "source_is_public_curriculum": true,
+        "no_teacher_only_inputs": true,
+        "rubric_template_exists": true,
+        "not_repo_visible_holdout": true
+      },
+      "source_seed_task_ids": [
+        "fpe.seed.a001.freeze-the-first-apprentice-role",
+        "fpe.seed.a002.freeze-the-evaluation-contract",
+        "fpe.seed.a003.freeze-the-mutation-surface",
+        "fpe.seed.a004.freeze-the-canonical-task-packet"
+      ],
+      "title": "Freeze the game being played",
+      "benchmark_goal": "Evaluate agent ability to execute Phase 1 (Freeze the game being played) tasks from the frozen 20-task FPE curriculum.",
+      "loop_stage": "public_curriculum",
+      "allowed_mutation_surfaces": [
+        "data/**",
+        "docs/**",
+        "seed/**",
+        "tests/**"
+      ],
+      "required_artifacts": [
+        "changed-files summary",
+        "policy snapshot",
+        "receipt note"
+      ],
+      "public_checks": [
+        "Task A001 success criteria are met",
+        "Task A002 success criteria are met",
+        "Task A003 success criteria are met",
+        "Task A004 success criteria are met"
+      ],
+      "readiness": {
+        "benchmark_pack": true,
+        "runtime_status": "complete",
+        "alpha_consumable": true,
+        "blocked_claims": [],
+        "evidence": "Contract surface fully implemented: role manifest, evaluation contract, task-packet schema, and seed registry are all checked in and versioned."
+      },
+      "notes": "Public-safe: all 4 tasks derive from Spec 014 public acceptance tests only."
+    },
+    {
+      "id": "rf.fpe.public.phase-2",
+      "status": "benchmark_ready",
+      "visibility": "student_visible",
+      "role": "Frontend/Product Engineer",
+      "role_scope": "frontend-product-engineer",
+      "promotion_criteria": {
+        "source_is_public_curriculum": true,
+        "no_teacher_only_inputs": true,
+        "rubric_template_exists": true,
+        "not_repo_visible_holdout": true
+      },
+      "source_seed_task_ids": [
+        "fpe.seed.b001.build-task-authoring-from-a-template",
+        "fpe.seed.b002.build-source-intake-curriculum-promotion-workflow",
+        "fpe.seed.b003.author-the-first-20-task-seed-set",
+        "fpe.seed.b004.add-weekly-holdout-refresh"
+      ],
+      "title": "Build the teacher operating system",
+      "benchmark_goal": "Evaluate agent ability to execute Phase 2 (Build the teacher operating system) tasks from the frozen 20-task FPE curriculum.",
+      "loop_stage": "public_curriculum",
+      "allowed_mutation_surfaces": [
+        "benchmarks/**",
+        "data/**",
+        "docs/**",
+        "seed/**",
+        "tests/**"
+      ],
+      "required_artifacts": [
+        "changed-files summary",
+        "policy snapshot",
+        "receipt note"
+      ],
+      "public_checks": [
+        "Task B001 success criteria are met",
+        "Task B002 success criteria are met",
+        "Task B003 success criteria are met",
+        "Task B004 success criteria are met"
+      ],
+      "readiness": {
+        "benchmark_pack": true,
+        "runtime_status": "not_started",
+        "alpha_consumable": true,
+        "blocked_claims": ["teacher operating system live", "authoring/promotion workflow end-to-end"],
+        "evidence": "Packets define the teacher OS tasks but no runtime authoring/promotion system is wired."
+      },
+      "notes": "Public-safe: all 4 tasks derive from Spec 014 public acceptance tests only."
+    },
+    {
+      "id": "rf.fpe.public.phase-3",
+      "status": "benchmark_ready",
+      "visibility": "student_visible",
+      "role": "Frontend/Product Engineer",
+      "role_scope": "frontend-product-engineer",
+      "promotion_criteria": {
+        "source_is_public_curriculum": true,
+        "no_teacher_only_inputs": true,
+        "rubric_template_exists": true,
+        "not_repo_visible_holdout": true
+      },
+      "source_seed_task_ids": [
+        "fpe.seed.c001.standardize-isolated-execution",
+        "fpe.seed.c002.wire-baseline-run-as-a-first-class-object",
+        "fpe.seed.c003.wire-candidate-run-with-real-code-test-execution",
+        "fpe.seed.c004.capture-full-receipts-automatically"
+      ],
+      "title": "Make the coding loop real",
+      "benchmark_goal": "Evaluate agent ability to execute Phase 3 (Make the coding loop real) tasks from the frozen 20-task FPE curriculum.",
+      "loop_stage": "public_curriculum",
+      "allowed_mutation_surfaces": [
+        "data/**",
+        "docs/**",
+        "runner_bridge/**",
+        "runtime/**",
+        "tests/**"
+      ],
+      "required_artifacts": [
+        "changed-files summary",
+        "policy snapshot",
+        "receipt note"
+      ],
+      "public_checks": [
+        "Task C001 success criteria are met",
+        "Task C002 success criteria are met",
+        "Task C003 success criteria are met",
+        "Task C004 success criteria are met"
+      ],
+      "readiness": {
+        "benchmark_pack": true,
+        "runtime_status": "partial",
+        "alpha_consumable": true,
+        "blocked_claims": ["live verifier execution"],
+        "evidence": "Autoresearch alpha receipts exist; Step C verifier-contract and verifier-gate honesty landed. Live verifier command execution still pending."
+      },
+      "notes": "Public-safe: all 4 tasks derive from Spec 014 public acceptance tests only."
+    },
+    {
+      "id": "rf.fpe.public.phase-4",
+      "status": "benchmark_ready",
+      "visibility": "student_visible",
+      "role": "Frontend/Product Engineer",
+      "role_scope": "frontend-product-engineer",
+      "promotion_criteria": {
+        "source_is_public_curriculum": true,
+        "no_teacher_only_inputs": true,
+        "rubric_template_exists": true,
+        "not_repo_visible_holdout": true
+      },
+      "source_seed_task_ids": [
+        "fpe.seed.d001.build-the-teacher-review-console",
+        "fpe.seed.d002.require-private-holdout-scoring-for-promotion",
+        "fpe.seed.d003.add-repeated-run-stability-checks",
+        "fpe.seed.d004.add-regression-gates"
+      ],
+      "title": "Make evaluation trustworthy",
+      "benchmark_goal": "Evaluate agent ability to execute Phase 4 (Make evaluation trustworthy) tasks from the frozen 20-task FPE curriculum.",
+      "loop_stage": "public_curriculum",
+      "allowed_mutation_surfaces": [
+        "app/**",
+        "benchmarks/**",
+        "data/**",
+        "docs/**",
+        "runtime/**",
+        "tests/**"
+      ],
+      "required_artifacts": [
+        "changed-files summary",
+        "policy snapshot",
+        "receipt note"
+      ],
+      "public_checks": [
+        "Task D001 success criteria are met",
+        "Task D002 success criteria are met",
+        "Task D003 success criteria are met",
+        "Task D004 success criteria are met"
+      ],
+      "readiness": {
+        "benchmark_pack": true,
+        "runtime_status": "not_started",
+        "alpha_consumable": true,
+        "blocked_claims": ["teacher review console", "promotion-gate enforcement", "private-holdout scoring live"],
+        "evidence": "Public scoring contract exists. Teacher review console and promotion-gate enforcement are not started."
+      },
+      "notes": "Public-safe: all 4 tasks derive from Spec 014 public acceptance tests only."
+    },
+    {
+      "id": "rf.fpe.public.phase-5",
+      "status": "benchmark_ready",
+      "visibility": "student_visible",
+      "role": "Frontend/Product Engineer",
+      "role_scope": "frontend-product-engineer",
+      "promotion_criteria": {
+        "source_is_public_curriculum": true,
+        "no_teacher_only_inputs": true,
+        "rubric_template_exists": true,
+        "not_repo_visible_holdout": true
+      },
+      "source_seed_task_ids": [
+        "fpe.seed.e001.turn-failures-into-next-step-curriculum",
+        "fpe.seed.e002.track-generation-lineage",
+        "fpe.seed.e003.run-a-real-weekly-training-cycle",
+        "fpe.seed.e004.only-then-expand-to-a-second-role"
+      ],
+      "title": "Make the system compound",
+      "benchmark_goal": "Evaluate agent ability to execute Phase 5 (Make the system compound) tasks from the frozen 20-task FPE curriculum.",
+      "loop_stage": "public_curriculum",
+      "allowed_mutation_surfaces": [
+        "data/**",
+        "docs/**",
+        "runner_bridge/**",
+        "runtime/**",
+        "seed/**",
+        "tests/**"
+      ],
+      "required_artifacts": [
+        "changed-files summary",
+        "policy snapshot",
+        "receipt note"
+      ],
+      "public_checks": [
+        "Task E001 success criteria are met",
+        "Task E002 success criteria are met",
+        "Task E003 success criteria are met",
+        "Task E004 success criteria are met"
+      ],
+      "readiness": {
+        "benchmark_pack": true,
+        "runtime_status": "not_started",
+        "alpha_consumable": true,
+        "blocked_claims": ["generation lineage registry", "weekly cycle automation", "compounding loop live"],
+        "evidence": "Lineage and weekly-cycle packets exist but the operating loop is not live. Generation lineage is not started."
+      },
+      "notes": "Public-safe: all 4 tasks derive from Spec 014 public acceptance tests only."
+    }
+  ]
+}

@@ -1,0 +1,774 @@
+{
+  "meta": {
+    "id": "fpe-public-benchmark-pack-v1-episode-registry",
+    "version": "1.0.0",
+    "benchmark_pack_id": "fpe-public-benchmark-pack-v1",
+    "benchmark_pack_path": "benchmarks/public-pack-v1-fpe/benchmark-pack.json",
+    "family_registry_path": "benchmarks/public-pack-v1-fpe/episode-family-registry.json",
+    "description": "Companion registry for FPE Public Benchmark Pack v1 with rubric templates and provenance for all 20 episodes.",
+    "student_visible_only": true,
+    "teacher_only_fields_present": false,
+    "generated_from": [
+      "data/curriculum/frontend-product-engineer-public-seed-registry.v1.json",
+      "data/curriculum/frontend-product-engineer-evaluation-contract.v1.json",
+      "benchmarks/public-pack-v1-fpe/benchmark-pack.json",
+      "benchmarks/public-pack-v1-fpe/episode-family-registry.json"
+    ]
+  },
+  "coverage": {
+    "public_episode_count": 20,
+    "benchmark_ready_family_count": 5,
+    "rubric_template_count": 5,
+    "rubric_mapped_episode_count": 20,
+    "provenance_mapped_episode_count": 20
+  },
+  "rubric_templates": [
+    {
+      "id": "fpe-rubric-phase-1-v1",
+      "family_id": "rf.fpe.public.phase-1",
+      "version": "1.0.0",
+      "title": "Phase 1 \u2014 Freeze the game being played rubric",
+      "description": "Rubric for evaluating Phase 1 (Freeze the game being played) episodes using the frozen FPE evaluation contract dimensions.",
+      "score_scale": {
+        "min": 0.0,
+        "max": 1.0
+      },
+      "dimensions": [
+        {
+          "id": "task_outcome",
+          "label": "Task outcome",
+          "weight": 0.3,
+          "description": "Did the requested product slice or fix actually land?",
+          "pass_signal": "Phase 1 tasks meet the task outcome standard.",
+          "fail_signal": "Phase 1 tasks fail the task outcome standard."
+        },
+        {
+          "id": "regression_safety",
+          "label": "Regression safety",
+          "weight": 0.25,
+          "description": "Did existing expected behavior keep working?",
+          "pass_signal": "Phase 1 tasks meet the regression safety standard.",
+          "fail_signal": "Phase 1 tasks fail the regression safety standard."
+        },
+        {
+          "id": "mutation_discipline",
+          "label": "Mutation discipline",
+          "weight": 0.15,
+          "description": "Did the agent stay inside the declared task surface and budget?",
+          "pass_signal": "Phase 1 tasks meet the mutation discipline standard.",
+          "fail_signal": "Phase 1 tasks fail the mutation discipline standard."
+        },
+        {
+          "id": "evidence_quality",
+          "label": "Evidence quality",
+          "weight": 0.15,
+          "description": "Did the run leave usable receipts, checks, and artifacts?",
+          "pass_signal": "Phase 1 tasks meet the evidence quality standard.",
+          "fail_signal": "Phase 1 tasks fail the evidence quality standard."
+        },
+        {
+          "id": "honesty_boundary_discipline",
+          "label": "Honesty / boundary discipline",
+          "weight": 0.15,
+          "description": "Did the run avoid fake claims, hidden leaks, and scope cheating?",
+          "pass_signal": "Phase 1 tasks meet the honesty / boundary discipline standard.",
+          "fail_signal": "Phase 1 tasks fail the honesty / boundary discipline standard."
+        }
+      ]
+    },
+    {
+      "id": "fpe-rubric-phase-2-v1",
+      "family_id": "rf.fpe.public.phase-2",
+      "version": "1.0.0",
+      "title": "Phase 2 \u2014 Build the teacher operating system rubric",
+      "description": "Rubric for evaluating Phase 2 (Build the teacher operating system) episodes using the frozen FPE evaluation contract dimensions.",
+      "score_scale": {
+        "min": 0.0,
+        "max": 1.0
+      },
+      "dimensions": [
+        {
+          "id": "task_outcome",
+          "label": "Task outcome",
+          "weight": 0.3,
+          "description": "Did the requested product slice or fix actually land?",
+          "pass_signal": "Phase 2 tasks meet the task outcome standard.",
+          "fail_signal": "Phase 2 tasks fail the task outcome standard."
+        },
+        {
+          "id": "regression_safety",
+          "label": "Regression safety",
+          "weight": 0.25,
+          "description": "Did existing expected behavior keep working?",
+          "pass_signal": "Phase 2 tasks meet the regression safety standard.",
+          "fail_signal": "Phase 2 tasks fail the regression safety standard."
+        },
+        {
+          "id": "mutation_discipline",
+          "label": "Mutation discipline",
+          "weight": 0.15,
+          "description": "Did the agent stay inside the declared task surface and budget?",
+          "pass_signal": "Phase 2 tasks meet the mutation discipline standard.",
+          "fail_signal": "Phase 2 tasks fail the mutation discipline standard."
+        },
+        {
+          "id": "evidence_quality",
+          "label": "Evidence quality",
+          "weight": 0.15,
+          "description": "Did the run leave usable receipts, checks, and artifacts?",
+          "pass_signal": "Phase 2 tasks meet the evidence quality standard.",
+          "fail_signal": "Phase 2 tasks fail the evidence quality standard."
+        },
+        {
+          "id": "honesty_boundary_discipline",
+          "label": "Honesty / boundary discipline",
+          "weight": 0.15,
+          "description": "Did the run avoid fake claims, hidden leaks, and scope cheating?",
+          "pass_signal": "Phase 2 tasks meet the honesty / boundary discipline standard.",
+          "fail_signal": "Phase 2 tasks fail the honesty / boundary discipline standard."
+        }
+      ]
+    },
+    {
+      "id": "fpe-rubric-phase-3-v1",
+      "family_id": "rf.fpe.public.phase-3",
+      "version": "1.0.0",
+      "title": "Phase 3 \u2014 Make the coding loop real rubric",
+      "description": "Rubric for evaluating Phase 3 (Make the coding loop real) episodes using the frozen FPE evaluation contract dimensions.",
+      "score_scale": {
+        "min": 0.0,
+        "max": 1.0
+      },
+      "dimensions": [
+        {
+          "id": "task_outcome",
+          "label": "Task outcome",
+          "weight": 0.3,
+          "description": "Did the requested product slice or fix actually land?",
+          "pass_signal": "Phase 3 tasks meet the task outcome standard.",
+          "fail_signal": "Phase 3 tasks fail the task outcome standard."
+        },
+        {
+          "id": "regression_safety",
+          "label": "Regression safety",
+          "weight": 0.25,
+          "description": "Did existing expected behavior keep working?",
+          "pass_signal": "Phase 3 tasks meet the regression safety standard.",
+          "fail_signal": "Phase 3 tasks fail the regression safety standard."
+        },
+        {
+          "id": "mutation_discipline",
+          "label": "Mutation discipline",
+          "weight": 0.15,
+          "description": "Did the agent stay inside the declared task surface and budget?",
+          "pass_signal": "Phase 3 tasks meet the mutation discipline standard.",
+          "fail_signal": "Phase 3 tasks fail the mutation discipline standard."
+        },
+        {
+          "id": "evidence_quality",
+          "label": "Evidence quality",
+          "weight": 0.15,
+          "description": "Did the run leave usable receipts, checks, and artifacts?",
+          "pass_signal": "Phase 3 tasks meet the evidence quality standard.",
+          "fail_signal": "Phase 3 tasks fail the evidence quality standard."
+        },
+        {
+          "id": "honesty_boundary_discipline",
+          "label": "Honesty / boundary discipline",
+          "weight": 0.15,
+          "description": "Did the run avoid fake claims, hidden leaks, and scope cheating?",
+          "pass_signal": "Phase 3 tasks meet the honesty / boundary discipline standard.",
+          "fail_signal": "Phase 3 tasks fail the honesty / boundary discipline standard."
+        }
+      ]
+    },
+    {
+      "id": "fpe-rubric-phase-4-v1",
+      "family_id": "rf.fpe.public.phase-4",
+      "version": "1.0.0",
+      "title": "Phase 4 \u2014 Make evaluation trustworthy rubric",
+      "description": "Rubric for evaluating Phase 4 (Make evaluation trustworthy) episodes using the frozen FPE evaluation contract dimensions.",
+      "score_scale": {
+        "min": 0.0,
+        "max": 1.0
+      },
+      "dimensions": [
+        {
+          "id": "task_outcome",
+          "label": "Task outcome",
+          "weight": 0.3,
+          "description": "Did the requested product slice or fix actually land?",
+          "pass_signal": "Phase 4 tasks meet the task outcome standard.",
+          "fail_signal": "Phase 4 tasks fail the task outcome standard."
+        },
+        {
+          "id": "regression_safety",
+          "label": "Regression safety",
+          "weight": 0.25,
+          "description": "Did existing expected behavior keep working?",
+          "pass_signal": "Phase 4 tasks meet the regression safety standard.",
+          "fail_signal": "Phase 4 tasks fail the regression safety standard."
+        },
+        {
+          "id": "mutation_discipline",
+          "label": "Mutation discipline",
+          "weight": 0.15,
+          "description": "Did the agent stay inside the declared task surface and budget?",
+          "pass_signal": "Phase 4 tasks meet the mutation discipline standard.",
+          "fail_signal": "Phase 4 tasks fail the mutation discipline standard."
+        },
+        {
+          "id": "evidence_quality",
+          "label": "Evidence quality",
+          "weight": 0.15,
+          "description": "Did the run leave usable receipts, checks, and artifacts?",
+          "pass_signal": "Phase 4 tasks meet the evidence quality standard.",
+          "fail_signal": "Phase 4 tasks fail the evidence quality standard."
+        },
+        {
+          "id": "honesty_boundary_discipline",
+          "label": "Honesty / boundary discipline",
+          "weight": 0.15,
+          "description": "Did the run avoid fake claims, hidden leaks, and scope cheating?",
+          "pass_signal": "Phase 4 tasks meet the honesty / boundary discipline standard.",
+          "fail_signal": "Phase 4 tasks fail the honesty / boundary discipline standard."
+        }
+      ]
+    },
+    {
+      "id": "fpe-rubric-phase-5-v1",
+      "family_id": "rf.fpe.public.phase-5",
+      "version": "1.0.0",
+      "title": "Phase 5 \u2014 Make the system compound rubric",
+      "description": "Rubric for evaluating Phase 5 (Make the system compound) episodes using the frozen FPE evaluation contract dimensions.",
+      "score_scale": {
+        "min": 0.0,
+        "max": 1.0
+      },
+      "dimensions": [
+        {
+          "id": "task_outcome",
+          "label": "Task outcome",
+          "weight": 0.3,
+          "description": "Did the requested product slice or fix actually land?",
+          "pass_signal": "Phase 5 tasks meet the task outcome standard.",
+          "fail_signal": "Phase 5 tasks fail the task outcome standard."
+        },
+        {
+          "id": "regression_safety",
+          "label": "Regression safety",
+          "weight": 0.25,
+          "description": "Did existing expected behavior keep working?",
+          "pass_signal": "Phase 5 tasks meet the regression safety standard.",
+          "fail_signal": "Phase 5 tasks fail the regression safety standard."
+        },
+        {
+          "id": "mutation_discipline",
+          "label": "Mutation discipline",
+          "weight": 0.15,
+          "description": "Did the agent stay inside the declared task surface and budget?",
+          "pass_signal": "Phase 5 tasks meet the mutation discipline standard.",
+          "fail_signal": "Phase 5 tasks fail the mutation discipline standard."
+        },
+        {
+          "id": "evidence_quality",
+          "label": "Evidence quality",
+          "weight": 0.15,
+          "description": "Did the run leave usable receipts, checks, and artifacts?",
+          "pass_signal": "Phase 5 tasks meet the evidence quality standard.",
+          "fail_signal": "Phase 5 tasks fail the evidence quality standard."
+        },
+        {
+          "id": "honesty_boundary_discipline",
+          "label": "Honesty / boundary discipline",
+          "weight": 0.15,
+          "description": "Did the run avoid fake claims, hidden leaks, and scope cheating?",
+          "pass_signal": "Phase 5 tasks meet the honesty / boundary discipline standard.",
+          "fail_signal": "Phase 5 tasks fail the honesty / boundary discipline standard."
+        }
+      ]
+    }
+  ],
+  "episodes": [
+    {
+      "id": "fpe.seed.a001.freeze-the-first-apprentice-role",
+      "family_id": "rf.fpe.public.phase-1",
+      "rubric_template_id": "fpe-rubric-phase-1-v1",
+      "title": "Freeze the first apprentice role",
+      "acceptance_test_id": "A001",
+      "provenance": {
+        "source_seed_scenarios": [
+          "a001"
+        ],
+        "source_seed_titles": [
+          "Freeze the first apprentice role"
+        ],
+        "teacher_only_inputs_used": false,
+        "public_spec_refs": [
+          "specs/014-frontend-product-engineer-20-task-curriculum.md#A001"
+        ],
+        "public_doc_refs": [
+          "docs/frontend-product-engineer-seed-curriculum.md"
+        ],
+        "source_record_id": "fpe-source-a001",
+        "promotion_record_id": "fpe-promotion-a001"
+      }
+    },
+    {
+      "id": "fpe.seed.a002.freeze-the-evaluation-contract",
+      "family_id": "rf.fpe.public.phase-1",
+      "rubric_template_id": "fpe-rubric-phase-1-v1",
+      "title": "Freeze the evaluation contract",
+      "acceptance_test_id": "A002",
+      "provenance": {
+        "source_seed_scenarios": [
+          "a002"
+        ],
+        "source_seed_titles": [
+          "Freeze the evaluation contract"
+        ],
+        "teacher_only_inputs_used": false,
+        "public_spec_refs": [
+          "specs/014-frontend-product-engineer-20-task-curriculum.md#A002"
+        ],
+        "public_doc_refs": [
+          "docs/frontend-product-engineer-seed-curriculum.md"
+        ],
+        "source_record_id": "fpe-source-a002",
+        "promotion_record_id": "fpe-promotion-a002"
+      }
+    },
+    {
+      "id": "fpe.seed.a003.freeze-the-mutation-surface",
+      "family_id": "rf.fpe.public.phase-1",
+      "rubric_template_id": "fpe-rubric-phase-1-v1",
+      "title": "Freeze the mutation surface",
+      "acceptance_test_id": "A003",
+      "provenance": {
+        "source_seed_scenarios": [
+          "a003"
+        ],
+        "source_seed_titles": [
+          "Freeze the mutation surface"
+        ],
+        "teacher_only_inputs_used": false,
+        "public_spec_refs": [
+          "specs/014-frontend-product-engineer-20-task-curriculum.md#A003"
+        ],
+        "public_doc_refs": [
+          "docs/frontend-product-engineer-seed-curriculum.md"
+        ],
+        "source_record_id": "fpe-source-a003",
+        "promotion_record_id": "fpe-promotion-a003"
+      }
+    },
+    {
+      "id": "fpe.seed.a004.freeze-the-canonical-task-packet",
+      "family_id": "rf.fpe.public.phase-1",
+      "rubric_template_id": "fpe-rubric-phase-1-v1",
+      "title": "Freeze the canonical task packet",
+      "acceptance_test_id": "A004",
+      "provenance": {
+        "source_seed_scenarios": [
+          "a004"
+        ],
+        "source_seed_titles": [
+          "Freeze the canonical task packet"
+        ],
+        "teacher_only_inputs_used": false,
+        "public_spec_refs": [
+          "specs/014-frontend-product-engineer-20-task-curriculum.md#A004"
+        ],
+        "public_doc_refs": [
+          "docs/frontend-product-engineer-seed-curriculum.md"
+        ],
+        "source_record_id": "fpe-source-a004",
+        "promotion_record_id": "fpe-promotion-a004"
+      }
+    },
+    {
+      "id": "fpe.seed.b001.build-task-authoring-from-a-template",
+      "family_id": "rf.fpe.public.phase-2",
+      "rubric_template_id": "fpe-rubric-phase-2-v1",
+      "title": "Build task authoring from a template",
+      "acceptance_test_id": "B001",
+      "provenance": {
+        "source_seed_scenarios": [
+          "b001"
+        ],
+        "source_seed_titles": [
+          "Build task authoring from a template"
+        ],
+        "teacher_only_inputs_used": false,
+        "public_spec_refs": [
+          "specs/014-frontend-product-engineer-20-task-curriculum.md#B001"
+        ],
+        "public_doc_refs": [
+          "docs/frontend-product-engineer-seed-curriculum.md"
+        ],
+        "source_record_id": "fpe-source-b001",
+        "promotion_record_id": "fpe-promotion-b001"
+      }
+    },
+    {
+      "id": "fpe.seed.b002.build-source-intake-curriculum-promotion-workflow",
+      "family_id": "rf.fpe.public.phase-2",
+      "rubric_template_id": "fpe-rubric-phase-2-v1",
+      "title": "Build source-intake -> curriculum promotion workflow",
+      "acceptance_test_id": "B002",
+      "provenance": {
+        "source_seed_scenarios": [
+          "b002"
+        ],
+        "source_seed_titles": [
+          "Build source-intake -> curriculum promotion workflow"
+        ],
+        "teacher_only_inputs_used": false,
+        "public_spec_refs": [
+          "specs/014-frontend-product-engineer-20-task-curriculum.md#B002"
+        ],
+        "public_doc_refs": [
+          "docs/frontend-product-engineer-seed-curriculum.md"
+        ],
+        "source_record_id": "fpe-source-b002",
+        "promotion_record_id": "fpe-promotion-b002"
+      }
+    },
+    {
+      "id": "fpe.seed.b003.author-the-first-20-task-seed-set",
+      "family_id": "rf.fpe.public.phase-2",
+      "rubric_template_id": "fpe-rubric-phase-2-v1",
+      "title": "Author the first 20-task seed set",
+      "acceptance_test_id": "B003",
+      "provenance": {
+        "source_seed_scenarios": [
+          "b003"
+        ],
+        "source_seed_titles": [
+          "Author the first 20-task seed set"
+        ],
+        "teacher_only_inputs_used": false,
+        "public_spec_refs": [
+          "specs/014-frontend-product-engineer-20-task-curriculum.md#B003"
+        ],
+        "public_doc_refs": [
+          "docs/frontend-product-engineer-seed-curriculum.md"
+        ],
+        "source_record_id": "fpe-source-b003",
+        "promotion_record_id": "fpe-promotion-b003"
+      }
+    },
+    {
+      "id": "fpe.seed.b004.add-weekly-holdout-refresh",
+      "family_id": "rf.fpe.public.phase-2",
+      "rubric_template_id": "fpe-rubric-phase-2-v1",
+      "title": "Add weekly holdout refresh",
+      "acceptance_test_id": "B004",
+      "provenance": {
+        "source_seed_scenarios": [
+          "b004"
+        ],
+        "source_seed_titles": [
+          "Add weekly holdout refresh"
+        ],
+        "teacher_only_inputs_used": false,
+        "public_spec_refs": [
+          "specs/014-frontend-product-engineer-20-task-curriculum.md#B004"
+        ],
+        "public_doc_refs": [
+          "docs/frontend-product-engineer-seed-curriculum.md"
+        ],
+        "source_record_id": "fpe-source-b004",
+        "promotion_record_id": "fpe-promotion-b004"
+      }
+    },
+    {
+      "id": "fpe.seed.c001.standardize-isolated-execution",
+      "family_id": "rf.fpe.public.phase-3",
+      "rubric_template_id": "fpe-rubric-phase-3-v1",
+      "title": "Standardize isolated execution",
+      "acceptance_test_id": "C001",
+      "provenance": {
+        "source_seed_scenarios": [
+          "c001"
+        ],
+        "source_seed_titles": [
+          "Standardize isolated execution"
+        ],
+        "teacher_only_inputs_used": false,
+        "public_spec_refs": [
+          "specs/014-frontend-product-engineer-20-task-curriculum.md#C001"
+        ],
+        "public_doc_refs": [
+          "docs/frontend-product-engineer-seed-curriculum.md"
+        ],
+        "source_record_id": "fpe-source-c001",
+        "promotion_record_id": "fpe-promotion-c001"
+      }
+    },
+    {
+      "id": "fpe.seed.c002.wire-baseline-run-as-a-first-class-object",
+      "family_id": "rf.fpe.public.phase-3",
+      "rubric_template_id": "fpe-rubric-phase-3-v1",
+      "title": "Wire baseline run as a first-class object",
+      "acceptance_test_id": "C002",
+      "provenance": {
+        "source_seed_scenarios": [
+          "c002"
+        ],
+        "source_seed_titles": [
+          "Wire baseline run as a first-class object"
+        ],
+        "teacher_only_inputs_used": false,
+        "public_spec_refs": [
+          "specs/014-frontend-product-engineer-20-task-curriculum.md#C002"
+        ],
+        "public_doc_refs": [
+          "docs/frontend-product-engineer-seed-curriculum.md"
+        ],
+        "source_record_id": "fpe-source-c002",
+        "promotion_record_id": "fpe-promotion-c002"
+      }
+    },
+    {
+      "id": "fpe.seed.c003.wire-candidate-run-with-real-code-test-execution",
+      "family_id": "rf.fpe.public.phase-3",
+      "rubric_template_id": "fpe-rubric-phase-3-v1",
+      "title": "Wire candidate run with real code/test execution",
+      "acceptance_test_id": "C003",
+      "provenance": {
+        "source_seed_scenarios": [
+          "c003"
+        ],
+        "source_seed_titles": [
+          "Wire candidate run with real code/test execution"
+        ],
+        "teacher_only_inputs_used": false,
+        "public_spec_refs": [
+          "specs/014-frontend-product-engineer-20-task-curriculum.md#C003"
+        ],
+        "public_doc_refs": [
+          "docs/frontend-product-engineer-seed-curriculum.md"
+        ],
+        "source_record_id": "fpe-source-c003",
+        "promotion_record_id": "fpe-promotion-c003"
+      }
+    },
+    {
+      "id": "fpe.seed.c004.capture-full-receipts-automatically",
+      "family_id": "rf.fpe.public.phase-3",
+      "rubric_template_id": "fpe-rubric-phase-3-v1",
+      "title": "Capture full receipts automatically",
+      "acceptance_test_id": "C004",
+      "provenance": {
+        "source_seed_scenarios": [
+          "c004"
+        ],
+        "source_seed_titles": [
+          "Capture full receipts automatically"
+        ],
+        "teacher_only_inputs_used": false,
+        "public_spec_refs": [
+          "specs/014-frontend-product-engineer-20-task-curriculum.md#C004"
+        ],
+        "public_doc_refs": [
+          "docs/frontend-product-engineer-seed-curriculum.md"
+        ],
+        "source_record_id": "fpe-source-c004",
+        "promotion_record_id": "fpe-promotion-c004"
+      }
+    },
+    {
+      "id": "fpe.seed.d001.build-the-teacher-review-console",
+      "family_id": "rf.fpe.public.phase-4",
+      "rubric_template_id": "fpe-rubric-phase-4-v1",
+      "title": "Build the teacher review console",
+      "acceptance_test_id": "D001",
+      "provenance": {
+        "source_seed_scenarios": [
+          "d001"
+        ],
+        "source_seed_titles": [
+          "Build the teacher review console"
+        ],
+        "teacher_only_inputs_used": false,
+        "public_spec_refs": [
+          "specs/014-frontend-product-engineer-20-task-curriculum.md#D001"
+        ],
+        "public_doc_refs": [
+          "docs/frontend-product-engineer-seed-curriculum.md"
+        ],
+        "source_record_id": "fpe-source-d001",
+        "promotion_record_id": "fpe-promotion-d001"
+      }
+    },
+    {
+      "id": "fpe.seed.d002.require-private-holdout-scoring-for-promotion",
+      "family_id": "rf.fpe.public.phase-4",
+      "rubric_template_id": "fpe-rubric-phase-4-v1",
+      "title": "Require private-holdout scoring for promotion",
+      "acceptance_test_id": "D002",
+      "provenance": {
+        "source_seed_scenarios": [
+          "d002"
+        ],
+        "source_seed_titles": [
+          "Require private-holdout scoring for promotion"
+        ],
+        "teacher_only_inputs_used": false,
+        "public_spec_refs": [
+          "specs/014-frontend-product-engineer-20-task-curriculum.md#D002"
+        ],
+        "public_doc_refs": [
+          "docs/frontend-product-engineer-seed-curriculum.md"
+        ],
+        "source_record_id": "fpe-source-d002",
+        "promotion_record_id": "fpe-promotion-d002"
+      }
+    },
+    {
+      "id": "fpe.seed.d003.add-repeated-run-stability-checks",
+      "family_id": "rf.fpe.public.phase-4",
+      "rubric_template_id": "fpe-rubric-phase-4-v1",
+      "title": "Add repeated-run stability checks",
+      "acceptance_test_id": "D003",
+      "provenance": {
+        "source_seed_scenarios": [
+          "d003"
+        ],
+        "source_seed_titles": [
+          "Add repeated-run stability checks"
+        ],
+        "teacher_only_inputs_used": false,
+        "public_spec_refs": [
+          "specs/014-frontend-product-engineer-20-task-curriculum.md#D003"
+        ],
+        "public_doc_refs": [
+          "docs/frontend-product-engineer-seed-curriculum.md"
+        ],
+        "source_record_id": "fpe-source-d003",
+        "promotion_record_id": "fpe-promotion-d003"
+      }
+    },
+    {
+      "id": "fpe.seed.d004.add-regression-gates",
+      "family_id": "rf.fpe.public.phase-4",
+      "rubric_template_id": "fpe-rubric-phase-4-v1",
+      "title": "Add regression gates",
+      "acceptance_test_id": "D004",
+      "provenance": {
+        "source_seed_scenarios": [
+          "d004"
+        ],
+        "source_seed_titles": [
+          "Add regression gates"
+        ],
+        "teacher_only_inputs_used": false,
+        "public_spec_refs": [
+          "specs/014-frontend-product-engineer-20-task-curriculum.md#D004"
+        ],
+        "public_doc_refs": [
+          "docs/frontend-product-engineer-seed-curriculum.md"
+        ],
+        "source_record_id": "fpe-source-d004",
+        "promotion_record_id": "fpe-promotion-d004"
+      }
+    },
+    {
+      "id": "fpe.seed.e001.turn-failures-into-next-step-curriculum",
+      "family_id": "rf.fpe.public.phase-5",
+      "rubric_template_id": "fpe-rubric-phase-5-v1",
+      "title": "Turn failures into next-step curriculum",
+      "acceptance_test_id": "E001",
+      "provenance": {
+        "source_seed_scenarios": [
+          "e001"
+        ],
+        "source_seed_titles": [
+          "Turn failures into next-step curriculum"
+        ],
+        "teacher_only_inputs_used": false,
+        "public_spec_refs": [
+          "specs/014-frontend-product-engineer-20-task-curriculum.md#E001"
+        ],
+        "public_doc_refs": [
+          "docs/frontend-product-engineer-seed-curriculum.md"
+        ],
+        "source_record_id": "fpe-source-e001",
+        "promotion_record_id": "fpe-promotion-e001"
+      }
+    },
+    {
+      "id": "fpe.seed.e002.track-generation-lineage",
+      "family_id": "rf.fpe.public.phase-5",
+      "rubric_template_id": "fpe-rubric-phase-5-v1",
+      "title": "Track generation lineage",
+      "acceptance_test_id": "E002",
+      "provenance": {
+        "source_seed_scenarios": [
+          "e002"
+        ],
+        "source_seed_titles": [
+          "Track generation lineage"
+        ],
+        "teacher_only_inputs_used": false,
+        "public_spec_refs": [
+          "specs/014-frontend-product-engineer-20-task-curriculum.md#E002"
+        ],
+        "public_doc_refs": [
+          "docs/frontend-product-engineer-seed-curriculum.md"
+        ],
+        "source_record_id": "fpe-source-e002",
+        "promotion_record_id": "fpe-promotion-e002"
+      }
+    },
+    {
+      "id": "fpe.seed.e003.run-a-real-weekly-training-cycle",
+      "family_id": "rf.fpe.public.phase-5",
+      "rubric_template_id": "fpe-rubric-phase-5-v1",
+      "title": "Run a real weekly training cycle",
+      "acceptance_test_id": "E003",
+      "provenance": {
+        "source_seed_scenarios": [
+          "e003"
+        ],
+        "source_seed_titles": [
+          "Run a real weekly training cycle"
+        ],
+        "teacher_only_inputs_used": false,
+        "public_spec_refs": [
+          "specs/014-frontend-product-engineer-20-task-curriculum.md#E003"
+        ],
+        "public_doc_refs": [
+          "docs/frontend-product-engineer-seed-curriculum.md"
+        ],
+        "source_record_id": "fpe-source-e003",
+        "promotion_record_id": "fpe-promotion-e003"
+      }
+    },
+    {
+      "id": "fpe.seed.e004.only-then-expand-to-a-second-role",
+      "family_id": "rf.fpe.public.phase-5",
+      "rubric_template_id": "fpe-rubric-phase-5-v1",
+      "title": "Only then expand to a second role",
+      "acceptance_test_id": "E004",
+      "provenance": {
+        "source_seed_scenarios": [
+          "e004"
+        ],
+        "source_seed_titles": [
+          "Only then expand to a second role"
+        ],
+        "teacher_only_inputs_used": false,
+        "public_spec_refs": [
+          "specs/014-frontend-product-engineer-20-task-curriculum.md#E004"
+        ],
+        "public_doc_refs": [
+          "docs/frontend-product-engineer-seed-curriculum.md"
+        ],
+        "source_record_id": "fpe-source-e004",
+        "promotion_record_id": "fpe-promotion-e004"
+      }
+    }
+  ]
+}

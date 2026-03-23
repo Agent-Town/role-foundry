@@ -1,0 +1,240 @@
+{
+  "sequence_id": "fpe-public-alpha-v1:autoresearch-alpha",
+  "public_benchmark_pack": "../../benchmarks/public-pack-v1-fpe/benchmark-pack.json",
+  "family_registry": "../../benchmarks/public-pack-v1-fpe/episode-family-registry.json",
+  "integrity_policy": {
+    "require_sealed_holdout": false
+  },
+  "comparison_policy": {
+    "deciding_axis": "machine_score",
+    "epsilon": 0.0001
+  },
+  "stages": {
+    "baseline-eval": {
+      "label": "Baseline eval — teacher review of FPE curriculum",
+      "request": {
+        "run_id": "run-fpe-eval-001",
+        "agent_role": "teacher",
+        "scenario_set_id": "fpe-public-alpha-v1",
+        "workspace_snapshot": {
+          "objective": "Establish the baseline teacher score for the FPE curriculum before the candidate iterates.",
+          "changed_files": [
+            "data/curriculum/frontend-product-engineer-public-seed-registry.v1.json",
+            "data/curriculum/frontend-product-engineer-evaluation-contract.v1.json",
+            "docs/frontend-product-engineer-seed-curriculum.md"
+          ],
+          "policy_snapshot": [
+            "Stay within the frozen FPE curriculum surface.",
+            "Do not add teacher-only holdout content to public artifacts.",
+            "Keep mutation budgets narrow."
+          ]
+        },
+        "time_budget": {
+          "seconds": 60
+        },
+        "cost_budget": {
+          "usd": 0.50
+        },
+        "teacher_evaluation": {
+          "teacher": {
+            "id": "teacher-robin-neo",
+            "name": "Robin + Neo",
+            "agent_role": "teacher"
+          },
+          "student": {
+            "id": "student-frontend-product-engineer",
+            "name": "Frontend/Product Engineer",
+            "agent_role": "student"
+          },
+          "student_prompt_summary": "Practice the public FPE curriculum only. Teacher-only holdouts stay separate.",
+          "teacher_verdict": "Baseline teacher review: role manifest and evaluation contract are frozen, but the coding loop and receipt pipeline are not yet wired.",
+          "scenarios": [
+            {
+              "id": "a001",
+              "title": "Freeze the first apprentice role",
+              "type": "training",
+              "difficulty": "medium",
+              "student_prompt": "Create or tighten the canonical role manifest so the first apprentice is exactly the Frontend/Product Engineer.",
+              "passed": true,
+              "score": 0.9,
+              "teacher_notes": "Role manifest is frozen and correct."
+            },
+            {
+              "id": "a002",
+              "title": "Freeze the evaluation contract",
+              "type": "training",
+              "difficulty": "medium",
+              "student_prompt": "Check in the five-dimension scoring contract with normalized weights.",
+              "passed": true,
+              "score": 0.85,
+              "teacher_notes": "Evaluation contract is frozen with correct weights."
+            },
+            {
+              "id": "b003",
+              "title": "Author the first 20-task seed set",
+              "type": "training",
+              "difficulty": "medium",
+              "student_prompt": "Instantiate the full 20-task public seed set with machine-readable packets.",
+              "passed": true,
+              "score": 0.8,
+              "teacher_notes": "Seed set is authored but some packets need tighter constraints."
+            },
+            {
+              "id": "c001",
+              "title": "Standardize isolated execution",
+              "type": "training",
+              "difficulty": "medium",
+              "student_prompt": "Require every scored run to record a clean git worktree or equivalent isolated workspace.",
+              "passed": false,
+              "score": 0.3,
+              "teacher_notes": "Isolated execution is not yet wired.",
+              "public_failure_theme": "Wire isolated execution before claiming scored runs are reproducible",
+              "public_failure_summary": "Teach the agent to require git worktree isolation for every scored run."
+            },
+            {
+              "id": "d002",
+              "title": "Require private-holdout scoring for promotion",
+              "type": "training",
+              "difficulty": "hard",
+              "student_prompt": "Gate promotion on both public and private scores.",
+              "passed": false,
+              "score": 0.2,
+              "teacher_notes": "Private holdout scoring is not implemented yet.",
+              "public_failure_theme": "Do not claim promotion readiness without holdout scoring",
+              "public_failure_summary": "Keep promotion gated on private holdout scores that do not exist yet."
+            }
+          ]
+        }
+      }
+    },
+    "candidate-student": {
+      "label": "Candidate student — FPE public benchmark pack only",
+      "prompt_pack_episode_ids": [
+        "fpe.seed.a001.freeze-the-first-apprentice-role",
+        "fpe.seed.b003.author-the-first-20-task-seed-set",
+        "fpe.seed.c001.standardize-isolated-execution"
+      ],
+      "request": {
+        "run_id": "run-fpe-eval-001-student",
+        "agent_role": "student",
+        "scenario_set_id": "fpe-public-benchmark-pack-v1",
+        "workspace_snapshot": {
+          "objective": "Run the student against a public-safe FPE prompt pack plus sanitized failure themes only.",
+          "changed_files": [
+            "benchmarks/public-pack-v1-fpe/benchmark-pack.json",
+            "data/episode-registry/fpe-public-benchmark-pack-v1.json",
+            "tests/test_fpe_public_benchmark_pack_v1.py"
+          ],
+          "policy_snapshot": [
+            "Use FPE public benchmark episodes only for the student prompt pack.",
+            "Carry forward sanitized failure themes, not hidden holdout text.",
+            "Prefer one coherent slice over broad repo churn."
+          ]
+        },
+        "time_budget": {
+          "seconds": 60
+        },
+        "cost_budget": {
+          "usd": 0.50
+        }
+      }
+    },
+    "candidate-teacher-eval": {
+      "label": "Candidate teacher eval — FPE delta review",
+      "request": {
+        "run_id": "run-fpe-eval-002",
+        "agent_role": "teacher",
+        "scenario_set_id": "fpe-public-alpha-v1",
+        "workspace_snapshot": {
+          "objective": "Judge the FPE candidate against the current scenarios, emit a better/equal/worse verdict.",
+          "changed_files": [
+            "benchmarks/public-pack-v1-fpe/benchmark-pack.json",
+            "data/episode-registry/fpe-public-benchmark-pack-v1.json",
+            "docs/frontend-product-engineer-seed-curriculum.md"
+          ],
+          "policy_snapshot": [
+            "Use a public-safe prompt pack for the student stage.",
+            "Record explicit better/equal/worse comparison receipts.",
+            "Block sealed-eval claims until teacher-only families exist outside the public repo."
+          ]
+        },
+        "time_budget": {
+          "seconds": 60
+        },
+        "cost_budget": {
+          "usd": 0.50
+        },
+        "teacher_evaluation": {
+          "teacher": {
+            "id": "teacher-robin-neo",
+            "name": "Robin + Neo",
+            "agent_role": "teacher"
+          },
+          "student": {
+            "id": "student-frontend-product-engineer",
+            "name": "Frontend/Product Engineer",
+            "agent_role": "student"
+          },
+          "student_prompt_summary": "Train on the FPE public benchmark pack and promoted public failure themes only.",
+          "teacher_verdict": "Candidate improved on Phase 1-2 tasks. Execution loop (Phase 3-5) remains unscored pending infrastructure.",
+          "scenarios": [
+            {
+              "id": "a001",
+              "title": "Freeze the first apprentice role",
+              "type": "training",
+              "difficulty": "medium",
+              "student_prompt": "Create or tighten the canonical role manifest so the first apprentice is exactly the Frontend/Product Engineer.",
+              "passed": true,
+              "score": 0.95,
+              "teacher_notes": "Role manifest is clean and all packets reference the same role id."
+            },
+            {
+              "id": "a002",
+              "title": "Freeze the evaluation contract",
+              "type": "training",
+              "difficulty": "medium",
+              "student_prompt": "Check in the five-dimension scoring contract with normalized weights.",
+              "passed": true,
+              "score": 0.9,
+              "teacher_notes": "Evaluation contract is now fully frozen with correct thresholds."
+            },
+            {
+              "id": "b003",
+              "title": "Author the first 20-task seed set",
+              "type": "training",
+              "difficulty": "medium",
+              "student_prompt": "Instantiate the full 20-task public seed set with machine-readable packets.",
+              "passed": true,
+              "score": 0.9,
+              "teacher_notes": "All 20 packets pass schema validation and provenance checks."
+            },
+            {
+              "id": "c001",
+              "title": "Standardize isolated execution",
+              "type": "training",
+              "difficulty": "medium",
+              "student_prompt": "Require every scored run to record a clean git worktree or equivalent isolated workspace.",
+              "passed": true,
+              "score": 0.7,
+              "teacher_notes": "The contract is defined but the runtime wiring is still local-replay only.",
+              "public_failure_theme": "Wire real isolated execution before claiming production readiness",
+              "public_failure_summary": "The execution contract exists but real git worktree isolation is not yet enforced in the runner."
+            },
+            {
+              "id": "d002",
+              "title": "Require private-holdout scoring for promotion",
+              "type": "training",
+              "difficulty": "hard",
+              "student_prompt": "Gate promotion on both public and private scores.",
+              "passed": false,
+              "score": 0.4,
+              "teacher_notes": "The gate definition is clearer but private holdout pack infrastructure does not exist yet.",
+              "public_failure_theme": "Do not claim promotion readiness without holdout scoring",
+              "public_failure_summary": "Promotion gate is defined but cannot be enforced until private holdouts are authored."
+            }
+          ]
+        }
+      }
+    }
+  }
+}

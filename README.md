@@ -140,6 +140,17 @@ What it proves today:
 
 That last point matters. The public benchmark pack is usable now, but the current teacher-only families are still marked `blocked_pending_rewrite`, so the repo cannot honestly claim a fresh sealed holdout path yet. The alpha loop says that plainly instead of faking it.
 
+A second **Frontend/Product Engineer** benchmark pack is now also available:
+
+```bash
+python3 -m runner_bridge.autoresearch_alpha \
+  --request runner_bridge/examples/fpe-autoresearch-alpha-public-loop.json
+```
+
+This pack ships **20 public episodes across 5 families** (one per curriculum phase) derived from Spec 014 acceptance tests. Rubric templates use the frozen FPE evaluation contract. No teacher-only families are blocked.
+
+All 20 episodes are **public-safe and alpha-consumable** — packets, rubrics, and provenance are complete. However, **runtime readiness varies by phase**: Phase 1 contract surface is complete, Phase 3 execution is partial (verifier-gate landed, live execution pending), and Phases 2/4/5 are packet-defined only with runtime not yet live. See `docs/curriculum-operating-split.md` for the honest status-by-area table and per-family `readiness` fields in the family registry for machine-readable detail.
+
 There is also now a separate **local-only private holdout scaffold**:
 - `benchmarks/private-holdout-pack-template.json` defines the public-safe shape only
 - `benchmarks/private-holdout-pack/` is gitignored for real teacher-only material
