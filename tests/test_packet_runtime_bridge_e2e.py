@@ -229,6 +229,53 @@ class TestExecutionHonesty(unittest.TestCase):
         self.assertEqual(eh["mutation_surface_audit_path"], "receipts/mutation-surface-audit.json")
 
 
+class TestClaudeVibecosystemBetaSeam(unittest.TestCase):
+    """Explicit claude_vibecosystem backend selection stays honest and inspectable."""
+
+    def setUp(self):
+        self._tmpdir = tempfile.TemporaryDirectory()
+        self.artifacts_root = Path(self._tmpdir.name)
+
+    def tearDown(self):
+        self._tmpdir.cleanup()
+
+    def _run_and_load(self, run_id: str) -> tuple[dict, dict, str]:
+        exit_code = cli_main([
+            "--packet", "A001",
+            "--run-id", run_id,
+            "--artifacts-root", str(self.artifacts_root),
+            "--runner-backend", "claude_vibecosystem",
+        ])
+        self.assertEqual(exit_code, 0)
+        run_dir = self.artifacts_root / run_id
+        result = json.loads((run_dir / "result.json").read_text())
+        run_object = json.loads((run_dir / "run-object.json").read_text())
+        transcript = (run_dir / "transcript.ndjson").read_text()
+        return result, run_object, transcript
+
+    def test_run_object_records_selected_backend(self):
+        result, run_object, _ = self._run_and_load("claude-beta-ro")
+        self.assertEqual(result["status"], "completed")
+        self.assertEqual(run_object["execution_backend"], "claude_vibecosystem")
+        contract = run_object["execution_backend_contract"]
+        self.assertEqual(contract["mode"], "external_executor_beta")
+        self.assertEqual(contract["executor"]["default_agent"], "backend-dev")
+
+    def test_result_execution_honesty_preserves_claim_boundary(self):
+        result, _, transcript = self._run_and_load("claude-beta-honesty")
+        eh = result["execution_honesty"]
+        self.assertEqual(eh["backend"], "claude_vibecosystem")
+        self.assertFalse(eh["executes_commands"])
+        self.assertFalse(eh["executes_checks"])
+        self.assertEqual(eh["mode"], "external_executor_beta")
+        self.assertEqual(eh["beta_status"], "adapter_first_contract_stub")
+        self.assertEqual(eh["external_executor"]["live_execution"], "not_invoked")
+        self.assertEqual(eh["claim_boundary"]["native_clawith_parity"], "not_claimed")
+        self.assertEqual(eh["claim_boundary"]["independent_executor_isolation"], "not_claimed")
+        self.assertIn("did not invoke Claude Code", eh["honesty_note"])
+        self.assertIn("adapter.stub.completed", transcript)
+
+
 class TestRequestPrivateJsonCarriesPacketRuntime(unittest.TestCase):
     """request.private.json carries the packet_runtime block when run via --packet."""
 

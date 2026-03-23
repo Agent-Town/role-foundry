@@ -249,6 +249,28 @@ class RunnerBridgeContractTests(unittest.TestCase):
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("missing required field", result.stderr.lower())
 
+    def test_runner_backend_flag_conflicts_with_backend_command_override(self):
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "runner_bridge.cli",
+                "--packet",
+                "A001",
+                "--artifacts-root",
+                tempfile.mkdtemp(),
+                "--runner-backend",
+                "claude_vibecosystem",
+                "--backend-command",
+                "python3 -m runner_bridge.backends.local_replay",
+            ],
+            capture_output=True,
+            text=True,
+            cwd=ROOT,
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("choose either --runner-backend or --backend-command", result.stderr)
+
 
 class RunnerBridgeDocumentationTests(unittest.TestCase):
     def test_runner_bridge_doc_mentions_local_mockable_bridge_contract(self):
@@ -259,11 +281,23 @@ class RunnerBridgeDocumentationTests(unittest.TestCase):
         self.assertIn("receipt provenance", text.lower())
         self.assertIn("evidence-index.json", text)
 
+    def test_runner_bridge_doc_mentions_claude_vibecosystem_beta_seam(self):
+        text = RUNNER_DOC.read_text()
+        self.assertIn("--runner-backend claude_vibecosystem", text)
+        self.assertIn("execution_backend_contract", text)
+        self.assertIn("external_executor_beta", text)
+        self.assertIn("does not claim sealed evaluation", text)
+
     def test_readme_mentions_first_live_run_cli(self):
         text = README.read_text()
         self.assertIn("python3 -m runner_bridge.cli", text)
         self.assertIn("first live run", text.lower())
         self.assertIn("receipt provenance pack", text.lower())
+
+    def test_readme_mentions_claude_vibecosystem_beta_surface(self):
+        text = README.read_text()
+        self.assertIn("claude_vibecosystem", text)
+        self.assertIn("external-executor beta seam", text)
 
 
 if __name__ == "__main__":

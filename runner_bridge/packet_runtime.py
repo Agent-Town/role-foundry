@@ -184,6 +184,7 @@ class PacketRunObject:
     # --- honesty ---
     execution_status: str = "not_started"
     execution_backend: str = "pending"
+    execution_backend_contract: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -198,24 +199,28 @@ class PacketRunObject:
         snapshot.setdefault("objective", self.objective)
         snapshot.setdefault("changed_files", [])
 
+        packet_runtime = {
+            "packet_id": self.packet_id,
+            "packet_version": self.packet_version,
+            "packet_content_hash": self.packet_content_hash,
+            "acceptance_test_id": self.acceptance_test_id,
+            "role_id": self.role_id,
+            "phase_index": self.phase_index,
+            "mutation_budget": asdict(self.mutation_budget),
+            "allowed_paths": self.allowed_paths,
+            "blocked_paths": self.blocked_paths,
+            "expected_checks": self.expected_checks,
+            "eval_contract_ref": asdict(self.eval_contract_ref),
+            "evidence_contract": asdict(self.evidence_contract),
+            "run_object_version": self.run_object_version,
+            "execution_status": self.execution_status,
+            "execution_backend": self.execution_backend,
+        }
+        if self.execution_backend_contract:
+            packet_runtime["execution_backend_contract"] = self.execution_backend_contract
+
         extras: dict[str, Any] = {
-            "packet_runtime": {
-                "packet_id": self.packet_id,
-                "packet_version": self.packet_version,
-                "packet_content_hash": self.packet_content_hash,
-                "acceptance_test_id": self.acceptance_test_id,
-                "role_id": self.role_id,
-                "phase_index": self.phase_index,
-                "mutation_budget": asdict(self.mutation_budget),
-                "allowed_paths": self.allowed_paths,
-                "blocked_paths": self.blocked_paths,
-                "expected_checks": self.expected_checks,
-                "eval_contract_ref": asdict(self.eval_contract_ref),
-                "evidence_contract": asdict(self.evidence_contract),
-                "run_object_version": self.run_object_version,
-                "execution_status": self.execution_status,
-                "execution_backend": self.execution_backend,
-            },
+            "packet_runtime": packet_runtime,
         }
 
         return RunRequest(
@@ -234,6 +239,8 @@ def load_run_object(
     *,
     run_id: str | None = None,
     artifacts_root: str = "runtime/runs",
+    execution_backend: str = "pending",
+    execution_backend_contract: dict[str, Any] | None = None,
 ) -> PacketRunObject:
     """Load a task packet by acceptance_test_id, validate it, cross-reference
     the evaluation contract, and return a ready-to-execute PacketRunObject.
@@ -254,6 +261,8 @@ def load_run_object(
         packet,
         run_id=run_id,
         artifacts_root=artifacts_root,
+        execution_backend=execution_backend,
+        execution_backend_contract=execution_backend_contract,
     )
 
 
@@ -262,6 +271,8 @@ def build_run_object(
     *,
     run_id: str | None = None,
     artifacts_root: str = "runtime/runs",
+    execution_backend: str = "pending",
+    execution_backend_contract: dict[str, Any] | None = None,
 ) -> PacketRunObject:
     """Build a PacketRunObject from a validated task packet dict.
 
@@ -305,6 +316,8 @@ def build_run_object(
         evidence_contract=EvidenceContract.from_packet(packet),
         run_id=resolved_run_id,
         receipt_output_dir=receipt_dir,
+        execution_backend=execution_backend,
+        execution_backend_contract=dict(execution_backend_contract or {}),
     )
 
 

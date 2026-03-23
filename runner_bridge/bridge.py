@@ -295,7 +295,7 @@ def _build_run_object_export(
     every field a reviewer or downstream tool needs to verify the run
     was set up correctly without re-reading the registry or contract files.
     """
-    return {
+    export = {
         "run_object_version": packet_runtime.get("run_object_version", "1.0.0"),
         "run_id": request.run_id,
         "packet_id": packet_runtime.get("packet_id", ""),
@@ -320,3 +320,7 @@ def _build_run_object_export(
             "receipts_dir": str(run_dir / "receipts"),
         },
     }
+    execution_backend_contract = packet_runtime.get("execution_backend_contract")
+    if isinstance(execution_backend_contract, dict) and execution_backend_contract:
+        export["execution_backend_contract"] = execution_backend_contract
+    return export

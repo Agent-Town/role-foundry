@@ -134,7 +134,7 @@ Every stage receipt now includes a `verifier_contract` block and the top-level a
 - **`verifier_contract.gate_status`** — one of `pass`, `fail`, `not_executed`, `no_commands`, or `incomplete`.
 - **`verifier_gate.aggregate_status`** — rolled up across all stages.
 
-In the local-replay alpha path, `gate_status` is always `not_executed` and every command result has `execution_status: "not_executed"` with `exit_code: null`. This is honest: the local-replay runner does not execute verifier commands. The gate becomes meaningful when a live-execution backend (e.g. a real `CodexRunner` or `ClaudeVibeRunner`) is wired.
+In the local-replay alpha path, `gate_status` is always `not_executed` and every command result has `execution_status: "not_executed"` with `exit_code: null`. This is honest: the local-replay runner does not execute verifier commands. The gate becomes meaningful when a live-execution backend (for example a real `codex` adapter or a live-upgraded `claude_vibecosystem` runner) is wired.
 
 The candidate receipt at `receipts/candidate.json` also includes a `verifier_gate` block with the same honesty contract.
 
@@ -170,6 +170,12 @@ python3 -m runner_bridge.cli \
   --run-id my-run-001 \
   --artifacts-root runtime/runs
 
+# Select the contract-first claude_vibecosystem beta seam
+python3 -m runner_bridge.cli \
+  --packet A001 \
+  --runner-backend claude_vibecosystem \
+  --artifacts-root runtime/runs
+
 # With control plane
 python3 -m runner_bridge.cli \
   --packet A001 \
@@ -178,6 +184,8 @@ python3 -m runner_bridge.cli \
 ```
 
 The `--packet` flag and `--request` flag are alternatives. `--packet` loads from the frozen public seed registry by acceptance_test_id, builds a `PacketRunObject`, converts it to a `RunRequest`, and feeds it to the bridge. `--request` loads a pre-built request JSON as before.
+
+`--runner-backend claude_vibecosystem` is the new contract-first beta seam. It selects a named backend, stamps that choice into `run-object.json`, carries a machine-readable `execution_backend_contract`, and routes execution to a tiny non-destructive adapter stub. In tests and local contract checks that stub records intent + claim boundary only: it does **not** invoke Claude Code, vibecosystem hooks, or the live Clawith/OpenClaw gateway. It does not claim sealed evaluation, tamper-proofing, independent executor isolation, or native Clawith parity.
 
 ### run-object.json — runtime artifact export
 
@@ -204,7 +212,8 @@ Contents:
 | `expected_checks` | task packet | Commands the student must run |
 | `evidence_contract` | task packet | Required artifacts and provenance rules |
 | `execution_status` | always `"not_started"` at creation | Honest: no claim of execution at construction time |
-| `execution_backend` | always `"pending"` at creation | Honest: backend not yet wired |
+| `execution_backend` | `"pending"` by default; explicit backend id when selected | Honest backend naming without claiming execution |
+| `execution_backend_contract` | present when a named backend is selected | Machine-readable backend mode, executor path, and claim boundary |
 | `receipt_output_dir` | bridge | Where receipts will be written |
 | `artifact_locations` | bridge | Paths to request.json, request.private.json, run-object.json, receipts/ |
 
@@ -242,6 +251,8 @@ When `LocalReplayRunner` processes a packet-driven request, `result.json` includ
 
 This makes it explicit that LocalReplayRunner does not execute task commands, enforce mutation budgets, or enforce path constraints. When a real worktree diff is available, the bridge can still audit the actual changed-file surface against the packet contract. When no diff exists, the receipt says so plainly instead of implying the surface passed.
 
+When `--runner-backend claude_vibecosystem` is selected, `execution_honesty` still stays conservative: the backend reports `executes_commands: false`, `executes_checks: false`, `mode: "external_executor_beta"`, and a claim-boundary block that says native Clawith parity, sealed evaluation, tamper-proofing, and independent executor isolation are all **not claimed**. That beta seam is intentionally inspectable but non-destructive.
+
 ### PacketRunObject contents
 
 Each run object is a frozen, self-contained snapshot:
@@ -259,19 +270,28 @@ Each run object is a frozen, self-contained snapshot:
 | `eval_contract_ref` | evaluation contract | Dimensions, weights, thresholds |
 | `evidence_contract` | task packet | Required artifacts and provenance rules |
 | `execution_status` | always `"not_started"` | Honest: no claim of execution at construction time |
-| `execution_backend` | always `"pending"` | Honest: backend not yet wired |
+| `execution_backend` | `"pending"` by default; explicit backend id when selected | Honest backend naming without implying work happened |
+| `execution_backend_contract` | backend registry | Optional backend mode / claim-boundary snapshot for named seams |
 
 ### Usage
 
 ```python
+from runner_bridge.backends import backend_contract_for_runner
 from runner_bridge.packet_runtime import load_run_object
 
 # Load by acceptance test id
-obj = load_run_object("C001", run_id="my-run-001")
+obj = load_run_object(
+    "C001",
+    run_id="my-run-001",
+    execution_backend="claude_vibecosystem",
+    execution_backend_contract=backend_contract_for_runner("claude_vibecosystem"),
+)
 
 # Inspect contract constraints
-print(obj.mutation_budget.tracked_files_max)  # 6
-print(obj.eval_contract_ref.dimensions)       # frozen 5 dimensions
+print(obj.mutation_budget.tracked_files_max)          # 6
+print(obj.eval_contract_ref.dimensions)               # frozen 5 dimensions
+print(obj.execution_backend)                          # claude_vibecosystem
+print(obj.execution_backend_contract["mode"])        # external_executor_beta
 
 # Convert to a RunRequest for the bridge
 request = obj.to_run_request(
@@ -297,7 +317,7 @@ for obj in objects:
 
 ### Honesty note
 
-The run object describes the *input shape* — what the run should do, which constraints apply, and what evidence is required. It does **not** claim that execution has happened. `execution_status` starts as `"not_started"` and `execution_backend` starts as `"pending"`. These fields become meaningful when a live backend is wired. The `execution_honesty` block in `result.json` makes the backend's actual capabilities machine-readable.
+The run object describes the *input shape* — what the run should do, which constraints apply, and what evidence is required. It does **not** claim that execution has happened. `execution_status` starts as `"not_started"`. `execution_backend` stays `"pending"` unless an explicit named seam is selected, and `execution_backend_contract` only records the chosen backend's mode + claim boundary. The `execution_honesty` block in `result.json` makes the backend's actual capabilities machine-readable.
 
 ## Current bridge shape
 
@@ -305,13 +325,14 @@ The run object describes the *input shape* — what the run should do, which con
 Operator / script
   → runner_bridge.cli
   → Clawith-compatible control plane
-  → LocalReplayRunner (today)
+  → LocalReplayRunner (default today)
+    or claude_vibecosystem (contract-first beta seam)
   → transcript.ndjson + artifact-bundle.json + result.json
 ```
 
 Future adapters can slot into the same bridge command:
-- ClaudeVibeRunner
-- CodexRunner
+- live-upgraded `claude_vibecosystem`
+- `codex`
 - deterministic verifier scripts
 
 ## Request contract
@@ -528,7 +549,7 @@ The second command is not a claim that Clawith is running. It is just the fastes
 
 - no native consumer OAuth in Clawith
 - no claim that Clawith already ships these exact run-patch endpoints upstream
-- no ClaudeVibeRunner wired yet
+- no live `claude_vibecosystem` execution path yet beyond the contract-first beta seam / stub
 - no full browser fan-out across live run storage yet; the UI only consumes configured read-only exports / receipts
 
 That is fine. The slice is still useful because it proves one honest run lifecycle end to end, proves a narrow teacher evaluation + iteration loop without leaking holdout prompt text into student-facing artifacts, and now gives the browser a receipt-oriented live shell without pretending the whole native stack is done.

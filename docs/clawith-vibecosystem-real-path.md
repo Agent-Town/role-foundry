@@ -227,13 +227,26 @@ This path does **not** claim:
 - broad unattended runtime hardening
 - evaluation-integrity isolation for vibecosystem memory/hook behavior
 
-## Recommended next implementation lane after the demo
+## Current beta seam after the demo proof
 
-Build a thin, explicit **`claude_vibecosystem` runner backend** for Role Foundry that:
+Role Foundry now carries a thin, explicit **`claude_vibecosystem` runner backend** beta seam for inspection:
+- select it with `python3 -m runner_bridge.cli --packet A001 --runner-backend claude_vibecosystem`
+- the run object records `execution_backend: "claude_vibecosystem"`
+- the run object and private request can carry an `execution_backend_contract` block with executor mode + claim boundary
+- the backend stub writes `execution_honesty` and provenance surfaces without invoking live Claude/network work in tests
+
+What this beta seam does **not** do yet:
+- it does not shell out to Claude Code for live execution
+- it does not create independent executor isolation
+- it does not create sealed evaluation or tamper-proofing
+- it does not create native Clawith model-pool parity
+
+That is deliberate. This formalizes the same narrow contract proven by `scripts/clawith_vibe_once.py` without broad `runner_bridge` redesign.
+
+## Recommended next implementation lane after this beta seam
+
+Upgrade the stub into a live adapter that:
 - shells out to Claude Code in a dedicated workdir
 - selects a curated vibecosystem agent per role
 - records prompts/results/artifacts deterministically
 - keeps Clawith as the control-plane / operator layer only
-
-Do **not** start with broad `runner_bridge` redesign.
-Start with the same narrow contract proven by `scripts/clawith_vibe_once.py`, then formalize it.

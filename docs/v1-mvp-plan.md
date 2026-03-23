@@ -62,8 +62,8 @@ _Ordered by dependency. Each slice should be demoable on its own._
 **Current fast path:** Milestone 4 now ships a local/mockable `LocalReplayRunner` through `python3 -m runner_bridge.cli` so the lifecycle, transcript storage, artifact bundle, and honest failure path are real before Claude wiring lands.
 
 **Tasks:**
-- [ ] Implement ClaudeVibeRunner adapter matching the contract in `docs/runner-bridge.md`
-- [ ] Runner takes a scenario, executes against Claude, captures transcript + artifacts
+- [x] Land the contract-first `claude_vibecosystem` beta seam matching the narrow contract in `docs/runner-bridge.md`
+- [ ] Upgrade the seam from stub to live Claude execution with transcript + artifacts
 - [ ] Runner reports back to Clawith with status and outputs
 - [ ] Test with one public scenario from Slice 2
 

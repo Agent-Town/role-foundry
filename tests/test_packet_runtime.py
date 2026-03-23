@@ -13,6 +13,7 @@ import unittest
 from pathlib import Path
 
 from runner_bridge import curriculum
+from runner_bridge.backends import backend_contract_for_runner
 from runner_bridge.contract import ContractError, RunRequest
 from runner_bridge.packet_runtime import (
     EvalContractRef,
@@ -333,6 +334,31 @@ class TestHonestyBoundaries(unittest.TestCase):
         prt = req.extras["packet_runtime"]
         self.assertEqual(prt["execution_status"], "not_started")
         self.assertEqual(prt["execution_backend"], "pending")
+
+    def test_explicit_runner_backend_is_recorded_without_claiming_execution(self):
+        obj = load_run_object(
+            "A001",
+            run_id="honesty-claude-beta",
+            execution_backend="claude_vibecosystem",
+            execution_backend_contract=backend_contract_for_runner("claude_vibecosystem"),
+        )
+        self.assertEqual(obj.execution_status, "not_started")
+        self.assertEqual(obj.execution_backend, "claude_vibecosystem")
+        self.assertEqual(obj.execution_backend_contract["mode"], "external_executor_beta")
+        self.assertEqual(obj.execution_backend_contract["claim_boundary"]["sealed_evaluation"], "not_claimed")
+
+    def test_request_extras_carry_execution_backend_contract_when_selected(self):
+        obj = load_run_object(
+            "A001",
+            run_id="honesty-claude-beta",
+            execution_backend="claude_vibecosystem",
+            execution_backend_contract=backend_contract_for_runner("claude_vibecosystem"),
+        )
+        req = obj.to_run_request()
+        prt = req.extras["packet_runtime"]
+        self.assertEqual(prt["execution_backend"], "claude_vibecosystem")
+        self.assertEqual(prt["execution_backend_contract"]["surface_version"], "0.1.0-beta")
+        self.assertEqual(prt["execution_backend_contract"]["executor"]["default_agent"], "backend-dev")
 
 
 if __name__ == "__main__":

@@ -253,6 +253,8 @@ For the hackathon MVP, Clawith integration is wired at the Docker layer and the 
 
 Using different model families for building and judging reduces correlated self-grading.
 
+A contract-first `claude_vibecosystem` external-executor beta seam is now wired through `python3 -m runner_bridge.cli --runner-backend claude_vibecosystem`. It records backend selection, executor intent, and claim boundaries, but it does not claim sealed evaluation, live isolation, or native Clawith parity.
+
 ## Docs
 
 - `docs/milestones.md` — spec-first milestone rail and current delivery status
@@ -287,6 +289,7 @@ Using different model families for building and judging reduces correlated self-
 - `specs/013-erc8004-base-agent0-adapter.md` — ERC-8004 Base / agent0-sdk adapter spec
 - `specs/014-frontend-product-engineer-20-task-curriculum.md` — TDD-first 20-task curriculum contract for the first Frontend/Product Engineer apprentice
 - `specs/015-sealed-receipt-surface.md` — public-safe sealing / tamper-evidence receipt surface honesty boundary
+- `specs/016-claude-vibecosystem-backend.md` — contract-first `claude_vibecosystem` external-executor beta seam
 
 ## License
 
