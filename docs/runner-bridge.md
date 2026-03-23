@@ -46,6 +46,32 @@ If a request includes an optional `teacher_evaluation` payload, `LocalReplayRunn
 
 The important line: the teacher can know more than the student without the repo leaking the sealed exam into the student-facing bundle.
 
+## Task-packet → runtime bridge
+
+The `runner_bridge.packet_runtime` module is the narrow bridge from the frozen Frontend/Product Engineer curriculum contracts to executable runtime objects.
+
+What is real now:
+- `python3 -m runner_bridge.cli --packet A001` loads a frozen task packet by acceptance-test id
+- the bridge materializes `run-object.json` alongside the normal request / receipt files
+- `result.json` includes a machine-readable `execution_honesty` block
+
+What is **not** claimed:
+- `LocalReplayRunner` does **not** execute packet commands
+- mutation budgets and path constraints are carried into runtime artifacts, but not yet enforced by the backend
+- packet-driven runs are an honest contract surface for execution, not proof that live execution is complete
+
+A packet-driven run now follows this shape:
+
+```text
+Teacher authors frozen task packet
+  → python3 -m runner_bridge.cli --packet A001
+  → runner_bridge.packet_runtime validates packet + role + eval contract
+  → bridge writes runtime/runs/<run_id>/run-object.json
+  → LocalReplayRunner writes transcript + artifacts
+  → result.json records execution_honesty truthfully
+```
+
+The generated `run-object.json` freezes the packet id/version/hash, role id, allowed and blocked paths, mutation budget, expected checks, evidence contract, and receipt locations for that run.
 ## Current bridge shape
 
 ```text

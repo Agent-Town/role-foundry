@@ -101,18 +101,24 @@ The first honest runner-bridge slice is now in the repo. It is intentionally sma
 Examples:
 
 ```bash
-python3 -m runner_bridge.cli \
-  --request runner_bridge/examples/first-live-run.json \
-  --clawith-url http://localhost:3000 \
-  --clawith-secret "$CLAWITH_SECRET"
-```
+# Run a task packet by acceptance_test_id (packet-driven path)
+python3 -m runner_bridge.cli --packet A001
 
-```bash
+# Run a task packet with explicit run-id
+python3 -m runner_bridge.cli --packet C001 --run-id my-run-001
+
+# Run from a pre-built request JSON
+python3 -m runner_bridge.cli \
+  --request runner_bridge/examples/first-live-run.json
+
+# With control plane
 python3 -m runner_bridge.cli \
   --request runner_bridge/examples/teacher-eval-loop.json \
   --clawith-url http://localhost:3000 \
   --clawith-secret "$CLAWITH_SECRET"
 ```
+
+The `--packet` path loads a frozen task packet from the public seed registry, validates it against the evaluation contract and role manifest, materializes a `run-object.json` runtime artifact in the run directory, and runs it through the bridge. The `run-object.json` carries the packet id, version, content hash, role id, eval contract ref, mutation budget, paths, checks, and evidence contract. The `result.json` includes a machine-readable `execution_honesty` block that truthfully reports whether the backend actually executed commands.
 
 Artifacts land under `runtime/runs/<run_id>/`.
 
