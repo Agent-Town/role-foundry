@@ -5,6 +5,7 @@ Commands:
     init     — scaffold a fresh holdout manifest from the public template
     audit    — check the local manifest for leakage + schema conformance
     status   — summarize what exists locally vs what is tracked
+    refresh  — generate a timestamped refresh receipt stub for weekly cycle
 
 This script never writes to tracked paths. It only touches files under
 benchmarks/private-holdout-pack/ (which is gitignored).
@@ -14,6 +15,7 @@ import argparse
 import json
 import subprocess
 import sys
+from datetime import date
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -21,6 +23,8 @@ TEMPLATE = ROOT / "benchmarks" / "private-holdout-pack-template.json"
 PRIVATE_DIR = ROOT / "benchmarks" / "private-holdout-pack"
 MANIFEST = PRIVATE_DIR / "holdout-manifest.json"
 EPISODES_DIR = PRIVATE_DIR / "episodes"
+REFRESH_DIR = PRIVATE_DIR / "refresh-receipts"
+REFRESH_SCHEMA = ROOT / "data" / "curriculum" / "frontend-product-engineer-private-holdout-refresh-receipt.schema.v1.json"
 GITIGNORE = ROOT / ".gitignore"
 
 # ── Repo-visible strings that must NOT appear in teacher-only content ──
@@ -293,6 +297,86 @@ def cmd_status(_args: argparse.Namespace) -> int:
     return 0
 
 
+# ─────────────────────────── refresh ─────────────────────────────
+
+def cmd_refresh(args: argparse.Namespace) -> int:
+    """Generate a timestamped refresh receipt stub in the local-only directory.
+
+    The receipt records what the teacher did (counts, timestamps, audit result)
+    without exposing any holdout content. Teachers fill in the action counts
+    after completing their refresh work.
+    """
+    if not _is_gitignored():
+        _err("benchmarks/private-holdout-pack/ is NOT in .gitignore — refusing to write receipt.")
+        return 1
+    if not REFRESH_SCHEMA.exists():
+        _err(f"Refresh schema missing at {REFRESH_SCHEMA.relative_to(ROOT)}")
+        return 1
+
+    REFRESH_DIR.mkdir(parents=True, exist_ok=True)
+
+    today = date.today()
+    week_num = today.isocalendar()[1]
+    receipt_id = f"refresh-{today.year}-w{week_num:02d}-001"
+
+    # Find next available sequence number
+    existing = sorted(REFRESH_DIR.glob(f"refresh-{today.year}-w{week_num:02d}-*.json"))
+    if existing:
+        last_seq = int(existing[-1].stem.rsplit("-", 1)[-1])
+        receipt_id = f"refresh-{today.year}-w{week_num:02d}-{last_seq + 1:03d}"
+
+    # Read manifest for episode count if available
+    total_episodes = 0
+    pack_version = "0.0.0"
+    if MANIFEST.exists():
+        manifest = json.loads(MANIFEST.read_text())
+        episodes = manifest.get("episodes", [])
+        total_episodes = len([
+            e for e in episodes
+            if not e.get("_placeholder") and "REPLACE-ME" not in str(e.get("id", ""))
+        ])
+        pack_version = manifest.get("meta", {}).get("version", "0.0.0")
+
+    receipt = {
+        "receipt_id": receipt_id,
+        "refresh_date": today.isoformat(),
+        "role_id": "role-frontend-product-engineer",
+        "teacher_id": args.teacher or "FILL-IN",
+        "pack_version_before": pack_version,
+        "pack_version_after": "FILL-IN — bump after refresh",
+        "actions": {
+            "episodes_reviewed": 0,
+            "episodes_retired": 0,
+            "episodes_added": 0,
+            "episodes_rewritten": 0,
+            "total_episodes_after": total_episodes,
+            "retired_episode_ids": [],
+            "retirement_reasons": []
+        },
+        "audit_result": {
+            "ran_audit": False,
+            "passed": False,
+            "error_count": 0,
+            "notes": "FILL-IN — run 'python3 scripts/holdout_author.py audit' and record result"
+        },
+        "honesty_note": "FILL-IN — attest that holdout content was refreshed honestly and not leaked"
+    }
+
+    receipt_path = REFRESH_DIR / f"{receipt_id}.json"
+    receipt_path.write_text(json.dumps(receipt, indent=2) + "\n")
+
+    print(f"Refresh receipt stub created at {receipt_path.relative_to(ROOT)}")
+    print()
+    print("Next steps:")
+    print("  1. Do your holdout refresh work (review, retire, author, rewrite)")
+    print("  2. Fill in the action counts in the receipt")
+    print("  3. Run: python3 scripts/holdout_author.py audit")
+    print("  4. Update the audit_result in the receipt")
+    print("  5. Write your honesty_note attestation")
+    print(f"  6. Bump pack_version_after (currently {pack_version})")
+    return 0
+
+
 # ─────────────────────────── main ──────────────────────────────
 
 def main() -> int:
@@ -308,12 +392,15 @@ def main() -> int:
     sub.add_parser("audit", help="Audit local manifest for leaks and schema issues")
     sub.add_parser("status", help="Show authoring status")
 
+    p_refresh = sub.add_parser("refresh", help="Generate a refresh receipt stub for weekly cycle")
+    p_refresh.add_argument("--teacher", default=None, help="Teacher identifier (optional)")
+
     args = parser.parse_args()
     if not args.command:
         parser.print_help()
         return 0
 
-    return {"init": cmd_init, "audit": cmd_audit, "status": cmd_status}[args.command](args)
+    return {"init": cmd_init, "audit": cmd_audit, "status": cmd_status, "refresh": cmd_refresh}[args.command](args)
 
 
 if __name__ == "__main__":

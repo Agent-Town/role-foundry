@@ -22,6 +22,18 @@
       "partner-track capability claims"
     ]
   },
+  "refresh_metadata": {
+    "_instructions": "Track weekly refresh cycles here. Each entry records what changed without exposing holdout content. The receipt schema is at data/curriculum/frontend-product-engineer-private-holdout-refresh-receipt.schema.v1.json.",
+    "last_refresh_date": null,
+    "refresh_count": 0,
+    "refresh_receipts_dir": "benchmarks/private-holdout-pack/refresh-receipts/",
+    "refresh_cadence": "weekly",
+    "archive_policy": {
+      "retire_after_leak": true,
+      "retire_after_weeks_stale": 8,
+      "require_audit_on_refresh": true
+    }
+  },
   "episodes": [
     {
       "_placeholder": true,
