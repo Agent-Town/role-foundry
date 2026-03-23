@@ -13,6 +13,9 @@ This is the **public seed-task registry** for the frozen `Frontend/Product Engin
 - **Public seed registry:** `data/curriculum/frontend-product-engineer-public-seed-registry.v1.json`
 - **Sample scorecard:** `data/curriculum/frontend-product-engineer-sample-scorecard.v1.json`
 - **Sample run objects:** `data/curriculum/frontend-product-engineer-sample-run-objects.v1.json`
+- **Operating split notes:** `docs/curriculum-operating-split.md`
+- **Validator/runtime helpers:** `runner_bridge/curriculum.py`
+- **Validator/runtime tests:** `tests/test_curriculum_contract.py`
 
 ## Scope
 
@@ -31,6 +34,7 @@ They make the frozen task/eval/receipt surfaces machine-readable without widenin
 ```bash
 python3 -m unittest tests/test_frontend_product_engineer_20_task_curriculum.py
 python3 -m unittest tests/test_frontend_product_engineer_seed_registry.py
+python3 -m unittest tests/test_curriculum_contract.py
 python3 -m unittest tests/test_private_holdout_separation.py
 ```
 
