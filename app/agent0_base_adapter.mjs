@@ -119,7 +119,7 @@ export async function connectWallet(provider, agent0sdk) {
  * @param {number} opts.chainId        - 84532 (Base Sepolia) or 8453 (Base Mainnet).
  * @param {string} opts.rpcUrl         - Base RPC endpoint (required).
  * @param {object} opts.walletProvider - Connected EIP-1193 provider.
- * @param {object} opts.registryOverrides   - Registry address (required — agent0-sdk does not reliably default for Base).
+ * @param {object} opts.registryOverrides   - Registry overrides keyed by chain id, e.g. { 84532: { IDENTITY: "0x..." } } (required — agent0-sdk does not reliably default for Base).
  * @param {object} [opts.subgraphOverrides]  - Optional subgraph URL override.
  *
  * Returns { ok, data: sdkInstance } or { ok: false, error }.
