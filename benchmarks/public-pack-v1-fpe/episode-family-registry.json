@@ -14,7 +14,8 @@
     "public_pack_rule": "Only benchmark_ready + student_visible families may appear in fpe-public-benchmark-pack-v1.",
     "blocked_rule": "No families are currently blocked. If teacher-only holdout families are authored in the future, they must be stored outside this pack.",
     "certification_note": "This pack is suitable for public training, regression checks, and alpha-loop consumption. It is not a sealed certification exam.",
-    "promotion_policy": "Every candidate family must have explicit promotion_criteria. A family with zero criteria is not promotable."
+    "promotion_policy": "Every candidate family must have explicit promotion_criteria. A family with zero criteria is not promotable.",
+    "promotion_policy_ref": "data/episode-registry/promotion-policy.json"
   },
   "families": [
     {
@@ -107,7 +108,10 @@
         "benchmark_pack": true,
         "runtime_status": "not_started",
         "alpha_consumable": true,
-        "blocked_claims": ["teacher operating system live", "authoring/promotion workflow end-to-end"],
+        "blocked_claims": [
+          "teacher operating system live",
+          "authoring/promotion workflow end-to-end"
+        ],
         "evidence": "Packets define the teacher OS tasks but no runtime authoring/promotion system is wired."
       },
       "notes": "Public-safe: all 4 tasks derive from Spec 014 public acceptance tests only."
@@ -155,7 +159,9 @@
         "benchmark_pack": true,
         "runtime_status": "partial",
         "alpha_consumable": true,
-        "blocked_claims": ["live verifier execution"],
+        "blocked_claims": [
+          "live verifier execution"
+        ],
         "evidence": "Autoresearch alpha receipts exist; Step C verifier-contract and verifier-gate honesty landed. Live verifier command execution still pending."
       },
       "notes": "Public-safe: all 4 tasks derive from Spec 014 public acceptance tests only."
@@ -204,7 +210,11 @@
         "benchmark_pack": true,
         "runtime_status": "not_started",
         "alpha_consumable": true,
-        "blocked_claims": ["teacher review console", "promotion-gate enforcement", "private-holdout scoring live"],
+        "blocked_claims": [
+          "teacher review console",
+          "promotion-gate enforcement",
+          "private-holdout scoring live"
+        ],
         "evidence": "Public scoring contract exists. Teacher review console and promotion-gate enforcement are not started."
       },
       "notes": "Public-safe: all 4 tasks derive from Spec 014 public acceptance tests only."
@@ -253,7 +263,11 @@
         "benchmark_pack": true,
         "runtime_status": "not_started",
         "alpha_consumable": true,
-        "blocked_claims": ["generation lineage registry", "weekly cycle automation", "compounding loop live"],
+        "blocked_claims": [
+          "generation lineage registry",
+          "weekly cycle automation",
+          "compounding loop live"
+        ],
         "evidence": "Lineage and weekly-cycle packets exist but the operating loop is not live. Generation lineage is not started."
       },
       "notes": "Public-safe: all 4 tasks derive from Spec 014 public acceptance tests only."

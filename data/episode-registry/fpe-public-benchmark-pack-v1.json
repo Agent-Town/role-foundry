@@ -13,7 +13,9 @@
       "data/curriculum/frontend-product-engineer-evaluation-contract.v1.json",
       "benchmarks/public-pack-v1-fpe/benchmark-pack.json",
       "benchmarks/public-pack-v1-fpe/episode-family-registry.json"
-    ]
+    ],
+    "source_bucket_registry": "data/episode-registry/source-buckets.json",
+    "promotion_policy_path": "data/episode-registry/promotion-policy.json"
   },
   "coverage": {
     "public_episode_count": 20,
@@ -27,7 +29,7 @@
       "id": "fpe-rubric-phase-1-v1",
       "family_id": "rf.fpe.public.phase-1",
       "version": "1.0.0",
-      "title": "Phase 1 \u2014 Freeze the game being played rubric",
+      "title": "Phase 1 — Freeze the game being played rubric",
       "description": "Rubric for evaluating Phase 1 (Freeze the game being played) episodes using the frozen FPE evaluation contract dimensions.",
       "score_scale": {
         "min": 0.0,
@@ -80,7 +82,7 @@
       "id": "fpe-rubric-phase-2-v1",
       "family_id": "rf.fpe.public.phase-2",
       "version": "1.0.0",
-      "title": "Phase 2 \u2014 Build the teacher operating system rubric",
+      "title": "Phase 2 — Build the teacher operating system rubric",
       "description": "Rubric for evaluating Phase 2 (Build the teacher operating system) episodes using the frozen FPE evaluation contract dimensions.",
       "score_scale": {
         "min": 0.0,
@@ -133,7 +135,7 @@
       "id": "fpe-rubric-phase-3-v1",
       "family_id": "rf.fpe.public.phase-3",
       "version": "1.0.0",
-      "title": "Phase 3 \u2014 Make the coding loop real rubric",
+      "title": "Phase 3 — Make the coding loop real rubric",
       "description": "Rubric for evaluating Phase 3 (Make the coding loop real) episodes using the frozen FPE evaluation contract dimensions.",
       "score_scale": {
         "min": 0.0,
@@ -186,7 +188,7 @@
       "id": "fpe-rubric-phase-4-v1",
       "family_id": "rf.fpe.public.phase-4",
       "version": "1.0.0",
-      "title": "Phase 4 \u2014 Make evaluation trustworthy rubric",
+      "title": "Phase 4 — Make evaluation trustworthy rubric",
       "description": "Rubric for evaluating Phase 4 (Make evaluation trustworthy) episodes using the frozen FPE evaluation contract dimensions.",
       "score_scale": {
         "min": 0.0,
@@ -239,7 +241,7 @@
       "id": "fpe-rubric-phase-5-v1",
       "family_id": "rf.fpe.public.phase-5",
       "version": "1.0.0",
-      "title": "Phase 5 \u2014 Make the system compound rubric",
+      "title": "Phase 5 — Make the system compound rubric",
       "description": "Rubric for evaluating Phase 5 (Make the system compound) episodes using the frozen FPE evaluation contract dimensions.",
       "score_scale": {
         "min": 0.0,

@@ -13,7 +13,9 @@
     ],
     "episode_registry": "data/episode-registry/public-benchmark-pack-v1.json",
     "public_episode_count": 14,
-    "public_family_count": 7
+    "public_family_count": 7,
+    "source_bucket_registry": "data/episode-registry/source-buckets.json",
+    "promotion_policy_path": "data/episode-registry/promotion-policy.json"
   },
   "execution_policy": {
     "student_visible_only": true,
@@ -95,7 +97,7 @@
       "title": "Tighten the README intro around the dogfood loop",
       "difficulty": "medium",
       "mutation_budget": "narrow",
-      "student_prompt": "Refactor the README intro so it frames the repo as a teacher \u2192 student \u2192 evaluation loop, not a generic agent platform.",
+      "student_prompt": "Refactor the README intro so it frames the repo as a teacher → student → evaluation loop, not a generic agent platform.",
       "constraints": [
         "Keep the repo description concrete and judge-facing",
         "Avoid fake future-looking claims",

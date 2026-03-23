@@ -8,11 +8,26 @@
     "description": "Public-safe benchmark pack for the Frontend/Product Engineer 20-task curriculum. Every episode is student-visible and derived from Spec 014 public acceptance tests.",
     "honesty_note": "This pack is valid for public training, iteration, regression checks, and alpha-loop consumption. It is not a sealed certification pack. No teacher-only families exist because no holdout framing has been disclosed. All 20 episodes are benchmark-ready (packets, rubrics, provenance complete), but runtime readiness varies by phase — see readiness_by_phase below and per-family readiness in the family registry.",
     "readiness_by_phase": {
-      "phase-1": {"benchmark_pack": true, "runtime_status": "complete"},
-      "phase-2": {"benchmark_pack": true, "runtime_status": "not_started"},
-      "phase-3": {"benchmark_pack": true, "runtime_status": "partial"},
-      "phase-4": {"benchmark_pack": true, "runtime_status": "not_started"},
-      "phase-5": {"benchmark_pack": true, "runtime_status": "not_started"}
+      "phase-1": {
+        "benchmark_pack": true,
+        "runtime_status": "complete"
+      },
+      "phase-2": {
+        "benchmark_pack": true,
+        "runtime_status": "not_started"
+      },
+      "phase-3": {
+        "benchmark_pack": true,
+        "runtime_status": "partial"
+      },
+      "phase-4": {
+        "benchmark_pack": true,
+        "runtime_status": "not_started"
+      },
+      "phase-5": {
+        "benchmark_pack": true,
+        "runtime_status": "not_started"
+      }
     },
     "generated_from": [
       "seed/frontend-product-engineer-role.v1.json",
@@ -22,7 +37,9 @@
     ],
     "episode_registry": "data/episode-registry/fpe-public-benchmark-pack-v1.json",
     "public_episode_count": 20,
-    "public_family_count": 5
+    "public_family_count": 5,
+    "source_bucket_registry": "data/episode-registry/source-buckets.json",
+    "promotion_policy_path": "data/episode-registry/promotion-policy.json"
   },
   "execution_policy": {
     "student_visible_only": true,

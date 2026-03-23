@@ -1,0 +1,160 @@
+{
+  "meta": {
+    "id": "episode-registry-promotion-policy",
+    "version": "1.0.0",
+    "description": "Machine-readable promotion policy governing how episode families move between statuses. G002 requires every family to have explicit promotion_criteria; this surface defines the allowed statuses, required criteria, and invariants that tests enforce.",
+    "honesty_note": "This policy describes what the repo enforces today. It does not describe aspirational future gates. See docs/promotion-gate-contracts.md for the full gate-level contracts (D002/D003/D004)."
+  },
+  "status_vocabulary": {
+    "benchmark_ready": {
+      "description": "Family has complete packets, rubrics, provenance, and all promotion_criteria satisfied. May appear in a public benchmark pack.",
+      "promotion_criteria_requirement": "All base criteria must be true."
+    },
+    "blocked_pending_rewrite": {
+      "description": "Family is repo-visible or has unmet criteria. Must NOT appear in any public benchmark pack until rewritten.",
+      "promotion_criteria_requirement": "At least one criterion must be false. blocked_reason and rewrite_requirements must be present."
+    },
+    "local_only": {
+      "description": "Bucket/family exists only in local gitignored paths. Zero committed families.",
+      "promotion_criteria_requirement": "Not applicable — no committed families to evaluate."
+    }
+  },
+  "base_promotion_criteria": {
+    "source_is_public_curriculum": {
+      "description": "Family derives only from student-visible public curriculum, not teacher-only material.",
+      "required_for_benchmark_ready": true
+    },
+    "no_teacher_only_inputs": {
+      "description": "No teacher-only prompt text, rubric content, or holdout material was used to author the family.",
+      "required_for_benchmark_ready": true
+    },
+    "rubric_template_exists": {
+      "description": "A complete public rubric template with normalized weights exists for this family.",
+      "required_for_benchmark_ready": true
+    },
+    "not_repo_visible_holdout": {
+      "description": "Family framing has not been disclosed in the public repo. Repo-visible holdouts cannot honestly claim sealed status.",
+      "required_for_benchmark_ready": true
+    }
+  },
+  "extended_criteria_for_blocked_families": {
+    "fresh_non_disclosed_wording": {
+      "description": "New wording authored specifically for teacher-only use, not already disclosed publicly.",
+      "must_be_true_before_promotion": true
+    },
+    "stored_outside_public_pack": {
+      "description": "Teacher-only content stored in gitignored paths, not in any tracked benchmark pack.",
+      "must_be_true_before_promotion": true
+    }
+  },
+  "invariants": [
+    {
+      "id": "G002-no-empty-criteria",
+      "rule": "Every family in any family registry must have an explicit promotion_criteria object. Zero families may lack this field.",
+      "test_ref": "tests/test_dataset_flywheel_phase_g.py::test_G002_every_family_has_promotion_criteria"
+    },
+    {
+      "id": "G002-ready-all-true",
+      "rule": "Benchmark-ready families must have all four base promotion criteria set to true.",
+      "test_ref": "tests/test_dataset_flywheel_phase_g.py::test_G002_benchmark_ready_families_have_all_criteria_true"
+    },
+    {
+      "id": "G002-blocked-has-false",
+      "rule": "Blocked families must have at least one promotion criterion that is false, making the block machine-readable.",
+      "test_ref": "tests/test_dataset_flywheel_phase_g.py::test_G002_blocked_families_have_unmet_criteria"
+    },
+    {
+      "id": "G003-no-leaked-promotion",
+      "rule": "A family with a blocked_reason (repo-visible disclosure) must NOT have status benchmark_ready.",
+      "test_ref": "tests/test_dataset_flywheel_phase_g.py::test_G003_no_repo_visible_family_promoted_to_benchmark"
+    },
+    {
+      "id": "G003-rewrite-required",
+      "rule": "Every blocked family must document rewrite_requirements before it can be considered for promotion.",
+      "test_ref": "tests/test_dataset_flywheel_phase_g.py::test_G003_blocked_families_have_rewrite_requirements"
+    },
+    {
+      "id": "G004-role-scoped",
+      "rule": "All included families in a benchmark pack must share the pack's declared role_scope. Mixed-role packs without explicit scoping are forbidden.",
+      "test_ref": "tests/test_dataset_flywheel_phase_g.py::test_G004_no_mixed_roles_in_pack"
+    },
+    {
+      "id": "G004-cross-pack-isolation",
+      "rule": "Episode IDs must not overlap across packs targeting different roles.",
+      "test_ref": "tests/test_dataset_flywheel_phase_g.py::test_G004_cross_pack_episode_ids_disjoint"
+    },
+    {
+      "id": "G001-intake-covered",
+      "rule": "Every tracked source-intake record must appear in exactly one intake bucket with explicit status and promotion_mode.",
+      "test_ref": "tests/test_dataset_flywheel_phase_g.py::test_G001_all_intake_records_covered_exactly_once"
+    },
+    {
+      "id": "G002-intake-status-explicit",
+      "rule": "Every intake bucket must use a documented source_intake_status_vocabulary value and a documented promotion_mode.",
+      "test_ref": "tests/test_dataset_flywheel_phase_g.py::test_G002_intake_buckets_have_explicit_status_and_promotion_mode"
+    },
+    {
+      "id": "G003-manual-curation-not-auto-promoted",
+      "rule": "Manual-curation-only and blocked teacher-only intake seams must not carry promoted public families or public-pack refs.",
+      "test_ref": "tests/test_dataset_flywheel_phase_g.py::test_G003_manual_curation_and_blocked_teacher_only_intake_not_publicly_promoted"
+    }
+  ],
+  "pack_refs": [
+    {
+      "pack_id": "public-benchmark-pack-v1",
+      "role_scope": "frontend-apprentice",
+      "family_registry": "benchmarks/public-pack-v1/episode-family-registry.json",
+      "pack_manifest": "benchmarks/public-pack-v1/benchmark-pack.json"
+    },
+    {
+      "pack_id": "fpe-public-benchmark-pack-v1",
+      "role_scope": "frontend-product-engineer",
+      "family_registry": "benchmarks/public-pack-v1-fpe/episode-family-registry.json",
+      "pack_manifest": "benchmarks/public-pack-v1-fpe/benchmark-pack.json"
+    }
+  ],
+  "source_intake_status_vocabulary": {
+    "promoted": {
+      "description": "At least one RF-authored family has been promoted from source intake into a public benchmark pack.",
+      "requires_promoted_family_ids": true,
+      "public_pack_eligible": true
+    },
+    "curated": {
+      "description": "Source is reviewed and suitable, but no RF-authored family is promoted yet.",
+      "requires_promoted_family_ids": false,
+      "public_pack_eligible": false
+    },
+    "discovered": {
+      "description": "Source is identified only. It may require curation or manual rewrite before any family can exist.",
+      "requires_promoted_family_ids": false,
+      "public_pack_eligible": false
+    },
+    "blocked_teacher_only_holdout": {
+      "description": "Source is visible only as a teacher-only holdout direction and must never appear in student-visible packs or curriculum.",
+      "requires_promoted_family_ids": false,
+      "public_pack_eligible": false
+    }
+  },
+  "promotion_modes": {
+    "public_benchmark_family": {
+      "description": "Source has already yielded an RF-authored family in a student-visible public benchmark pack.",
+      "auto_promotion_allowed": true,
+      "public_pack_allowed": true
+    },
+    "public_candidate": {
+      "description": "Source may yield a future public family, but only after authored episodes, rubric coverage, and provenance are checked in.",
+      "auto_promotion_allowed": false,
+      "public_pack_allowed": false
+    },
+    "manual_curation_only": {
+      "description": "Source may inform future episodes only through manual teacher rewrite. Bulk import and direct promotion are blocked.",
+      "auto_promotion_allowed": false,
+      "public_pack_allowed": false
+    },
+    "teacher_only_manual_curation": {
+      "description": "Teacher-only holdout direction. Any future episodes must stay outside public packs and student-visible curriculum.",
+      "auto_promotion_allowed": false,
+      "public_pack_allowed": false
+    }
+  }
+}

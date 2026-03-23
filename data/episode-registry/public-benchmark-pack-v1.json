@@ -12,7 +12,9 @@
       "seed/role-foundry-apprentice.json",
       "benchmarks/public-pack-v1/benchmark-pack.json",
       "benchmarks/public-pack-v1/episode-family-registry.json"
-    ]
+    ],
+    "source_bucket_registry": "data/episode-registry/source-buckets.json",
+    "promotion_policy_path": "data/episode-registry/promotion-policy.json"
   },
   "coverage": {
     "public_episode_count": 14,

@@ -1,56 +1,290 @@
 {
   "meta": {
     "id": "role-foundry-source-buckets",
-    "version": "1.0.0",
-    "description": "Enumerates every internal source bucket in the episode registry. G001 requires all current buckets to be represented.",
-    "honesty_note": "This index is descriptive, not aspirational. It records what exists now, including buckets that are blocked or local-only."
+    "version": "2.0.0",
+    "description": "Enumerates every internal source bucket across all roles in the episode registry. G001 requires all current buckets to be represented.",
+    "honesty_note": "This index is descriptive, not aspirational. It records what exists now, including buckets that are blocked or local-only. Each role's buckets are grouped under a role_id key in the completeness section."
   },
   "buckets": [
     {
       "id": "public-training",
-      "label": "Public training curriculum",
+      "role_id": "role-frontend-apprentice",
+      "label": "Public training curriculum (Frontend Apprentice)",
       "visibility": "student_visible",
       "status": "active",
-      "scenario_ids": ["t1", "t2", "t3", "t4", "t5", "t6", "t7"],
+      "scenario_ids": [
+        "t1",
+        "t2",
+        "t3",
+        "t4",
+        "t5",
+        "t6",
+        "t7"
+      ],
       "family_id_prefix": "rf.frontend-apprentice.public.",
       "family_count": 7,
-      "pack_refs": ["benchmarks/public-pack-v1/benchmark-pack.json"],
-      "registry_refs": ["data/episode-registry/public-benchmark-pack-v1.json"],
-      "notes": "All six public families are benchmark_ready and ship in public-benchmark-pack-v1."
+      "pack_refs": [
+        "benchmarks/public-pack-v1/benchmark-pack.json"
+      ],
+      "registry_refs": [
+        "data/episode-registry/public-benchmark-pack-v1.json"
+      ],
+      "notes": "All seven public families are benchmark_ready and ship in public-benchmark-pack-v1."
     },
     {
       "id": "blocked-teacher-only",
+      "role_id": "role-frontend-apprentice",
       "label": "Blocked teacher-only families (repo-visible, pending rewrite)",
       "visibility": "teacher_only",
       "status": "blocked_pending_rewrite",
-      "scenario_ids": ["h1", "h2", "h3"],
+      "scenario_ids": [
+        "h1",
+        "h2",
+        "h3"
+      ],
       "family_id_prefix": "rf.frontend-apprentice.blocked.",
       "family_count": 3,
       "pack_refs": [],
-      "registry_refs": ["benchmarks/public-pack-v1/episode-family-registry.json"],
+      "registry_refs": [
+        "benchmarks/public-pack-v1/episode-family-registry.json"
+      ],
       "blocked_reason": "Current repo already discloses framing for h1/h2/h3. Cannot honestly claim these as sealed or promote to teacher-only benchmark status until rewritten with fresh non-repo-visible wording.",
       "notes": "Listed in the family registry as blocked_pending_rewrite. Not included in any benchmark pack."
     },
     {
       "id": "local-private-holdout",
-      "label": "Local-only private holdout evaluation path",
+      "role_id": "role-frontend-apprentice",
+      "label": "Local-only private holdout evaluation path (Frontend Apprentice)",
       "visibility": "teacher_only",
       "status": "local_only",
       "scenario_ids": [],
       "family_id_prefix": "rf.frontend-apprentice.holdout.",
       "family_count": 0,
-      "pack_refs": ["benchmarks/private-holdout-pack-template.json"],
+      "pack_refs": [
+        "benchmarks/private-holdout-pack-template.json"
+      ],
       "registry_refs": [],
       "notes": "Template exists at benchmarks/private-holdout-pack-template.json. Actual holdout episodes are authored locally in a gitignored manifest. No episodes are committed to the repo. This bucket has zero committed families."
+    },
+    {
+      "id": "fpe-public-training",
+      "role_id": "role-frontend-product-engineer",
+      "label": "Public training curriculum (Frontend/Product Engineer)",
+      "visibility": "student_visible",
+      "status": "active",
+      "seed_task_ids": [
+        "A001",
+        "A002",
+        "A003",
+        "A004",
+        "B001",
+        "B002",
+        "B003",
+        "B004",
+        "C001",
+        "C002",
+        "C003",
+        "C004",
+        "D001",
+        "D002",
+        "D003",
+        "D004",
+        "E001",
+        "E002",
+        "E003",
+        "E004"
+      ],
+      "family_id_prefix": "rf.fpe.public.",
+      "family_count": 5,
+      "pack_refs": [
+        "benchmarks/public-pack-v1-fpe/benchmark-pack.json"
+      ],
+      "registry_refs": [
+        "data/episode-registry/fpe-public-benchmark-pack-v1.json"
+      ],
+      "notes": "All five phase families are benchmark_ready and ship in fpe-public-benchmark-pack-v1. No blocked families exist because no holdout framing has been disclosed for this role."
+    },
+    {
+      "id": "fpe-local-private-holdout",
+      "role_id": "role-frontend-product-engineer",
+      "label": "Local-only private holdout evaluation path (Frontend/Product Engineer)",
+      "visibility": "teacher_only",
+      "status": "local_only",
+      "seed_task_ids": [],
+      "family_id_prefix": "rf.fpe.holdout.",
+      "family_count": 0,
+      "pack_refs": [],
+      "registry_refs": [],
+      "notes": "No FPE holdout families are committed. Future teacher-only holdout tasks for this role would be authored locally, gitignored, and never tracked in public packs."
     }
   ],
   "completeness": {
-    "total_buckets": 3,
-    "active_buckets": 1,
+    "total_buckets": 5,
+    "active_buckets": 2,
     "blocked_buckets": 1,
-    "local_only_buckets": 1,
-    "all_seed_scenarios_covered": true,
-    "seed_scenario_ids": ["t1", "t2", "t3", "t4", "t5", "t6", "t7", "h1", "h2", "h3"],
-    "notes": "Every scenario in seed/role-foundry-apprentice.json maps to exactly one bucket."
-  }
+    "local_only_buckets": 2,
+    "by_role": {
+      "role-frontend-apprentice": {
+        "bucket_ids": [
+          "public-training",
+          "blocked-teacher-only",
+          "local-private-holdout"
+        ],
+        "all_seed_scenarios_covered": true,
+        "seed_scenario_ids": [
+          "t1",
+          "t2",
+          "t3",
+          "t4",
+          "t5",
+          "t6",
+          "t7",
+          "h1",
+          "h2",
+          "h3"
+        ],
+        "seed_ref": "seed/role-foundry-apprentice.json",
+        "intake_bucket_ids": [
+          "frontend-apprentice-source-intake-promoted",
+          "frontend-apprentice-source-intake-curated",
+          "frontend-apprentice-source-intake-manual-curation-only",
+          "frontend-apprentice-source-intake-blocked-teacher-only"
+        ],
+        "all_intake_records_covered": true,
+        "intake_record_ids": [
+          "intake-playwright-regression",
+          "intake-google-eng-practices",
+          "intake-alpinejs-curation",
+          "intake-swebench-teacher-holdout"
+        ]
+      },
+      "role-frontend-product-engineer": {
+        "bucket_ids": [
+          "fpe-public-training",
+          "fpe-local-private-holdout"
+        ],
+        "all_seed_tasks_covered": true,
+        "seed_task_ids": [
+          "A001",
+          "A002",
+          "A003",
+          "A004",
+          "B001",
+          "B002",
+          "B003",
+          "B004",
+          "C001",
+          "C002",
+          "C003",
+          "C004",
+          "D001",
+          "D002",
+          "D003",
+          "D004",
+          "E001",
+          "E002",
+          "E003",
+          "E004"
+        ],
+        "seed_ref": "data/curriculum/frontend-product-engineer-public-seed-registry.v1.json",
+        "intake_bucket_ids": []
+      }
+    },
+    "notes": "Every scenario/task across both roles maps to exactly one bucket. The Frontend Apprentice uses scenario_ids (t1-t7, h1-h3) plus four explicit source-intake buckets covering promoted, curated, manual-curation-only, and blocked teacher-only seams. The Frontend/Product Engineer uses acceptance_test_ids (A001-E004).",
+    "total_intake_buckets": 4,
+    "promoted_intake_buckets": 1,
+    "curated_intake_buckets": 1,
+    "manual_curation_only_intake_buckets": 2,
+    "blocked_teacher_only_intake_buckets": 1
+  },
+  "intake_buckets": [
+    {
+      "id": "frontend-apprentice-source-intake-promoted",
+      "role_id": "role-frontend-apprentice",
+      "label": "Promoted public source-intake records (Frontend Apprentice)",
+      "status": "promoted",
+      "promotion_mode": "public_benchmark_family",
+      "manual_curation_only": false,
+      "intake_record_ids": [
+        "intake-playwright-regression"
+      ],
+      "promoted_family_ids": [
+        "rf.frontend-apprentice.public.playwright-regression"
+      ],
+      "promoted_episode_ids": [
+        "pbpv1-e13",
+        "pbpv1-e14"
+      ],
+      "pack_refs": [
+        "benchmarks/public-pack-v1/benchmark-pack.json"
+      ],
+      "registry_refs": [
+        "data/source-research/software-engineer-source-intake.v1.json",
+        "benchmarks/public-pack-v1/episode-family-registry.json",
+        "data/episode-registry/public-benchmark-pack-v1.json"
+      ],
+      "notes": "Represents RF-authored, public-safe families already promoted from tracked source intake into the Frontend Apprentice benchmark pack. Today this is the Playwright-backed family only."
+    },
+    {
+      "id": "frontend-apprentice-source-intake-curated",
+      "role_id": "role-frontend-apprentice",
+      "label": "Curated public-source candidates awaiting authored families (Frontend Apprentice)",
+      "status": "curated",
+      "promotion_mode": "public_candidate",
+      "manual_curation_only": false,
+      "intake_record_ids": [
+        "intake-google-eng-practices"
+      ],
+      "promoted_family_ids": [],
+      "promoted_episode_ids": [],
+      "pack_refs": [],
+      "registry_refs": [
+        "data/source-research/software-engineer-source-intake.v1.json"
+      ],
+      "notes": "Source is curated and public-safe to work from, but no RF-authored family is promoted yet. Promotion stays blocked until authored episodes, rubric, and provenance exist."
+    },
+    {
+      "id": "frontend-apprentice-source-intake-manual-curation-only",
+      "role_id": "role-frontend-apprentice",
+      "label": "Manual-curation-only source candidates (Frontend Apprentice)",
+      "status": "discovered",
+      "promotion_mode": "manual_curation_only",
+      "manual_curation_only": true,
+      "intake_record_ids": [
+        "intake-alpinejs-curation"
+      ],
+      "promoted_family_ids": [],
+      "promoted_episode_ids": [],
+      "pack_refs": [],
+      "registry_refs": [
+        "data/source-research/software-engineer-source-intake.v1.json"
+      ],
+      "notes": "Source is discovered only. Manual teacher rewrite is required before any RF-authored family can exist. Bulk import stays blocked."
+    },
+    {
+      "id": "frontend-apprentice-source-intake-blocked-teacher-only",
+      "role_id": "role-frontend-apprentice",
+      "label": "Blocked teacher-only holdout directions from source intake (Frontend Apprentice)",
+      "status": "blocked_teacher_only_holdout",
+      "promotion_mode": "teacher_only_manual_curation",
+      "manual_curation_only": true,
+      "intake_record_ids": [
+        "intake-swebench-teacher-holdout"
+      ],
+      "promoted_family_ids": [],
+      "promoted_episode_ids": [],
+      "pack_refs": [],
+      "registry_refs": [
+        "data/source-research/software-engineer-source-intake.v1.json",
+        "benchmarks/private-holdout-pack-template.json"
+      ],
+      "blocked_for": [
+        "benchmarks/public-pack-v1/benchmark-pack.json",
+        "benchmarks/public-pack-v1-fpe/benchmark-pack.json",
+        "student-visible curriculum",
+        "demo data"
+      ],
+      "notes": "Visible seam for teacher-only holdout direction only. Any future use requires manual selection, original RF authorship, and storage outside public packs."
+    }
+  ]
 }
