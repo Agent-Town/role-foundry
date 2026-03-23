@@ -136,6 +136,10 @@ def build_prompt(message: dict[str, Any], relationships: list[dict[str, Any]]) -
     ).strip() + "\n"
 
 
+def build_latest_only_prompt(message: dict[str, Any]) -> str:
+    return (message.get("content") or "").strip()
+
+
 def run_claude(*, prompt: str, workdir: Path, claude_agent: str, model: str | None, permission_mode: str, setting_sources: str, claude_home: str | None) -> subprocess.CompletedProcess[str]:
     claude = shutil.which("claude")
     if not claude:
@@ -155,7 +159,6 @@ def run_claude(*, prompt: str, workdir: Path, claude_agent: str, model: str | No
         setting_sources,
         "--add-dir",
         str(workdir.resolve()),
-        prompt,
     ]
     if model:
         cmd[1:1] = ["--model", model]
@@ -164,10 +167,16 @@ def run_claude(*, prompt: str, workdir: Path, claude_agent: str, model: str | No
     if claude_home:
         env["HOME"] = claude_home
 
+    # Claude Code 2.1.79 was observed to behave inconsistently when the prompt was
+    # passed as a positional argv value in --print mode: a contextual prompt could
+    # return exit 0 with empty stdout, and a simple fallback prompt could claim no
+    # prompt was provided. Supplying the prompt on stdin avoids that CLI edge and
+    # produced the real reply in the same environment.
     return subprocess.run(
         cmd,
         cwd=str(workdir),
         env=env,
+        input=prompt,
         capture_output=True,
         text=True,
         check=False,
@@ -194,6 +203,7 @@ def main() -> int:
     parser.add_argument("--workdir", default=".", help="Working directory Claude should operate in")
     parser.add_argument("--claude-home", default="", help="Optional alternate HOME for Claude Code")
     parser.add_argument("--artifacts-dir", default="artifacts/clawith-gateway", help="Artifact root for prompts/results (default: artifacts/clawith-gateway)")
+    parser.add_argument("--prompt-mode", choices=["contextual", "latest-only"], default="contextual", help="Claude prompt shape (default: contextual)")
     args = parser.parse_args()
 
     workdir = Path(args.workdir).expanduser().resolve()
@@ -226,7 +236,10 @@ def main() -> int:
         message_id = str(message.get("id"))
         msg_dir = run_root / f"{idx:02d}_{message_id}"
         write_json(msg_dir / "message.json", message)
-        prompt = build_prompt(message, relationships)
+        if args.prompt_mode == "latest-only":
+            prompt = build_latest_only_prompt(message)
+        else:
+            prompt = build_prompt(message, relationships)
         write_text(msg_dir / "prompt.txt", prompt)
 
         proc = run_claude(
@@ -241,14 +254,60 @@ def main() -> int:
         write_text(msg_dir / "claude.stdout.txt", proc.stdout)
         write_text(msg_dir / "claude.stderr.txt", proc.stderr)
 
+        execution_meta: dict[str, Any] = {
+            "prompt_mode": args.prompt_mode,
+            "claude_input_transport": "stdin",
+            "chosen_strategy": None,
+            "primary": {
+                "returncode": proc.returncode,
+                "stdout_bytes": len(proc.stdout.encode("utf-8")),
+                "stderr_bytes": len(proc.stderr.encode("utf-8")),
+            },
+        }
+
         if proc.returncode == 0 and proc.stdout.strip():
             result_text = proc.stdout.strip()
-        else:
+            execution_meta["chosen_strategy"] = f"{args.prompt_mode}_prompt"
+        elif args.prompt_mode == "latest-only":
             failures += 1
+            execution_meta["chosen_strategy"] = "executor_error"
             result_text = (
                 "[clawith-vibe-once executor error] Claude Code failed to produce a reply. "
-                f"exit={proc.returncode}. See local artifacts at {msg_dir}."
+                f"primary_exit={proc.returncode}. See local artifacts at {msg_dir}."
             )
+        else:
+            fallback_prompt = build_latest_only_prompt(message)
+            write_text(msg_dir / "prompt.latest_only.txt", fallback_prompt)
+            fallback_proc = run_claude(
+                prompt=fallback_prompt,
+                workdir=workdir,
+                claude_agent=args.claude_agent,
+                model=args.model or None,
+                permission_mode=args.permission_mode,
+                setting_sources=args.setting_sources,
+                claude_home=args.claude_home or None,
+            )
+            write_text(msg_dir / "claude.latest_only.stdout.txt", fallback_proc.stdout)
+            write_text(msg_dir / "claude.latest_only.stderr.txt", fallback_proc.stderr)
+            execution_meta["latest_only_fallback"] = {
+                "returncode": fallback_proc.returncode,
+                "stdout_bytes": len(fallback_proc.stdout.encode("utf-8")),
+                "stderr_bytes": len(fallback_proc.stderr.encode("utf-8")),
+            }
+
+            if fallback_proc.returncode == 0 and fallback_proc.stdout.strip():
+                result_text = fallback_proc.stdout.strip()
+                execution_meta["chosen_strategy"] = "latest_only_fallback"
+            else:
+                failures += 1
+                execution_meta["chosen_strategy"] = "executor_error"
+                result_text = (
+                    "[clawith-vibe-once executor error] Claude Code failed to produce a reply. "
+                    f"primary_exit={proc.returncode}; fallback_exit={fallback_proc.returncode}. "
+                    f"See local artifacts at {msg_dir}."
+                )
+
+        write_json(msg_dir / "execution.json", execution_meta)
 
         try:
             report = report_result(args.base_url, args.api_key, message_id, result_text)
