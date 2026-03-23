@@ -6,7 +6,14 @@
     "role_scope": "frontend-product-engineer",
     "family_registry": "benchmarks/public-pack-v1-fpe/episode-family-registry.json",
     "description": "Public-safe benchmark pack for the Frontend/Product Engineer 20-task curriculum. Every episode is student-visible and derived from Spec 014 public acceptance tests.",
-    "honesty_note": "This pack is valid for public training, iteration, regression checks, and alpha-loop consumption. It is not a sealed certification pack. No teacher-only families exist because no holdout framing has been disclosed.",
+    "honesty_note": "This pack is valid for public training, iteration, regression checks, and alpha-loop consumption. It is not a sealed certification pack. No teacher-only families exist because no holdout framing has been disclosed. All 20 episodes are benchmark-ready (packets, rubrics, provenance complete), but runtime readiness varies by phase — see readiness_by_phase below and per-family readiness in the family registry.",
+    "readiness_by_phase": {
+      "phase-1": {"benchmark_pack": true, "runtime_status": "complete"},
+      "phase-2": {"benchmark_pack": true, "runtime_status": "not_started"},
+      "phase-3": {"benchmark_pack": true, "runtime_status": "partial"},
+      "phase-4": {"benchmark_pack": true, "runtime_status": "not_started"},
+      "phase-5": {"benchmark_pack": true, "runtime_status": "not_started"}
+    },
     "generated_from": [
       "seed/frontend-product-engineer-role.v1.json",
       "data/curriculum/frontend-product-engineer-public-seed-registry.v1.json",
@@ -707,7 +714,7 @@
   "promotion_readiness": {
     "phase": "B",
     "status": "pass",
-    "summary": "FPE Public Benchmark Pack v1 is ready to promote as the repo's public-safe benchmark pack for the Frontend/Product Engineer curriculum. It is not a sealed certification pack.",
+    "summary": "FPE Public Benchmark Pack v1 is public-safe and alpha-consumable. All 20 episodes have complete packets, rubrics, and provenance. Runtime readiness varies: Phase 1 complete, Phase 3 partial, Phases 2/4/5 packet-defined only (runtime not yet live). This is not a sealed certification pack.",
     "ready_for": [
       "public autoresearch loops",
       "public regression checks",
@@ -715,7 +722,8 @@
     ],
     "blocked_for": [
       "sealed certification",
-      "teacher-only adversarial evaluation"
+      "teacher-only adversarial evaluation",
+      "runtime-complete claims for phases 2/4/5"
     ],
     "metrics": {
       "B001": {

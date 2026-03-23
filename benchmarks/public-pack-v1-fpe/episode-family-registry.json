@@ -8,7 +8,7 @@
       "data/curriculum/frontend-product-engineer-public-seed-registry.v1.json",
       "specs/014-frontend-product-engineer-20-task-curriculum.md"
     ],
-    "honesty_note": "All families are public-safe and benchmark-ready. No teacher-only holdout families exist in this pack because the FPE curriculum has no disclosed holdout framing to block."
+    "honesty_note": "All families are public-safe and benchmark-ready. No teacher-only holdout families exist in this pack because the FPE curriculum has no disclosed holdout framing to block. Benchmark readiness means the task packets, rubrics, and provenance are complete — it does NOT mean every phase's runtime systems are live. See per-family readiness fields for the honest split."
   },
   "policy": {
     "public_pack_rule": "Only benchmark_ready + student_visible families may appear in fpe-public-benchmark-pack-v1.",
@@ -55,6 +55,13 @@
         "Task A003 success criteria are met",
         "Task A004 success criteria are met"
       ],
+      "readiness": {
+        "benchmark_pack": true,
+        "runtime_status": "complete",
+        "alpha_consumable": true,
+        "blocked_claims": [],
+        "evidence": "Contract surface fully implemented: role manifest, evaluation contract, task-packet schema, and seed registry are all checked in and versioned."
+      },
       "notes": "Public-safe: all 4 tasks derive from Spec 014 public acceptance tests only."
     },
     {
@@ -96,6 +103,13 @@
         "Task B003 success criteria are met",
         "Task B004 success criteria are met"
       ],
+      "readiness": {
+        "benchmark_pack": true,
+        "runtime_status": "not_started",
+        "alpha_consumable": true,
+        "blocked_claims": ["teacher operating system live", "authoring/promotion workflow end-to-end"],
+        "evidence": "Packets define the teacher OS tasks but no runtime authoring/promotion system is wired."
+      },
       "notes": "Public-safe: all 4 tasks derive from Spec 014 public acceptance tests only."
     },
     {
@@ -137,6 +151,13 @@
         "Task C003 success criteria are met",
         "Task C004 success criteria are met"
       ],
+      "readiness": {
+        "benchmark_pack": true,
+        "runtime_status": "partial",
+        "alpha_consumable": true,
+        "blocked_claims": ["live verifier execution"],
+        "evidence": "Autoresearch alpha receipts exist; Step C verifier-contract and verifier-gate honesty landed. Live verifier command execution still pending."
+      },
       "notes": "Public-safe: all 4 tasks derive from Spec 014 public acceptance tests only."
     },
     {
@@ -179,6 +200,13 @@
         "Task D003 success criteria are met",
         "Task D004 success criteria are met"
       ],
+      "readiness": {
+        "benchmark_pack": true,
+        "runtime_status": "not_started",
+        "alpha_consumable": true,
+        "blocked_claims": ["teacher review console", "promotion-gate enforcement", "private-holdout scoring live"],
+        "evidence": "Public scoring contract exists. Teacher review console and promotion-gate enforcement are not started."
+      },
       "notes": "Public-safe: all 4 tasks derive from Spec 014 public acceptance tests only."
     },
     {
@@ -221,6 +249,13 @@
         "Task E003 success criteria are met",
         "Task E004 success criteria are met"
       ],
+      "readiness": {
+        "benchmark_pack": true,
+        "runtime_status": "not_started",
+        "alpha_consumable": true,
+        "blocked_claims": ["generation lineage registry", "weekly cycle automation", "compounding loop live"],
+        "evidence": "Lineage and weekly-cycle packets exist but the operating loop is not live. Generation lineage is not started."
+      },
       "notes": "Public-safe: all 4 tasks derive from Spec 014 public acceptance tests only."
     }
   ]

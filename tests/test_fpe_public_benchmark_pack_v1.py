@@ -168,7 +168,7 @@ class FPEBenchmarkPackPhaseBTests(unittest.TestCase):
         readiness = self.pack["promotion_readiness"]
         self.assertEqual(readiness["phase"], "B")
         self.assertEqual(readiness["status"], "pass")
-        self.assertIn("public-safe benchmark pack", readiness["summary"].lower())
+        self.assertIn("public-safe", readiness["summary"].lower())
         self.assertIn("public autoresearch loops", readiness["ready_for"])
         self.assertIn("sealed certification", readiness["blocked_for"])
         self.assertEqual(
@@ -187,6 +187,84 @@ class FPEBenchmarkPackPhaseBTests(unittest.TestCase):
         """Every pack episode corresponds to a task in the seed registry."""
         for ep_id in self.pack_episodes:
             self.assertIn(ep_id, self.seed_tasks, f"{ep_id} not in seed registry")
+
+    # --------------------------------------------------------- Readiness honesty
+    def test_every_family_has_readiness_fields(self):
+        """Every family must declare machine-readable readiness dimensions."""
+        required_keys = {"benchmark_pack", "runtime_status", "alpha_consumable", "blocked_claims", "evidence"}
+        valid_runtime = {"complete", "partial", "not_started"}
+        for fam_id, fam in self.families.items():
+            self.assertIn("readiness", fam, f"{fam_id} missing readiness block")
+            r = fam["readiness"]
+            self.assertTrue(required_keys.issubset(r.keys()), f"{fam_id} readiness missing keys: {required_keys - set(r.keys())}")
+            self.assertIsInstance(r["benchmark_pack"], bool)
+            self.assertTrue(r["benchmark_pack"], f"{fam_id} is in the pack but benchmark_pack is False")
+            self.assertIn(r["runtime_status"], valid_runtime, f"{fam_id} has invalid runtime_status: {r['runtime_status']}")
+            self.assertIsInstance(r["alpha_consumable"], bool)
+            self.assertIsInstance(r["blocked_claims"], list)
+            self.assertIsInstance(r["evidence"], str)
+            self.assertGreater(len(r["evidence"]), 0, f"{fam_id} readiness evidence is empty")
+
+    def test_readiness_aligns_to_curriculum_operating_split(self):
+        """Readiness values must match the honest status from curriculum-operating-split.md."""
+        expected = {
+            "rf.fpe.public.phase-1": "complete",
+            "rf.fpe.public.phase-2": "not_started",
+            "rf.fpe.public.phase-3": "partial",
+            "rf.fpe.public.phase-4": "not_started",
+            "rf.fpe.public.phase-5": "not_started",
+        }
+        for fam_id, expected_status in expected.items():
+            actual = self.families[fam_id]["readiness"]["runtime_status"]
+            self.assertEqual(
+                actual, expected_status,
+                f"{fam_id}: runtime_status is '{actual}', expected '{expected_status}' per curriculum-operating-split.md"
+            )
+
+    def test_pack_meta_has_readiness_by_phase(self):
+        """benchmark-pack.json must carry a readiness_by_phase summary."""
+        self.assertIn("readiness_by_phase", self.pack["meta"])
+        rbp = self.pack["meta"]["readiness_by_phase"]
+        self.assertEqual(len(rbp), 5)
+        for phase_key, phase_r in rbp.items():
+            self.assertTrue(phase_r["benchmark_pack"])
+            self.assertIn(phase_r["runtime_status"], {"complete", "partial", "not_started"})
+
+    def test_no_runtime_complete_overclaim(self):
+        """Phases 2, 4, 5 must NOT claim runtime_status 'complete'."""
+        no_complete_phases = {"rf.fpe.public.phase-2", "rf.fpe.public.phase-4", "rf.fpe.public.phase-5"}
+        for fam_id in no_complete_phases:
+            self.assertNotEqual(
+                self.families[fam_id]["readiness"]["runtime_status"], "complete",
+                f"{fam_id} overclaims runtime complete — contradicts curriculum-operating-split.md"
+            )
+
+    def test_blocked_claims_non_empty_for_incomplete_phases(self):
+        """Families with runtime not complete must declare at least one blocked claim."""
+        for fam_id, fam in self.families.items():
+            r = fam["readiness"]
+            if r["runtime_status"] != "complete":
+                self.assertGreater(
+                    len(r["blocked_claims"]), 0,
+                    f"{fam_id} has runtime_status={r['runtime_status']} but no blocked_claims — must be explicit about what is missing"
+                )
+
+    def test_promotion_readiness_blocked_for_includes_runtime(self):
+        """promotion_readiness.blocked_for must mention runtime-incomplete phases."""
+        blocked = self.pack["promotion_readiness"]["blocked_for"]
+        blocked_joined = " ".join(blocked).lower()
+        self.assertTrue(
+            "runtime" in blocked_joined or "phases" in blocked_joined,
+            f"promotion_readiness.blocked_for should mention runtime-incomplete phases: {blocked}"
+        )
+
+    def test_honesty_note_mentions_runtime_distinction(self):
+        """The pack honesty_note must mention that benchmark_ready != runtime live."""
+        note = self.pack["meta"]["honesty_note"].lower()
+        self.assertTrue(
+            "runtime" in note,
+            "honesty_note must mention runtime readiness distinction"
+        )
 
     def test_role_consistency(self):
         """Pack, family registry, and role manifest agree on role identity."""
