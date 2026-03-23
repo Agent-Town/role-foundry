@@ -158,6 +158,7 @@ Using different model families for building and judging reduces correlated self-
 - `docs/runner-bridge.md` — bridge path, teacher evaluation contract, and explicit auth deferral
 - `docs/public-benchmark-pack-v1.md` — public-safe benchmark pack scope and blocked families
 - `docs/frontend-product-engineer-seed-curriculum.md` — public seed-task registry, packet schema, and audit commands for the frozen Frontend/Product Engineer role
+- `docs/curriculum-operating-split.md` — teacher vs student responsibilities, canonical contract surface, and honest implemented-vs-future status
 - `docs/conversation-log.md` — curated build log for the submission
 - `docs/agent-town-connection.md` — Agent Town relationship
 - `docs/synthesis-hackathon-ideation.md` — ideation and ranking
