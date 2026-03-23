@@ -3,11 +3,10 @@
 This module owns the *local* integration-artifact layer that Role Foundry
 writes after a run completes.  It:
 
-  1.  Hashes receipt/scorecard artifacts that already exist.
-  2.  Evaluates local guardrail checks against public/private artifacts.
-  3.  Drafts an ERC-8004 registration payload and agent0-sdk wiring plan
+  1.  Hashes stable receipt/scorecard artifacts that already exist.
+  2.  Drafts an ERC-8004 registration payload and agent0-sdk wiring plan
       targeting **Base** (Sepolia for review, mainnet for submission).
-  4.  Writes a completion template that stays in ``awaiting_wallet_confirmation``
+  3.  Writes a completion template that stays in ``awaiting_wallet_confirmation``
       until a real confirmed tx fills every required field.
 
 Nothing in this module fakes a wallet session, onchain tx, or minting receipt.
@@ -25,21 +24,6 @@ from typing import Any
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
-
-SEALED_TEXT_KEYS = {"holdout_prompt", "teacher_prompt", "scoring_rubric"}
-
-PUBLIC_SCAN_PATHS = (
-    "request.json",
-    "artifact-bundle.json",
-    "result.json",
-    "transcript.ndjson",
-    "receipts/manifest.json",
-    "receipts/candidate.json",
-    "receipts/baseline.json",
-    "receipts/evaluation.json",
-    "receipts/evidence-index.json",
-    "receipts/summary.md",
-)
 
 # Base chain config — env-driven, no hardcoded registry/subgraph fakes.
 BASE_SEPOLIA_CHAIN_ID = 84532
@@ -77,7 +61,7 @@ def _resolve_chain_env(chain_key: str) -> dict[str, Any]:
         "rpc_url_env": cfg["rpc_url_env"],
         "registry_env": cfg["registry_env"],
         "subgraph_env": cfg["subgraph_env"],
-        "wired": bool(os.environ.get(cfg["rpc_url_env"])),
+        "wired": bool(os.environ.get(cfg["rpc_url_env"]) and os.environ.get(cfg["registry_env"])),
     }
 
 
@@ -97,7 +81,6 @@ def write_product_integrations(
 
     This layer stays product-owned and local-first:
     - hashes receipt/scorecard artifacts that already exist
-    - evaluates local guardrail checks against public/private artifacts
     - drafts an ERC-8004 registration payload for Base via agent0-sdk
     - writes a completion template without faking activation
     """
@@ -106,8 +89,6 @@ def write_product_integrations(
     integrations_dir = run_dir / "integrations"
     integrations_dir.mkdir(parents=True, exist_ok=True)
 
-    request_public = _load_json(run_dir / "request.json")
-    request_private = _load_json(run_dir / "request.private.json")
     artifact_bundle_path = run_dir / "artifact-bundle.json"
     artifact_bundle = _load_json(artifact_bundle_path)
 
@@ -146,19 +127,8 @@ def write_product_integrations(
     agent0_adapter_path = integrations_dir / "agent0-base-adapter.json"
     agent0_adapter_path.write_text(json.dumps(agent0_adapter, indent=2))
 
-    # --- Locus guardrails ---
-    locus_guardrails = _build_locus_guardrails(
-        run_dir=run_dir,
-        request_public=request_public,
-        request_private=request_private,
-        result=result,
-        verifiable_receipts=verifiable_receipts,
-        erc8004_status="draft_ready",
-    )
-
     status_by_integration = {
         "verifiable_receipts": verifiable_receipts["status"],
-        "locus_guardrails": locus_guardrails["status"],
         "erc8004_identity": "draft_ready",
         "agent0_base_adapter": "staged" if not chain_env["wired"] else "ready",
     }
@@ -173,7 +143,6 @@ def write_product_integrations(
         "status_by_integration": status_by_integration,
         "completion_metrics": completion_metrics,
         "verifiable_receipts": verifiable_receipts,
-        "locus_guardrails": locus_guardrails,
         "erc8004_identity": {
             "status": "draft_ready",
             "recommended_path": "agent0-sdk",
@@ -193,13 +162,13 @@ def write_product_integrations(
             "blocking_requirements": [
                 "A human-approved EIP-1193 wallet session is required for any write.",
                 f"A Base RPC URL must be set via {chain_env['rpc_url_env']}.",
+                f"An explicit identity registry address must be set via {chain_env['registry_env']}.",
                 "No onchain claim is allowed until the completion record includes chain_id, registry, agent_id, and tx_hash.",
             ],
         },
         "demo_claims": demo_claims,
         "recommended_implementation_order": [
             "verifiable_receipts",
-            "locus_guardrails",
             "erc8004_identity",
             "agent0_base_adapter",
         ],
@@ -261,11 +230,13 @@ def _build_verifiable_receipts(run_dir: Path, result: dict[str, Any]) -> dict[st
     evidence_index_path = run_dir / "receipts" / "evidence-index.json"
     summary_path = run_dir / "receipts" / "summary.md"
 
+    # Only hash artifacts that are stable at this point.  artifact-bundle.json
+    # and result.json are mutated later (integration_bundle patched in), so
+    # including them would produce stale hashes.
     public_artifacts: dict[str, dict[str, Any]] = {}
     for relative in (
         "request.json",
-        "artifact-bundle.json",
-        "result.json",
+        "transcript.ndjson",
         "receipts/manifest.json",
         "receipts/evidence-index.json",
         "receipts/summary.md",
@@ -459,62 +430,10 @@ def _build_agent0_base_adapter_contract(
         "blocking_requirements": [
             "agent0-sdk must be available (npm or vendored ESM bundle).",
             "An EIP-6963/EIP-1193 compatible wallet must be present in the browser.",
-            f"RPC URL for chain {chain_env['chain_id']} must be configured.",
+            f"RPC URL for chain {chain_env['chain_id']} must be configured via {chain_env['rpc_url_env']}.",
+            f"Identity registry address must be configured via {chain_env['registry_env']} (agent0-sdk does not reliably default for Base).",
             "Human wallet approval is required before any onchain write.",
         ],
-    }
-
-
-def _build_locus_guardrails(
-    *,
-    run_dir: Path,
-    request_public: dict[str, Any],
-    request_private: dict[str, Any],
-    result: dict[str, Any],
-    verifiable_receipts: dict[str, Any],
-    erc8004_status: str,
-) -> dict[str, Any]:
-    sealed_texts = sorted(_extract_sealed_texts(request_private))
-    leak_matches = _scan_public_artifacts_for_sealed_texts(run_dir, sealed_texts)
-    scorecard_hash = verifiable_receipts.get("scorecard_hash") if isinstance(verifiable_receipts.get("scorecard_hash"), dict) else None
-
-    checks = [
-        {
-            "id": "sealed_holdout_redaction",
-            "label": "Sealed holdout text stays out of public artifacts",
-            "passed": len(leak_matches) == 0,
-            "detail": "No sealed prompt leakage detected." if not leak_matches else f"Leak detected in {len(leak_matches)} public artifact(s).",
-            "evidence": leak_matches,
-        },
-        {
-            "id": "receipt_bundle_complete",
-            "label": "Receipt bundle exists for independent inspection",
-            "passed": verifiable_receipts.get("status") == "demo_usable",
-            "detail": verifiable_receipts.get("status"),
-        },
-        {
-            "id": "scorecard_claim_is_hashed",
-            "label": "Scorecard claim is anchored to a content hash",
-            "passed": bool(scorecard_hash),
-            "detail": scorecard_hash.get("sha256") if scorecard_hash else "missing",
-        },
-        {
-            "id": "erc8004_claim_is_staged",
-            "label": "ERC-8004 claim stays in draft state until a confirmed tx exists",
-            "passed": erc8004_status == "draft_ready",
-            "detail": erc8004_status,
-        },
-    ]
-
-    status = "demo_usable" if all(check["passed"] for check in checks) else "blocked"
-    return {
-        "status": status,
-        "provider": "Locus",
-        "mode": "local-contract",
-        "policy_id": "role-foundry.locus-guardrails.v1",
-        "checks": checks,
-        "sealed_text_count": len(sealed_texts),
-        "public_artifact_count": len([p for p in PUBLIC_SCAN_PATHS if (run_dir / p).exists()]),
     }
 
 
@@ -542,11 +461,6 @@ def _build_demo_claims(
     else:
         blocked.append("Role Foundry has a fully verifiable receipt + scorecard bundle for every run.")
 
-    if status_by_integration.get("locus_guardrails") == "demo_usable":
-        allowed.append("Role Foundry runs a local Locus-style guardrail contract for redaction, receipt completeness, and staged external claims.")
-    else:
-        blocked.append("Locus guardrails are fully enforced and passing on this run.")
-
     # ERC-8004 / Base claims
     chain_label = chain_env["label"]
     if status_by_integration.get("erc8004_identity") == "draft_ready":
@@ -562,7 +476,6 @@ def _build_demo_claims(
     else:
         allowed.append(f"The agent0-sdk Base adapter contract is staged but the RPC endpoint for {chain_label} is not yet configured.")
 
-    blocked.append("Locus hosted enforcement or partner-managed guardrail SaaS is wired in this repo.")
     return {"allowed": allowed, "blocked": blocked}
 
 
@@ -604,7 +517,6 @@ def _build_summary_markdown(bundle: dict[str, Any]) -> str:
         "## Status by integration",
         "",
         f"- Verifiable receipts / scorecards: `{bundle.get('status_by_integration', {}).get('verifiable_receipts')}`",
-        f"- Locus guardrails: `{bundle.get('status_by_integration', {}).get('locus_guardrails')}`",
         f"- ERC-8004 identity: `{bundle.get('status_by_integration', {}).get('erc8004_identity')}`",
         f"- agent0 Base adapter: `{bundle.get('status_by_integration', {}).get('agent0_base_adapter')}`",
         "",
@@ -630,36 +542,6 @@ def _build_summary_markdown(bundle: dict[str, Any]) -> str:
 # ---------------------------------------------------------------------------
 # Utility helpers
 # ---------------------------------------------------------------------------
-
-
-def _extract_sealed_texts(value: Any, key_hint: str | None = None) -> set[str]:
-    results: set[str] = set()
-    if isinstance(value, dict):
-        for key, item in value.items():
-            results.update(_extract_sealed_texts(item, key_hint=str(key)))
-        return results
-    if isinstance(value, list):
-        for item in value:
-            results.update(_extract_sealed_texts(item, key_hint=key_hint))
-        return results
-    if isinstance(value, str) and key_hint in SEALED_TEXT_KEYS:
-        text = value.strip()
-        if text:
-            results.add(text)
-    return results
-
-
-def _scan_public_artifacts_for_sealed_texts(run_dir: Path, sealed_texts: list[str]) -> list[dict[str, Any]]:
-    matches: list[dict[str, Any]] = []
-    for relative in PUBLIC_SCAN_PATHS:
-        path = run_dir / relative
-        if not path.exists() or not path.is_file():
-            continue
-        text = path.read_text(errors="replace")
-        hit_count = sum(1 for sealed in sealed_texts if sealed and sealed in text)
-        if hit_count:
-            matches.append({"path": relative, "match_count": hit_count})
-    return matches
 
 
 def _load_json(path: Path) -> dict[str, Any]:

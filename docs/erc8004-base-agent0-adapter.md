@@ -15,7 +15,9 @@ A thin, Role Foundry-owned adapter that wires ERC-8004 agent registration on **B
 | Base Sepolia | 84532 | Review / demo default | `BASE_SEPOLIA_RPC_URL` |
 | Base Mainnet | 8453 | Submission target | `BASE_MAINNET_RPC_URL` |
 
-Registry and subgraph overrides: `BASE_SEPOLIA_REGISTRY`, `BASE_SEPOLIA_SUBGRAPH_URL` (and mainnet equivalents). These are optional — agent0-sdk provides defaults.
+Registry address: `BASE_SEPOLIA_REGISTRY` (and `BASE_MAINNET_REGISTRY`) — **required** for live minting. The local agent0-ts checkout does not reliably ship Base defaults.
+
+Subgraph URL: `BASE_SEPOLIA_SUBGRAPH_URL` (and mainnet) — optional.
 
 ## Browser adapter usage
 
@@ -38,11 +40,12 @@ if (!providers.ok) throw new Error(providers.error);
 const wallet = await adapter.connectWallet(providers.data[0].provider, agent0sdk);
 if (!wallet.ok) throw new Error(wallet.error);
 
-// Init SDK
+// Init SDK (registry is required — agent0-sdk does not default for Base)
 const sdk = adapter.initSDK(agent0sdk, {
   chainId: 84532,
   rpcUrl: 'https://sepolia.base.org',
   walletProvider: wallet.data.provider,
+  registryOverrides: { '84532': '0xYourRegistryAddress' },
 });
 if (!sdk.ok) throw new Error(sdk.error);
 
@@ -78,15 +81,17 @@ summary = write_product_integrations(
 
 ## What is real now
 
-- Registration draft generation targeting Base.
+- Registration draft generation targeting Base, wired into `RunBridge.run()` (runs after every CLI invocation).
 - Completion template with `awaiting_wallet_confirmation` status.
 - Browser adapter module with the full mint flow shape.
 - Readiness diagnostic that reports exactly what is wired vs pending.
+- Verifiable receipt hashing of stable artifacts only (request.json, transcript, receipts/*).
+- Explicit Base RPC + registry config requirement (no reliance on agent0-sdk defaults).
 
 ## What is pending
 
 - agent0-sdk availability (npm install or vendored bundle).
-- Configured Base RPC URL in the environment.
+- Configured Base RPC URL + identity registry address in the environment.
 - An actual wallet-approved mint on Base Sepolia or Mainnet.
 - IPFS registration (registerIPFS) as an alternative to registerHTTP.
 
