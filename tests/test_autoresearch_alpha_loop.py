@@ -151,6 +151,55 @@ class AutoresearchAlphaLoopContractTests(unittest.TestCase):
             self.assertTrue(coverage["candidate-teacher-eval"]["checks"]["teacher_verdict_present"])
             self.assertTrue(coverage["candidate-teacher-eval"]["checks"]["receipts/baseline.json"])
 
+            for stage_key in ("baseline-eval", "candidate-student", "candidate-teacher-eval"):
+                stage_checks = coverage[stage_key]["checks"]
+                self.assertTrue(
+                    stage_checks["receipts/evidence-index.json"],
+                    f"{stage_key} missing receipts/evidence-index.json",
+                )
+                self.assertTrue(
+                    stage_checks["receipts/summary.md"],
+                    f"{stage_key} missing receipts/summary.md",
+                )
+                self.assertTrue(
+                    stage_checks["bundle_provenance_has_manifest"],
+                    f"{stage_key} artifact bundle missing manifest provenance pointer",
+                )
+                self.assertTrue(
+                    stage_checks["bundle_provenance_has_evidence_index"],
+                    f"{stage_key} artifact bundle missing evidence-index provenance pointer",
+                )
+                self.assertTrue(
+                    stage_checks["bundle_provenance_has_summary"],
+                    f"{stage_key} artifact bundle missing summary provenance pointer",
+                )
+                self.assertTrue(
+                    stage_checks["result_provenance_has_manifest"],
+                    f"{stage_key} result missing manifest provenance pointer",
+                )
+                self.assertTrue(
+                    stage_checks["result_provenance_has_evidence_index"],
+                    f"{stage_key} result missing evidence-index provenance pointer",
+                )
+                self.assertTrue(
+                    stage_checks["result_provenance_has_summary"],
+                    f"{stage_key} result missing summary provenance pointer",
+                )
+
+                stage_export = receipt["stages"][stage_key]["export"]
+                self.assertIn("receipt_completeness", stage_export)
+                rc = stage_export["receipt_completeness"]
+                self.assertTrue(
+                    rc["complete"],
+                    f"{stage_key} receipt_completeness not complete: {rc}",
+                )
+                self.assertTrue(rc["receipt_files"]["manifest.json"])
+                self.assertTrue(rc["receipt_files"]["evidence-index.json"])
+                self.assertTrue(rc["receipt_files"]["summary.md"])
+                self.assertTrue(rc["receipt_files"]["candidate.json"])
+                self.assertTrue(rc["provenance_pointers"]["bundle_provenance_has_manifest"])
+                self.assertTrue(rc["provenance_pointers"]["result_provenance_has_manifest"])
+
             injected_request = json.loads(
                 (artifacts_root / "run-eval-002" / "request.private.json").read_text()
             )
