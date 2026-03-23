@@ -45,7 +45,7 @@
       "curated_on": "2026-03-23",
       "promoted_on": "2026-03-23",
       "discovery_notes": "Google's code review guides are public, well-licensed (CC BY 3.0), and directly relevant to the apprentice's need for diff-critique and review-comment discipline.",
-      "curation_notes": "Suitable for a future code-review-discipline family. Episodes should be RF-authored, converting Google's prose guidance into task-shaped scenarios grounded in RF diffs. Not yet promoted because no episodes are authored yet.",
+      "curation_notes": "Curation direction was to turn this into an RF-authored code-review-discipline family grounded in RF diffs. The eventual promotion kept that shape: original RF-authored episodes and rubric, no copied Google prose.",
       "promotion_notes": "Promoted as family rf.frontend-apprentice.public.code-review-discipline in public-benchmark-pack-v1. Two episodes grounded in existing RF surfaces (scenarios.html, run.html). Rubric authored fresh for RF context — no Google prose copied verbatim.",
       "promoted_family_id": "rf.frontend-apprentice.public.code-review-discipline",
       "promoted_episode_ids": ["pbpv1-e15", "pbpv1-e16"],

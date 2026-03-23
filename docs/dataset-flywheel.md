@@ -15,7 +15,7 @@ source-intake buckets.
 
 | Role | Bucket | Status | Families |
 |------|--------|--------|----------|
-| Frontend Apprentice | `public-training` | active | 7 |
+| Frontend Apprentice | `public-training` | active | 8 |
 | Frontend Apprentice | `blocked-teacher-only` | blocked_pending_rewrite | 3 |
 | Frontend Apprentice | `local-private-holdout` | local_only | 0 committed |
 | Frontend/Product Engineer | `fpe-public-training` | active | 5 |
@@ -25,8 +25,8 @@ source-intake buckets.
 
 | Bucket | Status | Promotion mode | Notes |
 |--------|--------|----------------|-------|
-| `frontend-apprentice-source-intake-promoted` | promoted | `public_benchmark_family` | Playwright-backed family already promoted |
-| `frontend-apprentice-source-intake-curated` | curated | `public_candidate` | Google Eng Practices is curated, not yet authored/promoted |
+| `frontend-apprentice-source-intake-promoted` | promoted | `public_benchmark_family` | Playwright-backed and Google Eng Practices-backed families are promoted |
+| `frontend-apprentice-source-intake-curated` | curated | `public_candidate` | Currently empty; no curated-but-unpromoted public intake seams remain |
 | `frontend-apprentice-source-intake-manual-curation-only` | discovered | `manual_curation_only` | Alpine.js remains manual-rewrite-only |
 | `frontend-apprentice-source-intake-blocked-teacher-only` | blocked_teacher_only_holdout | `teacher_only_manual_curation` | SWE-bench remains a teacher-only holdout direction |
 
@@ -51,8 +51,9 @@ Candidate intake seams must also have explicit status + promotion mode.
 - Both family registries point back to the shared promotion policy surface
 
 Benchmark-ready families satisfy all base criteria. Blocked families have at
-least one false criterion and explicit rewrite requirements. Curated/manual
-source-intake seams are explicit instead of prose-only.
+least one false criterion and explicit rewrite requirements. Manual-curation
+and teacher-only source-intake seams are explicit instead of prose-only, and
+there is no longer a curated-but-unpromoted public intake seam.
 
 ## G003 — Holdout promotion safety
 
@@ -93,8 +94,9 @@ None for G001–G004. The current contract passes honestly.
 - No sealed teacher pack is claimed or invented
 - Local private holdouts remain gitignored and local-only
 - h1/h2/h3 remain blocked pending genuine rewrite
-- Curated/manual source-intake seams still require actual RF-authored episode
-  work before they become promotable families
+- Manual-curation-only source-intake seams still require actual RF-authored
+  episode work before they become promotable public families
+- Teacher-only holdout seams remain blocked from any public promotion path
 
 ## Audit commands
 
