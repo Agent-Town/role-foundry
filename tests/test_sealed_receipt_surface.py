@@ -38,6 +38,7 @@ class SealedReceiptSurfaceSpecTests(unittest.TestCase):
             "execution_backend",
             "private_manifest_fingerprint",
             "pre_run_manifest_commitment",
+            "pre_run_manifest_attestation",
             "local operator correlation only",
         ]:
             self.assertIn(required, text, f"spec missing required content: {required}")
@@ -121,6 +122,7 @@ class SealedReceiptSurfacePublicRegressionTests(unittest.TestCase):
             "hardware_attestation_or_enclave",
             "external_audit",
             "pre_run_manifest_commitment",
+            "pre_run_manifest_attestation",
         ]
         for entry in required_entries:
             self.assertIn(entry, checklist, f"missing checklist entry: {entry}")
@@ -138,6 +140,7 @@ class SealedReceiptSurfacePublicRegressionTests(unittest.TestCase):
             "hardware_attestation_or_enclave",
             "external_audit",
             "pre_run_manifest_commitment",
+            "pre_run_manifest_attestation",
         ]
         for entry in must_be_false:
             self.assertFalse(
@@ -215,6 +218,7 @@ class SealedReceiptSurfacePublicRegressionTests(unittest.TestCase):
         sr = self.receipt["sealing_receipt"]
         if sr["status"] == "public_regression_alpha":
             self.assertIsNone(sr["pre_run_manifest_commitment"])
+            self.assertIsNone(sr["pre_run_manifest_attestation"])
             self.assertNotIn("pre_run_manifest_commitment", sr["linked_receipt_paths"])
 
     def test_integrity_gate_still_blocks_sealed_eval(self):
@@ -367,6 +371,7 @@ class PreRunManifestCommitmentUnitTests(unittest.TestCase):
             self.assertEqual(result["artifact_path"], "pre-run-manifest-commitment.json")
             self.assertEqual(result["linked_receipt_paths"]["alpha_receipt"], "autoresearch-alpha.json")
             self.assertEqual(result["linked_receipt_paths"]["alpha_request_copy"], "autoresearch-alpha.request.json")
+            self.assertIsNone(result["pre_run_manifest_attestation"])
             self.assertIn("not independently published", result["honesty_note"])
             self.assertTrue(result["recorded_at"].endswith("Z"))
 
@@ -380,6 +385,68 @@ class PreRunManifestCommitmentUnitTests(unittest.TestCase):
             canonical = json.dumps(mock_manifest, sort_keys=True, separators=(",", ":"))
             expected = hashlib.sha256(canonical.encode()).hexdigest()
             self.assertEqual(result["manifest_hash"]["hex_digest"], expected)
+
+    def test_commitment_preserves_public_safe_attestation_metadata(self):
+        from runner_bridge.autoresearch_alpha import _write_pre_run_manifest_commitment
+
+        mock_manifest = {
+            "meta": {"id": "test-pack", "visibility": "teacher_only", "public_repo_safe": False},
+            "episodes": [{"id": "e1", "family_id": "f1", "title": "Test"}],
+        }
+        canonical = json.dumps(mock_manifest, sort_keys=True, separators=(",", ":"))
+        expected = hashlib.sha256(canonical.encode()).hexdigest()
+        mock_pack = {
+            "manifest": mock_manifest,
+            "meta": mock_manifest["meta"],
+            "episodes_by_id": {},
+            "episode_ids": [],
+            "family_ids": [],
+        }
+        attestation = {
+            "attestation_type": "third_party_witness",
+            "attestor": {
+                "display_name": "Example Witness Co",
+                "role": "holdout witness",
+                "uri": "https://example.test/witnesses/example-witness-co",
+            },
+            "reference": {
+                "kind": "url",
+                "value": "https://example.test/attestations/test-pack-001",
+            },
+            "attested_at": "2026-03-24T00:00:00Z",
+            "attested_manifest_hash": {
+                "algorithm": "sha256",
+                "hex_digest": expected,
+            },
+            "public_note": "Recorded as a future tamper-evidence seam only.",
+        }
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            result = _write_pre_run_manifest_commitment(
+                integrity_gate_mode="local_private_holdout",
+                private_holdout_pack=mock_pack,
+                artifacts_root=Path(tmpdir),
+                sequence_id="test-seq",
+                pre_run_manifest_attestation=attestation,
+            )
+
+            self.assertIsNotNone(result)
+            recorded = result["pre_run_manifest_attestation"]
+            self.assertEqual(recorded["status"], "metadata_reference_only")
+            self.assertEqual(recorded["attestation_type"], "third_party_witness")
+            self.assertEqual(recorded["attestor"]["display_name"], "Example Witness Co")
+            self.assertEqual(recorded["attestor"]["role"], "holdout witness")
+            self.assertEqual(recorded["reference"]["kind"], "url")
+            self.assertEqual(
+                recorded["reference"]["value"],
+                "https://example.test/attestations/test-pack-001",
+            )
+            self.assertEqual(recorded["attested_manifest_hash"]["hex_digest"], expected)
+            self.assertTrue(recorded["attested_manifest_hash"]["matches_local_manifest_hash"])
+            self.assertEqual(recorded["verification"]["status"], "not_verified_by_role_foundry")
+            self.assertIn("does not verify witness identity", recorded["verification"]["reason"])
+            self.assertIn("does not by itself prove", recorded["honesty_note"])
+            self.assertEqual(recorded["public_note"], "Recorded as a future tamper-evidence seam only.")
 
     def test_no_commitment_without_local_private_holdout_mode(self):
         from runner_bridge.autoresearch_alpha import _write_pre_run_manifest_commitment
@@ -444,7 +511,64 @@ class PreRunManifestCommitmentUnitTests(unittest.TestCase):
                 sr["pre_run_manifest_commitment"]["manifest_hash"]["hex_digest"],
                 sr["private_manifest_fingerprint"]["hex_digest"],
             )
+            self.assertIsNone(sr["pre_run_manifest_attestation"])
             self.assertTrue(sr["operator_checklist"]["pre_run_manifest_commitment"]["present"])
+            self.assertFalse(sr["operator_checklist"]["pre_run_manifest_attestation"]["present"])
+
+    def test_sealing_receipt_threads_attestation_without_unlocking_claims(self):
+        from runner_bridge.autoresearch_alpha import (
+            _build_sealing_receipt,
+            _write_pre_run_manifest_commitment,
+        )
+
+        mock_manifest = {
+            "meta": {"id": "test", "visibility": "teacher_only", "public_repo_safe": False},
+            "episodes": [{"id": "e1", "family_id": "f1", "title": "Test"}],
+        }
+        canonical = json.dumps(mock_manifest, sort_keys=True, separators=(",", ":"))
+        expected = hashlib.sha256(canonical.encode()).hexdigest()
+        mock_pack = {
+            "manifest": mock_manifest,
+            "meta": mock_manifest["meta"],
+            "episodes_by_id": {},
+            "episode_ids": [],
+            "family_ids": [],
+        }
+        attestation = {
+            "attestation_type": "third_party_signature",
+            "attestor": {"display_name": "Example Signer"},
+            "reference": {"kind": "opaque_id", "value": "signing-service:attestation:test-001"},
+            "attested_manifest_hash": {"algorithm": "sha256", "hex_digest": expected},
+        }
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            artifacts_root = Path(tmpdir)
+            commitment = _write_pre_run_manifest_commitment(
+                integrity_gate_mode="local_private_holdout",
+                private_holdout_pack=mock_pack,
+                artifacts_root=artifacts_root,
+                sequence_id="test",
+                pre_run_manifest_attestation=attestation,
+            )
+            sr = _build_sealing_receipt(
+                integrity_gate={"status": "pass", "mode": "local_private_holdout", "summary": "test"},
+                private_holdout_pack=mock_pack,
+                artifacts_root=artifacts_root,
+                pre_run_commitment=commitment,
+            )
+
+            self.assertEqual(
+                sr["pre_run_manifest_attestation"],
+                commitment["pre_run_manifest_attestation"],
+            )
+            self.assertTrue(sr["operator_checklist"]["pre_run_manifest_attestation"]["present"])
+            self.assertIn(
+                "does not verify witness identity",
+                sr["operator_checklist"]["pre_run_manifest_attestation"]["reason"],
+            )
+            for prereq in sr["stronger_claim_prerequisites"]:
+                self.assertFalse(prereq["met"])
+            self.assertIn("reference-only", sr["honesty_note"])
 
 
 class ReadmeHonestyBoundaryTests(unittest.TestCase):
@@ -458,6 +582,7 @@ class ReadmeHonestyBoundaryTests(unittest.TestCase):
     def test_readme_mentions_local_pre_run_commitment(self):
         text = (ROOT / "README.md").read_text()
         self.assertIn("pre_run_manifest_commitment", text)
+        self.assertIn("pre_run_manifest_attestation", text)
         self.assertIn("pre-run-manifest-commitment.json", text)
         self.assertIn("external publication", text)
         self.assertIn("third-party witnessing", text)

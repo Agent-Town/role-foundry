@@ -187,9 +187,12 @@ What it carries:
 - `execution_backend` — backend provenance summary across the alpha stages, including backend id / mode, per-stage backend ids, optional `execution_backend_contract`, and summarized `execution_honesty`; this is **claim-boundary evidence only**, not proof of live execution or isolation
 - `private_manifest_fingerprint` — if a private holdout manifest was loaded, a SHA-256 of its canonical JSON bytes labeled as **local operator correlation only** (not independent tamper-proofing)
 - `pre_run_manifest_commitment` — when the run actually uses the local private-holdout lane, a local-only summary of the `pre-run-manifest-commitment.json` artifact written before stage execution, including the canonical manifest hash, timestamp, sequence linkage, and honesty note
+- `pre_run_manifest_attestation` — optional public-safe metadata/reference for a third-party witness statement or manifest-signing artifact tied to the pre-run commitment; preserved when supplied, absent by default
 - `linked_receipt_paths` — relative paths to the alpha receipt, request copy, and (when present) the pre-run commitment artifact
 
 On a local private-holdout run, `runner_bridge.autoresearch_alpha` writes `pre-run-manifest-commitment.json` **before** stage execution begins. That improves local operator auditability and later correlation, but it is still **not** external publication, third-party witnessing, signing, or tamper-proofing.
+
+If the local request also supplies `pre_run_manifest_attestation`, the alpha loop preserves only a public-safe reference block: attestation type, attestor label, reference pointer, attested manifest hash, optional public note, and whether that supplied hash matches the local manifest hash. That is an honest seam for future stronger tamper-evidence work, but it is still **reference metadata only** — Role Foundry does not verify witness identity, signature validity, publication timing, or independence, and the stronger claim prerequisites remain unmet.
 
 **Unmet prerequisites for stronger claims:**
 

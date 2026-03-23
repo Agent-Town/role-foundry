@@ -1,3 +1,4 @@
+import hashlib
 import json
 import subprocess
 import sys
@@ -341,11 +342,32 @@ class AutoresearchAlphaLoopContractTests(unittest.TestCase):
                 ],
             }
             manifest_path.write_text(json.dumps(manifest, indent=2))
+            expected_manifest_hash = hashlib.sha256(
+                json.dumps(manifest, sort_keys=True, separators=(",", ":")).encode()
+            ).hexdigest()
 
             payload = self._example_payload_with_absolute_paths()
             payload["integrity_policy"]["require_sealed_holdout"] = True
             payload["private_holdout_manifest"] = str(manifest_path)
             payload["sequence_id"] = "frontend-apprentice-local-sealed-alpha-v1:autoresearch-alpha"
+            payload["pre_run_manifest_attestation"] = {
+                "attestation_type": "third_party_witness",
+                "attestor": {
+                    "display_name": "Example Witness Co",
+                    "role": "holdout witness",
+                    "uri": "https://example.test/witnesses/example-witness-co",
+                },
+                "reference": {
+                    "kind": "url",
+                    "value": "https://example.test/attestations/private-holdout-pack-vtest",
+                },
+                "attested_at": "2026-03-24T00:00:00Z",
+                "attested_manifest_hash": {
+                    "algorithm": "sha256",
+                    "hex_digest": expected_manifest_hash,
+                },
+                "public_note": "Recorded as an optional witness seam only.",
+            }
 
             baseline_eval = payload["stages"]["baseline-eval"]["request"]["teacher_evaluation"]
             baseline_eval["student_prompt_summary"] = "Practice the public curriculum only. Fresh teacher-only holdouts stay local."
@@ -534,7 +556,12 @@ class AutoresearchAlphaLoopContractTests(unittest.TestCase):
                 checklist["pre_run_manifest_commitment"]["present"],
                 "pre_run_manifest_commitment should be True when a private holdout manifest is loaded",
             )
+            self.assertTrue(
+                checklist["pre_run_manifest_attestation"]["present"],
+                "pre_run_manifest_attestation should be True when metadata is supplied",
+            )
             self.assertIn("not independently published", checklist["pre_run_manifest_commitment"]["reason"])
+            self.assertIn("does not verify witness identity", checklist["pre_run_manifest_attestation"]["reason"])
             for must_be_false in [
                 "independent_executor_sandbox",
                 "third_party_holdout_auditor",
@@ -563,6 +590,23 @@ class AutoresearchAlphaLoopContractTests(unittest.TestCase):
             )
             self.assertIn("not independently published", prmc["honesty_note"])
             self.assertTrue(prmc["recorded_at"].endswith("Z"))
+
+            attestation = sr.get("pre_run_manifest_attestation")
+            self.assertIsNotNone(attestation, "private-holdout run should preserve supplied attestation metadata")
+            self.assertEqual(attestation, prmc["pre_run_manifest_attestation"])
+            self.assertEqual(attestation["status"], "metadata_reference_only")
+            self.assertEqual(attestation["attestation_type"], "third_party_witness")
+            self.assertEqual(attestation["attestor"]["display_name"], "Example Witness Co")
+            self.assertEqual(attestation["reference"]["kind"], "url")
+            self.assertEqual(
+                attestation["reference"]["value"],
+                "https://example.test/attestations/private-holdout-pack-vtest",
+            )
+            self.assertEqual(attestation["attested_manifest_hash"]["hex_digest"], expected_manifest_hash)
+            self.assertTrue(attestation["attested_manifest_hash"]["matches_local_manifest_hash"])
+            self.assertEqual(attestation["verification"]["status"], "not_verified_by_role_foundry")
+            self.assertIn("does not by itself prove", attestation["honesty_note"])
+            self.assertEqual(attestation["public_note"], "Recorded as an optional witness seam only.")
 
             # The commitment artifact file exists on disk and matches the receipt copy.
             commitment_file = artifacts_root / "pre-run-manifest-commitment.json"

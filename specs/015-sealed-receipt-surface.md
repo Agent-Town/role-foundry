@@ -50,6 +50,7 @@ The `sealing_receipt` block in the alpha receipt is designed to be **public-safe
 - `execution_backend` — backend provenance summary across alpha stages, including backend id / mode, per-stage backend ids, optional `execution_backend_contract`, and summarized `execution_honesty`; this is claim-boundary evidence only, not proof of live execution or isolation
 - `private_manifest_fingerprint` — if a private holdout manifest was loaded, a SHA-256 of its canonical JSON bytes; labeled as **local operator correlation only**, not independent tamper-proofing
 - `pre_run_manifest_commitment` — if a private holdout manifest was loaded, a commitment artifact written **before** any stage execution begins, recording the manifest hash, timestamp, and sequence linkage (see below)
+- `pre_run_manifest_attestation` — optional public-safe metadata/reference about a third-party witness statement or manifest-signing artifact tied to the pre-run commitment; recorded only when supplied and never treated as auto-verified proof
 - `linked_receipt_paths` — relative paths to the alpha receipt, request copy, and (when present) pre-run commitment within the artifacts root
 - `integrity_gate_mode` — forwarded from the existing integrity gate
 
@@ -72,6 +73,30 @@ This improves **local auditability and operator evidence only**. The operator ca
 - third-party signing or attestation
 - tamper-proofing (the operator controls both sides)
 
+### Optional pre-run manifest attestation reference
+
+A local private-holdout request may also supply a public-safe `pre_run_manifest_attestation` block. This is the narrow seam for future stronger tamper-evidence work around the commitment. It is intentionally metadata/reference-only.
+
+Required shape:
+- `attestation_type` — one of `third_party_witness`, `third_party_signature`, or `other`
+- `attestor.display_name` — public-safe witness/signer label
+- `reference.kind` + `reference.value` — where the external statement/signature can be looked up (`url`, `path`, `opaque_id`, or `text`)
+- `attested_manifest_hash.algorithm` + `attested_manifest_hash.hex_digest` — the hash the external statement claims to cover
+
+Optional shape:
+- `attestor.role`, `attestor.uri`
+- `attested_at`
+- `public_note`
+
+When present, the alpha loop preserves that sanitized block in both `pre_run_manifest_commitment` and `sealing_receipt`, plus a boolean for whether the supplied `attested_manifest_hash` matches the local manifest hash. It also keeps the verification ceiling explicit:
+
+- the metadata is **caller-supplied reference material only**
+- Role Foundry does **not** verify witness identity, signature validity, publication timing, or independence
+- a supplied `pre_run_manifest_attestation` does **not** automatically satisfy the stronger tamper-evidence prerequisite
+- this seam does **not** create live execution, independent executor isolation, sealed eval, certification, tamper-proofing, or audit by itself
+
+Do **not** put raw signature blobs, teacher-only notes, or private holdout content in this block. Keep it public-safe.
+
 ## Machine-readable surface
 
 The `sealing_receipt` is a top-level field on the alpha receipt JSON emitted by `runner_bridge.autoresearch_alpha`. See the implementation for the exact schema.
@@ -79,14 +104,14 @@ The `sealing_receipt` is a top-level field on the alpha receipt JSON emitted by 
 ## Non-goals
 
 - Inventing crypto theater (signatures nobody verifies, hashes labeled as proofs)
-- Claiming the fingerprint is tamper-proofing
-- Adding runtime overhead beyond a single SHA-256 of manifest bytes
+- Claiming the fingerprint or an unverified attestation reference is tamper-proofing
+- Adding runtime overhead beyond a single SHA-256 of manifest bytes plus optional metadata preservation
 - Touching private prompts, rubrics, or episodes
 
 ## Done when
 
 - Spec 015 is in the repo
 - `sealing_receipt` appears in alpha receipt output
-- Tests pin: claim ceiling, blocked claims, checklist states, fingerprint labeling, and the local-only pre-run commitment artifact/path
+- Tests pin: claim ceiling, blocked claims, checklist states, fingerprint labeling, the local-only pre-run commitment artifact/path, and conservative `pre_run_manifest_attestation` behavior (absent by default, preserved accurately when supplied)
 - README mentions the receipt surface and lists unmet prerequisites
 - No overclaiming language anywhere in the changeset

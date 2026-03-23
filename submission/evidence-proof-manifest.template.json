@@ -83,6 +83,14 @@
       "visibility": "pending",
       "lane": "role-foundry-clawith-native-agent-bringup",
       "notes": "Do not claim this until smoke output and exact setup notes exist."
+    },
+    {
+      "id": "pre-run-manifest-attestation-reference",
+      "kind": "attestation_reference",
+      "status": "optional_when_available",
+      "path": null,
+      "visibility": "public_safe_metadata_only",
+      "notes": "Optional reference to a third-party witness statement or manifest-signing artifact tied to pre_run_manifest_commitment. Reference metadata only; absent by default and does not by itself prove sealed eval, independent execution, tamper-proofing, certification, or audit."
     }
   ],
   "checklist": [
@@ -90,6 +98,7 @@
     "No teacher-only prompt text is copied into public packaging artifacts.",
     "Any remaining active-lane evidence stays marked pending and unclaimed.",
     "Roundtrip proof is scoped to the external gateway + Claude/vibecosystem executor lane and not rewritten as native parity.",
-    "Public benchmark artifacts are not misrepresented as sealed-eval proof."
+    "Public benchmark artifacts are not misrepresented as sealed-eval proof.",
+    "Any pre_run_manifest_attestation reference is described as public-safe metadata only and never used by itself to upgrade the claim ceiling."
   ]
 }

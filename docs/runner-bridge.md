@@ -78,10 +78,11 @@ If the request points `private_holdout_manifest` at a local-only holdout manifes
 - hydrate `title`, `difficulty`, `teacher_prompt`, and `scoring_rubric` from the local manifest into `request.private.json`
 - keep `request.json`, transcript receipts, and the student-facing artifact bundle free of teacher-only prompt text
 - write `pre-run-manifest-commitment.json` before stage execution starts, recording only public-safe metadata about the manifest hash and run linkage
+- optionally preserve a public-safe `pre_run_manifest_attestation` reference block in both the commitment artifact and `sealing_receipt` when the request supplies one
 - pass the integrity gate as a **local private-holdout** run when both teacher-eval stages are backed by the private manifest
 - still block **sealed certification** claims
 
-That is intentionally narrow. The pre-run commitment receipt improves local auditability only; it is not external publication, third-party proof, or tamper-proofing.
+That is intentionally narrow. The pre-run commitment receipt improves local auditability only; it is not external publication, third-party proof, or tamper-proofing. Any optional `pre_run_manifest_attestation` is reference metadata only: the bridge does not verify witness identity, signature validity, publication timing, or independence, and it does not unlock stronger claims automatically.
 
 **Allowed now:** fresh hidden holdouts in a local private manifest, a real local private-holdout rerun, and receipts that keep teacher-only content out of tracked and student-visible artifacts.
 

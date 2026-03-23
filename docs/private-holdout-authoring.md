@@ -84,6 +84,7 @@ Key points:
 - in `baseline-eval` and `candidate-teacher-eval`, reference holdout episodes by `id`
 - only store replay outcome fields in the request (`passed`, `score`, `teacher_notes`, optional public failure theme/summary)
 - let `runner_bridge.autoresearch_alpha` hydrate `teacher_prompt` and `scoring_rubric` from the local manifest into `request.private.json`
+- if you have a real third-party witness statement or manifest-signing artifact, you may add a public-safe `pre_run_manifest_attestation` block to the local request; keep it to labels/references/hash only, never raw signature blobs, teacher-only notes, or holdout content
 
 Then run:
 
@@ -94,6 +95,8 @@ python3 -m runner_bridge.autoresearch_alpha \
 ```
 
 When the run actually enters the local private-holdout lane, the artifacts root now also gets `pre-run-manifest-commitment.json` **before** stage execution starts. That file records only public-safe metadata: the canonical manifest hash, timestamp, sequence linkage, and artifact path. It improves local operator auditability, but it is **not** external publication, third-party proof, or tamper-proofing.
+
+If the request includes `pre_run_manifest_attestation`, that same public-safe reference block is preserved into `pre-run-manifest-commitment.json` and `sealing_receipt`. The bridge only records the supplied attestation type, attestor label, reference pointer, attested manifest hash, optional public note, and whether that hash matches the local manifest hash. It does **not** verify witness identity, signature validity, publication timing, or independence, so stronger tamper-evidence claims stay blocked unless real external controls land later.
 
 Honest claim boundary:
 - **allowed now:** fresh hidden holdouts in a gitignored local manifest, a real local private-holdout rerun, and receipts that keep teacher-only content out of tracked and student-visible artifacts

@@ -15,6 +15,9 @@ Claim boundary kept intentionally narrow:
 - **verified:** one real external `Clawith -> OpenClaw gateway -> Claude/vibecosystem -> Clawith` roundtrip
 - **not upgraded to:** native Clawith parity, sealed eval, tamper-proof proof, or broad production hardening
 
+Future-proof audit note:
+- if a later packet references `pre_run_manifest_attestation`, audit it only as a public-safe reference tied to `pre_run_manifest_commitment`; do not treat it as proof of independent execution, sealed eval, tamper-proofing, certification, or audit unless separate verification evidence exists.
+
 ## Receipt verification result
 
 - [x] The tracked manifest parses cleanly and still points to the external gateway-backed roundtrip only.

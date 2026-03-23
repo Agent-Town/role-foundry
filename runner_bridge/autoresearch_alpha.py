@@ -31,6 +31,17 @@ PRIVATE_HOLDOUT_REQUIRED_KEYS = {
     "difficulty",
 }
 VALID_DIFFICULTIES = {"easy", "medium", "hard"}
+VALID_PRE_RUN_MANIFEST_ATTESTATION_TYPES = {
+    "third_party_witness",
+    "third_party_signature",
+    "other",
+}
+VALID_PRE_RUN_MANIFEST_ATTESTATION_REFERENCE_KINDS = {
+    "url",
+    "path",
+    "opaque_id",
+    "text",
+}
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -109,6 +120,7 @@ def run_alpha_loop(
         private_holdout_pack=private_holdout_pack,
         artifacts_root=artifacts_root,
         sequence_id=loop_sequence_id,
+        pre_run_manifest_attestation=config.get("pre_run_manifest_attestation"),
     )
 
     control_plane = ClawithRunClient(clawith_url, clawith_secret)
@@ -1243,12 +1255,115 @@ def _canonical_manifest_hash(manifest: dict[str, Any]) -> dict[str, str]:
     }
 
 
+def _normalize_pre_run_manifest_attestation(
+    attestation: Any,
+    *,
+    manifest_hash: dict[str, str],
+) -> dict[str, Any] | None:
+    if attestation is None:
+        return None
+    if not isinstance(attestation, dict):
+        raise ContractError("pre_run_manifest_attestation must be an object when provided")
+
+    attestation_type = str(attestation.get("attestation_type") or "").strip()
+    if attestation_type not in VALID_PRE_RUN_MANIFEST_ATTESTATION_TYPES:
+        allowed = ", ".join(sorted(VALID_PRE_RUN_MANIFEST_ATTESTATION_TYPES))
+        raise ContractError(
+            f"pre_run_manifest_attestation.attestation_type must be one of: {allowed}"
+        )
+
+    attestor = attestation.get("attestor")
+    if not isinstance(attestor, dict):
+        raise ContractError("pre_run_manifest_attestation.attestor must be an object")
+    display_name = str(attestor.get("display_name") or "").strip()
+    if not display_name:
+        raise ContractError(
+            "pre_run_manifest_attestation.attestor.display_name is required"
+        )
+
+    reference = attestation.get("reference")
+    if not isinstance(reference, dict):
+        raise ContractError("pre_run_manifest_attestation.reference must be an object")
+    reference_kind = str(reference.get("kind") or "").strip()
+    if reference_kind not in VALID_PRE_RUN_MANIFEST_ATTESTATION_REFERENCE_KINDS:
+        allowed = ", ".join(sorted(VALID_PRE_RUN_MANIFEST_ATTESTATION_REFERENCE_KINDS))
+        raise ContractError(
+            f"pre_run_manifest_attestation.reference.kind must be one of: {allowed}"
+        )
+    reference_value = str(reference.get("value") or "").strip()
+    if not reference_value:
+        raise ContractError("pre_run_manifest_attestation.reference.value is required")
+
+    attested_manifest_hash = attestation.get("attested_manifest_hash")
+    if not isinstance(attested_manifest_hash, dict):
+        raise ContractError(
+            "pre_run_manifest_attestation.attested_manifest_hash must be an object"
+        )
+    algorithm = str(attested_manifest_hash.get("algorithm") or "").strip().lower()
+    hex_digest = str(attested_manifest_hash.get("hex_digest") or "").strip().lower()
+    if not algorithm or not hex_digest:
+        raise ContractError(
+            "pre_run_manifest_attestation.attested_manifest_hash.algorithm and hex_digest are required"
+        )
+
+    matches_local_manifest_hash = (
+        algorithm == manifest_hash.get("algorithm") and hex_digest == manifest_hash.get("hex_digest")
+    )
+
+    normalized = {
+        "status": "metadata_reference_only",
+        "attestation_type": attestation_type,
+        "attestor": {
+            "display_name": display_name,
+        },
+        "reference": {
+            "kind": reference_kind,
+            "value": reference_value,
+        },
+        "attested_manifest_hash": {
+            "algorithm": algorithm,
+            "hex_digest": hex_digest,
+            "matches_local_manifest_hash": matches_local_manifest_hash,
+        },
+        "verification": {
+            "status": "not_verified_by_role_foundry",
+            "reason": (
+                "Role Foundry records caller-supplied attestation metadata/reference only. "
+                "It does not verify witness identity, signature validity, publication timing, or independence."
+            ),
+        },
+        "honesty_note": (
+            "This optional attestation/witness block is a public-safe metadata/reference seam for future stronger "
+            "tamper-evidence work. It does not by itself prove sealed evaluation, independent execution, "
+            "certification, tamper-proofing, or audit."
+        ),
+    }
+
+    role = str(attestor.get("role") or "").strip()
+    if role:
+        normalized["attestor"]["role"] = role
+    uri = str(attestor.get("uri") or "").strip()
+    if uri:
+        normalized["attestor"]["uri"] = uri
+
+    attested_at = str(attestation.get("attested_at") or "").strip()
+    if attested_at:
+        normalized["attested_at"] = attested_at
+
+    public_note = str(attestation.get("public_note") or "").strip()
+    if public_note:
+        normalized["public_note"] = public_note
+
+    return normalized
+
+
 def _write_pre_run_manifest_commitment(
     *,
     integrity_gate_mode: str,
     private_holdout_pack: dict[str, Any] | None,
     artifacts_root: Path,
     sequence_id: str,
+    pre_run_manifest_attestation: dict[str, Any] | None = None,
 ) -> dict[str, Any] | None:
     """Write a local-only pre-run manifest commitment artifact.
 
@@ -1264,6 +1379,10 @@ def _write_pre_run_manifest_commitment(
 
     artifact_path = "pre-run-manifest-commitment.json"
     manifest_hash = _canonical_manifest_hash(private_holdout_pack["manifest"])
+    normalized_attestation = _normalize_pre_run_manifest_attestation(
+        pre_run_manifest_attestation,
+        manifest_hash=manifest_hash,
+    )
     commitment = {
         "spec": "015-sealed-receipt-surface",
         "type": "pre_run_manifest_commitment",
@@ -1278,10 +1397,13 @@ def _write_pre_run_manifest_commitment(
             "alpha_request_copy": "autoresearch-alpha.request.json",
         },
         "manifest_hash": manifest_hash,
+        "pre_run_manifest_attestation": normalized_attestation,
         "honesty_note": (
             "This local-only commitment receipt was recorded before stage execution began. "
             "It improves operator auditability and later correlation, but it was not independently "
-            "published, third-party witnessed, signed, or made tamper-proof."
+            "published, third-party witnessed, signed, or made tamper-proof. Any optional "
+            "pre_run_manifest_attestation is preserved as caller-supplied reference metadata only "
+            "and does not unlock stronger claims automatically."
         ),
     }
     (artifacts_root / artifact_path).write_text(json.dumps(commitment, indent=2))
@@ -1366,6 +1488,11 @@ def _build_sealing_receipt(
         status = "public_regression_alpha"
 
     execution_backend = _build_alpha_execution_backend_summary(stages)
+    pre_run_attestation = (
+        pre_run_commitment.get("pre_run_manifest_attestation")
+        if isinstance(pre_run_commitment, dict)
+        else None
+    )
 
     operator_checklist = {
         "public_benchmark_pack_loaded": {
@@ -1408,6 +1535,21 @@ def _build_sealing_receipt(
                 "but it was not independently published, third-party witnessed, signed, or made tamper-proof."
                 if pre_run_commitment is not None
                 else "No local pre-run manifest commitment receipt was recorded for this run."
+            ),
+        },
+        "pre_run_manifest_attestation": {
+            "present": pre_run_attestation is not None,
+            "reason": (
+                "Caller-supplied pre-run manifest attestation metadata/reference was recorded and its attested "
+                "manifest hash matches the local pre-run manifest commitment, but Role Foundry does not verify "
+                "witness identity, signature validity, publication timing, or independence."
+                if pre_run_attestation is not None
+                and pre_run_attestation["attested_manifest_hash"].get("matches_local_manifest_hash")
+                else "Caller-supplied pre-run manifest attestation metadata/reference was recorded, but the "
+                "attested manifest hash does not match the local pre-run manifest commitment. Stronger "
+                "tamper-evidence claims remain blocked."
+                if pre_run_attestation is not None
+                else "No caller-supplied pre-run manifest attestation metadata/reference was recorded for this run."
             ),
         },
     }
@@ -1496,11 +1638,14 @@ def _build_sealing_receipt(
         "execution_backend": execution_backend,
         "private_manifest_fingerprint": private_manifest_fingerprint,
         "pre_run_manifest_commitment": pre_run_commitment,
+        "pre_run_manifest_attestation": pre_run_attestation,
         "linked_receipt_paths": linked_receipt_paths,
         "honesty_note": (
             "This is a public-safe boundary record, not a seal. "
             "It records what the run can honestly claim and what controls "
-            "are missing before stronger language becomes honest."
+            "are missing before stronger language becomes honest. Optional "
+            "pre_run_manifest_attestation metadata is reference-only and does not "
+            "unlock stronger claims automatically."
         ),
     }
 
