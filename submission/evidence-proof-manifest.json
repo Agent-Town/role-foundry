@@ -1,7 +1,7 @@
 {
   "status": "final-review-ready",
   "final_review_branch": "review/submission-erc-provenance-20260323-1240",
-  "final_review_commit": "2c4e23f6f0e2e8682dda48fa26c796f20c091eef",
+  "final_review_commit": "324f29f81f3a9e81b52b6b89f5daa6fc29a6ac12",
   "final_review_commit_strategy": "content_freeze_commit_recorded_by_followup_stamp_commit",
   "artifacts": [
     {

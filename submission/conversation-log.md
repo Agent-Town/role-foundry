@@ -7,7 +7,7 @@ Canonical final packet artifact for review branch `review/submission-erc-provena
 
 - Project: Role Foundry
 - Final review branch: `review/submission-erc-provenance-20260323-1240`
-- Final review commit: `2c4e23f6f0e2e8682dda48fa26c796f20c091eef`
+- Final review commit: `324f29f81f3a9e81b52b6b89f5daa6fc29a6ac12`
 - One-sentence claim:
   - Role Foundry is a role-training, evaluation, and promotion system for AI apprentices; this branch makes the generation provenance chain explicit by showing that each evaluated generation carries receipts, evaluation context, score deltas, and a promotion/public-issuance decision, while the current evidence proves a Software Engineer apprentice public alpha loop, a local private-holdout honesty boundary, a staged ERC-8004/Base issuance path, and an external Clawith -> OpenClaw -> Claude/vibecosystem roundtrip path without claiming live minting, native parity, or sealed certification.
 
