@@ -13,6 +13,8 @@ The practical fast lane is now:
 3. run a **read-only probe**
 4. only then decide whether you need an adapter/shim for writes
 
+For the smallest **real** Clawith + Claude/vibecosystem executor path, see `docs/clawith-vibecosystem-real-path.md`.
+
 ## Current state
 
 | Concern | Honest status |
