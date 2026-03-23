@@ -11,6 +11,7 @@ from typing import Any
 
 from .contract import ContractError, RunRequest
 from .eval_loop import redact_request_for_artifacts
+from .mutation_surface import audit_packet_mutation_surface, write_mutation_surface_audit_receipt
 from .product_integrations import write_product_integrations
 from .provenance import write_receipt_provenance
 
@@ -116,6 +117,24 @@ class RunBridge:
 
         result["started_at"] = started_at
         result["finished_at"] = _utc_now()
+
+        packet_runtime = raw_request.get("packet_runtime") if isinstance(raw_request.get("packet_runtime"), dict) else None
+        if packet_runtime:
+            mutation_surface_audit = audit_packet_mutation_surface(
+                packet_runtime,
+                workspace_snapshot=raw_request.get("workspace_snapshot"),
+            )
+            mutation_surface_audit_path = write_mutation_surface_audit_receipt(run_dir, mutation_surface_audit)
+            execution_honesty = result.get("execution_honesty") if isinstance(result.get("execution_honesty"), dict) else {}
+            execution_honesty["mutation_surface_audit"] = mutation_surface_audit
+            execution_honesty["mutation_surface_audit_path"] = mutation_surface_audit_path
+            result["execution_honesty"] = execution_honesty
+            _patch_artifact_bundle_mutation_surface_audit(
+                run_dir / "artifact-bundle.json",
+                mutation_surface_audit,
+                mutation_surface_audit_path,
+            )
+
         result_path = run_dir / "result.json"
         result_path.write_text(json.dumps(result, indent=2))
 
@@ -233,6 +252,23 @@ def _ensure_failure_bundle(run_dir: Path, error: str, transcript_path: str | Pat
             )
         )
     return bundle_path
+
+
+def _patch_artifact_bundle_mutation_surface_audit(
+    artifact_bundle_path: Path,
+    mutation_surface_audit: dict[str, Any],
+    mutation_surface_audit_path: str,
+) -> None:
+    if not artifact_bundle_path.exists():
+        return
+    artifact_bundle = json.loads(artifact_bundle_path.read_text())
+    if not isinstance(artifact_bundle, dict):
+        return
+    receipts = artifact_bundle.get("receipts") if isinstance(artifact_bundle.get("receipts"), dict) else {}
+    receipts["mutation_surface_audit_path"] = mutation_surface_audit_path
+    artifact_bundle["receipts"] = receipts
+    artifact_bundle["mutation_surface_audit"] = mutation_surface_audit
+    artifact_bundle_path.write_text(json.dumps(artifact_bundle, indent=2))
 
 
 def _utc_now() -> str:
