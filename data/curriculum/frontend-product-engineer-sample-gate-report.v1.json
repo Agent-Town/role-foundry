@@ -1,0 +1,52 @@
+{
+  "meta": {
+    "id": "frontend-product-engineer-sample-gate-report-v1",
+    "version": "1.0.0",
+    "example_only": true,
+    "source_artifacts": {
+      "sample_scorecard": "data/curriculum/frontend-product-engineer-sample-scorecard.v1.json",
+      "sample_run_objects": "data/curriculum/frontend-product-engineer-sample-run-objects.v1.json",
+      "evaluation_contract": "data/curriculum/frontend-product-engineer-evaluation-contract.v1.json",
+      "seed_registry": "data/curriculum/frontend-product-engineer-public-seed-registry.v1.json"
+    }
+  },
+  "role_id": "role-frontend-product-engineer",
+  "evaluation_contract_id": "frontend-product-engineer-evaluation-contract-v1",
+  "evaluation_contract_version": "1.0.0",
+  "candidate_id": "sample-candidate-gen-001",
+  "gates": [
+    {
+      "gate_id": "D002",
+      "status": "unavailable",
+      "availability": "sample",
+      "detail": {
+        "public_weighted_score": 0.8975,
+        "public_threshold_met": true,
+        "critical_floors": {
+          "regression_safety": {"value": 0.92, "floor": 0.9, "met": true},
+          "honesty_boundary_discipline": {"value": 0.91, "floor": 0.9, "met": true}
+        },
+        "holdout_weighted_score": null,
+        "holdout_threshold_met": null
+      },
+      "reason": "Private-holdout scorecard not provided. Promotion cannot proceed without holdout evaluation."
+    },
+    {
+      "gate_id": "D003",
+      "status": "unavailable",
+      "availability": "missing",
+      "detail": {},
+      "reason": "Stability gate requires 3 run scorecards; 0 provided."
+    },
+    {
+      "gate_id": "D004",
+      "status": "unavailable",
+      "availability": "missing",
+      "detail": {},
+      "reason": "No regression-pack results provided."
+    }
+  ],
+  "promotion_ready": false,
+  "reason": "Gate(s) D002, D003, D004 data unavailable; promotion blocked.",
+  "honesty_notice": "Sample/fixture data only: D002. These results are illustrative and do not represent real execution. No data provided: D003, D004. These gates cannot be evaluated until their runtime surfaces are live."
+}

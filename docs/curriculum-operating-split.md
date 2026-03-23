@@ -187,6 +187,12 @@ The `execution_honesty` block in `result.json` makes it machine-readable whether
 - The lineage registry and weekly cycle receipt are still sample/fixture
   artifacts. Live weekly automation, enforced regression gates, and real
   promoted-generation ops remain future runtime work.
+- Promotion gate **evaluation logic** (D002/D003/D004) is now
+  contract-defined in `runner_bridge/promotion_gates.py` with
+  machine-readable verdicts.  However, **live enforcement** — real
+  holdout scoring, automated rerun scheduling, and regression-pack
+  execution — is still future runtime work.  See
+  `docs/promotion-gate-contracts.md` for the explicit split.
 
 ## Honest status by area
 
@@ -196,7 +202,7 @@ The `execution_honesty` block in `result.json` makes it machine-readable whether
 | Phase 2 teacher operating system | Contract-defined, partially operational | Authoring/promotion lifecycle plus local holdout refresh receipts are machine-readable and tested, but the end-to-end teacher runtime is still not live. |
 | Task-packet → runtime bridge | Implemented | CLI `--packet` path loads by acceptance_test_id, materializes `run-object.json`, and runs end-to-end through the bridge. `execution_honesty` block makes backend non-execution machine-readable. |
 | Phase 3 execution | Partial | Autoresearch alpha receipts exist, and Step C verifier-contract / verifier-gate honesty landed; live verifier execution is still pending. |
-| Phase 4 evaluation | Contract-defined with fixture-backed shell | Public scoring contract exists and the teacher review console renders stored exports only; promotion-gate enforcement and live evaluation wiring remain future work. |
+| Phase 4 evaluation | Contract-defined with fixture-backed shell + gate logic | Public scoring contract exists; teacher review console renders stored exports only; promotion-gate evaluation logic (D002/D003/D004) is contract-defined in `runner_bridge/promotion_gates.py` with machine-readable verdicts; live gate enforcement and evaluation wiring remain future work. |
 | Phase 5 compounding | Contract surface landed (fixture/sample) | Generation lineage registry (3 sample promoted generations), weekly cycle receipt schema and sample, cross-artifact linkage tests. All marked `example_only`; not live automation. See `docs/phase5-lineage-cycle-ops.md`. |
 | Private holdout pool | Local-only scaffold | Teacher authors locally; zero teacher-only content is tracked by git. |
 | Teacher review console | Fixture-backed shell/read-model | D001 surface renders stored exports only; no live transcript fetch, holdout scoring, stability checks, or regression history yet. See `docs/teacher-review-console.md`. |

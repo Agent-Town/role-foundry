@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Promotion Gate Report",
+  "description": "Machine-readable promotion decision artifact for the frozen Frontend/Product Engineer curriculum. Produced by runner_bridge.promotion_gates.build_promotion_report(). Each gate verdict carries an availability field that honestly reports whether data was live, sample, or missing.",
+  "type": "object",
+  "required": [
+    "role_id",
+    "evaluation_contract_id",
+    "evaluation_contract_version",
+    "candidate_id",
+    "gates",
+    "promotion_ready",
+    "reason",
+    "honesty_notice"
+  ],
+  "properties": {
+    "role_id": {
+      "type": "string",
+      "const": "role-frontend-product-engineer"
+    },
+    "evaluation_contract_id": {
+      "type": "string"
+    },
+    "evaluation_contract_version": {
+      "type": "string"
+    },
+    "candidate_id": {
+      "type": "string",
+      "description": "Identifier for the candidate generation being evaluated."
+    },
+    "gates": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+        "$ref": "#/$defs/gate_verdict"
+      },
+      "description": "Exactly three gate verdicts: D002 (holdout), D003 (stability), D004 (regression)."
+    },
+    "promotion_ready": {
+      "type": "boolean",
+      "description": "True only when ALL gates have status 'passed'. False if any gate is 'failed', 'unavailable', or 'not_executed'."
+    },
+    "reason": {
+      "type": "string"
+    },
+    "honesty_notice": {
+      "type": "string",
+      "description": "Human-readable notice about which gates used live data, sample data, or had no data at all."
+    },
+    "meta": {
+      "type": "object",
+      "description": "Optional metadata for sample/fixture reports. Not present in live promotion reports.",
+      "required": ["id", "example_only", "source_artifacts"],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "example_only": {
+          "type": "boolean",
+          "const": true
+        },
+        "source_artifacts": {
+          "type": "object",
+          "description": "Paths to the versioned curriculum fixtures this report was derived from.",
+          "properties": {
+            "sample_scorecard": { "type": "string" },
+            "sample_run_objects": { "type": "string" },
+            "evaluation_contract": { "type": "string" },
+            "seed_registry": { "type": "string" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "gate_verdict": {
+      "type": "object",
+      "required": ["gate_id", "status", "availability", "detail", "reason"],
+      "properties": {
+        "gate_id": {
+          "type": "string",
+          "enum": ["D002", "D003", "D004"]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["passed", "failed", "unavailable", "not_executed"],
+          "description": "passed = gate cleared. failed = data was evaluated and did not clear. unavailable = required data was not provided. not_executed = gate logic exists but was never invoked."
+        },
+        "availability": {
+          "type": "string",
+          "enum": ["live", "sample", "missing"],
+          "description": "live = data from actual execution. sample = illustrative fixture (example_only). missing = not provided."
+        },
+        "detail": {
+          "type": "object",
+          "description": "Gate-specific numeric detail (thresholds, scores, counts)."
+        },
+        "reason": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
