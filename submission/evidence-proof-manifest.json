@@ -1,7 +1,7 @@
 {
   "status": "submission-packet-ready_pending_human_publish",
   "final_review_branch": "review/submission-packet-assembly-20260323-1421",
-  "final_review_commit": "324f29f81f3a9e81b52b6b89f5daa6fc29a6ac12",
+  "final_review_commit": "67a3f093dbe642c5b9045abe0a0e04fc5e64098d",
   "final_review_commit_strategy": "content_freeze_commit_recorded_by_followup_stamp_commit",
   "artifacts": [
     {
