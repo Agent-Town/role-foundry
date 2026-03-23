@@ -4,7 +4,8 @@
     "name": "Role Foundry",
     "repo_url": "https://github.com/Agent-Town/role-foundry",
     "final_review_branch": "review/submission-finalization-pass-20260323-1159",
-    "final_review_commit": "FILL_FINAL_REVIEW_COMMIT"
+    "final_review_commit": "2c4e23f6f0e2e8682dda48fa26c796f20c091eef",
+    "final_review_commit_strategy": "content_freeze_commit_recorded_by_followup_stamp_commit"
   },
   "summary": {
     "one_liner": "Role Foundry is a role-training, evaluation, and promotion system for AI apprentices; the current submission proves a Software Engineer apprentice public alpha loop, a local private-holdout honesty boundary, and an external Clawith -> OpenClaw -> Claude/vibecosystem roundtrip path without claiming native parity or sealed certification.",

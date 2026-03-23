@@ -2,6 +2,8 @@
 
 Canonical final packet for review branch `review/submission-finalization-pass-20260323-1159`.
 
+The recorded `final_review_commit` in the packet files is the **content-freeze commit** for the finalized packet. The branch head may be one tiny stamp commit later so the packet can record a stable non-self-referential SHA.
+
 ## Canonical final artifacts
 
 - `submission/judge-demo-script.md`

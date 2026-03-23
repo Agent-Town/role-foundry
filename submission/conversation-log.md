@@ -7,7 +7,7 @@ Canonical final packet artifact for review branch `review/submission-finalizatio
 
 - Project: Role Foundry
 - Final review branch: `review/submission-finalization-pass-20260323-1159`
-- Final review commit: `FILL_FINAL_REVIEW_COMMIT`
+- Final review commit: `2c4e23f6f0e2e8682dda48fa26c796f20c091eef`
 - One-sentence claim:
   - Role Foundry is a role-training, evaluation, and promotion system for AI apprentices; the current submission proves a Software Engineer apprentice public alpha loop, a local private-holdout honesty boundary, and an external Clawith -> OpenClaw -> Claude/vibecosystem roundtrip path without claiming native parity or sealed certification.
 
@@ -51,3 +51,4 @@ Canonical final packet artifact for review branch `review/submission-finalizatio
 ## 6. Reviewer note
 
 This final packet uses tracked portable proof paths under `submission/roundtrip-proof/` so the submission branch no longer points judges at machine-local `artifacts/...` locations.
+al-review commit is the packet content-freeze commit; the branch head may be one tiny metadata-stamp commit later to avoid a self-referential SHA.

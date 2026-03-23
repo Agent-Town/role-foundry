@@ -1,7 +1,8 @@
 {
   "status": "final-review-ready",
   "final_review_branch": "review/submission-finalization-pass-20260323-1159",
-  "final_review_commit": "FILL_FINAL_REVIEW_COMMIT",
+  "final_review_commit": "2c4e23f6f0e2e8682dda48fa26c796f20c091eef",
+  "final_review_commit_strategy": "content_freeze_commit_recorded_by_followup_stamp_commit",
   "artifacts": [
     {
       "id": "framework-story",
