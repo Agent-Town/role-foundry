@@ -136,7 +136,9 @@ A second public benchmark pack now exists for the **Frontend/Product Engineer** 
 - `runner_bridge/examples/fpe-autoresearch-alpha-public-loop.json` — example alpha-loop request
 - `tests/test_fpe_public_benchmark_pack_v1.py` — contract tests (B001–B006 + alpha-loop consumability)
 
-All 20 episodes are public-safe and derive from Spec 014 acceptance tests. Rubric templates use the frozen FPE evaluation contract dimensions (5 dimensions, weights sum to 1.0). No teacher-only families are blocked because no holdout framing has been disclosed for this curriculum.
+All 20 episodes are **public-safe, benchmark-ready, and alpha-consumable** — packets, rubrics, and provenance are complete. No teacher-only families are blocked because no holdout framing has been disclosed for this curriculum. Rubric templates use the frozen FPE evaluation contract dimensions (5 dimensions, weights sum to 1.0).
+
+However, **runtime readiness varies by phase**: Phase 1 contract surface is complete, Phase 3 execution is partial (verifier-gate landed, live execution pending), and Phases 2/4/5 are packet-defined only with runtime not yet live. See `docs/curriculum-operating-split.md` for the honest status-by-area table and per-family `readiness` fields in the family registry for machine-readable detail.
 
 The pack is immediately consumable by `runner_bridge.autoresearch_alpha`:
 
