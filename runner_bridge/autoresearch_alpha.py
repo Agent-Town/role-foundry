@@ -490,6 +490,8 @@ def _build_stage_receipt(
         if export_result.get(path_key):
             export_result[path_key] = _relative_to_root(artifacts_root, Path(export_result[path_key]))
 
+    receipt_completeness = _build_stage_receipt_completeness(run_dir, artifact_bundle, stored_result)
+
     stage = {
         "run_id": run_id,
         "status": result.get("status"),
@@ -515,9 +517,39 @@ def _build_stage_receipt(
             "result": export_result,
             "artifact_bundle": artifact_bundle,
             "transcript_excerpt": transcript_excerpt,
+            "receipt_completeness": receipt_completeness,
         },
     }
     return stage
+
+
+def _build_stage_receipt_completeness(
+    run_dir: Path,
+    artifact_bundle: dict[str, Any],
+    result: dict[str, Any],
+) -> dict[str, Any]:
+    receipts_dir = run_dir / "receipts"
+    receipt_files = {
+        "manifest.json": (receipts_dir / "manifest.json").exists(),
+        "evidence-index.json": (receipts_dir / "evidence-index.json").exists(),
+        "summary.md": (receipts_dir / "summary.md").exists(),
+        "candidate.json": (receipts_dir / "candidate.json").exists(),
+    }
+    for optional in ("evaluation.json", "baseline.json"):
+        path = receipts_dir / optional
+        if path.exists():
+            receipt_files[optional] = True
+
+    provenance_pointers = _check_provenance_pointers(artifact_bundle, result)
+
+    all_receipt_files_present = all(receipt_files.values())
+    all_provenance_pointers_valid = all(provenance_pointers.values())
+
+    return {
+        "complete": all_receipt_files_present and all_provenance_pointers_valid,
+        "receipt_files": receipt_files,
+        "provenance_pointers": provenance_pointers,
+    }
 
 
 def _build_comparison(
@@ -603,6 +635,8 @@ def _build_artifact_coverage(
             "result.json": run_dir / "result.json",
             "receipts/manifest.json": run_dir / "receipts" / "manifest.json",
             "receipts/candidate.json": run_dir / "receipts" / "candidate.json",
+            "receipts/evidence-index.json": run_dir / "receipts" / "evidence-index.json",
+            "receipts/summary.md": run_dir / "receipts" / "summary.md",
         }
         if stage_key != "candidate-student":
             required_paths["receipts/evaluation.json"] = run_dir / "receipts" / "evaluation.json"
@@ -619,6 +653,9 @@ def _build_artifact_coverage(
         if stage_key == "candidate-student":
             checks["teacher_verdict_present"] = False
 
+        provenance_pointers = _check_provenance_pointers(artifact_bundle, result)
+        checks.update(provenance_pointers)
+
         coverage[stage_key] = {
             "run_id": stage["run_id"],
             "complete": all(checks.values()) if stage_key != "candidate-student" else all(
@@ -631,6 +668,43 @@ def _build_artifact_coverage(
         }
 
     return coverage
+
+
+def _check_provenance_pointers(
+    artifact_bundle: dict[str, Any],
+    result: dict[str, Any],
+) -> dict[str, bool]:
+    checks: dict[str, bool] = {}
+
+    bundle_provenance = artifact_bundle.get("provenance") if isinstance(artifact_bundle.get("provenance"), dict) else {}
+    bundle_receipts = artifact_bundle.get("receipts") if isinstance(artifact_bundle.get("receipts"), dict) else {}
+    bundle_paths = set()
+    if bundle_provenance.get("receipt_manifest_path"):
+        bundle_paths.add(bundle_provenance["receipt_manifest_path"])
+    if bundle_provenance.get("evidence_index_path"):
+        bundle_paths.add(bundle_provenance["evidence_index_path"])
+    if bundle_provenance.get("summary_path"):
+        bundle_paths.add(bundle_provenance["summary_path"])
+    for key in ("receipt_manifest_path", "evidence_index_path", "summary_path"):
+        if bundle_receipts.get(key):
+            bundle_paths.add(bundle_receipts[key])
+    checks["bundle_provenance_has_manifest"] = "receipts/manifest.json" in bundle_paths
+    checks["bundle_provenance_has_evidence_index"] = "receipts/evidence-index.json" in bundle_paths
+    checks["bundle_provenance_has_summary"] = "receipts/summary.md" in bundle_paths
+
+    result_provenance = result.get("provenance") if isinstance(result.get("provenance"), dict) else {}
+    result_paths = set()
+    if result_provenance.get("receipt_manifest_path"):
+        result_paths.add(result_provenance["receipt_manifest_path"])
+    if result_provenance.get("evidence_index_path"):
+        result_paths.add(result_provenance["evidence_index_path"])
+    if result_provenance.get("summary_path"):
+        result_paths.add(result_provenance["summary_path"])
+    checks["result_provenance_has_manifest"] = "receipts/manifest.json" in result_paths
+    checks["result_provenance_has_evidence_index"] = "receipts/evidence-index.json" in result_paths
+    checks["result_provenance_has_summary"] = "receipts/summary.md" in result_paths
+
+    return checks
 
 
 def _evaluate_integrity_gate(
