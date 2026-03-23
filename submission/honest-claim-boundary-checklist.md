@@ -33,6 +33,7 @@ If any checked item is false, soften the claim.
 - [ ] `role-foundry-clawith-native-agent-bringup` must land native model-pool smoke evidence before any native-parity claim is made.
 - [ ] If citing the roundtrip proof, keep the citation scoped to the external gateway + Claude/vibecosystem executor lane and the tracked proof manifest.
 - [ ] ERC-8004 Base minting still requires: configured `BASE_SEPOLIA_RPC_URL` + `BASE_SEPOLIA_REGISTRY` (or mainnet equivalents), agent0-sdk availability, a human-approved wallet session, and a human promotion/public-issuance decision.
+- [ ] The submission packet itself does **not** wait on live minting; if no onchain receipt exists, keep every ERC/Base statement at staged / not minted.
 
 ## Coherence notes
 

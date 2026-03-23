@@ -1,12 +1,12 @@
 # conversationLog
 
-Status: final-review-ready
-Canonical final packet artifact for review branch `review/submission-erc-provenance-20260323-1240`.
+Status: submission-packet-ready_pending_human_publish
+Canonical final packet artifact for review branch `review/submission-packet-assembly-20260323-1421`.
 
 ## 1. Submission framing
 
 - Project: Role Foundry
-- Final review branch: `review/submission-erc-provenance-20260323-1240`
+- Final review branch: `review/submission-packet-assembly-20260323-1421`
 - Final review commit: `324f29f81f3a9e81b52b6b89f5daa6fc29a6ac12`
 - One-sentence claim:
   - Role Foundry is a role-training, evaluation, and promotion system for AI apprentices; this branch makes the generation provenance chain explicit by showing that each evaluated generation carries receipts, evaluation context, score deltas, and a promotion/public-issuance decision, while the current evidence proves a Software Engineer apprentice public alpha loop, a local private-holdout honesty boundary, a staged ERC-8004/Base issuance path, and an external Clawith -> OpenClaw -> Claude/vibecosystem roundtrip path without claiming live minting, native parity, or sealed certification.
@@ -66,4 +66,4 @@ Canonical final packet artifact for review branch `review/submission-erc-provena
 
 ## 7. Reviewer note
 
-This branch is the cleaner reviewer-facing packet because it no longer leaves ERC-8004/Base in the "optional later" bucket while the adapter code already exists. It keeps the claim boundary narrow: staged issuance is in, live minting is still out.
+This branch is the cleaner reviewer-facing packet because it keeps the honest ERC-8004/Base adapter story in scope **without waiting for a live mint**. The packet is ready pending the short human/admin publish tasks in `submission/checklists/final-publish-todo.md`; the claim boundary stays narrow: staged issuance is in, live minting is still out.

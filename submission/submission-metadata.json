@@ -1,9 +1,9 @@
 {
-  "status": "final-review-ready",
+  "status": "submission-packet-ready_pending_human_publish",
   "project": {
     "name": "Role Foundry",
     "repo_url": "https://github.com/Agent-Town/role-foundry",
-    "final_review_branch": "review/submission-erc-provenance-20260323-1240",
+    "final_review_branch": "review/submission-packet-assembly-20260323-1421",
     "final_review_commit": "324f29f81f3a9e81b52b6b89f5daa6fc29a6ac12",
     "final_review_commit_strategy": "content_freeze_commit_recorded_by_followup_stamp_commit"
   },
@@ -119,5 +119,14 @@
       "needed_for": "Any future native-parity claim",
       "status": "pending_not_claimed"
     }
-  ]
+  ],
+  "publish_readiness": {
+    "status": "packet_ready_pending_human_publish",
+    "final_publish_todo_path": "submission/checklists/final-publish-todo.md",
+    "remaining_blockers": [
+      "Fill the submission portal with the canonical packet paths and final branch/commit.",
+      "Complete required team self-custody and team-admin publish steps.",
+      "Keep ERC-8004 / Base wording staged_not_minted unless this branch also gains a real wallet-approved onchain receipt."
+    ]
+  }
 }

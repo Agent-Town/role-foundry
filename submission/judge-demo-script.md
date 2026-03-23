@@ -1,7 +1,7 @@
 # Judge Demo Script — live 2-3 minute walkthrough
 
-Status: final-review-ready
-Canonical final packet artifact for this branch.
+Status: submission-packet-ready_pending_human_publish
+Canonical live walkthrough for the submission packet on this branch.
 
 Keep this live demo narrow. The point is not to show every file. The point is to make the provenance chain legible fast, then stop before the story gets inflated.
 
@@ -157,4 +157,5 @@ Do not upgrade this branch into claims of:
 
 - [ ] Confirm `submission/conversation-log.md`, `submission/evidence-proof-manifest.json`, and `submission/submission-metadata.json` still agree on the final review branch + commit.
 - [ ] Confirm the roundtrip manifest, export bundle, and final reply markers still match.
+- [ ] If there is still no wallet-approved onchain receipt on this branch, keep every ERC/Base phrase as **staged / not minted**.
 - [ ] Keep the non-claims verbatim unless the underlying proof materially changes.

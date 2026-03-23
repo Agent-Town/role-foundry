@@ -1,6 +1,6 @@
 # Judge Q&A note — honest short answers
 
-Status: final-review-ready
+Status: submission-packet-ready_pending_human_publish
 Supporting note for `submission/judge-demo-script.md`.
 
 ## What is actually real today?
@@ -34,6 +34,10 @@ No. It is a **local/private discipline and separation contract**. It keeps teach
 ## Is ERC-8004/Base part of this branch?
 
 Yes, but only as a **staged issuance path**. Role Foundry can draft ERC-8004 registration payloads targeting Base and wire the mint path through a thin agent0/Base adapter. That means the portable identity layer is staged. It does **not** mean a live Base mint already happened.
+
+## Why submit with staged ERC/Base wording instead of claiming a mint?
+
+Because the landed evidence already proves the portable-identity handoff path. Until this branch also carries a wallet-approved onchain receipt, the honest sentence is **staged, not minted**.
 
 ## What exactly does the Clawith proof prove?
 

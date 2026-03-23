@@ -1,6 +1,11 @@
 # Roundtrip receipt audit — 2026-03-23
 
-Scope audited on the clean submission-finalization worktree:
+Historical audit note carried forward into the current submission packet because the tracked manifest and portable bundle are unchanged on this branch.
+
+Current packet branch referencing this audit:
+- branch: `review/submission-packet-assembly-20260323-1421`
+
+Original audit scope on the clean submission-finalization worktree:
 - branch: `review/submission-finalization-pass-20260323-1159`
 - base commit: `363b7e0548edba4c322ff65c2aeaa01b8fb09818`
 - tracked proof index: `submission/clawith-vibecosystem-roundtrip-proof.manifest.json`

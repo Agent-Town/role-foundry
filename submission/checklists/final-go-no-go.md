@@ -3,6 +3,8 @@
 Use this right before merging the final submission branch or publishing the submission packet.
 If any required item is false, it is a **no-go**.
 
+Human/admin handoff items are tracked separately in `submission/checklists/final-publish-todo.md`.
+
 ## 1. Demo coherence
 
 - [ ] The demo opener describes Role Foundry as a **role-training / eval / promotion** system.
@@ -45,7 +47,13 @@ If any required item is false, it is a **no-go**.
 - [ ] `submission/drafts/` is clearly archived and no longer the canonical packet.
 - [ ] The final packet distinguishes **repo-visible proof** from **local-only proof**.
 
-## 5. Hygiene
+## 5. Human publish gate
+
+- [ ] Submission portal fields are filled with the final repo URL plus the canonical packet paths for `conversation-log`, `submission-metadata`, `evidence-proof-manifest`, and the roundtrip proof manifest.
+- [ ] Required team self-custody / admin-publish steps are complete.
+- [ ] If no wallet-approved Base receipt exists on this branch, the final wording still says **staged / not minted**.
+
+## 6. Hygiene
 
 - [ ] JSON packet files validate.
 - [ ] Markdown packet files are readable and placeholder-free where required.
@@ -56,4 +64,4 @@ If any required item is false, it is a **no-go**.
 ## Go / no-go rule
 
 - **GO** only if every required box above is true.
-- **NO-GO** if any proof claim depends on oral explanation, unpublished local state, or still-unfilled placeholders.
+- **NO-GO** if any proof claim depends on oral explanation, unpublished local state, still-unfilled placeholders, or unfinished human/admin publish prerequisites.

@@ -1,8 +1,15 @@
 # Submission packet
 
-Canonical final packet for review branch `review/submission-erc-provenance-20260323-1240`.
+Status: submission-packet-ready_pending_human_publish
+Canonical packet for review branch `review/submission-packet-assembly-20260323-1421`.
 
 The recorded `final_review_commit` in the packet files is the **content-freeze commit** for the finalized packet. The branch head may be one tiny stamp commit later so the packet can record a stable non-self-referential SHA.
+
+## Current packet status
+
+- The reviewer-facing packet under `submission/` is assembled and coherent on this branch.
+- The last human/admin send steps live in `submission/checklists/final-publish-todo.md`.
+- ERC-8004 / Base wording remains intentionally **staged / not minted** unless a real wallet-approved onchain receipt is added to this branch before publish.
 
 ## Canonical final artifacts
 
@@ -20,6 +27,11 @@ The recorded `final_review_commit` in the packet files is the **content-freeze c
 - `submission/roundtrip-proof/roundtrip-proof.export.json`
 - `submission/roundtrip-proof/final-reply.txt`
 - `submission/checklists/roundtrip-receipt-audit-2026-03-23.md`
+
+## Final publish gate
+
+- `submission/checklists/final-go-no-go.md`
+- `submission/checklists/final-publish-todo.md`
 
 ## Archived prep artifacts
 
