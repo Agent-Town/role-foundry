@@ -3,29 +3,31 @@
 Status: final-review-ready
 Canonical final packet artifact for this branch.
 
-## Summary
+## Plain-English summary
 
-This finalization pass turns the clean submission candidate into one publish-ready packet without widening the claim boundary.
+This branch tightens the submission packet around the narrow story the evidence actually supports.
 
-What is proven on this branch:
-- Role Foundry is framed honestly as a **role-training / eval / promotion** system.
-- The first concrete shipped role is a **Software Engineer apprentice** improving Role Foundry itself.
-- The repo contains an executable **public alpha loop** with baseline -> candidate -> teacher-eval -> better/equal/worse comparison proof on a public rail.
-- The repo contains a **local private-holdout** separation contract that keeps teacher-only prompts out of tracked and student-visible artifacts.
-- The packet now carries one tracked external roundtrip proof indexed in `submission/clawith-vibecosystem-roundtrip-proof.manifest.json`, with a portable reviewer-safe bundle under `submission/roundtrip-proof/` instead of broken local `artifacts/...` references.
-- The submission packet is now canonicalized under `submission/` with final file paths, while `submission/drafts/` is explicitly archived.
+Role Foundry is presented honestly as a **role-training / eval / promotion** system. The first concrete role is a **Software Engineer apprentice** improving Role Foundry itself. The public shipped slice is still frontend/product-heavy, and this packet now says that plainly instead of implying broader completed coverage.
 
-What remains intentionally out of scope on this branch:
-- **ERC-8004 + Base via Agent0 SDK** remains the major optional differentiator lane.
-- Native Clawith model-pool smoke evidence remains separate and unclaimed.
-- Any broader partner-integration bundle remains optional and unclaimed.
+## What a judge can verify quickly
 
-Explicit non-claims:
-- no claim of **native Clawith parity**
-- no claim of **native model-pool bring-up completion**
-- no claim of **sealed certification**
-- no claim of **tamper-proof** or **third-party-sealed** evaluation
+- an executable **public alpha / public-regression loop** with baseline -> candidate -> teacher-eval -> better/equal/worse comparison proof
+- a **local private-holdout** separation boundary where teacher-only prompts stay outside tracked and student-visible artifacts
+- one tracked external `Clawith -> OpenClaw -> Claude/vibecosystem -> Clawith` roundtrip proof, backed by a reviewer-safe manifest/export bundle under `submission/`
+- a canonical submission packet under `submission/` with final paths instead of broken local proof references
+
+## What this branch deliberately does not claim
+
+- **native Clawith parity**
+- **native model-pool bring-up completion**
+- **sealed certification** or **sealed eval**
+- **tamper-proof** or **third-party-sealed** evaluation
+- **ERC-8004/Base** as landed evidence on this branch
+
+## Optional future hook, clearly not landed here
+
+ERC-8004/Base identity work may still become a useful differentiator later, but it is not part of the proof on this branch and should only be discussed as future work.
 
 ## Reviewer note
 
-This lane is intentionally conservative: it finalizes packaging, replaces broken proof references with a tracked portable export, and leaves the honest claim boundary exactly where the evidence supports it.
+This is intentionally a conservative packet-finalization pass. The win is not bigger claims. The win is a cleaner, faster, more judge-friendly story that matches the current evidence exactly.
