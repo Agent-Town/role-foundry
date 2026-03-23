@@ -195,3 +195,22 @@ See `docs/synthesis-hackathon-stack-architecture.md` for details.
 - the tracked proof index records the agent/session/message ids used for the capture
 
 **Important honesty line:** this proves the external gateway + Claude/vibecosystem executor lane only. It does **not** prove native Clawith model-pool parity, stock upstream Role Foundry API parity, sealed evaluation, or tamper-proof certification.
+
+
+---
+
+## 2026-03-24 — Public-safe sealing receipt boundary folded into the overnight handoff
+
+**Outcome:** The freshest overnight handoff branch now carries a machine-readable receipt surface that says exactly what the local private-holdout lane can and cannot claim.
+
+**What changed:**
+- `specs/015-sealed-receipt-surface.md` defines a top-level `sealing_receipt` block on the alpha receipt as a public-safe boundary record, not a seal
+- `runner_bridge.autoresearch_alpha` now emits the claim ceiling, status tier, blocked stronger claims, unmet prerequisites, and a private-manifest fingerprint labeled `local_operator_correlation_only` when the local manifest lane is used
+- README + handoff/status docs now say plainly that the local private-holdout alpha lane is real, but stronger sealing / certification / tamper-proof language is still blocked
+
+**Evidence:**
+- `tests/test_sealed_receipt_surface.py` passes
+- `tests/test_autoresearch_alpha_loop.py` now pins the local private-holdout `sealing_receipt` behavior
+- no private holdout content was added to git
+
+**Important honesty line:** the new `sealing_receipt` explains the next claim boundary. It does **not** itself create sealing, certification, tamper-proofing, or third-party audit.

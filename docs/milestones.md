@@ -138,6 +138,10 @@ Principle: each milestone must have:
 
 These slices are real. This branch now has an executable **public alpha loop** plus evidence that the local private-holdout lane can run honestly with full replacement coverage. The claim ceiling still stops at local private-holdout alpha execution; sealed/certified/tamper-proof claims remain blocked.
 
+**Public-safe sealing boundary:**
+- `specs/015-sealed-receipt-surface.md` + `tests/test_sealed_receipt_surface.py` add a top-level `sealing_receipt` block that records the current claim ceiling, blocked stronger claims, and unmet prerequisites without leaking teacher-only content.
+- This keeps the branch honest: local private-holdout alpha execution is real, but stronger sealing / certification / tamper-proof / audited language remains blocked until new controls actually land.
+
 **Phase F adapter-readiness hardening (F001-F004):**
 - `scripts/check_clawith_adapter_prereqs.py` — GET-only prereq checker covering all 6 required F001 categories with explicit ready/blocked/unknown output
 - `docs/clawith-adapter-bringup.md` — seam-to-upstream mapping matrix using the 5 allowed F003 statuses
@@ -145,7 +149,7 @@ These slices are real. This branch now has an executable **public alpha loop** p
 - The prereq checker never reports `ready` when admin or model-pool presence is missing or unknown (F002 hardening)
 
 **Autoresearch Alpha review-spine freeze:**
-- In scope on this branch: the public benchmark pack v1, the executable public alpha loop, the read-only live UI/read-model shell, and the local private-holdout authoring/separation contract.
+- In scope on this branch: the public benchmark pack v1, the executable public alpha loop, the read-only live UI/read-model shell, the local private-holdout authoring/separation contract, and the public-safe sealing receipt boundary.
 - Out of scope on this branch: sealed-certification claims, partner-integration expansion, native live artifact browsing/storage fan-out, and broad `runner_bridge` core-contract churn.
 - If a follow-up change is not required to keep those four contracts coherent, it belongs on another branch.
 
