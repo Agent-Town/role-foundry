@@ -11,5 +11,8 @@ runtime/
 .env.*
 !.env.example
 
+# Proof bundles contain redacted but potentially sensitive local state.
+proof-bundles/
+
 # Private holdout packs — teacher-only material must never be pushed publicly.
 benchmarks/private-holdout-pack/

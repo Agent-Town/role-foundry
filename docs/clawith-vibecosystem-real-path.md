@@ -173,6 +173,16 @@ Again: your Claude app / Max subscription does **not** fill this model pool auto
 
 This is intentionally small. It is a demo bring-up seam, not a full production worker.
 
+## Proof capture
+
+Once a real round-trip has completed, package the judge-facing evidence bundle:
+
+```bash
+python3 scripts/capture_clawith_roundtrip_proof.py
+```
+
+See `docs/clawith-roundtrip-proof.md` for the full checklist and output format.
+
 ## What is still not claimed
 
 This path does **not** claim:
