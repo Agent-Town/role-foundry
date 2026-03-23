@@ -252,3 +252,22 @@ See `docs/synthesis-hackathon-stack-architecture.md` for details.
 - `docs/clawith-vibecosystem-real-path.md` remains the reference for the separate real gateway/executor proof lane
 
 **Important honesty line:** this is a contract/provenance-real external-executor beta seam only. It does **not** create live execution, independent executor isolation, sealed evaluation, certification, tamper-proofing, or native Clawith parity.
+
+---
+
+## 2026-03-24 — Backend provenance receipt hardening surfaced across alpha/audit status docs
+
+**Outcome:** The overnight handoff, milestone status, and curated build log now explicitly reflect that backend provenance no longer stops at packet/runtime setup; it now threads through the public-safe alpha/audit receipt surfaces too.
+
+**What changed:**
+- `docs/overnight-handoff-20260323-phase-g.md` and `docs/milestones.md` now call out that `artifact-bundle.json` carries `execution_backend`, `execution_backend_contract`, and `execution_honesty`
+- those same docs now say plainly that candidate/evaluation receipts carry receipt-level `execution_backend` blocks when present
+- the status spine now points out that each alpha stage export carries its own `execution_backend`, and the top-level `sealing_receipt.execution_backend` summarizes backend provenance across the full alpha sequence
+- the public-safe wording now keeps the honesty boundary explicit: this is backend provenance / claim-boundary evidence only, not live execution, independent isolation, sealed eval, certification, tamper-proofing, audit, or native Clawith parity
+
+**Evidence:**
+- `tests/test_packet_runtime_bridge_e2e.py` pins backend provenance in `artifact-bundle.json` plus receipt-level `execution_backend` on candidate receipts
+- `tests/test_autoresearch_alpha_loop.py` pins `execution_backend` on all three alpha stages plus the rolled-up `sealing_receipt.execution_backend` summary
+- `tests/test_sealed_receipt_surface.py` pins the `sealing_receipt.execution_backend` summary, stage coverage, and conservative honesty notes
+
+**Important honesty line:** this docs/status reconcile only surfaces newly landed backend provenance and claim-boundary evidence. It does **not** itself create live execution, independent executor isolation, sealed evaluation, certification, tamper-proofing, audit, or native Clawith parity.

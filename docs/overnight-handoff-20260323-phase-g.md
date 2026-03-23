@@ -1,6 +1,6 @@
 # Overnight handoff — 2026-03-23 late refresh
 
-This note supersedes the earlier Phase G snapshot on the pre-promotion head. It reflects the repo state after the Google Eng Practices promotion, the Alpine docs/examples promotion, and a small docs-only reconcile pass.
+This note supersedes the earlier Phase G snapshot on the pre-promotion head. It reflects the repo state after the Google Eng Practices promotion, the Alpine docs/examples promotion, and a small backend-provenance docs/status reconcile pass.
 
 ## What landed cleanly tonight
 
@@ -40,8 +40,9 @@ That is now repeated proof that the Phase G promotion surface can move real trac
 
 - `specs/015-sealed-receipt-surface.md` and the alpha-loop receipt now add a top-level `sealing_receipt` block as a **public-safe honesty boundary, not a seal**.
 - That block records the current claim ceiling (`local private-holdout alpha execution with public-safe receipts` when the local manifest lane is used), the current status tier, blocked stronger claims, and the unmet prerequisites for any stronger sealing / tamper-evidence language.
+- Backend provenance now threads through the public-safe audit surfaces too: `artifact-bundle.json` carries `execution_backend`, `execution_backend_contract`, and `execution_honesty`; receipt-level `execution_backend` blocks now show up in candidate/evaluation receipts; each alpha stage export now carries its own `execution_backend`; and the top-level `sealing_receipt.execution_backend` summarizes backend provenance across the full alpha sequence.
 - When a local private-holdout manifest is actually loaded, the run now writes a local-only `pre-run-manifest-commitment.json` artifact **before** any stage execution begins, and the receipt surfaces it as `pre_run_manifest_commitment` with the manifest hash, timestamp, sequence linkage, and honesty note.
-- The same boundary can still include a SHA-256 fingerprint labeled **local operator correlation only**; together these surfaces improve local auditability and operator correlation only, not publication, third-party witnessing, signing, tamper-proofing, certification, or independent audit.
+- The same boundary can still include a SHA-256 fingerprint labeled **local operator correlation only**; together these surfaces improve local auditability, operator correlation, and backend claim-boundary evidence only — not publication, third-party witnessing, signing, tamper-proofing, certification, or independent audit.
 - The read-only live UI/read-model shell now renders the same boundary when a `sealing_receipt` is exported. The committed browser sample stays at **public-regression alpha**, so it still blocks stronger sealed/certified/tamper-proof claims instead of inventing them.
 
 ## `claude_vibecosystem` external-executor beta seam now landed
@@ -49,9 +50,10 @@ That is now repeated proof that the Phase G promotion surface can move real trac
 - `specs/016-claude-vibecosystem-backend.md` formalizes a named `claude_vibecosystem` runner backend as a narrow **external-executor beta seam**.
 - `python3 -m runner_bridge.cli --packet A001 --runner-backend claude_vibecosystem` now stamps `execution_backend: "claude_vibecosystem"` into `run-object.json` and can carry a machine-readable `execution_backend_contract` block through the packet/runtime surface.
 - The tiny backend stub writes `execution_honesty` plus provenance/inspectability surfaces so reviewers can see the backend id, intended executor path, and current claim boundary in machine-readable form.
+- That backend provenance now survives past packet/runtime setup into `artifact-bundle.json`, receipt-level `execution_backend` blocks (including candidate/evaluation receipts when present), per-stage alpha receipts, and `sealing_receipt.execution_backend`.
 - This is the honest extension of the existing `docs/clawith-vibecosystem-real-path.md` proof lane: the contract/provenance seam is now explicit in the public runner surfaces, without pretending the stub is live execution.
 
-**Important honesty line:** this is a contract/provenance-real external-executor beta seam only. It remains a non-destructive stub. It does **not** create live execution, independent executor isolation, sealed evaluation, certification, tamper-proofing, or native Clawith parity.
+**Important honesty line:** this is backend provenance / claim-boundary evidence only on top of a contract/provenance-real external-executor beta seam. It remains a non-destructive stub. It does **not** create live execution, independent executor isolation, sealed evaluation, certification, tamper-proofing, audit, or native Clawith parity.
 
 ## What remains blocked / not claimable
 
