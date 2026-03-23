@@ -82,6 +82,44 @@ That is the bootstrap gate.
 
 After that, log in and continue below.
 
+## Automated "Link OpenClaw" agent setup
+
+`scripts/clawith_link_openclaw.py` idempotently creates (or finds) an OpenClaw agent in Clawith via its real API and saves the gateway key to `runtime/clawith_openclaw_key.json` under the repo root (gitignored).
+
+```bash
+# Create/find the agent and save the key (defaults: localhost:3008, user robin)
+# If CLAWITH_PASSWORD is not set, the script will prompt for it.
+python3 scripts/clawith_link_openclaw.py
+
+# Non-interactive auth via env vars
+CLAWITH_PASSWORD=hackathon123 python3 scripts/clawith_link_openclaw.py
+
+# Reuse an existing bearer token instead of logging in again
+CLAWITH_TOKEN=... python3 scripts/clawith_link_openclaw.py
+
+# Custom name or different creds
+python3 scripts/clawith_link_openclaw.py --agent-name my-bot --username admin --password secret
+```
+
+API endpoints used:
+- `POST /api/auth/login` — authenticate (unless a bearer token is supplied)
+- `GET  /api/agents/` — find existing agents
+- `POST /api/agents/` with `agent_type=openclaw` — create linked agent
+- `POST /api/agents/{id}/api-key` — regenerate key for an existing linked agent
+- `POST /api/gateway/heartbeat` — validate a saved gateway key without disturbing inbox delivery
+
+Idempotency: if the named openclaw agent already exists and the saved key still validates, the key is reused. If the saved key is missing or stale, a new one is generated via the API and written back to `runtime/`.
+
+Then run the gateway worker with the saved key:
+
+```bash
+python3 scripts/clawith_vibe_once.py \
+  --api-key "$(jq -r .api_key runtime/clawith_openclaw_key.json)" \
+  --base-url http://localhost:3008 \
+  --claude-agent backend-dev \
+  --workdir "$PWD"
+```
+
 ## Smallest real demo flow after first admin exists
 
 ### Option A — the real lane for this demo
@@ -122,6 +160,10 @@ That requires a real provider API key in Clawith, for example an Anthropic API k
 Again: your Claude app / Max subscription does **not** fill this model pool automatically.
 
 ## What this repo now adds
+
+`scripts/clawith_link_openclaw.py`
+- idempotent agent creation via Clawith API (adapter-first, no native parity claims)
+- saves gateway key to `runtime/` (gitignored)
 
 `scripts/clawith_vibe_once.py`
 - one-shot gateway worker
