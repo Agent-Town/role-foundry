@@ -11,9 +11,9 @@
       "label": "Public training curriculum",
       "visibility": "student_visible",
       "status": "active",
-      "scenario_ids": ["t1", "t2", "t3", "t4", "t5", "t6"],
+      "scenario_ids": ["t1", "t2", "t3", "t4", "t5", "t6", "t7"],
       "family_id_prefix": "rf.frontend-apprentice.public.",
-      "family_count": 6,
+      "family_count": 7,
       "pack_refs": ["benchmarks/public-pack-v1/benchmark-pack.json"],
       "registry_refs": ["data/episode-registry/public-benchmark-pack-v1.json"],
       "notes": "All six public families are benchmark_ready and ship in public-benchmark-pack-v1."
@@ -50,7 +50,7 @@
     "blocked_buckets": 1,
     "local_only_buckets": 1,
     "all_seed_scenarios_covered": true,
-    "seed_scenario_ids": ["t1", "t2", "t3", "t4", "t5", "t6", "h1", "h2", "h3"],
+    "seed_scenario_ids": ["t1", "t2", "t3", "t4", "t5", "t6", "t7", "h1", "h2", "h3"],
     "notes": "Every scenario in seed/role-foundry-apprentice.json maps to exactly one bucket."
   }
 }

@@ -96,6 +96,14 @@ const DEMO_DATA = {
       type: 'training',
       difficulty: 'hard',
     },
+    {
+      id: 't7',
+      title: 'Playwright-informed UI regression check',
+      description: 'Apply Playwright best-practice patterns (user-visible locators, test isolation) to write or improve a regression check for an existing Role Foundry screen. Source-backed by Playwright public docs (Apache-2.0).',
+      type: 'training',
+      difficulty: 'medium',
+      source_backed: true,
+    },
 
     // Hidden holdouts — shown here as judge previews, sealed from the apprentice in the real loop
     {
@@ -214,7 +222,7 @@ const DEMO_DATA = {
         agent_role: 'student',
       },
       prompt_summary: 'Train on the visible curriculum only. Hidden holdouts stay sealed until teacher review.',
-      visible_scenarios: ['t1', 't2', 't3', 't4', 't5', 't6'],
+      visible_scenarios: ['t1', 't2', 't3', 't4', 't5', 't6', 't7'],
       sealed_holdout_count: 3,
       public_curriculum_themes: [],
     },
@@ -226,7 +234,7 @@ const DEMO_DATA = {
         agent_role: 'student',
       },
       prompt_summary: 'Keep demo mode honest, leave visible receipts, and turn failure categories into public curriculum without leaking the exam.',
-      visible_scenarios: ['t1', 't2', 't3', 't4', 't5', 't6'],
+      visible_scenarios: ['t1', 't2', 't3', 't4', 't5', 't6', 't7'],
       sealed_holdout_count: 3,
       public_curriculum_themes: [
         'Generic demo copy instead of a narrow apprentice vertical',
@@ -341,6 +349,55 @@ const DEMO_DATA = {
         { speaker: 'Teacher', text: 'Accepted. Hidden prompts remained sealed; only failure categories became curriculum.' },
       ],
     },
+  },
+
+  teacher_source_intake: {
+    process: 'discover → curate → promote',
+    process_doc: 'docs/teacher-source-curriculum-workflow.md',
+    note: 'Any teacher can follow this workflow to extend the curriculum with source-backed additions.',
+    sources: [
+      {
+        id: 'intake-playwright-regression',
+        name: 'Playwright docs + examples',
+        license: 'Apache-2.0',
+        status: 'promoted',
+        manual_curation_only: false,
+        promoted_family: 'rf.frontend-apprentice.public.playwright-regression',
+        episode_count: 2,
+        summary: 'Playwright best-practice patterns for UI regression checks. Promoted as a public family with 2 RF-authored episodes grounded in existing RF screens.',
+      },
+      {
+        id: 'intake-google-eng-practices',
+        name: 'Google Engineering Practices — code review',
+        license: 'CC BY 3.0',
+        status: 'curated',
+        manual_curation_only: false,
+        promoted_family: null,
+        episode_count: 0,
+        summary: 'Code review heuristics for diff critique, test expectations, and scope control. Curated and ready for a future code-review-discipline family.',
+      },
+      {
+        id: 'intake-alpinejs-curation',
+        name: 'Alpine.js repo + docs',
+        license: 'MIT (code/docs)',
+        status: 'discovered',
+        manual_curation_only: true,
+        promoted_family: null,
+        episode_count: 0,
+        summary: 'Stack-adjacent frontend fixes. Manual curation only — GitHub thread text has ambiguous downstream rights.',
+      },
+      {
+        id: 'intake-swebench-teacher-holdout',
+        name: 'SWE-bench / SWE-bench Verified',
+        license: 'MIT (harness)',
+        status: 'blocked_teacher_only_holdout',
+        manual_curation_only: true,
+        promoted_family: null,
+        episode_count: 0,
+        summary: 'Teacher-only holdout direction. NOT public curriculum. Manual curation only for small, hand-picked teacher holdout candidates.',
+        teacher_only: true,
+      },
+    ],
   },
 
   run_replays: {

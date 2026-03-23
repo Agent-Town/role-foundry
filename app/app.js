@@ -21,6 +21,7 @@ const ROLE_FOUNDRY_UI_SNAPSHOT_KEYS = Object.freeze([
   'iterations',
   'artifacts',
   'run_replays',
+  'teacher_source_intake',
 ]);
 
 function cloneRoleFoundryData(value) {
@@ -430,6 +431,7 @@ function createDataSkeleton(mode) {
     iterations: [],
     artifacts: {},
     run_replays: {},
+    teacher_source_intake: null,
   };
 }
 
@@ -985,6 +987,7 @@ function normalizeAppData(payload, mode) {
     iterations: normalizeIterations(payload.iterations ?? base.iterations),
     artifacts: normalizeRecord(payload.artifacts ?? base.artifacts),
     run_replays: normalizeRecord(payload.run_replays ?? base.run_replays),
+    teacher_source_intake: payload.teacher_source_intake ?? base.teacher_source_intake ?? null,
   };
 }
 
