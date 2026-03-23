@@ -199,6 +199,26 @@ Again: your Claude app / Max subscription does **not** fill this model pool auto
 
 This is intentionally small. It is a demo bring-up seam, not a full production worker.
 
+## Rescue-proof capture referenced by submission packaging
+
+One honest real roundtrip was captured and is now indexed for submission review in `submission/clawith-vibecosystem-roundtrip-proof.manifest.json`.
+
+Tracked proof index:
+- `submission/clawith-vibecosystem-roundtrip-proof.manifest.json`
+
+Local referenced receipt roots (not committed in this packaging pass):
+- `artifacts/clawith-roundtrip/rescue-proof/20260323T025241Z/`
+- `artifacts/clawith-gateway/rescue-proof/20260323T025254Z/`
+
+Required final reply markers from the proof:
+- `REAL_GATEWAY_ROUNDTRIP_OK_20260323_0958Z`
+- `CLAWITH_CONTROL_PLANE_VIBECOSYSTEM_EXECUTOR`
+
+Claim boundary for this proof:
+- it proves the **external gateway + Claude/vibecosystem executor lane**
+- it does **not** prove native Clawith model-pool parity
+- it does **not** prove sealed, tamper-proof, or independently certified evaluation
+
 ## What is still not claimed
 
 This path does **not** claim:

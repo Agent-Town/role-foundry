@@ -81,6 +81,7 @@ docker compose --profile live up
 ```
 
 See `docs/clawith-integration.md` for prerequisites and the full integration guide.
+For the narrow real external-executor proof lane, see `docs/clawith-vibecosystem-real-path.md` and `submission/clawith-vibecosystem-roundtrip-proof.manifest.json`.
 
 ## First live run
 
@@ -189,6 +190,7 @@ Using different model families for building and judging reduces correlated self-
 - `docs/v1-mvp-plan.md` — build slices
 - `docs/clawith-integration.md` — live-mode setup, prerequisites, image contract, and read-only probe lane
 - `docs/clawith-adapter-bringup.md` — seam-to-upstream mapping matrix and adapter-first bring-up prereqs
+- `docs/clawith-vibecosystem-real-path.md` — smallest real external gateway + Claude/vibecosystem roundtrip lane
 - `docs/runner-bridge.md` — bridge path, teacher evaluation contract, comparison receipts, and explicit auth deferral
 - `docs/public-benchmark-pack-v1.md` — public-safe benchmark pack scope, blocked families, and local private-holdout path
 - `docs/software-engineer-curriculum-sources.md` — narrow public source inventory for the software-engineering apprentice
