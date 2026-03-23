@@ -99,6 +99,12 @@
     <p>The live shell is read-only. It renders configured browser snapshots, receipt-oriented read-model exports, or the alpha-loop sample adapter path without pretending missing data exists.</p>
   </article>
 
+  <article class="judge-callout compact-callout" x-show="$store.app.sourceMode === 'live' && $store.app.alphaLoopComparison()">
+    <strong>Public alpha receipt:</strong>
+    <span x-text="'Verdict ' + ($store.app.alphaLoopComparison()?.verdict || 'pending') + ' on ' + ($store.app.alphaLoopComparison()?.deciding_axis || 'the exported deciding axis') + '.'"></span>
+    <small x-text="'Source total-score delta: ' + $store.app.formatSigned($store.app.alphaLoopComparison()?.total_score_delta, 4)"></small>
+  </article>
+
   <div class="meta-grid">
     <article class="meta-card">
       <span class="meta-label">Public curriculum</span>

@@ -76,6 +76,8 @@ To exercise the **browser live shell** against the committed alpha-loop sample:
 http://localhost:8080/?mode=live&liveDataUrl=live-read-model.alpha-loop.sample.json
 ```
 
+That sample is a **consumer-side envelope derived from the repo's real public alpha-loop receipt**. The browser now renders the exported `comparison.verdict`, `deciding_axis`, `baseline_total_score`, `candidate_total_score`, `total_score_delta`, and `category_deltas` directly instead of inventing new score semantics.
+
 To start the optional backend-side **live mode** (requires an external Clawith image):
 
 ```bash
@@ -194,7 +196,7 @@ See `docs/erc8004-base-agent0-adapter.md` for usage and `specs/013-erc8004-base-
 This repo is intentionally honest about what is not wired yet:
 - the browser **live shell is read-only** — it consumes configured exports / receipts, but it does not chase native run storage or claim upstream Clawith parity
 - only one **local/mockable runner path** is implemented today (`LocalReplayRunner`); teacher scorecards and iteration history are real contracts, but Claude/Codex-backed adapters still need wiring
-- the committed alpha-loop browser fixture is a **sample/read-model export**, not proof that a fully real baseline → candidate → teacher-eval loop has already executed end to end on this branch
+- the committed alpha-loop browser fixture is a **sample/read-model export derived from a real public alpha receipt**, not proof that native live storage/browser fan-out already exists on this branch
 - no auth, no Privy, no fake consumer OAuth path
 - no live artifact viewer backed by run storage fan-out
 
