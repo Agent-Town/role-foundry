@@ -1,8 +1,9 @@
 # conversationLog — roundtrip-ready draft
 
-Status: draft-fill-on-roundtrip-fold
+Status: draft-with-exact-roundtrip-refs
 Do not publish this unchanged.
-Replace the `FILL_*` placeholders before using it as final submission text.
+The roundtrip proof refs below are now literal.
+Replace the remaining `FILL_FINAL_*` placeholders before using it as final submission text.
 
 ## 1. Submission framing
 
@@ -10,7 +11,7 @@ Replace the `FILL_*` placeholders before using it as final submission text.
 - Final review branch: `FILL_FINAL_REVIEW_BRANCH`
 - Final review commit: `FILL_FINAL_REVIEW_COMMIT`
 - One-sentence claim:
-  - Role Foundry is a role-training, evaluation, and promotion system for AI apprentices; the current submission proves a Software Engineer apprentice public alpha loop, a local private-holdout honesty boundary, and an external Clawith -> OpenClaw -> Claude/vibecosystem roundtrip path without claiming native parity or sealed certification.
+  - Role Foundry is a role-training, evaluation, and promotion system for AI apprentices; the current submission proves a Software Engineer apprentice public alpha loop, a local private-holdout honesty boundary, and one external gateway-backed Clawith -> OpenClaw -> Claude/vibecosystem -> Clawith roundtrip path without claiming native parity or sealed certification.
 
 ## 2. Repo-visible proof already present
 
@@ -20,15 +21,18 @@ Replace the `FILL_*` placeholders before using it as final submission text.
 - The repo contains a **local private-holdout** contract and leak-separation path (`docs/private-holdout-authoring.md`, `specs/012-private-holdout-pack.md`, `tests/test_private_holdout_separation.py`).
 - The submission packet now includes fill-ready drafts and final review checklists under `submission/drafts/` and `submission/checklists/`.
 
-## 3. Roundtrip proof entry to fill after the active lane lands
+## 3. Roundtrip proof entry filled from the cited proof branch
 
-- Proof branch: `FILL_ROUNDTRIP_BRANCH`
-- Proof commit: `FILL_ROUNDTRIP_COMMIT`
-- Proof artifact path: `FILL_ROUNDTRIP_ARTIFACT_PATH`
-- Proof entrypoint: `FILL_ROUNDTRIP_ENTRYPOINT`
+- Proof branch: `review/submission-readiness-roundtrip-proof-20260323-1005`
+- Proof commit: `c353d88b866419d3da6cbb5ff7470f442310c0cc`
+- Proof artifact path: `submission/clawith-vibecosystem-roundtrip-proof.manifest.json`
+- Proof entrypoint: `scripts/clawith_ws_roundtrip.js` + `scripts/clawith_vibe_once.py`
 - Proof note:
-  - This proof shows an external **Clawith -> OpenClaw -> Claude/vibecosystem** roundtrip path.
-  - It does **not** upgrade the claim to native Clawith parity.
+  - This proof shows one external gateway-backed **Clawith -> OpenClaw -> Claude/vibecosystem -> Clawith** roundtrip.
+  - The tracked manifest points back to the source rescue proof branch `origin/review/clawith-vibe-roundtrip-demo-20260323-1000` at `4dab2a9866b86df4525d9698a7c844ab538ac61c`.
+  - Raw receipt roots are referenced, not committed: `artifacts/clawith-roundtrip/rescue-proof/20260323T025241Z` and `artifacts/clawith-gateway/rescue-proof/20260323T025254Z`.
+  - The required final reply markers recorded in the proof manifest are `REAL_GATEWAY_ROUNDTRIP_OK_20260323_0958Z` and `CLAWITH_CONTROL_PLANE_VIBECOSYSTEM_EXECUTOR`.
+  - It does **not** upgrade the claim to native Clawith parity, native model-pool completion, or sealed evaluation.
 
 ## 4. Explicit non-claims
 
@@ -44,4 +48,4 @@ Replace the `FILL_*` placeholders before using it as final submission text.
 
 ## 6. Reviewer note
 
-This draft is intentionally additive and merge-friendly. It prepares the final packaging language while the active proof-fold lane finishes the live roundtrip evidence.
+This draft stays additive and merge-friendly. It now carries the exact roundtrip proof refs while leaving only the final-review/publish fields for the later final packet pass.

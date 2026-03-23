@@ -1,5 +1,5 @@
 {
-  "status": "draft-fill-on-roundtrip-fold",
+  "status": "draft-with-exact-roundtrip-refs",
   "project": {
     "name": "Role Foundry",
     "repo_url": "https://github.com/Agent-Town/role-foundry",
@@ -7,12 +7,12 @@
     "final_review_commit": "FILL_FINAL_REVIEW_COMMIT"
   },
   "summary": {
-    "one_liner": "Role Foundry is a role-training, evaluation, and promotion system for AI apprentices; the current submission proves a Software Engineer apprentice public alpha loop, a local private-holdout honesty boundary, and an external Clawith -> OpenClaw -> Claude/vibecosystem roundtrip path without claiming native parity or sealed certification.",
+    "one_liner": "Role Foundry is a role-training, evaluation, and promotion system for AI apprentices; the current submission proves a Software Engineer apprentice public alpha loop, a local private-holdout honesty boundary, and one external gateway-backed Clawith -> OpenClaw -> Claude/vibecosystem -> Clawith roundtrip path without claiming native parity or sealed certification.",
     "current_role": "Software Engineer apprentice",
     "scope_note": "The shipped public curriculum remains frontend/product-heavy even though the role framing is broader software engineering.",
     "public_alpha_loop_status": "proven",
     "local_private_holdout_boundary_status": "proven",
-    "external_roundtrip_status": "fill_after_roundtrip_fold",
+    "external_roundtrip_status": "proven_on_cited_proof_branch",
     "native_clawith_parity_status": "not_claimed",
     "sealed_certification_status": "not_claimed"
   },
@@ -45,12 +45,22 @@
       ]
     },
     "external_roundtrip": {
-      "status": "fill_after_roundtrip_fold",
-      "branch": "FILL_ROUNDTRIP_BRANCH",
-      "commit": "FILL_ROUNDTRIP_COMMIT",
-      "artifact_path": "FILL_ROUNDTRIP_ARTIFACT_PATH",
-      "entrypoint": "FILL_ROUNDTRIP_ENTRYPOINT",
-      "note": "Expected proof target is an external Clawith -> OpenClaw -> Claude/vibecosystem roundtrip path."
+      "status": "ready_on_cited_proof_branch",
+      "branch": "review/submission-readiness-roundtrip-proof-20260323-1005",
+      "commit": "c353d88b866419d3da6cbb5ff7470f442310c0cc",
+      "artifact_path": "submission/clawith-vibecosystem-roundtrip-proof.manifest.json",
+      "entrypoint": "scripts/clawith_ws_roundtrip.js + scripts/clawith_vibe_once.py",
+      "source_review_branch": "origin/review/clawith-vibe-roundtrip-demo-20260323-1000",
+      "source_review_commit": "4dab2a9866b86df4525d9698a7c844ab538ac61c",
+      "local_receipt_roots": [
+        "artifacts/clawith-roundtrip/rescue-proof/20260323T025241Z",
+        "artifacts/clawith-gateway/rescue-proof/20260323T025254Z"
+      ],
+      "required_final_reply_markers": [
+        "REAL_GATEWAY_ROUNDTRIP_OK_20260323_0958Z",
+        "CLAWITH_CONTROL_PLANE_VIBECOSYSTEM_EXECUTOR"
+      ],
+      "note": "One honest external gateway-backed Clawith -> OpenClaw -> Claude/vibecosystem -> Clawith roundtrip, indexed by a tracked manifest; raw receipts remain local-only referenced."
     }
   },
   "claim_boundary": {
@@ -59,7 +69,7 @@
       "Software Engineer apprentice as the first concrete shipped role",
       "Executable public alpha loop proof",
       "Local private-holdout honesty boundary",
-      "External Clawith -> OpenClaw -> Claude/vibecosystem roundtrip proof once the exact artifact is filled"
+      "One honest external gateway-backed Clawith -> OpenClaw -> Claude/vibecosystem -> Clawith roundtrip proof indexed by submission/clawith-vibecosystem-roundtrip-proof.manifest.json on the cited proof branch"
     ],
     "not_claimed": [
       "Native Clawith parity",
