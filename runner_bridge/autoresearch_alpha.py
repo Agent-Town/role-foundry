@@ -553,7 +553,7 @@ def _build_comparison(
     if integrity_gate.get("claims_blocked"):
         if integrity_gate.get("mode") == "local_private_holdout":
             reasons.append(
-                "Integrity gate still blocks sealed-certification claims. This run proves a local private-holdout lane, not a certified exam."
+                "Integrity gate still blocks sealed-eval and sealed-certification claims. This run proves a local private-holdout lane with fresh hidden holdouts kept outside the public repo and student-visible artifacts."
             )
         else:
             reasons.append(
@@ -662,7 +662,9 @@ def _evaluate_integrity_gate(
         and baseline_usage["all_holdouts_private"]
         and candidate_usage["all_holdouts_private"]
     )
-    sealed_eval_claim_ok = local_private_holdout_ok
+    fresh_hidden_holdout_claim_ok = local_private_holdout_ok
+    local_private_holdout_claim_ok = local_private_holdout_ok
+    sealed_eval_claim_ok = False
     certification_claim_ok = False
 
     claims_allowed = [
@@ -670,27 +672,22 @@ def _evaluate_integrity_gate(
         "artifact-complete baseline → candidate → teacher-eval receipts",
         "public curriculum prompt-pack execution",
     ]
-    claims_blocked: list[str] = []
+    claims_blocked: list[str] = ["sealed-eval claims", "sealed certification"]
     mode = "public_regression"
 
     if local_private_holdout_ok:
         mode = "local_private_holdout"
         claims_allowed.append("local private-holdout alpha-loop execution")
+        claims_allowed.append("fresh hidden holdouts loaded from a local private manifest")
         claims_allowed.append("fresh teacher-only holdout scoring kept out of student-visible artifacts")
-        claims_blocked.append("sealed certification")
     else:
-        claims_blocked.extend(
-            [
-                "sealed certification",
-                "fresh hidden holdout integrity claims",
-            ]
-        )
+        claims_blocked.append("fresh hidden holdout integrity claims")
 
     if require_sealed_holdout and not local_private_holdout_ok:
         summary = "Integrity gate blocked: a truly local private-holdout alpha path is not configured yet. Author fresh teacher-only episodes outside the public repo and reference them via private_holdout_manifest first."
         status = "blocked"
     elif local_private_holdout_ok:
-        summary = "Integrity gate passed for a local private-holdout alpha loop. The run may claim local sealed holdout execution, but not sealed certification."
+        summary = "Integrity gate passed for a local private-holdout alpha loop. The run may claim fresh hidden holdouts loaded from a local private manifest and kept out of tracked or student-visible artifacts, but sealed-eval and sealed-certification claims remain blocked."
         status = "pass"
     else:
         summary = "Integrity gate passed for a public-regression alpha loop; sealed-eval claims remain blocked pending teacher-only family rewrite."
@@ -701,6 +698,8 @@ def _evaluate_integrity_gate(
         "mode": mode,
         "summary": summary,
         "public_regression_ok": public_regression_ok,
+        "fresh_hidden_holdout_claim_ok": fresh_hidden_holdout_claim_ok,
+        "local_private_holdout_claim_ok": local_private_holdout_claim_ok,
         "sealed_eval_claim_ok": sealed_eval_claim_ok,
         "certification_claim_ok": certification_claim_ok,
         "require_sealed_holdout": require_sealed_holdout,

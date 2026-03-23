@@ -80,7 +80,11 @@ If the request points `private_holdout_manifest` at a local-only holdout manifes
 - pass the integrity gate as a **local private-holdout** run when both teacher-eval stages are backed by the private manifest
 - still block **sealed certification** claims
 
-That is intentionally narrow. It proves a local private-holdout lane, not partner-ready or tamper-proof evaluation.
+That is intentionally narrow.
+
+**Allowed now:** fresh hidden holdouts in a local private manifest, a real local private-holdout rerun, and receipts that keep teacher-only content out of tracked and student-visible artifacts.
+
+**Still blocked:** sealed-eval claims, sealed certification, partner-ready evaluation, tamper-proofing, or any claim that an independent system sealed the holdouts.
 
 ## Current bridge shape
 

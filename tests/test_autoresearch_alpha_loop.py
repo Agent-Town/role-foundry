@@ -290,10 +290,14 @@ class AutoresearchAlphaLoopContractTests(unittest.TestCase):
             integrity_gate = receipt["integrity_gate"]
             self.assertEqual(integrity_gate["status"], "pass")
             self.assertEqual(integrity_gate["mode"], "local_private_holdout")
-            self.assertTrue(integrity_gate["sealed_eval_claim_ok"])
+            self.assertTrue(integrity_gate["fresh_hidden_holdout_claim_ok"])
+            self.assertTrue(integrity_gate["local_private_holdout_claim_ok"])
+            self.assertFalse(integrity_gate["sealed_eval_claim_ok"])
             self.assertFalse(integrity_gate["certification_claim_ok"])
             self.assertEqual(integrity_gate["private_holdout_manifest_id"], "private-holdout-pack-vtest")
             self.assertIn("local private-holdout alpha-loop execution", integrity_gate["claims_allowed"])
+            self.assertIn("fresh hidden holdouts loaded from a local private manifest", integrity_gate["claims_allowed"])
+            self.assertIn("sealed-eval claims", integrity_gate["claims_blocked"])
             self.assertIn("sealed certification", integrity_gate["claims_blocked"])
             self.assertNotIn("fresh hidden holdout integrity claims", integrity_gate["claims_blocked"])
             self.assertEqual(

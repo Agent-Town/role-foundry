@@ -141,13 +141,17 @@ There is also now a separate **local-only private holdout scaffold**:
 - `tests/test_private_holdout_separation.py` proves tracked artifacts stay clean
 - `runner_bridge.autoresearch_alpha` can now hydrate a **local private-holdout** teacher lane from `private_holdout_manifest` while keeping student-visible artifacts redacted
 
-That scaffold is now enough for a **local private-holdout** alpha run once fresh episodes are authored locally. It is still **not** proof of a sealed certification path.
+That scaffold is now enough for a **local private-holdout** alpha run once fresh episodes are authored locally.
+
+**Allowed now:** fresh hidden holdouts in a gitignored local manifest, real reruns, and receipts that keep teacher-only content out of tracked and student-visible artifacts.
+
+**Still blocked:** sealed-eval claims, sealed certification, tamper-proof evaluation, and any claim that a third party independently sealed the holdouts.
 
 The local-only shape is:
 
 ```bash
 python3 -m runner_bridge.autoresearch_alpha \
-  --request benchmarks/private-holdout-pack/local-sealed-alpha-loop.request.json
+  --request benchmarks/private-holdout-pack/local-private-holdout-alpha-loop.request.json
 ```
 
 That request file stays local-only, points `private_holdout_manifest` at the gitignored manifest, and references holdout episodes by id so the bridge can hydrate teacher-only prompts into `request.private.json` only.
