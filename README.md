@@ -152,6 +152,21 @@ python3 -m runner_bridge.autoresearch_alpha \
 
 That request file stays local-only, points `private_holdout_manifest` at the gitignored manifest, and references holdout episodes by id so the bridge can hydrate teacher-only prompts into `request.private.json` only.
 
+## ERC-8004 / Base / agent0-sdk adapter
+
+The repo now ships a narrow adapter for ERC-8004 agent registration on **Base** through the `agent0-sdk` mint shape:
+
+- `runner_bridge/product_integrations.py` — generates a local ERC-8004 registration draft, completion template, and agent0 Base adapter contract after each run. No onchain writes.
+- `app/agent0_base_adapter.mjs` — thin browser adapter following the agent0 mint shape: `discoverEip6963Providers` → `connectEip1193` → `SDK({ chainId, rpcUrl, walletProvider })` → `createAgent(...)` → `registerHTTP(tokenUri)`.
+
+**Target chains:** Base Sepolia (chain id 84532, review/demo default) and Base Mainnet (chain id 8453, explicit submission target). Both are env-driven via `BASE_SEPOLIA_RPC_URL` / `BASE_MAINNET_RPC_URL`.
+
+**What is real now:** registration drafts, completion templates, the browser adapter module, and wired-vs-pending diagnostics.
+
+**What is pending:** agent0-sdk availability, configured Base RPC URL, and an actual wallet-approved mint. No minting has been claimed or faked.
+
+See `docs/erc8004-base-agent0-adapter.md` for usage and `specs/013-erc8004-base-agent0-adapter.md` for the full spec.
+
 ## What is still stubbed
 
 This repo is intentionally honest about what is not wired yet:
@@ -199,6 +214,7 @@ Using different model families for building and judging reduces correlated self-
 - `docs/swe-bench-holdout-extension.md` — teacher-only process for small manually curated SWE-bench-derived holdout episodes
 - `docs/conversation-log.md` — curated build log for the submission
 - `submission/` — final submission packaging templates and review checklists
+- `docs/erc8004-base-agent0-adapter.md` — ERC-8004 Base / agent0-sdk adapter usage and claim boundary
 - `docs/agent-town-connection.md` — Agent Town relationship
 - `docs/synthesis-hackathon-ideation.md` — ideation and ranking
 - `docs/synthesis-hackathon-stack-architecture.md` — architecture notes
@@ -210,6 +226,7 @@ Using different model families for building and judging reduces correlated self-
 - `specs/010-autoresearch-alpha-public-loop.md` — the first executable public alpha loop with integrity gate
 - `specs/011-live-ui-read-model.md` — read-only browser adapter for configured live/read-model exports
 - `specs/012-private-holdout-pack.md` — local-only private holdout contract without shipping teacher material
+- `specs/013-erc8004-base-agent0-adapter.md` — ERC-8004 Base / agent0-sdk adapter spec
 
 ## License
 
