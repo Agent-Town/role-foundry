@@ -431,6 +431,65 @@ class AutoresearchAlphaLoopContractTests(unittest.TestCase):
             self.assertNotIn(prompt_one, all_public_text)
             self.assertNotIn(prompt_two, all_public_text)
 
+            # --- Sealing receipt surface (Spec 015) on local private-holdout ---
+            sr = receipt.get("sealing_receipt")
+            self.assertIsNotNone(sr, "local private-holdout receipt missing sealing_receipt")
+
+            # Status must reflect the private-holdout lane
+            self.assertEqual(sr["status"], "local_private_holdout_alpha")
+
+            # Claim ceiling must stay honest — no sealed/certified/tamper-proof language
+            ceiling = sr["claim_ceiling"]
+            self.assertIn("public-safe receipts", ceiling)
+            self.assertIn("local private-holdout", ceiling)
+            for forbidden in ["sealed eval", "sealed cert", "tamper-proof", "independently audited"]:
+                self.assertNotIn(
+                    forbidden,
+                    ceiling.lower(),
+                    f"claim_ceiling overclaims with '{forbidden}'",
+                )
+
+            # Private manifest fingerprint exists and is labeled local_operator_correlation_only
+            fp = sr["private_manifest_fingerprint"]
+            self.assertIsNotNone(fp, "private-holdout run must have a manifest fingerprint")
+            self.assertEqual(fp["scope"], "local_operator_correlation_only")
+            self.assertEqual(fp["algorithm"], "sha256")
+            self.assertIn("does not prove anything to a third party", fp["honesty_note"])
+            self.assertTrue(len(fp["hex_digest"]) == 64, "sha256 hex digest should be 64 chars")
+
+            # Stronger controls remain unmet
+            for p in sr["stronger_claim_prerequisites"]:
+                self.assertFalse(
+                    p["met"],
+                    f"prerequisite '{p['prerequisite']}' must be unmet on local private-holdout",
+                )
+
+            # Stronger claims remain blocked
+            blocked_names = {bc["claim"] for bc in sr["blocked_claims"]}
+            for required in [
+                "sealed evaluation",
+                "sealed certification",
+                "tamper-proof execution",
+                "independently audited",
+            ]:
+                self.assertIn(required, blocked_names, f"missing blocked claim: {required}")
+
+            # Operator checklist: private holdout loaded, but stronger controls absent
+            checklist = sr["operator_checklist"]
+            self.assertTrue(checklist["private_holdout_manifest_loaded"]["present"])
+            self.assertTrue(checklist["integrity_gate_passed"]["present"])
+            for must_be_false in [
+                "independent_executor_sandbox",
+                "third_party_holdout_auditor",
+                "hardware_attestation_or_enclave",
+                "external_audit",
+                "pre_run_manifest_commitment",
+            ]:
+                self.assertFalse(
+                    checklist[must_be_false]["present"],
+                    f"{must_be_false} must be False on local private-holdout",
+                )
+
     def _example_payload_with_absolute_paths(self):
         payload = json.loads(EXAMPLE_REQUEST.read_text())
         payload["public_benchmark_pack"] = str(

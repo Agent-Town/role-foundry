@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import shlex
 import sys
@@ -218,6 +219,12 @@ def run_alpha_loop(
         "candidate-teacher-eval": candidate_teacher_stage,
     })
 
+    sealing_receipt = _build_sealing_receipt(
+        integrity_gate=integrity_gate,
+        private_holdout_pack=private_holdout_pack,
+        artifacts_root=artifacts_root,
+    )
+
     receipt = {
         "ok": all(
             stage.get("status") == "completed"
@@ -238,6 +245,7 @@ def run_alpha_loop(
         "comparison": comparison,
         "verdict": comparison.get("verdict"),
         "verifier_gate": verifier_gate_summary,
+        "sealing_receipt": sealing_receipt,
         "artifact_coverage": artifact_coverage,
         "outputs": {
             "request_copy_path": "autoresearch-alpha.request.json",
@@ -1212,6 +1220,155 @@ def _evaluate_integrity_gate(
         },
         "claims_allowed": claims_allowed,
         "claims_blocked": claims_blocked,
+    }
+
+
+def _build_sealing_receipt(
+    *,
+    integrity_gate: dict[str, Any],
+    private_holdout_pack: dict[str, Any] | None,
+    artifacts_root: Path,
+) -> dict[str, Any]:
+    """Build a public-safe sealing receipt surface (Spec 015).
+
+    This is explicitly a boundary record, not a seal.  It records the
+    claim ceiling, operator checklist states, and blocked stronger claims
+    so downstream consumers can see exactly what the run does and does not
+    prove.
+    """
+    mode = integrity_gate.get("mode", "public_regression")
+    is_private_holdout = mode == "local_private_holdout"
+
+    if is_private_holdout:
+        claim_ceiling = "local private-holdout alpha execution with public-safe receipts"
+        status = "local_private_holdout_alpha"
+    else:
+        claim_ceiling = "public-regression alpha execution with public-safe receipts"
+        status = "public_regression_alpha"
+
+    operator_checklist = {
+        "public_benchmark_pack_loaded": {
+            "present": True,
+            "reason": "Public benchmark episodes were loaded for the candidate lifecycle.",
+        },
+        "integrity_gate_passed": {
+            "present": integrity_gate.get("status") == "pass",
+            "reason": integrity_gate.get("summary", ""),
+        },
+        "private_holdout_manifest_loaded": {
+            "present": is_private_holdout,
+            "reason": (
+                "Fresh teacher-only holdouts loaded from a local private manifest."
+                if is_private_holdout
+                else "No private holdout manifest was configured for this run."
+            ),
+        },
+        "independent_executor_sandbox": {
+            "present": False,
+            "reason": "No independent executor sandbox isolates the student from holdout content at runtime.",
+        },
+        "third_party_holdout_auditor": {
+            "present": False,
+            "reason": "No third-party auditor has reviewed or signed the holdout separation.",
+        },
+        "hardware_attestation_or_enclave": {
+            "present": False,
+            "reason": "The operator controls the local machine; no hardware attestation or remote enclave is used.",
+        },
+        "external_audit": {
+            "present": False,
+            "reason": "No external party has inspected the holdout manifest, run artifacts, or scoring pipeline.",
+        },
+        "pre_run_manifest_commitment": {
+            "present": False,
+            "reason": "No cryptographic commitment to holdout manifest hash was published before the run.",
+        },
+    }
+
+    blocked_claims = [
+        {
+            "claim": "sealed evaluation",
+            "reason": "No independent executor sandbox isolates the student from holdout content at runtime.",
+            "prerequisite": "Independent executor sandbox where the student cannot read holdout files at runtime.",
+        },
+        {
+            "claim": "sealed certification",
+            "reason": "No third-party auditor has reviewed or signed the holdout separation.",
+            "prerequisite": "Third-party holdout auditor signs the manifest before the run.",
+        },
+        {
+            "claim": "tamper-proof execution",
+            "reason": "The operator controls the local machine; no hardware attestation or remote enclave is used.",
+            "prerequisite": "Hardware attestation or remote enclave execution with verifiable logs.",
+        },
+        {
+            "claim": "independently audited",
+            "reason": "No external party has inspected the holdout manifest, run artifacts, or scoring pipeline.",
+            "prerequisite": "External audit of the scoring pipeline, holdout manifest, and run artifacts.",
+        },
+    ]
+
+    # Private manifest fingerprint: local operator correlation only.
+    private_manifest_fingerprint = None
+    if private_holdout_pack and private_holdout_pack.get("manifest"):
+        canonical = json.dumps(private_holdout_pack["manifest"], sort_keys=True, separators=(",", ":"))
+        private_manifest_fingerprint = {
+            "algorithm": "sha256",
+            "hex_digest": hashlib.sha256(canonical.encode()).hexdigest(),
+            "scope": "local_operator_correlation_only",
+            "honesty_note": (
+                "This fingerprint lets the same operator correlate a receipt with a "
+                "manifest later. It does not prove anything to a third party because "
+                "the operator controls both the manifest and the hashing process."
+            ),
+        }
+
+    stronger_claim_prerequisites = [
+        {
+            "prerequisite": "Independent executor sandbox where the student cannot read holdout files at runtime",
+            "enables": "sealed evaluation",
+            "met": False,
+        },
+        {
+            "prerequisite": "Third-party holdout auditor signs the manifest before the run",
+            "enables": "sealed certification",
+            "met": False,
+        },
+        {
+            "prerequisite": "Hardware attestation or remote enclave execution with verifiable logs",
+            "enables": "tamper-proof execution",
+            "met": False,
+        },
+        {
+            "prerequisite": "External audit of the scoring pipeline, holdout manifest, and run artifacts",
+            "enables": "independently audited",
+            "met": False,
+        },
+        {
+            "prerequisite": "Cryptographic commitment to holdout manifest hash published before the run",
+            "enables": "stronger tamper-evidence claims beyond local correlation",
+            "met": False,
+        },
+    ]
+
+    return {
+        "spec": "015-sealed-receipt-surface",
+        "claim_ceiling": claim_ceiling,
+        "status": status,
+        "integrity_gate_mode": mode,
+        "operator_checklist": operator_checklist,
+        "blocked_claims": blocked_claims,
+        "stronger_claim_prerequisites": stronger_claim_prerequisites,
+        "private_manifest_fingerprint": private_manifest_fingerprint,
+        "linked_receipt_paths": {
+            "alpha_receipt": "autoresearch-alpha.json",
+            "alpha_request_copy": "autoresearch-alpha.request.json",
+        },
+        "honesty_note": (
+            "This is a public-safe boundary record, not a seal. "
+            "It records what the run can honestly claim and what controls "
+            "are missing before stronger language becomes honest."
+        ),
     }
 
 

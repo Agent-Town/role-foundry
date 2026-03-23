@@ -174,6 +174,33 @@ python3 -m runner_bridge.autoresearch_alpha \
 
 That request file stays local-only, points `private_holdout_manifest` at the gitignored manifest, and references holdout episodes by id so the bridge can hydrate teacher-only prompts into `request.private.json` only.
 
+## Sealing receipt surface (honesty boundary)
+
+The alpha receipt now includes a top-level `sealing_receipt` block (Spec 015) that records exactly what the run can and cannot claim. This is a **public-safe boundary record, not a seal**.
+
+What it carries:
+- `claim_ceiling` — the strongest honest claim the run supports (today: "local private-holdout alpha execution with public-safe receipts")
+- `status` — current tier (`local_private_holdout_alpha` or `public_regression_alpha`)
+- `operator_checklist` — which controls are present vs missing, with reasons
+- `blocked_claims` — stronger claims that are explicitly blocked, each with a reason and prerequisite
+- `stronger_claim_prerequisites` — machine-readable list of what would need to be true before each blocked claim could be unblocked, each with `prerequisite`, `enables`, and `met` fields
+- `private_manifest_fingerprint` — if a private holdout manifest was loaded, a SHA-256 of its canonical JSON bytes labeled as **local operator correlation only** (not independent tamper-proofing)
+- `linked_receipt_paths` — relative paths to the alpha receipt and request copy
+
+**Unmet prerequisites for stronger claims:**
+
+| Prerequisite | Would enable |
+|---|---|
+| Independent executor sandbox (student cannot read holdout files at runtime) | "sealed evaluation" language |
+| Third-party holdout auditor signs the manifest before the run | "sealed certification" language |
+| Hardware attestation or remote enclave execution with verifiable logs | "tamper-proof" language |
+| External audit of scoring pipeline, holdout manifest, and run artifacts | "independently audited" language |
+| Cryptographic commitment to manifest hash published before the run | Stronger tamper-evidence beyond local correlation |
+
+None of these prerequisites are met today. The `sealing_receipt` makes this explicit so future branches cannot overclaim without first landing the missing controls.
+
+See `specs/015-sealed-receipt-surface.md` for the full spec.
+
 ## ERC-8004 / Base / agent0-sdk Python mint path
 
 The repo now ships a narrow **Python-native** path that turns the generation-provenance chain into a portable identity handoff on **Base** through the `agent0-sdk` / `agent0-py` flow:
@@ -256,6 +283,7 @@ Using different model families for building and judging reduces correlated self-
 - `specs/012-private-holdout-pack.md` — local-only private holdout contract without shipping teacher material
 - `specs/013-erc8004-base-agent0-adapter.md` — ERC-8004 Base / agent0-sdk adapter spec
 - `specs/014-frontend-product-engineer-20-task-curriculum.md` — TDD-first 20-task curriculum contract for the first Frontend/Product Engineer apprentice
+- `specs/015-sealed-receipt-surface.md` — public-safe sealing / tamper-evidence receipt surface honesty boundary
 
 ## License
 
