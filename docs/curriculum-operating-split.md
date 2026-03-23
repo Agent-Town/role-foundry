@@ -19,8 +19,15 @@ The public curriculum lane now has one canonical, versioned surface:
 - `data/curriculum/frontend-product-engineer-evaluation-contract.v1.json`
 - `data/curriculum/frontend-product-engineer-task-packet.schema.v1.json`
 - `data/curriculum/frontend-product-engineer-public-seed-registry.v1.json`
+- `data/curriculum/frontend-product-engineer-generation-lineage.schema.v1.json`
+- `data/curriculum/frontend-product-engineer-generation-lineage-registry.v1.json`
+- `data/curriculum/frontend-product-engineer-weekly-training-cycle.schema.v1.json`
+- `data/curriculum/frontend-product-engineer-weekly-cycle-registry.v1.json`
+- `data/curriculum/frontend-product-engineer-sample-weekly-cycle-receipt.v1.json`
+- `docs/frontend-product-engineer-compounding-ops.md`
 - `runner_bridge/curriculum.py`
 - `tests/test_frontend_product_engineer_seed_registry.py`
+- `tests/test_frontend_product_engineer_compounding_ops.py`
 - `tests/test_curriculum_contract.py`
 
 There is intentionally no separate generic `seed/frontend-product-engineer.json`,
@@ -102,8 +109,9 @@ Frontend/Product Engineer apprentice that:
 - All **20 public seed task packets are checked in** at
   `data/curriculum/frontend-product-engineer-public-seed-registry.v1.json`.
 - The versioned role manifest, evaluation contract, task-packet schema,
-  source records, promotion records, sample scorecard, and sample run
-  objects are all checked in and machine-readable.
+  source records, promotion records, sample scorecard, sample run
+  objects, Phase 5 lineage schema/registry, and Phase 5 weekly-cycle
+  schema/registry/sample receipt are all checked in and machine-readable.
 - `runner_bridge/curriculum.py` validates task packets, scorecards, and
   evaluation-contract invariants against frozen Spec 014 constants.
 - Step C eval-contract honesty landed in the alpha loop: stage receipts
@@ -119,8 +127,11 @@ Frontend/Product Engineer apprentice that:
 - `LocalReplayRunner` still does not execute verifier commands, so the
   verifier gate is a truthful contract surface, not a live green check.
 - Teacher review console, promotion gating app flows, stability gates,
-  regression gates, lineage registry, and weekly cycle automation are
-  still future runtime work.
+  regression gates, and live weekly cycle automation are still future
+  runtime work.
+- The tracked lineage registry and weekly-cycle receipt are sample
+  fixtures, not proof that live promotion gating or live weekly cadence
+  already ran.
 
 ## Honest status by area
 
@@ -130,10 +141,10 @@ Frontend/Product Engineer apprentice that:
 | Phase 2 teacher operating system | Packet-defined, runtime not yet live | Authoring/promotion workflow is described in packets, but not wired as an end-to-end teacher system. |
 | Phase 3 execution | Partial | Autoresearch alpha receipts exist, and Step C verifier-contract / verifier-gate honesty landed; live verifier execution is still pending. |
 | Phase 4 evaluation | Packet-defined, runtime not yet live | Public scoring contract exists; teacher console and promotion-gate enforcement do not. |
-| Phase 5 compounding | Packet-defined, runtime not yet live | Lineage and weekly-cycle packets exist, but the operating loop is not live. |
+| Phase 5 compounding | Contract fixtures landed, runtime not yet live | Lineage and weekly-cycle schemas/registries now exist, but they remain tracked sample receipts rather than live operating evidence. |
 | Private holdout pool | Local-only scaffold | Teacher authors locally; zero teacher-only content is tracked by git. |
 | Teacher review console | Not started | Requires Phase 4 app / export surface. |
-| Generation lineage | Not started | Requires Phase 5 registry and real promoted generations. |
+| Generation lineage | Schema + sample registry landed | Parent/version/promotion-reason fields are now machine-readable; live promoted generations are still not claimed. |
 
 This is the honest split: the public curriculum contract is real now,
 while much of the teacher OS and live runtime remains future work.

@@ -1,0 +1,324 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent.town/role-foundry/schema/frontend-product-engineer-generation-lineage-v1.json",
+  "title": "Frontend/Product Engineer generation lineage registry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "meta",
+    "generation_roots",
+    "promoted_generations"
+  ],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "version",
+        "generated_on",
+        "role_id",
+        "source_spec",
+        "evaluation_contract_path",
+        "seed_registry_path",
+        "cycle_registry_path",
+        "sample_cycle_receipt_path",
+        "public_safe",
+        "teacher_only_fields_present",
+        "live_promoted_generation_count",
+        "sample_promoted_generation_count",
+        "notes"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "generated_on": {
+          "type": "string"
+        },
+        "role_id": {
+          "type": "string"
+        },
+        "source_spec": {
+          "type": "string"
+        },
+        "evaluation_contract_path": {
+          "type": "string"
+        },
+        "seed_registry_path": {
+          "type": "string"
+        },
+        "cycle_registry_path": {
+          "type": "string"
+        },
+        "sample_cycle_receipt_path": {
+          "type": "string"
+        },
+        "public_safe": {
+          "type": "boolean"
+        },
+        "teacher_only_fields_present": {
+          "type": "boolean"
+        },
+        "live_promoted_generation_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sample_promoted_generation_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "notes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "generation_roots": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "generation_id",
+          "kind",
+          "description"
+        ],
+        "properties": {
+          "generation_id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "promoted_generations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "generation_id",
+          "role_id",
+          "example_only",
+          "operational_status",
+          "live_promotion_claimed",
+          "parent_generation_id",
+          "source_cycle_id",
+          "promotion_sequence_index",
+          "task_packet",
+          "evaluation_contract",
+          "regression_pack",
+          "teacher_review",
+          "promotion_decision",
+          "curriculum_link",
+          "artifact_refs"
+        ],
+        "properties": {
+          "generation_id": {
+            "type": "string"
+          },
+          "role_id": {
+            "type": "string"
+          },
+          "example_only": {
+            "type": "boolean"
+          },
+          "operational_status": {
+            "type": "string"
+          },
+          "live_promotion_claimed": {
+            "type": "boolean"
+          },
+          "parent_generation_id": {
+            "type": "string"
+          },
+          "source_cycle_id": {
+            "type": "string"
+          },
+          "promotion_sequence_index": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "task_packet": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "task_id",
+              "acceptance_test_id",
+              "packet_version",
+              "registry_path"
+            ],
+            "properties": {
+              "task_id": {
+                "type": "string"
+              },
+              "acceptance_test_id": {
+                "type": "string"
+              },
+              "packet_version": {
+                "type": "string"
+              },
+              "registry_path": {
+                "type": "string"
+              }
+            }
+          },
+          "evaluation_contract": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "version",
+              "path"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "version": {
+                "type": "string"
+              },
+              "path": {
+                "type": "string"
+              }
+            }
+          },
+          "regression_pack": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "version",
+              "source_receipt_path",
+              "result"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "version": {
+                "type": "string"
+              },
+              "source_receipt_path": {
+                "type": "string"
+              },
+              "result": {
+                "type": "string"
+              }
+            }
+          },
+          "teacher_review": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "review_mode",
+              "scorecard_path",
+              "public_safe_summary"
+            ],
+            "properties": {
+              "review_mode": {
+                "type": "string"
+              },
+              "scorecard_path": {
+                "type": "string"
+              },
+              "public_safe_summary": {
+                "type": "string"
+              }
+            }
+          },
+          "promotion_decision": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "outcome",
+              "reason",
+              "public_weighted_score",
+              "private_holdout_gate_status",
+              "regression_gate_status",
+              "eligible_for_live_ops_claim"
+            ],
+            "properties": {
+              "outcome": {
+                "type": "string"
+              },
+              "reason": {
+                "type": "string"
+              },
+              "public_weighted_score": {
+                "type": "number"
+              },
+              "private_holdout_gate_status": {
+                "type": "string"
+              },
+              "regression_gate_status": {
+                "type": "string"
+              },
+              "eligible_for_live_ops_claim": {
+                "type": "boolean"
+              }
+            }
+          },
+          "curriculum_link": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "originating_failure_id",
+              "linked_task_id",
+              "disposition",
+              "public_safe_note"
+            ],
+            "properties": {
+              "originating_failure_id": {
+                "type": "string"
+              },
+              "linked_task_id": {
+                "type": "string"
+              },
+              "disposition": {
+                "type": "string"
+              },
+              "public_safe_note": {
+                "type": "string"
+              }
+            }
+          },
+          "artifact_refs": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "cycle_receipt_path",
+              "cycle_registry_path",
+              "ops_doc_path"
+            ],
+            "properties": {
+              "cycle_receipt_path": {
+                "type": "string"
+              },
+              "cycle_registry_path": {
+                "type": "string"
+              },
+              "ops_doc_path": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

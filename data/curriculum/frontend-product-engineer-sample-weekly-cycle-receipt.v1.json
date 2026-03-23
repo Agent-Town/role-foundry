@@ -1,0 +1,149 @@
+{
+  "meta": {
+    "id": "frontend-product-engineer-sample-weekly-cycle-receipt-v1",
+    "version": "1.0.0",
+    "cycle_id": "fpe-cycle-2026-W13-sample",
+    "week": "2026-W13",
+    "role_id": "role-frontend-product-engineer",
+    "source_spec": "specs/014-frontend-product-engineer-20-task-curriculum.md",
+    "schema_path": "data/curriculum/frontend-product-engineer-weekly-training-cycle.schema.v1.json",
+    "seed_registry_path": "data/curriculum/frontend-product-engineer-public-seed-registry.v1.json",
+    "evaluation_contract_path": "data/curriculum/frontend-product-engineer-evaluation-contract.v1.json",
+    "lineage_registry_path": "data/curriculum/frontend-product-engineer-generation-lineage-registry.v1.json",
+    "example_only": true,
+    "live_cycle_claimed": false,
+    "operational_status": "tracked_sample_fixture",
+    "future_live_receipt_root": "runtime/training-cycles/YYYY-Www/"
+  },
+  "task_selection": {
+    "selected_tasks": [
+      {
+        "task_id": "fpe.seed.e001.turn-failures-into-next-step-curriculum",
+        "acceptance_test_id": "E001",
+        "selection_reason": "Stable failure themes were not yet linked to public task or defer decisions."
+      },
+      {
+        "task_id": "fpe.seed.e002.track-generation-lineage",
+        "acceptance_test_id": "E002",
+        "selection_reason": "Promoted generations still lacked a machine-readable parent/version registry."
+      },
+      {
+        "task_id": "fpe.seed.e003.run-a-real-weekly-training-cycle",
+        "acceptance_test_id": "E003",
+        "selection_reason": "The repo needed a dated cycle receipt shape before live cadence work can be judged honestly."
+      }
+    ],
+    "selection_basis": [
+      "Close the compounding/ops contract gap first.",
+      "Keep scope inside the Frontend/Product Engineer curriculum surface.",
+      "Add tracked sample artifacts without pretending runtime automation already exists."
+    ],
+    "originating_failure_ids": [
+      "failure.failure-to-curriculum-linkage-gap",
+      "failure.lineage-machine-readable-gap",
+      "failure.weekly-cycle-receipt-gap"
+    ]
+  },
+  "baseline_run": {
+    "run_id": "fpe-cycle-2026-W13-baseline-sample",
+    "example_only": true,
+    "workspace_kind": "git_worktree",
+    "isolated": true,
+    "task_packet_version": "1.0.0",
+    "evaluation_contract_version": "1.0.0",
+    "status_summary": "Before this slice, Phase 5 existed only as packet prose without a tracked lineage registry or weekly cycle receipt fixture."
+  },
+  "candidate_run": {
+    "run_id": "fpe-cycle-2026-W13-candidate-sample",
+    "example_only": true,
+    "workspace_kind": "git_worktree",
+    "isolated": true,
+    "task_packet_version": "1.0.0",
+    "evaluation_contract_version": "1.0.0",
+    "changed_files": [
+      "data/curriculum/frontend-product-engineer-generation-lineage.schema.v1.json",
+      "data/curriculum/frontend-product-engineer-generation-lineage-registry.v1.json",
+      "data/curriculum/frontend-product-engineer-weekly-training-cycle.schema.v1.json",
+      "data/curriculum/frontend-product-engineer-weekly-cycle-registry.v1.json",
+      "data/curriculum/frontend-product-engineer-sample-weekly-cycle-receipt.v1.json",
+      "docs/frontend-product-engineer-compounding-ops.md",
+      "tests/test_frontend_product_engineer_compounding_ops.py"
+    ],
+    "checks_run": [
+      {
+        "id": "phase5-compounding-contracts",
+        "status": "passing_fixture"
+      },
+      {
+        "id": "frontend-product-engineer-seed-registry",
+        "status": "passing_fixture"
+      }
+    ]
+  },
+  "teacher_review": {
+    "review_mode": "human_teacher_required",
+    "scorecard_path": "data/curriculum/frontend-product-engineer-sample-scorecard.v1.json",
+    "public_safe_summary": "Teacher review approves the contract shape and honesty boundary: tracked sample receipts exist, but live weekly operations and private holdout gating are still manual/local."
+  },
+  "promotion_decision": {
+    "outcome": "documented_example_promotions",
+    "promoted_generation_ids": [
+      "fpe-generation-sample-001",
+      "fpe-generation-sample-002",
+      "fpe-generation-sample-003"
+    ],
+    "eligible_for_live_ops_claim": false,
+    "blocked_by": [
+      "Private-holdout scoring remains local/manual and is not evidenced in tracked git artifacts.",
+      "The weekly cadence sample is a tracked fixture, not proof that live weekly operations already ran."
+    ]
+  },
+  "regression_gate": {
+    "pack": {
+      "id": "frontend-product-engineer-regression-pack-sample-2026-W13",
+      "version": "2026-W13.sample.1",
+      "source_seed_registry_path": "data/curriculum/frontend-product-engineer-public-seed-registry.v1.json",
+      "task_ids": [
+        "fpe.seed.e001.turn-failures-into-next-step-curriculum",
+        "fpe.seed.e002.track-generation-lineage",
+        "fpe.seed.e003.run-a-real-weekly-training-cycle"
+      ]
+    },
+    "critical_regressions": 0,
+    "overall_pass_rate": 1.0,
+    "result": "pass_fixture_only"
+  },
+  "curriculum_update": {
+    "failure_actions": [
+      {
+        "failure_id": "failure.failure-to-curriculum-linkage-gap",
+        "disposition": "modified_existing_task",
+        "linked_task_id": "fpe.seed.e001.turn-failures-into-next-step-curriculum",
+        "status": "closed_by_tracked_contract_fixture"
+      },
+      {
+        "failure_id": "failure.lineage-machine-readable-gap",
+        "disposition": "new_task",
+        "linked_task_id": "fpe.seed.e002.track-generation-lineage",
+        "status": "closed_by_tracked_contract_fixture"
+      },
+      {
+        "failure_id": "failure.weekly-cycle-receipt-gap",
+        "disposition": "new_task",
+        "linked_task_id": "fpe.seed.e003.run-a-real-weekly-training-cycle",
+        "status": "closed_by_tracked_contract_fixture"
+      }
+    ],
+    "public_safe": true
+  },
+  "private_holdout_boundary": {
+    "teacher_only_content_tracked": false,
+    "refresh_status": "manual_local_only",
+    "tracked_manifest_in_git": false
+  },
+  "honesty_notes": [
+    "This sample receipt demonstrates the weekly-cycle data contract only; it is not a claim that live weekly ops already ran.",
+    "Teacher-only holdout prompts and rubrics remain local-only and are intentionally absent from tracked artifacts.",
+    "The sample promotion decisions document required fields while keeping live promotion and sealed-evaluation claims turned off."
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "meta": {
+    "id": "frontend-product-engineer-weekly-cycle-registry-v1",
+    "version": "1.0.0",
+    "generated_on": "2026-03-23",
+    "role_id": "role-frontend-product-engineer",
+    "source_spec": "specs/014-frontend-product-engineer-20-task-curriculum.md",
+    "schema_path": "data/curriculum/frontend-product-engineer-weekly-training-cycle.schema.v1.json",
+    "sample_cycle_receipt_path": "data/curriculum/frontend-product-engineer-sample-weekly-cycle-receipt.v1.json",
+    "lineage_registry_path": "data/curriculum/frontend-product-engineer-generation-lineage-registry.v1.json",
+    "future_live_cycle_root": "runtime/training-cycles/YYYY-Www/",
+    "sample_cycle_count": 1,
+    "live_cycle_count": 0,
+    "notes": [
+      "The registry indexes tracked sample receipts until live weekly operations are real and can land under runtime/training-cycles/.",
+      "live_cycle_count stays zero here on purpose; the repo does not claim a live weekly training cadence from these fixtures."
+    ]
+  },
+  "cycles": [
+    {
+      "cycle_id": "fpe-cycle-2026-W13-sample",
+      "week": "2026-W13",
+      "receipt_path": "data/curriculum/frontend-product-engineer-sample-weekly-cycle-receipt.v1.json",
+      "example_only": true,
+      "operational_status": "tracked_sample_fixture",
+      "selected_task_ids": [
+        "fpe.seed.e001.turn-failures-into-next-step-curriculum",
+        "fpe.seed.e002.track-generation-lineage",
+        "fpe.seed.e003.run-a-real-weekly-training-cycle"
+      ],
+      "promoted_generation_ids": [
+        "fpe-generation-sample-001",
+        "fpe-generation-sample-002",
+        "fpe-generation-sample-003"
+      ],
+      "live_cycle_claimed": false,
+      "summary": "Tracked sample close-out tying failures, promotions, lineage, and weekly-cycle structure together without claiming live cadence."
+    }
+  ]
+}

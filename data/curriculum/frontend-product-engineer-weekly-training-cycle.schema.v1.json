@@ -1,0 +1,401 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent.town/role-foundry/schema/frontend-product-engineer-weekly-training-cycle-v1.json",
+  "title": "Frontend/Product Engineer weekly training cycle receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "meta",
+    "task_selection",
+    "baseline_run",
+    "candidate_run",
+    "teacher_review",
+    "promotion_decision",
+    "regression_gate",
+    "curriculum_update",
+    "private_holdout_boundary",
+    "honesty_notes"
+  ],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "version",
+        "cycle_id",
+        "week",
+        "role_id",
+        "source_spec",
+        "schema_path",
+        "seed_registry_path",
+        "evaluation_contract_path",
+        "lineage_registry_path",
+        "example_only",
+        "live_cycle_claimed",
+        "operational_status",
+        "future_live_receipt_root"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "cycle_id": {
+          "type": "string"
+        },
+        "week": {
+          "type": "string"
+        },
+        "role_id": {
+          "type": "string"
+        },
+        "source_spec": {
+          "type": "string"
+        },
+        "schema_path": {
+          "type": "string"
+        },
+        "seed_registry_path": {
+          "type": "string"
+        },
+        "evaluation_contract_path": {
+          "type": "string"
+        },
+        "lineage_registry_path": {
+          "type": "string"
+        },
+        "example_only": {
+          "type": "boolean"
+        },
+        "live_cycle_claimed": {
+          "type": "boolean"
+        },
+        "operational_status": {
+          "type": "string"
+        },
+        "future_live_receipt_root": {
+          "type": "string"
+        }
+      }
+    },
+    "task_selection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "selected_tasks",
+        "selection_basis",
+        "originating_failure_ids"
+      ],
+      "properties": {
+        "selected_tasks": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "task_id",
+              "acceptance_test_id",
+              "selection_reason"
+            ],
+            "properties": {
+              "task_id": {
+                "type": "string"
+              },
+              "acceptance_test_id": {
+                "type": "string"
+              },
+              "selection_reason": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "selection_basis": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "originating_failure_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "baseline_run": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "run_id",
+        "example_only",
+        "workspace_kind",
+        "isolated",
+        "task_packet_version",
+        "evaluation_contract_version",
+        "status_summary"
+      ],
+      "properties": {
+        "run_id": {
+          "type": "string"
+        },
+        "example_only": {
+          "type": "boolean"
+        },
+        "workspace_kind": {
+          "type": "string"
+        },
+        "isolated": {
+          "type": "boolean"
+        },
+        "task_packet_version": {
+          "type": "string"
+        },
+        "evaluation_contract_version": {
+          "type": "string"
+        },
+        "status_summary": {
+          "type": "string"
+        }
+      }
+    },
+    "candidate_run": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "run_id",
+        "example_only",
+        "workspace_kind",
+        "isolated",
+        "task_packet_version",
+        "evaluation_contract_version",
+        "changed_files",
+        "checks_run"
+      ],
+      "properties": {
+        "run_id": {
+          "type": "string"
+        },
+        "example_only": {
+          "type": "boolean"
+        },
+        "workspace_kind": {
+          "type": "string"
+        },
+        "isolated": {
+          "type": "boolean"
+        },
+        "task_packet_version": {
+          "type": "string"
+        },
+        "evaluation_contract_version": {
+          "type": "string"
+        },
+        "changed_files": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "checks_run": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "status"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "teacher_review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "review_mode",
+        "scorecard_path",
+        "public_safe_summary"
+      ],
+      "properties": {
+        "review_mode": {
+          "type": "string"
+        },
+        "scorecard_path": {
+          "type": "string"
+        },
+        "public_safe_summary": {
+          "type": "string"
+        }
+      }
+    },
+    "promotion_decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "outcome",
+        "promoted_generation_ids",
+        "eligible_for_live_ops_claim",
+        "blocked_by"
+      ],
+      "properties": {
+        "outcome": {
+          "type": "string"
+        },
+        "promoted_generation_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "eligible_for_live_ops_claim": {
+          "type": "boolean"
+        },
+        "blocked_by": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "regression_gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "pack",
+        "critical_regressions",
+        "overall_pass_rate",
+        "result"
+      ],
+      "properties": {
+        "pack": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "version",
+            "source_seed_registry_path",
+            "task_ids"
+          ],
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "version": {
+              "type": "string"
+            },
+            "source_seed_registry_path": {
+              "type": "string"
+            },
+            "task_ids": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "critical_regressions": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "overall_pass_rate": {
+          "type": "number"
+        },
+        "result": {
+          "type": "string"
+        }
+      }
+    },
+    "curriculum_update": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "failure_actions",
+        "public_safe"
+      ],
+      "properties": {
+        "failure_actions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "failure_id",
+              "disposition",
+              "linked_task_id",
+              "status"
+            ],
+            "properties": {
+              "failure_id": {
+                "type": "string"
+              },
+              "disposition": {
+                "type": "string"
+              },
+              "linked_task_id": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "public_safe": {
+          "type": "boolean"
+        }
+      }
+    },
+    "private_holdout_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "teacher_only_content_tracked",
+        "refresh_status",
+        "tracked_manifest_in_git"
+      ],
+      "properties": {
+        "teacher_only_content_tracked": {
+          "type": "boolean"
+        },
+        "refresh_status": {
+          "type": "string"
+        },
+        "tracked_manifest_in_git": {
+          "type": "boolean"
+        }
+      }
+    },
+    "honesty_notes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

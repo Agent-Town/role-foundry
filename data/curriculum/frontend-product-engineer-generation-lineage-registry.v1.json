@@ -1,0 +1,184 @@
+{
+  "meta": {
+    "id": "frontend-product-engineer-generation-lineage-registry-v1",
+    "version": "1.0.0",
+    "generated_on": "2026-03-23",
+    "role_id": "role-frontend-product-engineer",
+    "source_spec": "specs/014-frontend-product-engineer-20-task-curriculum.md",
+    "evaluation_contract_path": "data/curriculum/frontend-product-engineer-evaluation-contract.v1.json",
+    "seed_registry_path": "data/curriculum/frontend-product-engineer-public-seed-registry.v1.json",
+    "cycle_registry_path": "data/curriculum/frontend-product-engineer-weekly-cycle-registry.v1.json",
+    "sample_cycle_receipt_path": "data/curriculum/frontend-product-engineer-sample-weekly-cycle-receipt.v1.json",
+    "public_safe": true,
+    "teacher_only_fields_present": false,
+    "live_promoted_generation_count": 0,
+    "sample_promoted_generation_count": 3,
+    "notes": [
+      "These promoted-generation records are tracked sample fixtures that make lineage machine-readable without claiming live weekly operations.",
+      "Private-holdout gating, fresh teacher-only prompts, and live promotion approval remain manual/local and are not tracked by git.",
+      "Use runtime/training-cycles/YYYY-Www/ for future live receipts; the tracked sample receipt stays under data/curriculum until that loop is real."
+    ]
+  },
+  "generation_roots": [
+    {
+      "generation_id": "fpe-generation-bootstrap-root",
+      "kind": "bootstrap_reference",
+      "description": "Synthetic root node used only to anchor the first tracked sample promotion chain."
+    }
+  ],
+  "promoted_generations": [
+    {
+      "generation_id": "fpe-generation-sample-001",
+      "role_id": "role-frontend-product-engineer",
+      "example_only": true,
+      "operational_status": "tracked_sample_fixture",
+      "live_promotion_claimed": false,
+      "parent_generation_id": "fpe-generation-bootstrap-root",
+      "source_cycle_id": "fpe-cycle-2026-W13-sample",
+      "promotion_sequence_index": 1,
+      "task_packet": {
+        "task_id": "fpe.seed.e002.track-generation-lineage",
+        "acceptance_test_id": "E002",
+        "packet_version": "1.0.0",
+        "registry_path": "data/curriculum/frontend-product-engineer-public-seed-registry.v1.json"
+      },
+      "evaluation_contract": {
+        "id": "frontend-product-engineer-evaluation-contract-v1",
+        "version": "1.0.0",
+        "path": "data/curriculum/frontend-product-engineer-evaluation-contract.v1.json"
+      },
+      "regression_pack": {
+        "id": "frontend-product-engineer-regression-pack-sample-2026-W13",
+        "version": "2026-W13.sample.1",
+        "source_receipt_path": "data/curriculum/frontend-product-engineer-sample-weekly-cycle-receipt.v1.json",
+        "result": "pass_fixture_only"
+      },
+      "teacher_review": {
+        "review_mode": "human_teacher_required",
+        "scorecard_path": "data/curriculum/frontend-product-engineer-sample-scorecard.v1.json",
+        "public_safe_summary": "Sample teacher review confirms the lineage contract is explicit, versioned, and public-safe."
+      },
+      "promotion_decision": {
+        "outcome": "promoted_example_only",
+        "reason": "The sample chain starts by turning the missing-lineage failure into a versioned registry and explicit promotion reason field.",
+        "public_weighted_score": 0.89,
+        "private_holdout_gate_status": "manual_local_not_tracked",
+        "regression_gate_status": "pass_fixture_only",
+        "eligible_for_live_ops_claim": false
+      },
+      "curriculum_link": {
+        "originating_failure_id": "failure.lineage-machine-readable-gap",
+        "linked_task_id": "fpe.seed.e002.track-generation-lineage",
+        "disposition": "new_task",
+        "public_safe_note": "The failure maps to a public contract task without exposing any teacher-only evaluation text."
+      },
+      "artifact_refs": {
+        "cycle_receipt_path": "data/curriculum/frontend-product-engineer-sample-weekly-cycle-receipt.v1.json",
+        "cycle_registry_path": "data/curriculum/frontend-product-engineer-weekly-cycle-registry.v1.json",
+        "ops_doc_path": "docs/frontend-product-engineer-compounding-ops.md"
+      }
+    },
+    {
+      "generation_id": "fpe-generation-sample-002",
+      "role_id": "role-frontend-product-engineer",
+      "example_only": true,
+      "operational_status": "tracked_sample_fixture",
+      "live_promotion_claimed": false,
+      "parent_generation_id": "fpe-generation-sample-001",
+      "source_cycle_id": "fpe-cycle-2026-W13-sample",
+      "promotion_sequence_index": 2,
+      "task_packet": {
+        "task_id": "fpe.seed.e001.turn-failures-into-next-step-curriculum",
+        "acceptance_test_id": "E001",
+        "packet_version": "1.0.0",
+        "registry_path": "data/curriculum/frontend-product-engineer-public-seed-registry.v1.json"
+      },
+      "evaluation_contract": {
+        "id": "frontend-product-engineer-evaluation-contract-v1",
+        "version": "1.0.0",
+        "path": "data/curriculum/frontend-product-engineer-evaluation-contract.v1.json"
+      },
+      "regression_pack": {
+        "id": "frontend-product-engineer-regression-pack-sample-2026-W13",
+        "version": "2026-W13.sample.1",
+        "source_receipt_path": "data/curriculum/frontend-product-engineer-sample-weekly-cycle-receipt.v1.json",
+        "result": "pass_fixture_only"
+      },
+      "teacher_review": {
+        "review_mode": "human_teacher_required",
+        "scorecard_path": "data/curriculum/frontend-product-engineer-sample-scorecard.v1.json",
+        "public_safe_summary": "Sample teacher review records that stable failures now point at explicit task changes or defer decisions."
+      },
+      "promotion_decision": {
+        "outcome": "promoted_example_only",
+        "reason": "The second sample promotion closes the failure-to-curriculum gap with explicit disposition fields before the weekly cycle closes.",
+        "public_weighted_score": 0.91,
+        "private_holdout_gate_status": "manual_local_not_tracked",
+        "regression_gate_status": "pass_fixture_only",
+        "eligible_for_live_ops_claim": false
+      },
+      "curriculum_link": {
+        "originating_failure_id": "failure.failure-to-curriculum-linkage-gap",
+        "linked_task_id": "fpe.seed.e001.turn-failures-into-next-step-curriculum",
+        "disposition": "modified_existing_task",
+        "public_safe_note": "The update tracks the linkage contract only; teacher-only holdout content remains local."
+      },
+      "artifact_refs": {
+        "cycle_receipt_path": "data/curriculum/frontend-product-engineer-sample-weekly-cycle-receipt.v1.json",
+        "cycle_registry_path": "data/curriculum/frontend-product-engineer-weekly-cycle-registry.v1.json",
+        "ops_doc_path": "docs/frontend-product-engineer-compounding-ops.md"
+      }
+    },
+    {
+      "generation_id": "fpe-generation-sample-003",
+      "role_id": "role-frontend-product-engineer",
+      "example_only": true,
+      "operational_status": "tracked_sample_fixture",
+      "live_promotion_claimed": false,
+      "parent_generation_id": "fpe-generation-sample-002",
+      "source_cycle_id": "fpe-cycle-2026-W13-sample",
+      "promotion_sequence_index": 3,
+      "task_packet": {
+        "task_id": "fpe.seed.e003.run-a-real-weekly-training-cycle",
+        "acceptance_test_id": "E003",
+        "packet_version": "1.0.0",
+        "registry_path": "data/curriculum/frontend-product-engineer-public-seed-registry.v1.json"
+      },
+      "evaluation_contract": {
+        "id": "frontend-product-engineer-evaluation-contract-v1",
+        "version": "1.0.0",
+        "path": "data/curriculum/frontend-product-engineer-evaluation-contract.v1.json"
+      },
+      "regression_pack": {
+        "id": "frontend-product-engineer-regression-pack-sample-2026-W13",
+        "version": "2026-W13.sample.1",
+        "source_receipt_path": "data/curriculum/frontend-product-engineer-sample-weekly-cycle-receipt.v1.json",
+        "result": "pass_fixture_only"
+      },
+      "teacher_review": {
+        "review_mode": "human_teacher_required",
+        "scorecard_path": "data/curriculum/frontend-product-engineer-sample-scorecard.v1.json",
+        "public_safe_summary": "Sample teacher review confirms the weekly-cycle receipt links selection, review, regression, and curriculum update end to end."
+      },
+      "promotion_decision": {
+        "outcome": "promoted_example_only",
+        "reason": "The third sample promotion makes the weekly-cycle summary machine-readable while keeping live cadence and private holdouts explicitly manual.",
+        "public_weighted_score": 0.9,
+        "private_holdout_gate_status": "manual_local_not_tracked",
+        "regression_gate_status": "pass_fixture_only",
+        "eligible_for_live_ops_claim": false
+      },
+      "curriculum_link": {
+        "originating_failure_id": "failure.weekly-cycle-receipt-gap",
+        "linked_task_id": "fpe.seed.e003.run-a-real-weekly-training-cycle",
+        "disposition": "new_task",
+        "public_safe_note": "The tracked sample receipt demonstrates the shape of a weekly close-out without pretending the live cadence already exists."
+      },
+      "artifact_refs": {
+        "cycle_receipt_path": "data/curriculum/frontend-product-engineer-sample-weekly-cycle-receipt.v1.json",
+        "cycle_registry_path": "data/curriculum/frontend-product-engineer-weekly-cycle-registry.v1.json",
+        "ops_doc_path": "docs/frontend-product-engineer-compounding-ops.md"
+      }
+    }
+  ]
+}

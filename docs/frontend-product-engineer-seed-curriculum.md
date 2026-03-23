@@ -13,6 +13,9 @@ This is the **public seed-task registry** for the frozen `Frontend/Product Engin
 - **Public seed registry:** `data/curriculum/frontend-product-engineer-public-seed-registry.v1.json`
 - **Sample scorecard:** `data/curriculum/frontend-product-engineer-sample-scorecard.v1.json`
 - **Sample run objects:** `data/curriculum/frontend-product-engineer-sample-run-objects.v1.json`
+- **Generation lineage schema/registry:** `data/curriculum/frontend-product-engineer-generation-lineage.schema.v1.json`, `data/curriculum/frontend-product-engineer-generation-lineage-registry.v1.json`
+- **Weekly cycle schema/registry/sample receipt:** `data/curriculum/frontend-product-engineer-weekly-training-cycle.schema.v1.json`, `data/curriculum/frontend-product-engineer-weekly-cycle-registry.v1.json`, `data/curriculum/frontend-product-engineer-sample-weekly-cycle-receipt.v1.json`
+- **Compounding / ops notes:** `docs/frontend-product-engineer-compounding-ops.md`
 - **Operating split notes:** `docs/curriculum-operating-split.md`
 - **Validator/runtime helpers:** `runner_bridge/curriculum.py`
 - **Validator/runtime tests:** `tests/test_curriculum_contract.py`
@@ -26,14 +29,16 @@ This is the **public seed-task registry** for the frozen `Frontend/Product Engin
 
 ## Why the extra fixtures exist
 
-The scorecard and run-object files are **illustrative contract fixtures**, not claims about a real learner run.
+The scorecard, run-object, lineage, and weekly-cycle files are **illustrative contract fixtures**, not claims about a real learner run or a live weekly operating cadence.
 They make the frozen task/eval/receipt surfaces machine-readable without widening `runner_bridge` or private-holdout scope on this lane.
+Tracked Phase 5 samples live under `data/curriculum/` on purpose; the future live receipt root is still `runtime/training-cycles/YYYY-Www/` once the operating loop is real.
 
 ## Audit commands
 
 ```bash
 python3 -m unittest tests/test_frontend_product_engineer_20_task_curriculum.py
 python3 -m unittest tests/test_frontend_product_engineer_seed_registry.py
+python3 -m unittest tests/test_frontend_product_engineer_compounding_ops.py
 python3 -m unittest tests/test_curriculum_contract.py
 python3 -m unittest tests/test_private_holdout_separation.py
 ```
