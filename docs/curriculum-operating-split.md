@@ -19,9 +19,13 @@ The public curriculum lane now has one canonical, versioned surface:
 - `data/curriculum/frontend-product-engineer-evaluation-contract.v1.json`
 - `data/curriculum/frontend-product-engineer-task-packet.schema.v1.json`
 - `data/curriculum/frontend-product-engineer-public-seed-registry.v1.json`
+- `data/curriculum/frontend-product-engineer-teacher-task-lifecycle.v1.json`
+- `data/curriculum/frontend-product-engineer-private-holdout-refresh-receipt.schema.v1.json`
 - `runner_bridge/curriculum.py`
+- `scripts/holdout_author.py`
 - `tests/test_frontend_product_engineer_seed_registry.py`
 - `tests/test_curriculum_contract.py`
+- `tests/test_teacher_ops_lifecycle.py`
 
 There is intentionally no separate generic `seed/frontend-product-engineer.json`,
 `data/curriculum/evaluation-contract.json`,
@@ -102,10 +106,14 @@ Frontend/Product Engineer apprentice that:
 - All **20 public seed task packets are checked in** at
   `data/curriculum/frontend-product-engineer-public-seed-registry.v1.json`.
 - The versioned role manifest, evaluation contract, task-packet schema,
-  source records, promotion records, sample scorecard, and sample run
-  objects are all checked in and machine-readable.
+  source records, promotion records, sample scorecard, sample run
+  objects, teacher task lifecycle contract, and private-holdout refresh
+  receipt schema are all checked in and machine-readable.
 - `runner_bridge/curriculum.py` validates task packets, scorecards, and
   evaluation-contract invariants against frozen Spec 014 constants.
+- `scripts/holdout_author.py` now includes a local-only `refresh`
+  command that scaffolds weekly holdout refresh receipts without tracking
+  teacher-only content in git.
 - Step C eval-contract honesty landed in the alpha loop: stage receipts
   now include `verifier_contract`, the top-level alpha receipt includes
   `verifier_gate`, and local replay truthfully reports `not_executed`
@@ -127,7 +135,7 @@ Frontend/Product Engineer apprentice that:
 | Area | Status | Notes |
 |------|--------|-------|
 | Public seed registry (A001-E004 packets) | Implemented as contract surface | All 20 public packets exist and are versioned. |
-| Phase 2 teacher operating system | Packet-defined, runtime not yet live | Authoring/promotion workflow is described in packets, but not wired as an end-to-end teacher system. |
+| Phase 2 teacher operating system | Contract-defined, partially operational | Authoring/promotion lifecycle plus local holdout refresh receipts are machine-readable and tested, but the end-to-end teacher runtime is still not live. |
 | Phase 3 execution | Partial | Autoresearch alpha receipts exist, and Step C verifier-contract / verifier-gate honesty landed; live verifier execution is still pending. |
 | Phase 4 evaluation | Packet-defined, runtime not yet live | Public scoring contract exists; teacher console and promotion-gate enforcement do not. |
 | Phase 5 compounding | Packet-defined, runtime not yet live | Lineage and weekly-cycle packets exist, but the operating loop is not live. |

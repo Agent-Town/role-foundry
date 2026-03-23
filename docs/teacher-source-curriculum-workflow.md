@@ -2,7 +2,28 @@
 
 How teachers discover, curate, and promote external sources into Role Foundry curriculum.
 
-## The loop
+## Task lifecycle states
+
+The formal lifecycle is defined machine-readably in `data/curriculum/frontend-product-engineer-teacher-task-lifecycle.v1.json`. Tests enforce it.
+
+```
+draft → intake_recorded → promoted → seed_defined → executed → scored
+                                                        ↑               |
+                                                        └── (failure) ──┘
+```
+
+| State | What exists | Who acts |
+|-------|------------|----------|
+| `draft` | Partially filled task packet from template | Teacher |
+| `intake_recorded` | Source record linking task to spec acceptance test | Teacher |
+| `promoted` | Promotion record confirming task is public-safe | Teacher |
+| `seed_defined` | Task packet in public seed registry, student-visible | Teacher (frozen) |
+| `executed` | Candidate run in isolated workspace *(future)* | Student + runtime |
+| `scored` | Scorecard against frozen evaluation contract *(future)* | Teacher |
+
+**Implemented today:** draft through seed_defined (20 tasks). Executed and scored states have schemas defined but no live runtime yet.
+
+## The source-intake loop
 
 ```
 discover → curate → promote
@@ -24,6 +45,9 @@ discover → curate → promote
 | Episode registry | `data/episode-registry/public-benchmark-pack-v1.json` | Rubric templates, provenance, and episode-to-rubric mappings |
 | Seed | `seed/role-foundry-apprentice.json` | Canonical scenario definitions (t1–t7, h1–h3) |
 | Curriculum sources doc | `docs/software-engineer-curriculum-sources.md` | Ranked candidate analysis and ingestion guidance |
+| Task lifecycle contract | `data/curriculum/frontend-product-engineer-teacher-task-lifecycle.v1.json` | Formal workflow states and transition rules for task authoring |
+| Refresh receipt schema | `data/curriculum/frontend-product-engineer-private-holdout-refresh-receipt.schema.v1.json` | Machine-readable shape for weekly holdout refresh receipts |
+| Holdout authoring script | `scripts/holdout_author.py` | init, audit, status, refresh commands for local holdout management |
 
 ## Provenance rules
 
@@ -67,6 +91,37 @@ Source intake log (blocked_teacher_only_holdout)
 ```
 
 This seam is visible but blocked. No SWE-bench-derived content ships in the public pack until a teacher manually curates it through this process.
+
+## Weekly holdout refresh
+
+Private holdouts need regular refresh to stay honest. The refresh workflow and receipt schema are defined in:
+
+- **Receipt schema**: `data/curriculum/frontend-product-engineer-private-holdout-refresh-receipt.schema.v1.json`
+- **Template with refresh metadata**: `benchmarks/private-holdout-pack-template.json`
+- **Authoring script**: `scripts/holdout_author.py refresh`
+
+### Refresh workflow
+
+1. Generate a receipt stub: `python3 scripts/holdout_author.py refresh --teacher robin`
+2. Review existing holdout episodes for staleness or leakage
+3. Retire leaked/stale episodes, author fresh replacements if needed
+4. Run `python3 scripts/holdout_author.py audit` to confirm no leaks
+5. Fill in the receipt with action counts and audit result
+6. Bump the pack version
+
+### What the receipt records (and does not record)
+
+The receipt records **counts and timestamps** — how many episodes were reviewed, retired, added, rewritten — plus whether the audit passed. It does **not** contain holdout prompts, rubrics, or any teacher-only content. Receipt IDs and retirement reasons are safe metadata.
+
+### What is tracked vs local
+
+| Artifact | Tracked in git? | Contains holdout content? |
+|----------|----------------|--------------------------|
+| Refresh receipt schema | Yes | No — defines the shape only |
+| Holdout pack template (with refresh_metadata) | Yes | No — placeholders only |
+| holdout_author.py | Yes | No — tooling only |
+| Actual refresh receipts | No (local-only) | No — counts and timestamps |
+| Holdout manifest + episodes | No (local-only) | Yes — teacher-only |
 
 ## Who can do this
 

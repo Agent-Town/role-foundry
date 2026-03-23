@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent.town/role-foundry/schema/private-holdout-refresh-receipt-v1.json",
+  "title": "Private holdout refresh receipt",
+  "description": "Machine-readable receipt for a weekly holdout refresh cycle. The receipt itself contains NO teacher-only content — it records what the teacher did (counts, timestamps, actions) without exposing holdout prompts or rubrics. The receipt schema is tracked; actual receipts are local-only by default.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "receipt_id",
+    "refresh_date",
+    "role_id",
+    "pack_version_before",
+    "pack_version_after",
+    "actions",
+    "audit_result",
+    "honesty_note"
+  ],
+  "properties": {
+    "receipt_id": {
+      "type": "string",
+      "description": "Unique receipt identifier, e.g. refresh-2026-w13-001"
+    },
+    "refresh_date": {
+      "type": "string",
+      "format": "date",
+      "description": "ISO 8601 date of the refresh"
+    },
+    "role_id": {
+      "type": "string",
+      "description": "Role this refresh applies to"
+    },
+    "teacher_id": {
+      "type": "string",
+      "description": "Optional teacher identifier"
+    },
+    "pack_version_before": {
+      "type": "string",
+      "description": "Holdout pack version before refresh"
+    },
+    "pack_version_after": {
+      "type": "string",
+      "description": "Holdout pack version after refresh"
+    },
+    "actions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "episodes_reviewed",
+        "episodes_retired",
+        "episodes_added",
+        "episodes_rewritten",
+        "total_episodes_after"
+      ],
+      "properties": {
+        "episodes_reviewed": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of existing episodes the teacher reviewed for staleness"
+        },
+        "episodes_retired": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of episodes archived or retired this cycle"
+        },
+        "episodes_added": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of net-new episodes authored this cycle"
+        },
+        "episodes_rewritten": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of existing episodes rewritten with fresh wording"
+        },
+        "total_episodes_after": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total active episodes in the pack after this refresh"
+        },
+        "retired_episode_ids": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "IDs of retired episodes (IDs are not teacher-only content)"
+        },
+        "retirement_reasons": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "episode_id": {"type": "string"},
+              "reason": {
+                "type": "string",
+                "enum": ["leaked", "stale", "too_easy", "too_hard", "replaced", "out_of_scope"]
+              }
+            },
+            "required": ["episode_id", "reason"]
+          },
+          "description": "Why each episode was retired — no holdout content exposed"
+        }
+      }
+    },
+    "audit_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ran_audit", "passed"],
+      "properties": {
+        "ran_audit": {
+          "type": "boolean",
+          "description": "Whether holdout_author.py audit was run"
+        },
+        "passed": {
+          "type": "boolean",
+          "description": "Whether the audit passed"
+        },
+        "error_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "honesty_note": {
+      "type": "string",
+      "description": "Teacher's attestation that holdout content was refreshed honestly and not leaked"
+    }
+  }
+}
