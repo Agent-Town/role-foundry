@@ -100,12 +100,12 @@
   <div class="meta-grid">
     <article class="meta-card">
       <span class="meta-label">Public curriculum</span>
-      <strong class="meta-value" x-text="$store.app.trainingScenarios().length"></strong>
+      <strong class="meta-value" x-text="$store.app.scenarioCount('training')"></strong>
       <small>The apprentice can practice on these product slices.</small>
     </article>
     <article class="meta-card">
       <span class="meta-label">Hidden holdouts</span>
-      <strong class="meta-value" x-text="$store.app.holdoutScenarios().length"></strong>
+      <strong class="meta-value" x-text="$store.app.scenarioCount('holdout')"></strong>
       <small>Sealed from the apprentice. Judges use them for honest scoring.</small>
     </article>
     <article class="meta-card">

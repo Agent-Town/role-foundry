@@ -305,6 +305,10 @@ function normalizeUiScorecardShape(value) {
       }
       return {
         scenario_id: String(result.scenario_id),
+        title: typeof result.title === 'string' ? result.title : '',
+        type: typeof result.type === 'string' ? result.type : '',
+        difficulty: typeof result.difficulty === 'string' ? result.difficulty : '',
+        visibility: typeof result.visibility === 'string' ? result.visibility : '',
         passed: Boolean(result.passed),
         score: normalizeNumber(result.score),
         notes:
@@ -473,10 +477,85 @@ function normalizeRuns(runs) {
     }));
 }
 
+function normalizeScenarioEntry(scenario) {
+  if (!isPlainObject(scenario) || !scenario.id) {
+    return null;
+  }
+
+  return {
+    ...scenario,
+    id: String(scenario.id),
+    title: typeof scenario.title === 'string' ? scenario.title : '',
+    type: typeof scenario.type === 'string' ? scenario.type : '',
+    difficulty: typeof scenario.difficulty === 'string' ? scenario.difficulty : '',
+  };
+}
+
 function normalizeScenarios(scenarios) {
-  return (Array.isArray(scenarios) ? scenarios : []).filter(
-    scenario => isPlainObject(scenario) && scenario.id
-  );
+  return (Array.isArray(scenarios) ? scenarios : []).map(normalizeScenarioEntry).filter(Boolean);
+}
+
+function mergeScenarioCatalog(existingScenarios, discoveredScenarios) {
+  const merged = new Map();
+
+  normalizeScenarios(existingScenarios).forEach(scenario => {
+    merged.set(scenario.id, scenario);
+  });
+
+  normalizeScenarios(discoveredScenarios).forEach(scenario => {
+    const current = merged.get(scenario.id);
+    if (!current) {
+      merged.set(scenario.id, scenario);
+      return;
+    }
+
+    merged.set(scenario.id, {
+      ...scenario,
+      ...current,
+      id: current.id || scenario.id,
+      title: current.title || scenario.title || '',
+      type: current.type || scenario.type || '',
+      difficulty: current.difficulty || scenario.difficulty || '',
+    });
+  });
+
+  return Array.from(merged.values());
+}
+
+function discoverScoredScenariosFromRunEntry(entry) {
+  if (!isPlainObject(entry)) {
+    return [];
+  }
+
+  const discovered = [];
+  const scorecardCandidates = [
+    entry.scorecard,
+    normalizeRecord(entry.result).scorecard,
+    entry.teacher_scorecard,
+    entry.teacher_output,
+    normalizeRecord(entry.artifact_bundle).teacher_output,
+  ];
+
+  scorecardCandidates.forEach(candidate => {
+    const scorecard = normalizeRecord(candidate);
+    const rawResults = Array.isArray(scorecard.scenario_results)
+      ? scorecard.scenario_results
+      : (Array.isArray(scorecard.results) ? scorecard.results : []);
+
+    rawResults.forEach(result => {
+      if (!isPlainObject(result) || !(result.scenario_id || result.id)) {
+        return;
+      }
+      discovered.push({
+        id: result.scenario_id || result.id,
+        title: result.title,
+        type: result.type,
+        difficulty: result.difficulty,
+      });
+    });
+  });
+
+  return mergeScenarioCatalog([], discovered);
 }
 
 function normalizeIterations(iterations) {
@@ -716,30 +795,36 @@ function mapLiveReadModelPayloadToSnapshot(payload) {
     snapshot.run_replays = summary.run_replays;
   }
 
-  (Array.isArray(summary.runs) ? summary.runs : [])
-    .map(mapLiveRunEntry)
-    .filter(Boolean)
-    .forEach(mapped => {
-      snapshot.runs.push(mapped.run);
-      if (mapped.scorecard) {
-        snapshot.scores[mapped.run.id] = mapped.scorecard;
-      }
-      if (mapped.studentView) {
-        snapshot.student_views[mapped.run.id] = mapped.studentView;
-      }
-      if (mapped.artifact) {
-        snapshot.artifacts[mapped.run.id] = mapped.artifact;
-      }
-      if (mapped.replay.length) {
-        snapshot.run_replays[mapped.run.id] = mapped.replay;
-      }
-      if (mapped.actors.student && !snapshot.actors.student) {
-        snapshot.actors.student = mapped.actors.student;
-      }
-      if (mapped.actors.teacher && !snapshot.actors.teacher) {
-        snapshot.actors.teacher = mapped.actors.teacher;
-      }
-    });
+  (Array.isArray(summary.runs) ? summary.runs : []).forEach(entry => {
+    const mapped = mapLiveRunEntry(entry);
+    if (!mapped) {
+      return;
+    }
+
+    snapshot.scenarios = mergeScenarioCatalog(
+      snapshot.scenarios,
+      discoverScoredScenariosFromRunEntry(entry)
+    );
+    snapshot.runs.push(mapped.run);
+    if (mapped.scorecard) {
+      snapshot.scores[mapped.run.id] = mapped.scorecard;
+    }
+    if (mapped.studentView) {
+      snapshot.student_views[mapped.run.id] = mapped.studentView;
+    }
+    if (mapped.artifact) {
+      snapshot.artifacts[mapped.run.id] = mapped.artifact;
+    }
+    if (mapped.replay.length) {
+      snapshot.run_replays[mapped.run.id] = mapped.replay;
+    }
+    if (mapped.actors.student && !snapshot.actors.student) {
+      snapshot.actors.student = mapped.actors.student;
+    }
+    if (mapped.actors.teacher && !snapshot.actors.teacher) {
+      snapshot.actors.teacher = mapped.actors.teacher;
+    }
+  });
 
   return snapshot;
 }
@@ -822,7 +907,7 @@ function mapAutoresearchAlphaPayloadToSnapshot(payload) {
           ) || null
         : null;
 
-    const mapped = mapLiveRunEntry({
+    const rawRunEntry = {
       ...stageExport,
       stage_label: stageRun.stage_label || stageSpec.label,
       sort_order: stageRun.sort_order ?? index + 1,
@@ -859,12 +944,18 @@ function mapAutoresearchAlphaPayloadToSnapshot(payload) {
         stageExport.teacher_scorecard || stageExport.teacher_output || fallbackScorecard,
       transcript_excerpt: stageExport.transcript_excerpt,
       run_replay: stageExport.run_replay,
-    });
+    };
+
+    const mapped = mapLiveRunEntry(rawRunEntry);
 
     if (!mapped) {
       return;
     }
 
+    snapshot.scenarios = mergeScenarioCatalog(
+      snapshot.scenarios,
+      discoverScoredScenariosFromRunEntry(rawRunEntry)
+    );
     snapshot.runs.push(mapped.run);
     if (mapped.scorecard) {
       snapshot.scores[mapped.run.id] = mapped.scorecard;
@@ -1226,25 +1317,105 @@ function createAppStore(config) {
       return this.scenarios.filter(scenario => scenario.type === 'holdout');
     },
 
+    scenarioCount(type = null) {
+      if (!type) {
+        return this.scenarios.length;
+      }
+
+      const catalogCount =
+        type === 'training' ? this.trainingScenarios().length : this.holdoutScenarios().length;
+      if (catalogCount) {
+        return catalogCount;
+      }
+
+      const runId = this.latestScoredRunId() || this.latestRunId();
+      return runId ? this.scenarioTotal(runId, type) : 0;
+    },
+
     resultsForRun(runId) {
       return this.getScorecard(runId)?.results || [];
     },
 
     resultsByType(runId, type) {
-      return this.resultsForRun(runId).filter(
-        result => this.getScenario(result.scenario_id)?.type === type
-      );
+      return this.resultsForRun(runId).filter(result => {
+        const scenarioType = this.getScenario(result.scenario_id)?.type || result.type || null;
+        return scenarioType === type;
+      });
+    },
+
+    aggregateSlice(runId, type = null) {
+      const aggregate = this.getScorecard(runId)?.aggregate_score;
+      if (!aggregate || !type) {
+        return null;
+      }
+
+      const overallPassed = normalizeNumber(aggregate.passed);
+      const overallTotal = normalizeNumber(aggregate.total);
+      const holdout = normalizeRecord(aggregate.holdout);
+      const holdoutPassed = normalizeNumber(holdout.passed);
+      const holdoutTotal = normalizeNumber(holdout.total);
+      const holdoutRate = normalizeNumber(holdout.pass_rate);
+
+      if (type === 'holdout') {
+        if (holdoutPassed === null && holdoutTotal === null && holdoutRate === null) {
+          return null;
+        }
+        return {
+          passed: holdoutPassed ?? 0,
+          total: holdoutTotal,
+          pass_rate:
+            holdoutRate ??
+            (holdoutPassed !== null && holdoutTotal
+              ? holdoutPassed / holdoutTotal
+              : (holdoutTotal === 0 ? 0 : null)),
+        };
+      }
+
+      if (type === 'training' && overallPassed !== null && overallTotal !== null) {
+        const passed = overallPassed - (holdoutPassed ?? 0);
+        const total = overallTotal - (holdoutTotal ?? 0);
+        if (total < 0) {
+          return null;
+        }
+        return {
+          passed,
+          total,
+          pass_rate: total ? passed / total : 0,
+        };
+      }
+
+      return null;
+    },
+
+    scenarioTotal(runId, type = null) {
+      if (!type) {
+        return this.resultsForRun(runId).length;
+      }
+
+      const typedResults = this.resultsByType(runId, type);
+      if (typedResults.length) {
+        return typedResults.length;
+      }
+
+      return this.aggregateSlice(runId, type)?.total ?? 0;
     },
 
     passCount(runId, type = null) {
       const results = type ? this.resultsByType(runId, type) : this.resultsForRun(runId);
-      return results.filter(result => result.passed).length;
+      if (results.length || !type) {
+        return results.filter(result => result.passed).length;
+      }
+      return this.aggregateSlice(runId, type)?.passed ?? null;
     },
 
     passRate(runId, type = null) {
       const results = type ? this.resultsByType(runId, type) : this.resultsForRun(runId);
-      if (!results.length) return null;
-      return this.passCount(runId, type) / results.length;
+      if (results.length) {
+        const passed = this.passCount(runId, type);
+        return passed === null ? null : passed / results.length;
+      }
+      if (!type) return null;
+      return this.aggregateSlice(runId, type)?.pass_rate ?? null;
     },
 
     scoreDelta(currentRunId, previousRunId = null, type = null) {
@@ -1253,7 +1424,10 @@ function createAppStore(config) {
       const currentScorecard = this.getScorecard(currentRunId);
       const baselineScorecard = this.getScorecard(baselineId);
       if (!currentScorecard || !baselineScorecard) return null;
-      return this.passCount(currentRunId, type) - this.passCount(baselineId, type);
+      const currentCount = this.passCount(currentRunId, type);
+      const baselineCount = this.passCount(baselineId, type);
+      if (currentCount === null || baselineCount === null) return null;
+      return currentCount - baselineCount;
     },
 
     passRateDelta(currentRunId, previousRunId = null, type = null) {

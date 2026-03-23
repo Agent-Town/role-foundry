@@ -106,11 +106,11 @@
           <tbody>
             <template x-for="result in $store.app.resultsForRun(selectedRun)" :key="result.scenario_id">
               <tr>
-                <td x-text="$store.app.getScenario(result.scenario_id)?.title || result.scenario_id"></td>
+                <td x-text="$store.app.getScenario(result.scenario_id)?.title || result.title || result.scenario_id"></td>
                 <td>
                   <span class="badge"
-                    :class="$store.app.getScenario(result.scenario_id)?.type === 'holdout' ? 'badge-holdout' : 'badge-training'"
-                    x-text="$store.app.getScenario(result.scenario_id)?.type"></span>
+                    :class="($store.app.getScenario(result.scenario_id)?.type || result.type) === 'holdout' ? 'badge-holdout' : 'badge-training'"
+                    x-text="$store.app.getScenario(result.scenario_id)?.type || result.type || '—'"></span>
                 </td>
                 <td>
                   <span class="badge" :class="result.passed ? 'badge-pass' : 'badge-fail'" x-text="result.passed ? 'PASS' : 'FAIL'"></span>

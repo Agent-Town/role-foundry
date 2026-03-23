@@ -177,11 +177,11 @@
           <div class="label">Overall pass count</div>
         </div>
         <div class="stat">
-          <div class="value" x-text="$store.app.resultsByType(detailRun, 'training').length ? $store.app.passCount(detailRun, 'training') + '/' + $store.app.resultsByType(detailRun, 'training').length : '—'"></div>
+          <div class="value" x-text="$store.app.scenarioTotal(detailRun, 'training') ? $store.app.passCount(detailRun, 'training') + '/' + $store.app.scenarioTotal(detailRun, 'training') : '—'"></div>
           <div class="label">Public curriculum</div>
         </div>
         <div class="stat">
-          <div class="value" x-text="$store.app.resultsByType(detailRun, 'holdout').length ? $store.app.passCount(detailRun, 'holdout') + '/' + $store.app.resultsByType(detailRun, 'holdout').length : '—'"></div>
+          <div class="value" x-text="$store.app.scenarioTotal(detailRun, 'holdout') ? $store.app.passCount(detailRun, 'holdout') + '/' + $store.app.scenarioTotal(detailRun, 'holdout') : '—'"></div>
           <div class="label">Hidden holdouts</div>
         </div>
         <div class="stat" x-show="$store.app.hasComparisonRun(detailRun) && $store.app.getScorecard(detailRun)">
@@ -194,11 +194,11 @@
         <template x-for="result in $store.app.resultsForRun(detailRun)" :key="result.scenario_id">
           <div class="card scenario-result-card" :class="result.passed ? 'card-pass' : 'card-fail'">
             <div class="card-header-row">
-              <h4 x-text="$store.app.getScenario(result.scenario_id)?.title || result.scenario_id"></h4>
+              <h4 x-text="$store.app.getScenario(result.scenario_id)?.title || result.title || result.scenario_id"></h4>
               <span class="badge" :class="result.passed ? 'badge-pass' : 'badge-fail'" x-text="result.passed ? 'PASS' : 'FAIL'"></span>
             </div>
             <div class="card-footer-row">
-              <span class="badge" :class="$store.app.getScenario(result.scenario_id)?.type === 'holdout' ? 'badge-holdout' : 'badge-training'" x-text="$store.app.getScenario(result.scenario_id)?.type"></span>
+              <span class="badge" :class="($store.app.getScenario(result.scenario_id)?.type || result.type) === 'holdout' ? 'badge-holdout' : 'badge-training'" x-text="$store.app.getScenario(result.scenario_id)?.type || result.type || '—'"></span>
               <span class="mini-note" x-text="result.score !== null && result.score !== undefined ? 'Score: ' + result.score.toFixed(1) : 'Score pending'"></span>
             </div>
             <p x-text="result.notes"></p>
