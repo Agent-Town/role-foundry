@@ -282,6 +282,51 @@
       "notes": "Source-backed by Playwright public documentation (Apache-2.0). Episodes are RF-authored, not copied from Playwright docs."
     },
     {
+      "id": "rf.frontend-apprentice.public.code-review-discipline",
+      "status": "benchmark_ready",
+      "visibility": "student_visible",
+      "role": "Frontend Apprentice",
+      "role_scope": "frontend-apprentice",
+      "promotion_criteria": {
+        "source_is_public_curriculum": true,
+        "no_teacher_only_inputs": true,
+        "rubric_template_exists": true,
+        "not_repo_visible_holdout": true
+      },
+      "source_seed_scenarios": [
+        "t8"
+      ],
+      "title": "Code-review discipline on RF diffs",
+      "benchmark_goal": "Write structured, actionable review comments on narrow Role Foundry changes, separating blocking concerns from nits and keeping feedback proportionate to risk.",
+      "loop_stage": "public_curriculum",
+      "source_backed_by": {
+        "source_id": "google-eng-practices-review",
+        "source_url": "https://google.github.io/eng-practices/review/",
+        "source_license": "CC BY 3.0",
+        "intake_record": "data/source-research/software-engineer-source-intake.v1.json#intake-google-eng-practices",
+        "rf_authored": true,
+        "notes": "Episodes are original RF-authored work informed by Google's public code review guidelines. No Google prose is copied verbatim."
+      },
+      "allowed_mutation_surfaces": [
+        "app/scenarios.html",
+        "app/run.html",
+        "app/data.js",
+        "docs/"
+      ],
+      "required_artifacts": [
+        "changed-files summary",
+        "review-comment receipt",
+        "policy snapshot"
+      ],
+      "public_checks": [
+        "Review comments are specific and actionable, not vague or generic",
+        "Blocking concerns are clearly separated from style nits",
+        "Feedback is proportionate to the risk and scope of the change",
+        "No teacher-only prompt text or rubric content leaks into review comments"
+      ],
+      "notes": "Source-backed by Google Engineering Practices code review guides (CC BY 3.0). Episodes are RF-authored, not copied from Google docs."
+    },
+    {
       "id": "rf.frontend-apprentice.blocked.teacher-only-h1",
       "status": "blocked_pending_rewrite",
       "visibility": "teacher_only",

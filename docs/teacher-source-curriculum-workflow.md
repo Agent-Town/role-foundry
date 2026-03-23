@@ -139,6 +139,6 @@ The intake log, episode registry, and benchmark pack are the shared coordination
 | Source | Status | Family |
 |--------|--------|--------|
 | Playwright docs (Apache-2.0) | **Promoted** | `rf.frontend-apprentice.public.playwright-regression` (2 episodes) |
-| Google Eng Practices (CC BY 3.0) | Curated | — (code-review-discipline family planned) |
+| Google Eng Practices (CC BY 3.0) | **Promoted** | `rf.frontend-apprentice.public.code-review-discipline` (2 episodes) |
 | Alpine.js repo (MIT code) | Discovered | — (manual curation only) |
 | SWE-bench (MIT harness) | Blocked — teacher-only holdout direction | — (no episodes authored; seam documented) |

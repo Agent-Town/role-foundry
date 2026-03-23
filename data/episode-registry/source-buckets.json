@@ -19,17 +19,18 @@
         "t4",
         "t5",
         "t6",
-        "t7"
+        "t7",
+        "t8"
       ],
       "family_id_prefix": "rf.frontend-apprentice.public.",
-      "family_count": 7,
+      "family_count": 8,
       "pack_refs": [
         "benchmarks/public-pack-v1/benchmark-pack.json"
       ],
       "registry_refs": [
         "data/episode-registry/public-benchmark-pack-v1.json"
       ],
-      "notes": "All seven public families are benchmark_ready and ship in public-benchmark-pack-v1."
+      "notes": "All eight public families are benchmark_ready and ship in public-benchmark-pack-v1."
     },
     {
       "id": "blocked-teacher-only",
@@ -139,6 +140,7 @@
           "t5",
           "t6",
           "t7",
+          "t8",
           "h1",
           "h2",
           "h3"
@@ -190,7 +192,7 @@
         "intake_bucket_ids": []
       }
     },
-    "notes": "Every scenario/task across both roles maps to exactly one bucket. The Frontend Apprentice uses scenario_ids (t1-t7, h1-h3) plus four explicit source-intake buckets covering promoted, curated, manual-curation-only, and blocked teacher-only seams. The Frontend/Product Engineer uses acceptance_test_ids (A001-E004).",
+    "notes": "Every scenario/task across both roles maps to exactly one bucket. The Frontend Apprentice uses scenario_ids (t1-t8, h1-h3) plus four explicit source-intake buckets covering promoted, curated, manual-curation-only, and blocked teacher-only seams. The Frontend/Product Engineer uses acceptance_test_ids (A001-E004).",
     "total_intake_buckets": 4,
     "promoted_intake_buckets": 1,
     "curated_intake_buckets": 1,
@@ -206,14 +208,18 @@
       "promotion_mode": "public_benchmark_family",
       "manual_curation_only": false,
       "intake_record_ids": [
-        "intake-playwright-regression"
+        "intake-playwright-regression",
+        "intake-google-eng-practices"
       ],
       "promoted_family_ids": [
-        "rf.frontend-apprentice.public.playwright-regression"
+        "rf.frontend-apprentice.public.playwright-regression",
+        "rf.frontend-apprentice.public.code-review-discipline"
       ],
       "promoted_episode_ids": [
         "pbpv1-e13",
-        "pbpv1-e14"
+        "pbpv1-e14",
+        "pbpv1-e15",
+        "pbpv1-e16"
       ],
       "pack_refs": [
         "benchmarks/public-pack-v1/benchmark-pack.json"
@@ -223,7 +229,7 @@
         "benchmarks/public-pack-v1/episode-family-registry.json",
         "data/episode-registry/public-benchmark-pack-v1.json"
       ],
-      "notes": "Represents RF-authored, public-safe families already promoted from tracked source intake into the Frontend Apprentice benchmark pack. Today this is the Playwright-backed family only."
+      "notes": "Represents RF-authored, public-safe families already promoted from tracked source intake into the Frontend Apprentice benchmark pack. Today this includes the Playwright-backed family and the Google Eng Practices-backed family."
     },
     {
       "id": "frontend-apprentice-source-intake-curated",
@@ -232,16 +238,14 @@
       "status": "curated",
       "promotion_mode": "public_candidate",
       "manual_curation_only": false,
-      "intake_record_ids": [
-        "intake-google-eng-practices"
-      ],
+      "intake_record_ids": [],
       "promoted_family_ids": [],
       "promoted_episode_ids": [],
       "pack_refs": [],
       "registry_refs": [
         "data/source-research/software-engineer-source-intake.v1.json"
       ],
-      "notes": "Source is curated and public-safe to work from, but no RF-authored family is promoted yet. Promotion stays blocked until authored episodes, rubric, and provenance exist."
+      "notes": "No curated-but-unpromoted sources remain. Google Eng Practices was promoted to rf.frontend-apprentice.public.code-review-discipline."
     },
     {
       "id": "frontend-apprentice-source-intake-manual-curation-only",

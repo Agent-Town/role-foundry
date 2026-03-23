@@ -6,7 +6,7 @@ The episode registry layer provides audit surfaces for **how each public episode
 
 | Surface | Path | Purpose |
 |---------|------|---------|
-| Apprentice episode registry | `data/episode-registry/public-benchmark-pack-v1.json` | Rubrics + provenance for the 14-episode Frontend Apprentice pack |
+| Apprentice episode registry | `data/episode-registry/public-benchmark-pack-v1.json` | Rubrics + provenance for the 16-episode Frontend Apprentice pack |
 | FPE episode registry | `data/episode-registry/fpe-public-benchmark-pack-v1.json` | Rubrics + provenance for the 20-episode FPE pack |
 | Source buckets | `data/episode-registry/source-buckets.json` | Every internal source bucket across both roles |
 | Promotion policy | `data/episode-registry/promotion-policy.json` | Machine-readable status vocabulary, criteria, and invariants |
@@ -59,11 +59,11 @@ Every family in every family registry must have explicit `promotion_criteria`. B
 `data/episode-registry/source-buckets.json` now exposes two layers:
 
 - **family buckets**
-  - **Frontend Apprentice**: `public-training` (7 families), `blocked-teacher-only` (3 families), `local-private-holdout` (0 committed)
+  - **Frontend Apprentice**: `public-training` (8 families), `blocked-teacher-only` (3 families), `local-private-holdout` (0 committed)
   - **Frontend/Product Engineer**: `fpe-public-training` (5 families), `fpe-local-private-holdout` (0 committed)
 - **source-intake buckets**
   - `frontend-apprentice-source-intake-promoted` — already promoted into a public family (`rf.frontend-apprentice.public.playwright-regression`)
-  - `frontend-apprentice-source-intake-curated` — curated public candidate, not yet authored/promoted
+  - `frontend-apprentice-source-intake-curated` — curated public candidate bucket (currently empty; Google Eng Practices promoted out)
   - `frontend-apprentice-source-intake-manual-curation-only` — discovered source that requires teacher rewrite before any RF family exists
   - `frontend-apprentice-source-intake-blocked-teacher-only` — explicit teacher-only holdout direction, blocked from all public packs
 

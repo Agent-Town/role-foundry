@@ -17,11 +17,11 @@
     "promotion_policy_path": "data/episode-registry/promotion-policy.json"
   },
   "coverage": {
-    "public_episode_count": 14,
-    "benchmark_ready_family_count": 7,
-    "rubric_template_count": 7,
-    "rubric_mapped_episode_count": 14,
-    "provenance_mapped_episode_count": 14
+    "public_episode_count": 16,
+    "benchmark_ready_family_count": 8,
+    "rubric_template_count": 8,
+    "rubric_mapped_episode_count": 16,
+    "provenance_mapped_episode_count": 16
   },
   "rubric_templates": [
     {
@@ -288,6 +288,51 @@
           "description": "The check does not claim a full Playwright CI harness or E2E infrastructure that does not exist.",
           "pass_signal": "Scope claims match what is actually wired.",
           "fail_signal": "The slice implies CI integration or infrastructure that is not present."
+        }
+      ]
+    },
+    {
+      "id": "pbpv1-rubric-code-review-discipline-v1",
+      "family_id": "rf.frontend-apprentice.public.code-review-discipline",
+      "version": "1.0.0",
+      "title": "Code-review discipline rubric",
+      "description": "Scores whether review comments on an RF diff are specific, actionable, and proportionate, with blocking concerns clearly separated from nits.",
+      "score_scale": {
+        "min": 0.0,
+        "max": 1.0
+      },
+      "dimensions": [
+        {
+          "id": "comment_specificity",
+          "label": "Comment specificity",
+          "weight": 0.35,
+          "description": "Review comments reference specific lines or hunks in the diff rather than making generic observations about the file.",
+          "pass_signal": "Comments point at concrete lines and explain what is wrong or could improve there.",
+          "fail_signal": "Comments are vague, file-level, or could apply to any diff."
+        },
+        {
+          "id": "actionability",
+          "label": "Actionable feedback",
+          "weight": 0.3,
+          "description": "Each review comment tells the author what to change, not just what is wrong.",
+          "pass_signal": "Every blocking comment includes a concrete suggested fix or direction.",
+          "fail_signal": "Comments name problems without suggesting what to do about them."
+        },
+        {
+          "id": "triage_discipline",
+          "label": "Blocking-vs-nit triage",
+          "weight": 0.2,
+          "description": "Blocking concerns (correctness, honesty, contract violations) are clearly separated from style nits, and nits are grouped rather than scattered.",
+          "pass_signal": "Blocking issues and nits are visibly separated; nits are batched.",
+          "fail_signal": "Minor style issues are inflated to blocking, or blocking issues are buried among nits."
+        },
+        {
+          "id": "proportionality",
+          "label": "Review proportionality",
+          "weight": 0.15,
+          "description": "The volume and intensity of review feedback is proportionate to the risk and scope of the change.",
+          "pass_signal": "A small safe change gets a brief review; a risky change gets deeper scrutiny.",
+          "fail_signal": "A trivial change receives an architecture lecture, or a risky change is rubber-stamped."
         }
       ]
     }
@@ -669,6 +714,72 @@
           "intake_record": "data/source-research/software-engineer-source-intake.v1.json#intake-playwright-regression"
         },
         "notes": "Source-backed by Playwright public documentation (Apache-2.0). Episode is original RF-authored work informed by Playwright best practices; no Playwright prose is copied verbatim."
+      }
+    },
+    {
+      "id": "pbpv1-e15",
+      "family_id": "rf.frontend-apprentice.public.code-review-discipline",
+      "title": "Write a focused review comment on a narrow RF diff",
+      "rubric_template_id": "pbpv1-rubric-code-review-discipline-v1",
+      "provenance": {
+        "source_seed_scenarios": [
+          "t8"
+        ],
+        "source_seed_titles": [
+          "Apply code-review discipline to an RF diff"
+        ],
+        "source_seed_types": [
+          "training"
+        ],
+        "public_spec_refs": [
+          "specs/008-public-benchmark-pack-v1.md"
+        ],
+        "public_doc_refs": [
+          "docs/public-benchmark-pack-v1.md",
+          "docs/dataset-episode-registry.md",
+          "docs/teacher-source-curriculum-workflow.md"
+        ],
+        "teacher_only_inputs_used": false,
+        "source_backed_by": {
+          "source_id": "google-eng-practices-review",
+          "source_url": "https://google.github.io/eng-practices/review/",
+          "source_license": "CC BY 3.0",
+          "intake_record": "data/source-research/software-engineer-source-intake.v1.json#intake-google-eng-practices"
+        },
+        "notes": "Source-backed by Google Engineering Practices code review guides (CC BY 3.0). Episode is original RF-authored work informed by Google's public guidelines; no Google prose is copied verbatim."
+      }
+    },
+    {
+      "id": "pbpv1-e16",
+      "family_id": "rf.frontend-apprentice.public.code-review-discipline",
+      "title": "Separate blocking concerns from nits in an RF change review",
+      "rubric_template_id": "pbpv1-rubric-code-review-discipline-v1",
+      "provenance": {
+        "source_seed_scenarios": [
+          "t8"
+        ],
+        "source_seed_titles": [
+          "Apply code-review discipline to an RF diff"
+        ],
+        "source_seed_types": [
+          "training"
+        ],
+        "public_spec_refs": [
+          "specs/008-public-benchmark-pack-v1.md"
+        ],
+        "public_doc_refs": [
+          "docs/public-benchmark-pack-v1.md",
+          "docs/dataset-episode-registry.md",
+          "docs/teacher-source-curriculum-workflow.md"
+        ],
+        "teacher_only_inputs_used": false,
+        "source_backed_by": {
+          "source_id": "google-eng-practices-review",
+          "source_url": "https://google.github.io/eng-practices/review/",
+          "source_license": "CC BY 3.0",
+          "intake_record": "data/source-research/software-engineer-source-intake.v1.json#intake-google-eng-practices"
+        },
+        "notes": "Source-backed by Google Engineering Practices code review guides (CC BY 3.0). Episode is original RF-authored work informed by Google's public guidelines; no Google prose is copied verbatim."
       }
     }
   ]

@@ -356,12 +356,16 @@ class LegacyPackNotBrokenTests(unittest.TestCase):
         self.assertTrue(LEGACY_PACK.exists())
         pack = json.loads(LEGACY_PACK.read_text())
         self.assertEqual(pack["meta"]["id"], "public-benchmark-pack-v1")
-        self.assertEqual(len(pack["episodes"]), 14)
+        self.assertGreaterEqual(len(pack["episodes"]), 14)
+        self.assertEqual(len(pack["episodes"]), pack["meta"]["public_episode_count"])
 
     def test_legacy_family_registry_still_loads(self):
         self.assertTrue(LEGACY_FAMILY_REGISTRY.exists())
         reg = json.loads(LEGACY_FAMILY_REGISTRY.read_text())
-        self.assertEqual(len([f for f in reg["families"] if f["status"] == "benchmark_ready"]), 7)
+        pack = json.loads(LEGACY_PACK.read_text())
+        benchmark_ready = [f for f in reg["families"] if f["status"] == "benchmark_ready"]
+        self.assertGreaterEqual(len(benchmark_ready), 7)
+        self.assertEqual(len(benchmark_ready), pack["meta"]["public_family_count"])
 
     def test_legacy_and_fpe_packs_are_independent(self):
         legacy = json.loads(LEGACY_PACK.read_text())

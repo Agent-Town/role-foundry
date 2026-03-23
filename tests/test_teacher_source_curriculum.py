@@ -86,6 +86,66 @@ class TeacherSourceCurriculumTests(unittest.TestCase):
         total_weight = sum(d["weight"] for d in rubric["dimensions"])
         self.assertAlmostEqual(total_weight, 1.0, places=9)
 
+    def test_google_eng_practices_promoted(self):
+        """Google Eng Practices intake must be promoted with family and episodes."""
+        google = self.intake_records.get("intake-google-eng-practices")
+        self.assertIsNotNone(google, "Google Eng Practices intake record must exist")
+        self.assertEqual(google["status"], "promoted")
+        self.assertFalse(google["manual_curation_only"])
+        self.assertFalse(google["provenance"]["teacher_only_inputs_used"])
+        self.assertEqual(
+            google["promoted_family_id"],
+            "rf.frontend-apprentice.public.code-review-discipline",
+        )
+        self.assertEqual(len(google["promoted_episode_ids"]), 2)
+        self.assertIn(
+            google["promoted_family_id"],
+            self.pack["included_family_ids"],
+        )
+
+    def test_google_family_in_pack_and_registry(self):
+        """Google-backed family must be in pack and registry with source_backed_by."""
+        google_family = "rf.frontend-apprentice.public.code-review-discipline"
+        self.assertIn(google_family, self.pack["included_family_ids"])
+
+        families = {f["id"]: f for f in self.registry["families"]}
+        self.assertIn(google_family, families)
+        family = families[google_family]
+        self.assertEqual(family["status"], "benchmark_ready")
+        self.assertEqual(family["visibility"], "student_visible")
+        self.assertIn("source_backed_by", family)
+        self.assertEqual(family["source_backed_by"]["source_license"], "CC BY 3.0")
+        self.assertTrue(family["source_backed_by"]["rf_authored"])
+
+    def test_google_episodes_have_provenance(self):
+        """Google-backed episodes must have proper provenance."""
+        episodes = {e["id"]: e for e in self.episode_registry["episodes"]}
+        for eid in ("pbpv1-e15", "pbpv1-e16"):
+            self.assertIn(eid, episodes)
+            ep = episodes[eid]
+            self.assertEqual(
+                ep["family_id"],
+                "rf.frontend-apprentice.public.code-review-discipline",
+            )
+            self.assertIn("source_backed_by", ep["provenance"])
+            self.assertEqual(
+                ep["provenance"]["source_backed_by"]["source_license"],
+                "CC BY 3.0",
+            )
+            self.assertFalse(ep["provenance"]["teacher_only_inputs_used"])
+
+    def test_google_rubric_exists(self):
+        """Google-backed family must have a complete rubric template."""
+        rubrics = {r["id"]: r for r in self.episode_registry["rubric_templates"]}
+        self.assertIn("pbpv1-rubric-code-review-discipline-v1", rubrics)
+        rubric = rubrics["pbpv1-rubric-code-review-discipline-v1"]
+        self.assertEqual(
+            rubric["family_id"],
+            "rf.frontend-apprentice.public.code-review-discipline",
+        )
+        total_weight = sum(d["weight"] for d in rubric["dimensions"])
+        self.assertAlmostEqual(total_weight, 1.0, places=9)
+
     def test_swebench_record_is_blocked_teacher_only(self):
         swebench = self.intake_records.get("intake-swebench-teacher-holdout")
         self.assertIsNotNone(swebench, "SWE-bench intake record must exist")
@@ -129,6 +189,12 @@ class TeacherSourceCurriculumTests(unittest.TestCase):
         self.assertIn("t7", scenario_ids)
         t7 = next(s for s in self.seed["scenarios"] if s["id"] == "t7")
         self.assertEqual(t7["type"], "training")
+
+    def test_seed_has_t8_scenario(self):
+        scenario_ids = {s["id"] for s in self.seed["scenarios"]}
+        self.assertIn("t8", scenario_ids)
+        t8 = next(s for s in self.seed["scenarios"] if s["id"] == "t8")
+        self.assertEqual(t8["type"], "training")
 
     def test_episode_registry_coverage_consistent(self):
         coverage = self.episode_registry["coverage"]

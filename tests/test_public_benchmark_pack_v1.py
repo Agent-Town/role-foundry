@@ -40,7 +40,7 @@ class PublicBenchmarkPackPhaseBTests(unittest.TestCase):
             "minimum_episode_count"
         ]
         self.assertGreaterEqual(len(self.pack_episodes), minimum)
-        self.assertEqual(len(self.pack_episodes), 14)
+        self.assertEqual(len(self.pack_episodes), 16)
         self.assertEqual(
             self.episode_registry["coverage"]["public_episode_count"],
             len(self.pack_episodes),

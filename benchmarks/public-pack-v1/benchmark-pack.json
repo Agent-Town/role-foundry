@@ -12,8 +12,8 @@
       "benchmarks/public-pack-v1/episode-family-registry.json"
     ],
     "episode_registry": "data/episode-registry/public-benchmark-pack-v1.json",
-    "public_episode_count": 14,
-    "public_family_count": 7,
+    "public_episode_count": 16,
+    "public_family_count": 8,
     "source_bucket_registry": "data/episode-registry/source-buckets.json",
     "promotion_policy_path": "data/episode-registry/promotion-policy.json"
   },
@@ -50,7 +50,8 @@
     "rf.frontend-apprentice.public.proof-bundle",
     "rf.frontend-apprentice.public.demo-honesty",
     "rf.frontend-apprentice.public.failure-to-curriculum",
-    "rf.frontend-apprentice.public.playwright-regression"
+    "rf.frontend-apprentice.public.playwright-regression",
+    "rf.frontend-apprentice.public.code-review-discipline"
   ],
   "blocked_family_ids": [
     "rf.frontend-apprentice.blocked.teacher-only-h1",
@@ -521,6 +522,88 @@
         "source_url": "https://playwright.dev/docs/best-practices",
         "source_license": "Apache-2.0"
       }
+    },
+    {
+      "id": "pbpv1-e15",
+      "family_id": "rf.frontend-apprentice.public.code-review-discipline",
+      "title": "Write a focused review comment on a narrow RF diff",
+      "difficulty": "medium",
+      "mutation_budget": "narrow",
+      "student_prompt": "Given a small diff that changes copy on app/scenarios.html, write a structured review comment that is specific to the lines changed, actionable (says what to do, not just what is wrong), and separates must-fix issues from optional style suggestions.",
+      "constraints": [
+        "Target an existing Role Foundry surface (app/scenarios.html)",
+        "Review comments must reference specific lines or hunks, not the file in general",
+        "Do not leak teacher-only prompt text or rubric content in the review",
+        "Keep feedback proportionate — a one-line copy fix does not need an architecture lecture"
+      ],
+      "suggested_files": [
+        "app/scenarios.html",
+        "app/data.js",
+        "docs/"
+      ],
+      "artifacts_required": [
+        "changed-files summary",
+        "review-comment receipt",
+        "policy snapshot"
+      ],
+      "public_checks": [
+        "Review comment references specific lines changed, not the whole file",
+        "Comment distinguishes must-fix from nice-to-have",
+        "Comment is actionable — says what to change, not just what is wrong",
+        "No teacher-only content leaks into the review"
+      ],
+      "tags": [
+        "code-review",
+        "diff-critique",
+        "source-backed"
+      ],
+      "source_backed_by": {
+        "source_id": "google-eng-practices-review",
+        "source_url": "https://google.github.io/eng-practices/review/",
+        "source_license": "CC BY 3.0"
+      }
+    },
+    {
+      "id": "pbpv1-e16",
+      "family_id": "rf.frontend-apprentice.public.code-review-discipline",
+      "title": "Separate blocking concerns from nits in an RF change review",
+      "difficulty": "medium",
+      "mutation_budget": "narrow",
+      "student_prompt": "Given a multi-hunk diff that touches app/run.html and app/data.js, triage the review into blocking issues (correctness, honesty, contract violations) versus nits (style, naming, whitespace). Blocking issues get explicit fix requests; nits get a single grouped suggestion. Keep the review proportionate to the change's risk.",
+      "constraints": [
+        "Target existing Role Foundry surfaces (app/run.html, app/data.js)",
+        "Blocking issues must cite the specific hunk and explain the risk",
+        "Nits must be grouped, not scattered as individual comments",
+        "Do not inflate minor style issues into blocking concerns",
+        "Do not invent problems that are not present in the diff"
+      ],
+      "suggested_files": [
+        "app/run.html",
+        "app/data.js",
+        "docs/"
+      ],
+      "artifacts_required": [
+        "changed-files summary",
+        "review-comment receipt",
+        "triage summary (blocking vs nits)"
+      ],
+      "public_checks": [
+        "Blocking issues and nits are clearly separated",
+        "Blocking issues cite specific hunks and explain risk",
+        "Nits are grouped rather than scattered",
+        "Review is proportionate — no inflation of minor issues"
+      ],
+      "tags": [
+        "code-review",
+        "diff-critique",
+        "triage",
+        "source-backed"
+      ],
+      "source_backed_by": {
+        "source_id": "google-eng-practices-review",
+        "source_url": "https://google.github.io/eng-practices/review/",
+        "source_license": "CC BY 3.0"
+      }
     }
   ],
   "promotion_readiness": {
@@ -542,31 +625,31 @@
         "label": "Public episode count",
         "status": "pass",
         "minimum_episode_count": 10,
-        "actual_episode_count": 14
+        "actual_episode_count": 16
       },
       "B002": {
         "label": "Rubric completeness",
         "status": "pass",
-        "rubric_template_count": 7,
-        "rubric_mapped_episode_count": 14,
+        "rubric_template_count": 8,
+        "rubric_mapped_episode_count": 16,
         "expectation": "Every public episode maps to a complete public rubric template."
       },
       "B003": {
         "label": "Weight normalization",
         "status": "pass",
-        "normalized_template_count": 7,
+        "normalized_template_count": 8,
         "expectation": "Each public rubric template sums to 1.0."
       },
       "B004": {
         "label": "Public/teacher split integrity",
         "status": "pass",
-        "included_student_visible_family_count": 7,
+        "included_student_visible_family_count": 8,
         "blocked_teacher_only_family_count": 3
       },
       "B005": {
         "label": "Provenance coverage",
         "status": "pass",
-        "provenance_mapped_episode_count": 14,
+        "provenance_mapped_episode_count": 16,
         "expectation": "Every public episode cites its public source scenario and contract docs/specs."
       },
       "B006": {
