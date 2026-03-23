@@ -1,6 +1,6 @@
 {
   "status": "draft-template",
-  "generated_from_branch": "review/submission-readiness-pass-20260323-0910",
+  "generated_from_branch": "review/submission-readiness-roundtrip-proof-20260323-1005",
   "generated_from_base": "origin/submission/active-base-20260323-0711",
   "artifacts": [
     {
@@ -60,13 +60,20 @@
       "notes": "Documents public-regression vs local-private-holdout vs blocked sealed-eval claims."
     },
     {
+      "id": "clawith-vibecosystem-real-path-doc",
+      "kind": "integration_story_doc",
+      "status": "ready",
+      "path": "docs/clawith-vibecosystem-real-path.md",
+      "visibility": "public",
+      "notes": "Explains the exact external gateway + Claude/vibecosystem lane and its claim boundaries."
+    },
+    {
       "id": "live-roundtrip-capture",
       "kind": "live_proof",
-      "status": "pending_active_lane",
-      "path": null,
-      "visibility": "pending",
-      "lane": "role-foundry-clawith-vibe-roundtrip-demo",
-      "notes": "Do not claim this until a real capture artifact exists."
+      "status": "ready",
+      "path": "submission/clawith-vibecosystem-roundtrip-proof.manifest.json",
+      "visibility": "public",
+      "notes": "Tracked receipt index for one honest external gateway + Claude/vibecosystem roundtrip; raw receipt dirs stay local and are referenced, not committed."
     },
     {
       "id": "native-model-pool-smoke",
@@ -81,7 +88,8 @@
   "checklist": [
     "Every claimed artifact has a real repo path or an explicit pending status.",
     "No teacher-only prompt text is copied into public packaging artifacts.",
-    "Pending active-lane evidence remains marked pending and unclaimed.",
+    "Any remaining active-lane evidence stays marked pending and unclaimed.",
+    "Roundtrip proof is scoped to the external gateway + Claude/vibecosystem executor lane and not rewritten as native parity.",
     "Public benchmark artifacts are not misrepresented as sealed-eval proof."
   ]
 }

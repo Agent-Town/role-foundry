@@ -175,3 +175,23 @@ See `docs/synthesis-hackathon-stack-architecture.md` for details.
 **Evidence:**
 - targeted and full test passes on the promotion branch
 - no broad `runner_bridge` contract rewrite was needed for this cleanup
+
+---
+
+## 2026-03-23 — External gateway roundtrip proof folded into submission packaging
+
+**Outcome:** The submission/readiness branch now carries one honest proof that Clawith can remain the control plane while Claude + vibecosystem acts as the external executor through the upstream gateway contract.
+
+**What changed:**
+- `docs/clawith-vibecosystem-real-path.md` now documents the exact adapter-first lane and links the packaged proof index
+- `scripts/clawith_link_openclaw.py` creates or reuses the linked OpenClaw agent and saves the gateway key under `runtime/`
+- `scripts/clawith_vibe_once.py` captures one gateway-worker cycle with Claude Code + vibecosystem and writes receipts under `artifacts/clawith-gateway/...`
+- `scripts/clawith_ws_roundtrip.js` sends a real user chat message over the stock Clawith websocket/session path and captures the visible assistant reply under `artifacts/clawith-roundtrip/...`
+- `submission/clawith-vibecosystem-roundtrip-proof.manifest.json` indexes the local receipt roots without committing the raw artifacts themselves
+
+**Evidence:**
+- referenced local receipt roots: `artifacts/clawith-roundtrip/rescue-proof/20260323T025241Z/` and `artifacts/clawith-gateway/rescue-proof/20260323T025254Z/`
+- required final reply markers: `REAL_GATEWAY_ROUNDTRIP_OK_20260323_0958Z` and `CLAWITH_CONTROL_PLANE_VIBECOSYSTEM_EXECUTOR`
+- the tracked proof index records the agent/session/message ids used for the capture
+
+**Important honesty line:** this proves the external gateway + Claude/vibecosystem executor lane only. It does **not** prove native Clawith model-pool parity, stock upstream Role Foundry API parity, sealed evaluation, or tamper-proof certification.
