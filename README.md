@@ -231,6 +231,7 @@ Using different model families for building and judging reduces correlated self-
 - `specs/011-live-ui-read-model.md` — read-only browser adapter for configured live/read-model exports
 - `specs/012-private-holdout-pack.md` — local-only private holdout contract without shipping teacher material
 - `specs/013-erc8004-base-agent0-adapter.md` — ERC-8004 Base / agent0-sdk adapter spec
+- `specs/014-frontend-product-engineer-20-task-curriculum.md` — TDD-first 20-task curriculum contract for the first Frontend/Product Engineer apprentice
 
 ## License
 
