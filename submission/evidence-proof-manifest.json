@@ -1,5 +1,5 @@
 {
-  "status": "submission-packet-ready_pending_human_publish",
+  "status": "submission-published",
   "final_review_branch": "review/submission-packet-assembly-20260323-1421",
   "final_review_commit": "67a3f093dbe642c5b9045abe0a0e04fc5e64098d",
   "final_review_commit_strategy": "content_freeze_commit_recorded_by_followup_stamp_commit",
@@ -65,7 +65,7 @@
         "docs/erc8004-base-agent0-adapter.md",
         "specs/013-erc8004-base-agent0-adapter.md",
         "runner_bridge/product_integrations.py",
-        "app/agent0_base_adapter.mjs",
+        "runner_bridge/erc8004_agent0.py",
         "tests/test_erc8004_base_agent0_adapter.py"
       ],
       "visibility": "public",

@@ -1,6 +1,6 @@
 # Judge Q&A note — honest short answers
 
-Status: submission-packet-ready_pending_human_publish
+Status: submission-published
 Supporting note for `submission/judge-demo-script.md`.
 
 ## What is actually real today?

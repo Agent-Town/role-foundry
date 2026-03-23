@@ -1,8 +1,8 @@
 # Final publish TODO
 
-Status: packet-ready_pending_human_publish
+Status: historical-checklist_used_for_published_submission
 
-This submission packet is assembled. What remains is short, concrete, and mostly human-side.
+This historical checklist was used to publish the submission. Keep it as an audit trail and rerun list, not as a statement that publish is still blocked.
 
 ## 1. Freeze and stamp the packet
 

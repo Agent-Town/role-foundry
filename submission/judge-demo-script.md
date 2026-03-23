@@ -1,6 +1,6 @@
 # Judge Demo Script — live 2-3 minute walkthrough
 
-Status: submission-packet-ready_pending_human_publish
+Status: submission-published
 Canonical live walkthrough for the submission packet on this branch.
 
 Keep this live demo narrow. The point is not to show every file. The point is to make the provenance chain legible fast, then stop before the story gets inflated.
@@ -88,18 +88,18 @@ Land:
 Show:
 - `docs/erc8004-base-agent0-adapter.md`
 - `runner_bridge/product_integrations.py`
-- `app/agent0_base_adapter.mjs`
+- `runner_bridge/erc8004_agent0.py`
 - `tests/test_erc8004_base_agent0_adapter.py`
 
 Say:
 
-> After each evaluated generation, the bridge can write a local ERC-8004 registration draft, a completion template, and a thin Base adapter contract tied back to the existing receipts. For public promoted generations, that is the portable identity handoff. No wallet transaction is faked here.
+> After each evaluated generation, the bridge can write a local ERC-8004 registration draft, a completion template, and a canonical Python mint contract tied back to the existing receipts. For promoted/public generations, that becomes the portable identity handoff. No onchain transaction is faked here.
 
 Land:
 - the staged issuance path is **real in repo code**
 - Base Sepolia is the review/demo default; Base Mainnet is the explicit submission target
 - this is a **staged issuance** claim, not a live mint claim
-- the adapter makes wired-vs-pending explicit: RPC, registry, SDK, wallet approval
+- the Python path makes staged-vs-live explicit: RPC, signer, token URI, live gate, promotion decision
 
 ### Stop 5 — One real external roundtrip proof (25-35 sec)
 

@@ -1,11 +1,11 @@
 # PR / submission summary
 
-Status: submission-packet-ready_pending_human_publish
-Canonical final packet artifact for this branch.
+Status: submission-published
+Canonical final packet artifact used for the published submission.
 
 ## Plain-English summary
 
-This branch turns the honest review line into a **submission-ready packet** without widening the evidence boundary. Role Foundry is a **generation provenance** system for role-scoped apprentices: each evaluated generation leaves inspectable receipts, evaluation context, score deltas, and a promotion decision. Promoted public generations can then be staged for **ERC-8004 issuance on Base** through a thin Role Foundry-owned adapter.
+This branch takes the frozen submission packet and the Python SDK follow-up and keeps the core story cleaner without widening the evidence boundary. Role Foundry is a **generation provenance** system for role-scoped apprentices. Each evaluated generation leaves inspectable receipts, evaluation context, score deltas, and a promotion decision. Promoted public generations can then be staged for **ERC-8004 issuance on Base** through a thin Role Foundry-owned Python mint path.
 
 The first concrete role remains a **Software Engineer apprentice** improving Role Foundry itself. The shipped public slice is still frontend/product-heavy, and this branch keeps saying that plainly instead of pretending broader completed coverage.
 
@@ -28,4 +28,4 @@ The first concrete role remains a **Software Engineer apprentice** improving Rol
 
 ## Reviewer note
 
-This packet is ready to publish once the short human/admin steps in `submission/checklists/final-publish-todo.md` are done. The story stays narrow and honest: generation receipts -> evaluation -> deltas -> promotion -> staged portable identity, with no fake jump to live minting or sealed evaluation.
+This packet was used for the published submission. Keep `submission/checklists/final-publish-todo.md` only as a historical checklist. The story stays narrow and honest: generation receipts -> evaluation -> deltas -> promotion -> staged portable identity, with no fake jump to live minting or sealed evaluation.

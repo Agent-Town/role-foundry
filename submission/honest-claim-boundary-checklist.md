@@ -12,8 +12,8 @@ If any checked item is false, soften the claim.
 - [ ] The repo includes a local private-holdout scaffold where fresh hidden holdouts stay outside tracked and student-visible artifacts.
 - [ ] Each reviewed generation can be narrated through repo-visible receipts, evaluation context, score deltas, and a promotion/public-issuance decision.
 - [ ] The repo includes one honest external adapter-first Clawith -> OpenClaw gateway -> Claude/vibecosystem -> Clawith roundtrip, indexed by `submission/clawith-vibecosystem-roundtrip-proof.manifest.json`.
-- [ ] The repo stages ERC-8004 registrations targeting Base (Sepolia for review, mainnet for submission) and wires the agent0-sdk mint path through a thin Role Foundry-owned adapter (`app/agent0_base_adapter.mjs` + `runner_bridge/product_integrations.py`).
-- [ ] The adapter makes wired-vs-pending explicit: registration drafts and completion templates are generated locally; no onchain mint has been claimed or faked.
+- [ ] The repo stages ERC-8004 registrations targeting Base (Sepolia for review, mainnet for submission) and wires the canonical agent0-sdk Python mint path in-repo (`runner_bridge/product_integrations.py` + `runner_bridge/erc8004_agent0.py`).
+- [ ] The path makes staged-vs-live explicit: registration drafts and completion templates are generated locally; no onchain mint has been claimed or faked.
 - [ ] Promoted/public generations can be discussed as the intended portable-identity layer.
 
 ## Do not claim now
@@ -32,7 +32,7 @@ If any checked item is false, soften the claim.
 
 - [ ] `role-foundry-clawith-native-agent-bringup` must land native model-pool smoke evidence before any native-parity claim is made.
 - [ ] If citing the roundtrip proof, keep the citation scoped to the external gateway + Claude/vibecosystem executor lane and the tracked proof manifest.
-- [ ] ERC-8004 Base minting still requires: configured `BASE_SEPOLIA_RPC_URL` + `BASE_SEPOLIA_REGISTRY` (or mainnet equivalents), agent0-sdk availability, a human-approved wallet session, and a human promotion/public-issuance decision.
+- [ ] ERC-8004 Base minting still requires: configured `BASE_SEPOLIA_RPC_URL` + `BASE_SEPOLIA_REGISTRY` (or mainnet equivalents), `agent0-sdk` in the Python environment, a signer private key, a public token URI hosting the draft JSON, `ROLE_FOUNDRY_ERC8004_ENABLE_LIVE_MINT=1`, and a human promotion/public-issuance decision.
 - [ ] The submission packet itself does **not** wait on live minting; if no onchain receipt exists, keep every ERC/Base statement at staged / not minted.
 
 ## Coherence notes
