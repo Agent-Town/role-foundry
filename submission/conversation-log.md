@@ -51,4 +51,4 @@ Canonical final packet artifact for review branch `review/submission-finalizatio
 ## 6. Reviewer note
 
 This final packet uses tracked portable proof paths under `submission/roundtrip-proof/` so the submission branch no longer points judges at machine-local `artifacts/...` locations.
-al-review commit is the packet content-freeze commit; the branch head may be one tiny metadata-stamp commit later to avoid a self-referential SHA.
+The final-review commit is the packet content-freeze commit; the branch head may be one tiny metadata-stamp commit later to avoid a self-referential SHA.
