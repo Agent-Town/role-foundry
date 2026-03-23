@@ -1,0 +1,41 @@
+{
+  "_template_note": "PUBLIC policy template for teacher-only holdout extension rounds derived from external sources (for example SWE-bench). Contains NO episode content and NO teacher-only prompt/rubric fields. Teachers use this as a public-safe planning seam, then author real episodes in the existing gitignored private holdout manifest.",
+  "meta": {
+    "id": "holdout-extension-pack-v1",
+    "version": "0.0.0",
+    "visibility": "teacher_only",
+    "public_repo_safe": false,
+    "source_type": "external_derived",
+    "honesty_note": "Extension rounds described here are manually curated and rewritten from external sources. They remain teacher-only evaluation material, not public curriculum, and not a sealed certification exam."
+  },
+  "source_policy": {
+    "max_episodes_per_round": 10,
+    "requires_rewrite": true,
+    "verbatim_copy_allowed": false,
+    "provenance_required": true,
+    "student_visible": false,
+    "author_in_private_manifest": true
+  },
+  "allowed_source_types": [
+    "swe-bench-derived",
+    "playwright-docs-derived",
+    "code-review-guide-derived",
+    "manual-teacher-authored"
+  ],
+  "extension_rounds": [
+    {
+      "_placeholder": true,
+      "_instructions": "Plan one extension round here, then author the actual teacher-only episodes in benchmarks/private-holdout-pack/holdout-manifest.json. Do not store teacher prompts or scoring rubrics in this tracked file.",
+      "extension_id": "REPLACE-ME",
+      "source_type": "swe-bench-derived",
+      "source_snapshot": "REPLACE-ME — source release / commit / dataset version for teacher reference",
+      "episode_limit": 5,
+      "suggested_family_namespace": "rf.software-engineer.holdout.swebench-derived",
+      "private_manifest_path": "benchmarks/private-holdout-pack/holdout-manifest.json",
+      "private_episode_ids": [
+        "REPLACE-ME"
+      ],
+      "student_visible": false
+    }
+  ]
+}

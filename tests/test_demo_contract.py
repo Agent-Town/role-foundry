@@ -1,3 +1,4 @@
+import json
 import re
 import unittest
 from pathlib import Path
@@ -8,6 +9,7 @@ DOCS = ROOT / 'docs'
 DATA_JS = APP / 'data.js'
 README = ROOT / 'README.md'
 COMPOSE = ROOT / 'docker-compose.yml'
+ALPHA_EXAMPLE = ROOT / 'runner_bridge' / 'examples' / 'autoresearch-alpha-public-loop.json'
 
 
 class DemoContractTests(unittest.TestCase):
@@ -23,9 +25,9 @@ class DemoContractTests(unittest.TestCase):
         text = DATA_JS.read_text()
         self.assertIn("mode: 'demo'", text)
 
-    def test_frontend_apprentice_seed_role_exists(self):
+    def test_current_apprentice_seed_role_exists(self):
         text = DATA_JS.read_text()
-        self.assertIn("name: 'Frontend Apprentice'", text)
+        self.assertIn("name: 'Software Engineer Apprentice'", text)
         self.assertIn('Robin + Neo', text)
 
     def test_scenario_split_is_preserved(self):
@@ -42,19 +44,31 @@ class DemoContractTests(unittest.TestCase):
         self.assertIn('iterations:', text)
         self.assertIn('failure_themes', text)
 
+        alpha_request = json.loads(ALPHA_EXAMPLE.read_text())
+        self.assertIn('candidate-student', alpha_request['stages'])
+        self.assertEqual(
+            alpha_request['stages']['candidate-teacher-eval']['request']['teacher_evaluation']['student']['agent_role'],
+            'student',
+        )
+        self.assertEqual(
+            alpha_request['stages']['candidate-teacher-eval']['request']['teacher_evaluation']['teacher']['agent_role'],
+            'teacher',
+        )
+
     def test_apprentice_vertical_surfaces_exist(self):
         index_text = (APP / 'index.html').read_text()
         scenarios_text = (APP / 'scenarios.html').read_text()
         run_text = (APP / 'run.html').read_text()
         scorecard_text = (APP / 'scorecard.html').read_text()
 
-        self.assertIn('Frontend Apprentice', index_text)
+        self.assertIn('Software Engineer Apprentice', index_text)
         self.assertIn('Public Curriculum &amp; Sealed Holdouts', scenarios_text)
         self.assertIn('Proof Bundle', run_text)
         self.assertIn('Policy Snapshot', run_text)
         self.assertIn('Transcript Excerpt', run_text)
         self.assertIn('Failure Analysis → Next Curriculum', scorecard_text)
-        self.assertIn('Compare to Run 1', scorecard_text)
+        self.assertIn('Compare to ', scorecard_text)
+        self.assertIn('config.js', index_text)
 
     def test_readme_explains_demo_vs_live_mode(self):
         text = README.read_text()
@@ -62,13 +76,15 @@ class DemoContractTests(unittest.TestCase):
         self.assertIn('runner-bridge', text)
         self.assertIn('Clawith', text)
 
-    def test_compose_includes_demo_stack_and_clawith_stub(self):
+    def test_compose_includes_demo_stack_and_live_profile(self):
         text = COMPOSE.read_text()
         self.assertIn('role-foundry-web:', text)
         self.assertIn('postgres:', text)
         self.assertIn('redis:', text)
-        self.assertIn('# clawith:', text)
-        self.assertIn('# bootstrap:', text)
+        # M3: clawith and bootstrap are real services gated by the "live" profile
+        self.assertIn('clawith:', text)
+        self.assertIn('bootstrap:', text)
+        self.assertIn('profiles: ["live"]', text)
 
     def test_required_docs_exist(self):
         required = [

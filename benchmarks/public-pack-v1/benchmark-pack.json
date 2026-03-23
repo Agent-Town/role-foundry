@@ -1,0 +1,581 @@
+{
+  "meta": {
+    "id": "public-benchmark-pack-v1",
+    "version": "1.0.0",
+    "role": "Frontend Apprentice",
+    "role_scope": "frontend-apprentice",
+    "family_registry": "benchmarks/public-pack-v1/episode-family-registry.json",
+    "description": "The first public-safe benchmark pack for Role Foundry's autoresearch loop. Every episode is student-visible and grounded in public curriculum only.",
+    "honesty_note": "This pack is valid for public training, iteration, and regression checks. It is not a sealed certification pack. Teacher-only families are explicitly blocked pending rewrite.",
+    "generated_from": [
+      "seed/role-foundry-apprentice.json",
+      "benchmarks/public-pack-v1/episode-family-registry.json"
+    ],
+    "episode_registry": "data/episode-registry/public-benchmark-pack-v1.json",
+    "public_episode_count": 14,
+    "public_family_count": 7
+  },
+  "execution_policy": {
+    "student_visible_only": true,
+    "teacher_only_fields_present": false,
+    "intended_use": [
+      "public autoresearch loops",
+      "public regression checks",
+      "copy/UI/artifact honesty tuning"
+    ],
+    "not_for": [
+      "sealed certification",
+      "teacher-only adversarial evaluation",
+      "partner-track capability claims",
+      "runner_bridge core-contract changes"
+    ],
+    "recommended_loop": [
+      "pick one episode and keep the mutation surface narrow",
+      "run only public/student-visible work for that episode",
+      "record changed files plus a short keep/discard note",
+      "run the recommended verifier commands before scoring the result"
+    ],
+    "recommended_verifier_commands": [
+      "python3 -m unittest tests/test_public_benchmark_pack_v1.py",
+      "python3 -m unittest tests/test_milestone3_contract.py tests/test_milestone5_teacher_eval_loop.py",
+      "python3 -m unittest tests/test_private_holdout_separation.py"
+    ]
+  },
+  "included_family_ids": [
+    "rf.frontend-apprentice.public.landing-story",
+    "rf.frontend-apprentice.public.curriculum-split",
+    "rf.frontend-apprentice.public.score-deltas",
+    "rf.frontend-apprentice.public.proof-bundle",
+    "rf.frontend-apprentice.public.demo-honesty",
+    "rf.frontend-apprentice.public.failure-to-curriculum",
+    "rf.frontend-apprentice.public.playwright-regression"
+  ],
+  "blocked_family_ids": [
+    "rf.frontend-apprentice.blocked.teacher-only-h1",
+    "rf.frontend-apprentice.blocked.teacher-only-h2",
+    "rf.frontend-apprentice.blocked.teacher-only-h3"
+  ],
+  "episodes": [
+    {
+      "id": "pbpv1-e01",
+      "family_id": "rf.frontend-apprentice.public.landing-story",
+      "title": "Name the apprentice in the opening screenful",
+      "difficulty": "medium",
+      "mutation_budget": "narrow",
+      "student_prompt": "Rewrite the first screenful so a new judge immediately sees who the student is, who the teachers are, and that the apprentice is building Role Foundry itself.",
+      "constraints": [
+        "Keep demo mode honest",
+        "Do not introduce auth, Privy, or fake live wiring",
+        "Leave behind a concise receipt trail"
+      ],
+      "suggested_files": [
+        "app/index.html",
+        "app/data.js",
+        "README.md"
+      ],
+      "artifacts_required": [
+        "changed-files summary",
+        "before-after copy summary",
+        "policy snapshot"
+      ],
+      "public_checks": [
+        "Frontend Apprentice is named explicitly",
+        "Robin + Neo are named explicitly as teachers",
+        "The story says the apprentice is building Role Foundry itself"
+      ],
+      "tags": [
+        "copy",
+        "landing",
+        "dogfood"
+      ]
+    },
+    {
+      "id": "pbpv1-e02",
+      "family_id": "rf.frontend-apprentice.public.landing-story",
+      "title": "Tighten the README intro around the dogfood loop",
+      "difficulty": "medium",
+      "mutation_budget": "narrow",
+      "student_prompt": "Refactor the README intro so it frames the repo as a teacher \u2192 student \u2192 evaluation loop, not a generic agent platform.",
+      "constraints": [
+        "Keep the repo description concrete and judge-facing",
+        "Avoid fake future-looking claims",
+        "Preserve quickstart clarity"
+      ],
+      "suggested_files": [
+        "README.md",
+        "docs/conversation-log.md"
+      ],
+      "artifacts_required": [
+        "changed-files summary",
+        "receipt note"
+      ],
+      "public_checks": [
+        "README explains the named apprentice loop",
+        "README does not read like a generic marketplace or infra pitch",
+        "Demo-mode honesty remains explicit"
+      ],
+      "tags": [
+        "docs",
+        "copy",
+        "README"
+      ]
+    },
+    {
+      "id": "pbpv1-e03",
+      "family_id": "rf.frontend-apprentice.public.curriculum-split",
+      "title": "Make student-visible versus teacher-only surfaces explicit",
+      "difficulty": "easy",
+      "mutation_budget": "narrow",
+      "student_prompt": "Clarify the scenarios page so a judge can tell what the student sees, what the teacher sees, and why the boundary matters.",
+      "constraints": [
+        "Do not add teacher-only prompt text",
+        "Explain the contract boundary in plain language",
+        "Keep the slice scoped to one page or one doc"
+      ],
+      "suggested_files": [
+        "app/scenarios.html",
+        "app/data.js"
+      ],
+      "artifacts_required": [
+        "changed-files summary",
+        "student-view snapshot"
+      ],
+      "public_checks": [
+        "Student-visible and teacher-only surfaces are labeled clearly",
+        "Prompt-pack copy references public curriculum only",
+        "No teacher-only rubric leaks into student-visible text"
+      ],
+      "tags": [
+        "ui",
+        "scenarios",
+        "visibility-boundary"
+      ]
+    },
+    {
+      "id": "pbpv1-e04",
+      "family_id": "rf.frontend-apprentice.public.curriculum-split",
+      "title": "Explain the prompt-pack contract on the run detail page",
+      "difficulty": "medium",
+      "mutation_budget": "narrow",
+      "student_prompt": "Improve the run detail page or docs so it is obvious that the student prompt pack contains public curriculum only, while teacher-only evaluation remains separate.",
+      "constraints": [
+        "No hidden prompt text",
+        "No core contract churn in runner_bridge",
+        "Leave a short receipt note"
+      ],
+      "suggested_files": [
+        "app/run.html",
+        "docs/runner-bridge.md"
+      ],
+      "artifacts_required": [
+        "changed-files summary",
+        "receipt note"
+      ],
+      "public_checks": [
+        "Student prompt pack is described as public-only",
+        "Teacher-only evaluation is described without leaking prompts",
+        "The explanation stays concrete, not hand-wavy"
+      ],
+      "tags": [
+        "ui",
+        "docs",
+        "contract-boundary"
+      ]
+    },
+    {
+      "id": "pbpv1-e05",
+      "family_id": "rf.frontend-apprentice.public.score-deltas",
+      "title": "Show why Run 2 is better with concrete deltas",
+      "difficulty": "medium",
+      "mutation_budget": "narrow",
+      "student_prompt": "Add or refine a surface that compares two runs with explicit score movement instead of vague improvement language.",
+      "constraints": [
+        "Use concrete counts, rates, or receipts",
+        "Keep demo-vs-live honesty intact",
+        "Do not invent unimplemented telemetry"
+      ],
+      "suggested_files": [
+        "app/scorecard.html",
+        "app/data.js",
+        "app/run.html"
+      ],
+      "artifacts_required": [
+        "score summary",
+        "changed-files summary"
+      ],
+      "public_checks": [
+        "At least two runs are compared",
+        "Improvement is visible as a delta",
+        "No fake instrumentation is implied"
+      ],
+      "tags": [
+        "scorecard",
+        "iteration",
+        "metrics"
+      ]
+    },
+    {
+      "id": "pbpv1-e06",
+      "family_id": "rf.frontend-apprentice.public.score-deltas",
+      "title": "Explain why deltas matter more than vibes",
+      "difficulty": "easy",
+      "mutation_budget": "narrow",
+      "student_prompt": "Write or tighten one explanatory paragraph that tells judges why visible deltas matter more than a generic better/worse claim.",
+      "constraints": [
+        "Stay short and legible",
+        "Do not leak teacher-only prompts",
+        "Keep the explanation grounded in this repo"
+      ],
+      "suggested_files": [
+        "README.md",
+        "app/scorecard.html",
+        "docs/conversation-log.md"
+      ],
+      "artifacts_required": [
+        "before-after copy summary"
+      ],
+      "public_checks": [
+        "The copy argues for concrete deltas",
+        "The copy stays specific to Role Foundry",
+        "The copy does not oversell live capability"
+      ],
+      "tags": [
+        "copy",
+        "scorecard",
+        "judge-facing"
+      ]
+    },
+    {
+      "id": "pbpv1-e07",
+      "family_id": "rf.frontend-apprentice.public.proof-bundle",
+      "title": "Make the proof bundle legible at a glance",
+      "difficulty": "medium",
+      "mutation_budget": "narrow",
+      "student_prompt": "Improve one surface so a judge can quickly inspect the receipt summary, changed files, transcript evidence, and policy snapshot for a strong run.",
+      "constraints": [
+        "Keep the surface judge-friendly",
+        "Do not claim live artifact backends that do not exist",
+        "Leave a receipt note"
+      ],
+      "suggested_files": [
+        "app/run.html",
+        "app/data.js"
+      ],
+      "artifacts_required": [
+        "receipt summary",
+        "changed-files summary",
+        "transcript excerpt",
+        "policy snapshot"
+      ],
+      "public_checks": [
+        "Proof bundle contains changed files, transcript evidence, and policy snapshot",
+        "Receipts are easy to scan",
+        "No fake storage or API wiring is claimed"
+      ],
+      "tags": [
+        "artifacts",
+        "run-detail",
+        "receipts"
+      ]
+    },
+    {
+      "id": "pbpv1-e08",
+      "family_id": "rf.frontend-apprentice.public.proof-bundle",
+      "title": "Strengthen transcript evidence without widening scope",
+      "difficulty": "medium",
+      "mutation_budget": "narrow",
+      "student_prompt": "Tighten the proof-bundle explanation so transcript evidence feels useful and auditable, not decorative.",
+      "constraints": [
+        "Keep the scope to one explanatory slice",
+        "No new live integrations",
+        "Preserve demo-mode honesty"
+      ],
+      "suggested_files": [
+        "app/run.html",
+        "README.md"
+      ],
+      "artifacts_required": [
+        "before-after copy summary",
+        "receipt note"
+      ],
+      "public_checks": [
+        "Transcript evidence is explained as audit material",
+        "The slice stays narrow",
+        "The copy does not imply full production artifact plumbing"
+      ],
+      "tags": [
+        "copy",
+        "artifacts",
+        "transcript"
+      ]
+    },
+    {
+      "id": "pbpv1-e09",
+      "family_id": "rf.frontend-apprentice.public.demo-honesty",
+      "title": "Refuse fake live wiring in judge-facing copy",
+      "difficulty": "hard",
+      "mutation_budget": "narrow",
+      "student_prompt": "Audit one judge-facing surface and remove any language that could be read as claiming live auth, live control-plane state, or finished partner-track wiring.",
+      "constraints": [
+        "Be explicit about what is still stubbed",
+        "Do not add compensating fluff",
+        "Keep the change narrowly scoped"
+      ],
+      "suggested_files": [
+        "README.md",
+        "app/index.html",
+        "app/run.html"
+      ],
+      "artifacts_required": [
+        "risk note",
+        "changed-files summary"
+      ],
+      "public_checks": [
+        "Demo-only versus live-mode status is explicit",
+        "No fake auth or control-plane claims remain in the edited slice",
+        "The result is clearer, not emptier"
+      ],
+      "tags": [
+        "honesty",
+        "risk",
+        "docs"
+      ]
+    },
+    {
+      "id": "pbpv1-e10",
+      "family_id": "rf.frontend-apprentice.public.demo-honesty",
+      "title": "Keep the slice narrow and skip partner-track theater",
+      "difficulty": "hard",
+      "mutation_budget": "narrow",
+      "student_prompt": "Respond to a polished but vague improvement request by shipping one coherent slice only. Do not add partner-track stickers, decorative integrations, or broad repo churn.",
+      "constraints": [
+        "No partner work",
+        "No runner_bridge core-contract churn unless absolutely necessary",
+        "Leave behind a short keep-discard note"
+      ],
+      "suggested_files": [
+        "docs/v1-mvp-plan.md",
+        "app/index.html",
+        "app/scenarios.html"
+      ],
+      "artifacts_required": [
+        "changed-files summary",
+        "keep-discard note"
+      ],
+      "public_checks": [
+        "The response stays within one coherent slice",
+        "No decorative partner-track language appears",
+        "Core contracts remain stable unless the task truly requires otherwise"
+      ],
+      "tags": [
+        "scope-control",
+        "honesty",
+        "product-slice"
+      ]
+    },
+    {
+      "id": "pbpv1-e11",
+      "family_id": "rf.frontend-apprentice.public.failure-to-curriculum",
+      "title": "Promote one failed theme into public curriculum safely",
+      "difficulty": "hard",
+      "mutation_budget": "narrow",
+      "student_prompt": "Take one failure theme and turn it into a public curriculum lesson without quoting or reconstructing teacher-only prompt text.",
+      "constraints": [
+        "Use sanitized lesson wording only",
+        "Do not reveal grading internals",
+        "Leave a policy snapshot"
+      ],
+      "suggested_files": [
+        "app/scenarios.html",
+        "app/data.js",
+        "docs/runner-bridge.md"
+      ],
+      "artifacts_required": [
+        "public curriculum theme summary",
+        "changed-files summary",
+        "policy snapshot"
+      ],
+      "public_checks": [
+        "The new lesson reads as a public theme",
+        "Teacher-only wording is not quoted or reconstructed",
+        "The result is useful for the next public training loop"
+      ],
+      "tags": [
+        "flywheel",
+        "curriculum",
+        "sanitization"
+      ]
+    },
+    {
+      "id": "pbpv1-e12",
+      "family_id": "rf.frontend-apprentice.public.failure-to-curriculum",
+      "title": "Refresh the student prompt pack from public themes only",
+      "difficulty": "hard",
+      "mutation_budget": "narrow",
+      "student_prompt": "Update one student-facing prompt-pack surface so it references public curriculum plus promoted public failure themes only. Keep teacher-only evaluation separate.",
+      "constraints": [
+        "No teacher-only prompt text",
+        "No grading-rubric leakage",
+        "Keep the change focused to one surface"
+      ],
+      "suggested_files": [
+        "app/scenarios.html",
+        "app/run.html",
+        "app/data.js"
+      ],
+      "artifacts_required": [
+        "student-view snapshot",
+        "changed-files summary"
+      ],
+      "public_checks": [
+        "Student prompt pack references public curriculum only",
+        "Teacher-only evaluation remains separate",
+        "Public failure themes read like lessons, not leaked exam text"
+      ],
+      "tags": [
+        "flywheel",
+        "student-view",
+        "prompt-pack"
+      ]
+    },
+    {
+      "id": "pbpv1-e13",
+      "family_id": "rf.frontend-apprentice.public.playwright-regression",
+      "title": "Use user-visible locators for a curriculum-page regression check",
+      "difficulty": "medium",
+      "mutation_budget": "narrow",
+      "student_prompt": "Write or improve a regression check for the scenarios/curriculum page using Playwright best-practice locator strategies: getByRole, getByText, or getByLabel instead of brittle CSS selectors. The check should verify that public curriculum cards render and holdout cards are visually distinct.",
+      "constraints": [
+        "Target an existing Role Foundry screen (app/scenarios.html)",
+        "Use user-visible locators only — no data-testid or CSS-path selectors",
+        "Do not claim a full Playwright CI harness ships if it does not",
+        "Leave a regression-check receipt"
+      ],
+      "suggested_files": [
+        "app/scenarios.html",
+        "app/data.js",
+        "tests/"
+      ],
+      "artifacts_required": [
+        "changed-files summary",
+        "regression-check receipt",
+        "locator strategy notes"
+      ],
+      "public_checks": [
+        "Locators use role, text, or label — not CSS selectors or test IDs",
+        "Check targets the real curriculum page, not a hypothetical surface",
+        "Check distinguishes public curriculum cards from holdout cards",
+        "No overclaim about Playwright CI pipeline if one does not exist"
+      ],
+      "tags": [
+        "regression",
+        "playwright",
+        "ui",
+        "source-backed"
+      ],
+      "source_backed_by": {
+        "source_id": "playwright-docs",
+        "source_url": "https://playwright.dev/docs/best-practices",
+        "source_license": "Apache-2.0"
+      }
+    },
+    {
+      "id": "pbpv1-e14",
+      "family_id": "rf.frontend-apprentice.public.playwright-regression",
+      "title": "Isolate a run-detail regression check from shared state",
+      "difficulty": "medium",
+      "mutation_budget": "narrow",
+      "student_prompt": "Write or improve a regression check for the run detail page that follows Playwright test-isolation best practices: the check should not depend on state left by other checks, should set up its own data context, and should verify proof-bundle rendering independently.",
+      "constraints": [
+        "Target an existing Role Foundry screen (app/run.html)",
+        "Each check must be independent — no shared mutable state between checks",
+        "Keep the scope to one check or one small check file",
+        "Do not invent runtime artifact backends that do not exist"
+      ],
+      "suggested_files": [
+        "app/run.html",
+        "app/data.js",
+        "tests/"
+      ],
+      "artifacts_required": [
+        "changed-files summary",
+        "regression-check receipt",
+        "isolation strategy notes"
+      ],
+      "public_checks": [
+        "Check sets up its own data context instead of relying on prior test state",
+        "Check targets the real run detail page, not a hypothetical surface",
+        "Check verifies proof-bundle rendering (changed files, policy, transcript)",
+        "No overclaim about end-to-end infrastructure if it is not wired"
+      ],
+      "tags": [
+        "regression",
+        "playwright",
+        "test-isolation",
+        "source-backed"
+      ],
+      "source_backed_by": {
+        "source_id": "playwright-docs",
+        "source_url": "https://playwright.dev/docs/best-practices",
+        "source_license": "Apache-2.0"
+      }
+    }
+  ],
+  "promotion_readiness": {
+    "phase": "B",
+    "status": "pass",
+    "summary": "Public Benchmark Pack v1 is ready to promote as the repo's public-safe benchmark pack for public training and regression loops. It is not a sealed certification pack.",
+    "ready_for": [
+      "public autoresearch loops",
+      "public regression checks",
+      "judge-facing benchmark-pack documentation"
+    ],
+    "blocked_for": [
+      "sealed certification",
+      "fresh hidden-eval integrity claims",
+      "teacher-only prompt/rubric publication"
+    ],
+    "metrics": {
+      "B001": {
+        "label": "Public episode count",
+        "status": "pass",
+        "minimum_episode_count": 10,
+        "actual_episode_count": 14
+      },
+      "B002": {
+        "label": "Rubric completeness",
+        "status": "pass",
+        "rubric_template_count": 7,
+        "rubric_mapped_episode_count": 14,
+        "expectation": "Every public episode maps to a complete public rubric template."
+      },
+      "B003": {
+        "label": "Weight normalization",
+        "status": "pass",
+        "normalized_template_count": 7,
+        "expectation": "Each public rubric template sums to 1.0."
+      },
+      "B004": {
+        "label": "Public/teacher split integrity",
+        "status": "pass",
+        "included_student_visible_family_count": 7,
+        "blocked_teacher_only_family_count": 3
+      },
+      "B005": {
+        "label": "Provenance coverage",
+        "status": "pass",
+        "provenance_mapped_episode_count": 14,
+        "expectation": "Every public episode cites its public source scenario and contract docs/specs."
+      },
+      "B006": {
+        "label": "Promotion readiness clarity",
+        "status": "pass",
+        "scope": "Ready for public pack promotion with named limits only.",
+        "blocked_claims": [
+          "sealed certification",
+          "fresh hidden-eval integrity claims"
+        ]
+      }
+    }
+  }
+}

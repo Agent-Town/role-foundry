@@ -1,0 +1,87 @@
+{
+  "status": "ready",
+  "proof_id": "clawith-vibecosystem-roundtrip-proof-20260323-0958z",
+  "scope": "One honest external adapter-first Clawith -> OpenClaw gateway -> Claude/vibecosystem -> Clawith roundtrip.",
+  "source_review_branch": "origin/review/clawith-vibe-roundtrip-demo-20260323-1000",
+  "source_review_commit": "4dab2a9866b86df4525d9698a7c844ab538ac61c",
+  "repo_visible_support": [
+    "docs/clawith-vibecosystem-real-path.md",
+    "scripts/clawith_link_openclaw.py",
+    "scripts/clawith_vibe_once.py",
+    "scripts/clawith_ws_roundtrip.js"
+  ],
+  "portable_evidence_bundle": {
+    "status": "tracked_sanitized_export",
+    "directory": "submission/roundtrip-proof",
+    "paths": [
+      "submission/roundtrip-proof/README.md",
+      "submission/roundtrip-proof/roundtrip-proof.export.json",
+      "submission/roundtrip-proof/final-reply.txt"
+    ],
+    "audit_note_path": "submission/checklists/roundtrip-receipt-audit-2026-03-23.md",
+    "notes": "Use these repo-visible paths in tracked packet materials. Raw receipt trees remain local-only and untracked."
+  },
+  "maintainer_local_receipt_roots": [
+    {
+      "id": "websocket-roundtrip",
+      "status": "local_only_referenced_not_committed",
+      "path": "artifacts/clawith-roundtrip/rescue-proof/20260323T025241Z",
+      "notes": "User-side Clawith session + websocket receipts showing the final assistant reply visible back through the stock chat/session path.",
+      "key_files": [
+        "agent.json",
+        "session.json",
+        "session_messages.json",
+        "summary.json",
+        "transport.json",
+        "ws_events.json",
+        "ws_summary.json",
+        "final_reply.txt"
+      ]
+    },
+    {
+      "id": "gateway-worker-roundtrip",
+      "status": "local_only_referenced_not_committed",
+      "path": "artifacts/clawith-gateway/rescue-proof/20260323T025254Z",
+      "notes": "External OpenClaw-gateway worker receipts showing the real inbound message, Claude/vibecosystem execution metadata, and successful report back to Clawith.",
+      "key_files": [
+        "poll.json",
+        "01_fc7f2137-2d6e-4047-9061-03e7dca481c2/message.json",
+        "01_fc7f2137-2d6e-4047-9061-03e7dca481c2/prompt.txt",
+        "01_fc7f2137-2d6e-4047-9061-03e7dca481c2/execution.json",
+        "01_fc7f2137-2d6e-4047-9061-03e7dca481c2/claude.stdout.txt",
+        "01_fc7f2137-2d6e-4047-9061-03e7dca481c2/report.json"
+      ]
+    }
+  ],
+  "observed_receipt_facts": {
+    "agent_name": "vibecosystem-adapter",
+    "agent_id": "8e6d247d-5b59-4211-9afc-42cdb036782e",
+    "session_id": "65d9ecda-b1f9-442d-bbf6-2b09573882de",
+    "gateway_message_id": "fc7f2137-2d6e-4047-9061-03e7dca481c2",
+    "placeholder_seen_on_websocket": true,
+    "claude_input_transport": "stdin",
+    "gateway_report_status": "ok"
+  },
+  "required_final_reply": {
+    "lines": [
+      "REAL_GATEWAY_ROUNDTRIP_OK_20260323_0958Z",
+      "CLAWITH_CONTROL_PLANE_VIBECOSYSTEM_EXECUTOR"
+    ]
+  },
+  "assertions_proven": [
+    "A real Clawith-linked external agent received a pending message through the upstream /api/gateway/* contract.",
+    "Claude Code with a vibecosystem-selected executor produced the reply and that reply was reported back through the gateway contract.",
+    "The final assistant reply became visible again through the Clawith chat session/websocket path."
+  ],
+  "non_claims": [
+    "This does not prove native upstream Clawith model-pool parity.",
+    "This does not prove native Role Foundry role/scenario/run APIs already exist upstream in Clawith.",
+    "This does not prove sealed, tamper-proof, or independently certified evaluation.",
+    "This does not prove broad production hardening for the external executor lane."
+  ],
+  "review_notes": [
+    "Tracked packet files should cite the portable bundle under submission/roundtrip-proof/ instead of raw artifacts/... paths.",
+    "Maintainer-local receipt roots remain indexed for deep revalidation only; they are not required for basic packet review.",
+    "Do not upgrade this proof into native Clawith parity or sealed evaluation claims."
+  ]
+}

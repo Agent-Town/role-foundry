@@ -57,7 +57,7 @@ Principle: each milestone must have:
 
 ## Milestone 3 — Clawith Control Plane in Compose
 
-**Status:** active
+**Status:** done
 
 **Goal:** replace the current stub with a real control plane service that the repo can talk to honestly.
 
@@ -81,7 +81,7 @@ Principle: each milestone must have:
 
 ## Milestone 4 — Runner Bridge + First Live Run
 
-**Status:** queued
+**Status:** done
 
 **Goal:** make one real teacher/student run happen without faking consumer OAuth inside Clawith.
 
@@ -103,7 +103,7 @@ Principle: each milestone must have:
 
 ## Milestone 5 — Teacher Evaluation + Iteration Loop
 
-**Status:** queued
+**Status:** done
 
 **Goal:** prove the actual moat: hidden holdout evaluation, failure themes, and score improvement.
 
@@ -120,6 +120,33 @@ Principle: each milestone must have:
 - at least two iterations can be shown honestly
 
 **Builds on:** Milestone 4
+
+**Landed support slices on this spine:**
+- `specs/008-public-benchmark-pack-v1.md` + `docs/public-benchmark-pack-v1.md` freeze the first public-safe benchmark pack v1.
+- additive receipt provenance now rides on top of the existing runner-bridge outputs; it does not change the teacher score semantics.
+- `specs/009-clawith-readiness-probe.md` + `docs/clawith-integration.md` keep the upstream Clawith path adapter-first and read-only.
+- `specs/011-live-ui-read-model.md` keeps the browser live shell read-only and payload-faithful for configured exports / fixtures.
+
+**Executable follow-through now landed on this branch:**
+- `specs/010-autoresearch-alpha-public-loop.md` + `tests/test_autoresearch_alpha_loop.py` deliver the first honest baseline → candidate-student → candidate-teacher-eval → better/equal/worse loop.
+- the integrity gate explicitly allows **public-regression** claims while blocking **sealed-eval** claims until fresh teacher-only families exist outside the public repo.
+
+**Local private holdout scaffold (contract only):**
+- `specs/012-private-holdout-pack.md` + `benchmarks/private-holdout-pack-template.json` + `tests/test_private_holdout_separation.py` define the teacher-only path without shipping any real teacher-only content.
+- `scripts/holdout_author.py` + `docs/private-holdout-authoring.md` make that path locally authorable and auditable without changing the public alpha-loop claims.
+
+These slices are real. This branch now has an executable **public alpha loop**, but a truly sealed holdout path is still blocked pending fresh teacher-only rewrites stored only in the local gitignored private path.
+
+**Phase F adapter-readiness hardening (F001-F004):**
+- `scripts/check_clawith_adapter_prereqs.py` — GET-only prereq checker covering all 6 required F001 categories with explicit ready/blocked/unknown output
+- `docs/clawith-adapter-bringup.md` — seam-to-upstream mapping matrix using the 5 allowed F003 statuses
+- `tests/test_clawith_adapter_readiness.py` — 19 tests covering F001 probe coverage, F002 zero false-ready, F003 mapping completeness, and F004 non-destructive guarantee
+- The prereq checker never reports `ready` when admin or model-pool presence is missing or unknown (F002 hardening)
+
+**Autoresearch Alpha review-spine freeze:**
+- In scope on this branch: the public benchmark pack v1, the executable public alpha loop, the read-only live UI/read-model shell, and the local private-holdout authoring/separation contract.
+- Out of scope on this branch: sealed-certification claims, partner-integration expansion, native live artifact browsing/storage fan-out, and broad `runner_bridge` core-contract churn.
+- If a follow-up change is not required to keep those four contracts coherent, it belongs on another branch.
 
 ---
 

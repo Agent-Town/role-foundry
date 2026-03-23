@@ -6,129 +6,156 @@
   <title>Role Foundry — Judge Scorecard</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
   <link rel="stylesheet" href="style.css">
+  <script src="config.js"></script>
   <script src="data.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
   <script src="app.js"></script>
 </head>
 <body>
 
-<div class="demo-banner">DEMO MODE — scorecards emphasize hidden-holdout improvement, not just public-curriculum success.</div>
+<div class="mode-banner" :class="$store.app.modeBannerTone()" x-data>
+  <div class="mode-banner-inner">
+    <div class="mode-banner-copy">
+      <strong class="mode-banner-title" x-text="$store.app.modeBadgeLabel()"></strong>
+      <span x-text="$store.app.modeBannerText()"></span>
+      <small x-show="$store.app.liveShell.lastError" x-text="$store.app.liveShell.lastError"></small>
+    </div>
+    <div class="mode-banner-actions">
+      <button class="secondary outline" @click="$store.app.switchMode('demo')">Demo data</button>
+      <button class="contrast outline" @click="$store.app.switchMode('live')">Live shell</button>
+    </div>
+  </div>
+</div>
 
 <nav x-data="navComponent()">
   <ul>
-    <li><a class="brand" href="index.html">Role Foundry</a></li>
-    <li><a href="index.html" :class="isActive('index.html') && 'active'">Apprentice</a></li>
-    <li><a href="scenarios.html" :class="isActive('scenarios.html') && 'active'">Curriculum</a></li>
-    <li><a href="run.html" :class="isActive('run.html') && 'active'">Runs</a></li>
-    <li><a href="scorecard.html" :class="isActive('scorecard.html') && 'active'">Scorecard</a></li>
+    <li><a class="brand" :href="pageHref('index.html')">Role Foundry</a></li>
+    <li><a :href="pageHref('vision.html')" :class="isActive('vision.html') && 'active'">Vision</a></li>
+    <li><a :href="pageHref('index.html')" :class="isActive('index.html') && 'active'">Apprentice</a></li>
+    <li><a :href="pageHref('scenarios.html')" :class="isActive('scenarios.html') && 'active'">Curriculum</a></li>
+    <li><a :href="pageHref('run.html')" :class="isActive('run.html') && 'active'">Runs</a></li>
+    <li><a :href="pageHref('scorecard.html')" :class="isActive('scorecard.html') && 'active'">Scorecard</a></li>
   </ul>
 </nav>
 
-<main class="container" x-data="{ selectedRun: 'run-002', compareMode: true }">
+<main class="container" x-data="{ selectedRun: null, compareMode: true, init() { this.selectedRun = $store.app.latestScoredRunId() || $store.app.latestRunId(); } }">
+  <div x-effect="if (!selectedRun || !$store.app.getRun(selectedRun)) { selectedRun = $store.app.latestScoredRunId() || $store.app.latestRunId(); }"></div>
+
   <div class="page-header">
     <h1>Judge Scorecard</h1>
-    <p>Passing public curriculum is nice. Passing sealed holdouts is the real signal that the Frontend Apprentice can ship Role Foundry slices without overfitting the demo.</p>
+    <p>Passing public curriculum is practice. Passing fresh teacher-only holdouts would be the stronger signal. This branch's scorecard proves public-regression movement and holdout-aware review, not sealed certification.</p>
   </div>
 
   <div class="toolbar-row">
-    <label style="margin-bottom: 0;">
+    <label style="margin-bottom: 0;" x-show="$store.app.runs.length > 0">
       View run:
       <select x-model="selectedRun" style="width: auto; display: inline-block; margin-left: 0.5rem;">
-        <template x-for="run in $store.app.runs" :key="run.id">
+        <template x-for="run in $store.app.orderedRuns()" :key="run.id">
           <option :value="run.id" x-text="run.label"></option>
         </template>
       </select>
     </label>
-    <label style="margin-bottom: 0;">
-      <input type="checkbox" x-model="compareMode" role="switch"> Compare to Run 1
+    <label style="margin-bottom: 0;" x-show="$store.app.runs.length > 0">
+      <input type="checkbox" x-model="compareMode" role="switch" :disabled="!$store.app.hasComparisonRun(selectedRun)">
+      <span x-text="$store.app.hasComparisonRun(selectedRun) ? 'Compare to ' + $store.app.getRunShortLabel($store.app.comparisonRunId(selectedRun)) : 'No comparison run yet'"></span>
     </label>
   </div>
 
-  <div class="score-summary detail-summary">
-    <div class="stat">
-      <div class="value" x-text="$store.app.getScorecard(selectedRun)?.overall + '/' + $store.app.getScorecard(selectedRun)?.total"></div>
-      <div class="label">Overall pass count</div>
-    </div>
-    <div class="stat">
-      <div class="value" x-text="$store.app.formatPercent($store.app.passRate(selectedRun, 'training'))"></div>
-      <div class="label">Public curriculum</div>
-    </div>
-    <div class="stat">
-      <div class="value" x-text="$store.app.formatPercent($store.app.passRate(selectedRun, 'holdout'))"></div>
-      <div class="label">Hidden holdouts</div>
-    </div>
-    <div class="stat" x-show="compareMode && selectedRun === 'run-002'">
-      <div class="value improved" x-text="$store.app.formatSigned($store.app.passRateDelta('run-002') * 100, 0, ' pts')"></div>
-      <div class="label">Overall delta</div>
-    </div>
-    <div class="stat" x-show="compareMode && selectedRun === 'run-002'">
-      <div class="value improved" x-text="$store.app.formatSigned($store.app.passRateDelta('run-002', 'run-001', 'holdout') * 100, 0, ' pts')"></div>
-      <div class="label">Holdout delta</div>
-    </div>
-  </div>
+  <template x-if="selectedRun">
+    <section>
+      <div class="score-summary detail-summary">
+        <div class="stat">
+          <div class="value" x-text="$store.app.getScorecard(selectedRun) ? $store.app.getScorecard(selectedRun).overall + '/' + $store.app.getScorecard(selectedRun).total : 'pending'"></div>
+          <div class="label">Overall pass count</div>
+        </div>
+        <div class="stat">
+          <div class="value" x-text="$store.app.formatPercent($store.app.passRate(selectedRun, 'training'))"></div>
+          <div class="label">Public curriculum</div>
+        </div>
+        <div class="stat">
+          <div class="value" x-text="$store.app.formatPercent($store.app.passRate(selectedRun, 'holdout'))"></div>
+          <div class="label">Hidden holdouts</div>
+        </div>
+        <div class="stat" x-show="compareMode && $store.app.hasComparisonRun(selectedRun) && $store.app.getScorecard(selectedRun)">
+          <div class="value improved" x-text="$store.app.formatSigned($store.app.passRateDelta(selectedRun) === null ? null : $store.app.passRateDelta(selectedRun) * 100, 0, ' pts')"></div>
+          <div class="label">Overall delta</div>
+        </div>
+        <div class="stat" x-show="compareMode && $store.app.hasComparisonRun(selectedRun) && $store.app.getScorecard(selectedRun)">
+          <div class="value improved" x-text="$store.app.formatSigned($store.app.passRateDelta(selectedRun, null, 'holdout') === null ? null : $store.app.passRateDelta(selectedRun, null, 'holdout') * 100, 0, ' pts')"></div>
+          <div class="label">Holdout delta</div>
+        </div>
+      </div>
 
-  <article class="judge-callout compact-callout" x-show="selectedRun === 'run-002'">
-    <strong>Teacher verdict:</strong>
-    Run 2 clearly improved because the apprentice now names the vertical, keeps holdouts sealed, shows receipts, and avoids fake live-integration claims.
-  </article>
+      <article class="judge-callout compact-callout" x-show="$store.app.teacherSummaryForRun(selectedRun)">
+        <strong>Teacher verdict:</strong>
+        <span x-text="$store.app.teacherSummaryForRun(selectedRun)"></span>
+      </article>
 
-  <table>
-    <thead>
-      <tr>
-        <th>Scenario</th>
-        <th>Type</th>
-        <th>Run</th>
-        <th>Score</th>
-        <th x-show="compareMode">Run 1</th>
-        <th x-show="compareMode">Delta</th>
-        <th>Notes</th>
-      </tr>
-    </thead>
-    <tbody>
-      <template x-for="result in $store.app.getScorecard(selectedRun)?.results || []" :key="result.scenario_id">
-        <tr>
-          <td x-text="$store.app.getScenario(result.scenario_id)?.title || result.scenario_id"></td>
-          <td>
-            <span class="badge"
-              :class="$store.app.getScenario(result.scenario_id)?.type === 'holdout' ? 'badge-holdout' : 'badge-training'"
-              x-text="$store.app.getScenario(result.scenario_id)?.type"></span>
-          </td>
-          <td>
-            <span class="badge" :class="result.passed ? 'badge-pass' : 'badge-fail'" x-text="result.passed ? 'PASS' : 'FAIL'"></span>
-          </td>
-          <td x-text="result.score.toFixed(1)"></td>
-          <td x-show="compareMode">
-            <template x-if="$store.app.getScorecard('run-001')">
-              <span x-text="($store.app.getScorecard('run-001').results.find(r => r.scenario_id === result.scenario_id)?.score || 0).toFixed(1)"></span>
+      <template x-if="$store.app.resultsForRun(selectedRun).length > 0">
+        <table>
+          <thead>
+            <tr>
+              <th>Scenario</th>
+              <th>Type</th>
+              <th>Run</th>
+              <th>Score</th>
+              <th x-show="compareMode && $store.app.hasComparisonRun(selectedRun)" x-text="$store.app.getRunShortLabel($store.app.comparisonRunId(selectedRun))"></th>
+              <th x-show="compareMode && $store.app.hasComparisonRun(selectedRun)">Delta</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <template x-for="result in $store.app.resultsForRun(selectedRun)" :key="result.scenario_id">
+              <tr>
+                <td x-text="$store.app.getScenario(result.scenario_id)?.title || result.scenario_id"></td>
+                <td>
+                  <span class="badge"
+                    :class="$store.app.getScenario(result.scenario_id)?.type === 'holdout' ? 'badge-holdout' : 'badge-training'"
+                    x-text="$store.app.getScenario(result.scenario_id)?.type"></span>
+                </td>
+                <td>
+                  <span class="badge" :class="result.passed ? 'badge-pass' : 'badge-fail'" x-text="result.passed ? 'PASS' : 'FAIL'"></span>
+                </td>
+                <td x-text="result.score !== null && result.score !== undefined ? result.score.toFixed(1) : '—'"></td>
+                <td x-show="compareMode && $store.app.hasComparisonRun(selectedRun)" x-text="$store.app.scoreForScenario($store.app.comparisonRunId(selectedRun), result.scenario_id) !== null ? $store.app.scoreForScenario($store.app.comparisonRunId(selectedRun), result.scenario_id).toFixed(1) : '—'"></td>
+                <td x-show="compareMode && $store.app.hasComparisonRun(selectedRun)">
+                  <span
+                    :class="{
+                      'improved': $store.app.scoreForScenario($store.app.comparisonRunId(selectedRun), result.scenario_id) !== null && result.score > $store.app.scoreForScenario($store.app.comparisonRunId(selectedRun), result.scenario_id),
+                      'regressed': $store.app.scoreForScenario($store.app.comparisonRunId(selectedRun), result.scenario_id) !== null && result.score < $store.app.scoreForScenario($store.app.comparisonRunId(selectedRun), result.scenario_id)
+                    }"
+                    x-text="$store.app.scoreForScenario($store.app.comparisonRunId(selectedRun), result.scenario_id) !== null ? $store.app.formatSigned(result.score - $store.app.scoreForScenario($store.app.comparisonRunId(selectedRun), result.scenario_id), 1) : '—'">
+                  </span>
+                </td>
+                <td><small x-text="result.notes"></small></td>
+              </tr>
             </template>
-          </td>
-          <td x-show="compareMode">
-            <template x-if="$store.app.getScorecard('run-001')">
-              <span
-                :class="{
-                  'improved': result.score > ($store.app.getScorecard('run-001').results.find(r => r.scenario_id === result.scenario_id)?.score || 0),
-                  'regressed': result.score < ($store.app.getScorecard('run-001').results.find(r => r.scenario_id === result.scenario_id)?.score || 0)
-                }"
-                x-text="$store.app.formatSigned((result.score - ($store.app.getScorecard('run-001').results.find(r => r.scenario_id === result.scenario_id)?.score || 0)), 1)">
-              </span>
-            </template>
-          </td>
-          <td><small x-text="result.notes"></small></td>
-        </tr>
+          </tbody>
+        </table>
       </template>
-    </tbody>
-  </table>
+
+      <article class="card empty-state" x-show="$store.app.resultsForRun(selectedRun).length === 0">
+        <strong>No per-scenario teacher scorecard is attached to this run yet.</strong>
+        <p>The selected stage may be the candidate student run, or the export may only include aggregate receipts.</p>
+      </article>
+    </section>
+  </template>
+
+  <article class="card empty-state" x-show="$store.app.runs.length === 0">
+    <strong>No scored runs are loaded yet.</strong>
+    <p>The shell is ready to show scorecards once live evaluation results exist.</p>
+  </article>
 
   <div class="iteration-progress">
     <h3>Iteration Progress</h3>
     <div class="iteration-bars">
-      <template x-for="run in $store.app.runs" :key="run.id">
+      <template x-for="run in $store.app.scoredRuns()" :key="run.id">
         <div class="iter-bar-group">
-          <div class="iter-bar-label" x-text="'#' + run.iteration"></div>
+          <div class="iter-bar-label" x-text="run.iteration ? '#' + run.iteration : run.id"></div>
           <div class="iter-bar-track">
             <div class="iter-bar-fill"
-              :style="'width:' + Math.round(($store.app.getScorecard(run.id)?.pass_rate || 0) * 100) + '%'"
-              :class="($store.app.getScorecard(run.id)?.pass_rate || 0) >= 0.7 ? 'bar-good' : 'bar-warn'">
+              :style="'width:' + Math.round((($store.app.getScorecard(run.id)?.pass_rate) || 0) * 100) + '%'"
+              :class="(($store.app.getScorecard(run.id)?.pass_rate) || 0) >= 0.7 ? 'bar-good' : 'bar-warn'">
             </div>
           </div>
           <div class="iter-bar-value" x-text="$store.app.formatPercent($store.app.getScorecard(run.id)?.pass_rate || 0)"></div>
@@ -137,13 +164,13 @@
     </div>
   </div>
 
-  <template x-if="$store.app.getIteration('run-002')">
+  <template x-if="$store.app.getIteration(selectedRun)">
     <section>
       <h3>Failure Analysis → Next Curriculum</h3>
-      <p><small x-text="$store.app.getIteration('run-002').curriculum_notes"></small></p>
+      <p><small x-text="$store.app.getIteration(selectedRun).curriculum_notes"></small></p>
 
-      <div class="grid-2" style="margin-bottom: 1rem;">
-        <template x-for="ft in $store.app.getIteration('run-002').failure_themes" :key="ft.theme">
+      <div class="grid-2" style="margin-bottom: 1rem;" x-show="$store.app.getIteration(selectedRun).failure_themes?.length">
+        <template x-for="ft in $store.app.getIteration(selectedRun).failure_themes" :key="ft.theme">
           <div class="card theme-card">
             <h4 x-text="ft.theme"></h4>
             <p x-text="ft.description"></p>
@@ -152,16 +179,42 @@
       </div>
 
       <details open>
-        <summary>Policy changes applied before Run 2</summary>
+        <summary x-text="'Policy changes applied before ' + $store.app.getRunShortLabel(selectedRun)"></summary>
         <ul>
-          <template x-for="(change, i) in $store.app.getIteration('run-002').policy_changes" :key="i">
+          <template x-for="(change, i) in $store.app.getIteration(selectedRun).policy_changes || []" :key="i">
             <li x-text="change"></li>
           </template>
         </ul>
-        <p><strong>Updated identity:</strong> <em x-text="$store.app.getIteration('run-002').identity_snapshot"></em></p>
+        <p><strong>Updated identity:</strong> <em x-text="$store.app.getIteration(selectedRun).identity_snapshot"></em></p>
       </details>
     </section>
   </template>
+
+  <section x-show="$store.app.iterationTimeline().length > 0">
+    <h3>Iteration History</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Iteration</th>
+          <th>Overall</th>
+          <th>Holdouts</th>
+          <th>Pass-rate delta</th>
+        </tr>
+      </thead>
+      <tbody>
+        <template x-for="entry in $store.app.iterationTimeline()" :key="entry.run_id">
+          <tr>
+            <td x-text="entry.iteration ? '#' + entry.iteration : entry.run_id"></td>
+            <td x-text="entry.aggregate_score?.passed + '/' + entry.aggregate_score?.total"></td>
+            <td x-text="entry.aggregate_score?.holdout ? entry.aggregate_score?.holdout?.passed + '/' + entry.aggregate_score?.holdout?.total : '—'"></td>
+            <td>
+              <span x-text="entry.delta ? $store.app.formatSigned(entry.delta.pass_rate_points, 0, ' pts') : '—'"></span>
+            </td>
+          </tr>
+        </template>
+      </tbody>
+    </table>
+  </section>
 
   <article>
     <h3>How to read this scorecard</h3>

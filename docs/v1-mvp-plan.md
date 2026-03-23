@@ -59,6 +59,8 @@ _Ordered by dependency. Each slice should be demoable on its own._
 
 **What:** Build the first runner adapter that dispatches a student run to Claude.
 
+**Current fast path:** Milestone 4 now ships a local/mockable `LocalReplayRunner` through `python3 -m runner_bridge.cli` so the lifecycle, transcript storage, artifact bundle, and honest failure path are real before Claude wiring lands.
+
 **Tasks:**
 - [ ] Implement ClaudeVibeRunner adapter matching the contract in `docs/runner-bridge.md`
 - [ ] Runner takes a scenario, executes against Claude, captures transcript + artifacts

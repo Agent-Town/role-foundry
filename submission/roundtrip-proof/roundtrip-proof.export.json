@@ -1,0 +1,81 @@
+{
+  "status": "tracked-sanitized-export",
+  "proof_id": "clawith-vibecosystem-roundtrip-proof-20260323-0958z",
+  "scope": "Portable reviewer-safe excerpt bundle exported from maintainer-local rescue receipts for one honest external adapter-first Clawith -> OpenClaw gateway -> Claude/vibecosystem -> Clawith roundtrip.",
+  "source_review_branch": "origin/review/clawith-vibe-roundtrip-demo-20260323-1000",
+  "source_review_commit": "4dab2a9866b86df4525d9698a7c844ab538ac61c",
+  "portable_files": [
+    {
+      "path": "submission/roundtrip-proof/roundtrip-proof.export.json",
+      "kind": "sanitized-summary-export"
+    },
+    {
+      "path": "submission/roundtrip-proof/final-reply.txt",
+      "kind": "exact-final-reply-excerpt",
+      "sha256": "832efaefab558dc99516f6c5ad59394f602709e640ff7ce99b353eb94a1b0821"
+    },
+    {
+      "path": "submission/roundtrip-proof/README.md",
+      "kind": "reviewer-orientation-note"
+    }
+  ],
+  "maintainer_local_receipt_roots": [
+    {
+      "id": "websocket-roundtrip",
+      "status": "local_only_untracked_source",
+      "repo_relative_path": "artifacts/clawith-roundtrip/rescue-proof/20260323T025241Z"
+    },
+    {
+      "id": "gateway-worker-roundtrip",
+      "status": "local_only_untracked_source",
+      "repo_relative_path": "artifacts/clawith-gateway/rescue-proof/20260323T025254Z"
+    }
+  ],
+  "observed_receipt_facts": {
+    "agent_name": "vibecosystem-adapter",
+    "agent_id": "8e6d247d-5b59-4211-9afc-42cdb036782e",
+    "session_id": "65d9ecda-b1f9-442d-bbf6-2b09573882de",
+    "gateway_message_id": "fc7f2137-2d6e-4047-9061-03e7dca481c2",
+    "placeholder_seen_on_websocket": true,
+    "response_visible_in_session": true,
+    "claude_input_transport": "stdin",
+    "gateway_report_status": "ok"
+  },
+  "websocket_excerpt": {
+    "summary_source": "artifacts/clawith-roundtrip/rescue-proof/20260323T025241Z/summary.json",
+    "summary_sha256": "4bb52ec4bac40dd1a4f7de235b8ae9a43995683f5aeed19b102b1d1aaf91111c",
+    "final_reply_path": "submission/roundtrip-proof/final-reply.txt",
+    "final_reply_sha256": "832efaefab558dc99516f6c5ad59394f602709e640ff7ce99b353eb94a1b0821"
+  },
+  "gateway_excerpt": {
+    "poll_source": "artifacts/clawith-gateway/rescue-proof/20260323T025254Z/poll.json",
+    "poll_sha256": "d6cca753d7055147d4b00b400a681b0aec832ef9376f1b06ac23f638666d9fec",
+    "execution_source": "artifacts/clawith-gateway/rescue-proof/20260323T025254Z/01_fc7f2137-2d6e-4047-9061-03e7dca481c2/execution.json",
+    "execution_sha256": "f95a7043215339c1a2747fe366d47e604807dadbdfbca083a7cd53cc0294805a",
+    "report_source": "artifacts/clawith-gateway/rescue-proof/20260323T025254Z/01_fc7f2137-2d6e-4047-9061-03e7dca481c2/report.json",
+    "report_sha256": "d37208a9be5dfe712a7ee54fdce2f1b0a006ec021754f2c3b70e2d55d6fb585e",
+    "sender_user_name": "Hackathon Admin",
+    "created_at": "2026-03-23T02:52:41.647803Z",
+    "user_instruction": "Reply in exactly two lines. First line: REAL_GATEWAY_ROUNDTRIP_OK_20260323_0958Z. Second line: CLAWITH_CONTROL_PLANE_VIBECOSYSTEM_EXECUTOR.",
+    "execution": {
+      "prompt_mode": "contextual",
+      "chosen_strategy": "contextual_prompt",
+      "claude_input_transport": "stdin",
+      "returncode": 0,
+      "stdout_bytes": 85,
+      "stderr_bytes": 0
+    },
+    "report_status": "ok"
+  },
+  "assertions_proven": [
+    "A real Clawith-linked external agent received a pending message through the upstream /api/gateway/* contract.",
+    "Claude Code with a vibecosystem-selected executor produced the reply and that reply was reported back through the gateway contract.",
+    "The final assistant reply became visible again through the Clawith chat session/websocket path."
+  ],
+  "non_claims": [
+    "This does not prove native upstream Clawith model-pool parity.",
+    "This does not prove native Role Foundry role/scenario/run APIs already exist upstream in Clawith.",
+    "This does not prove sealed, tamper-proof, or independently certified evaluation.",
+    "This does not prove broad production hardening for the external executor lane."
+  ]
+}

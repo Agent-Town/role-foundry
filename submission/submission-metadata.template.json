@@ -1,0 +1,70 @@
+{
+  "status": "draft-template",
+  "project": {
+    "name": "Role Foundry",
+    "repo_url": "https://github.com/Agent-Town/role-foundry",
+    "submission_base_branch": "origin/submission/active-base-20260323-0711",
+    "submission_base_commit": "0dcdc40",
+    "packaging_review_branch": "review/submission-candidate-finished-lanes-20260323-1129",
+    "final_review_commit": "FILL_BEFORE_PUBLISH"
+  },
+  "summary": {
+    "one_liner": "FILL_BEFORE_PUBLISH",
+    "current_demo_claim": "Role Foundry trains an apprentice against public curriculum and teacher-only holdout lanes, with visible score deltas, inspectable receipts, and one honest external gateway roundtrip proof through Clawith.",
+    "scope_note": "The shipped public curriculum remains frontend/product-heavy even though the current framing is Software Engineer Apprentice."
+  },
+  "stack": {
+    "agent_framework": "OpenClaw",
+    "agent_harness": "openclaw",
+    "control_plane": "Clawith",
+    "execution_backends": [
+      "Claude + vibecosystem",
+      "Codex",
+      "deterministic scripts"
+    ],
+    "ui": "Static browser demo plus read-only live/read-model shell"
+  },
+  "repo_visible_evidence": [
+    "docs/conversation-log.md",
+    "app/vision.html",
+    "data/source-research/software-engineer-source-intake.v1.json",
+    "docs/teacher-source-curriculum-workflow.md",
+    "docs/private-holdout-authoring.md",
+    "benchmarks/public-pack-v1/benchmark-pack.json",
+    "docs/clawith-vibecosystem-real-path.md",
+    "submission/clawith-vibecosystem-roundtrip-proof.manifest.json"
+  ],
+  "claim_boundary": {
+    "allowed_now": [
+      "Static judge-facing demo and read-only live/read-model shell",
+      "Public curriculum plus teacher-only holdout separation contract",
+      "Teacher-driven source intake and public curriculum promotion workflow",
+      "Local private-holdout scaffold with fresh hidden holdouts kept outside tracked and student-visible artifacts",
+      "Public-regression alpha-loop and receipt/evidence artifacts",
+      "One honest external adapter-first Clawith -> OpenClaw gateway -> Claude/vibecosystem -> Clawith roundtrip, indexed by a tracked proof manifest."
+    ],
+    "blocked_now": [
+      "Sealed-eval claims",
+      "Sealed certification",
+      "Tamper-proof or third-party-sealed evaluation claims",
+      "Native Clawith model-pool parity claims",
+      "Native Clawith parity claims beyond the single external gateway + Claude/vibecosystem executor proof.",
+      "Product-core partner integration completion claims"
+    ]
+  },
+  "pending_active_lanes": [
+    {
+      "lane": "role-foundry-clawith-native-agent-bringup",
+      "needed_for": "Native Clawith model-pool smoke evidence",
+      "status": "pending"
+    }
+  ],
+  "fill_before_publish": [
+    "Final one-line submission summary",
+    "Final review-branch commit hash",
+    "Published conversationLog path",
+    "Published evidence/proof manifest path",
+    "Published roundtrip proof manifest path",
+    "Wallet / self-custody / participant metadata required by the submission portal"
+  ]
+}

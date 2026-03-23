@@ -1,0 +1,141 @@
+{
+  "status": "submission-packet-ready_pending_human_publish",
+  "final_review_branch": "review/submission-packet-assembly-20260323-1421",
+  "final_review_commit": "67a3f093dbe642c5b9045abe0a0e04fc5e64098d",
+  "final_review_commit_strategy": "content_freeze_commit_recorded_by_followup_stamp_commit",
+  "artifacts": [
+    {
+      "id": "framework-story",
+      "kind": "repo-doc",
+      "status": "ready",
+      "path": "README.md",
+      "visibility": "public",
+      "notes": "Frames Role Foundry as a role-training, evaluation, and promotion system."
+    },
+    {
+      "id": "software-engineer-apprentice-story",
+      "kind": "repo-doc",
+      "status": "ready",
+      "path": "README.md",
+      "visibility": "public",
+      "notes": "Defines the first concrete role as the Software Engineer apprentice."
+    },
+    {
+      "id": "generation-provenance-story",
+      "kind": "repo-doc-plus-bridge",
+      "status": "ready",
+      "paths": [
+        "README.md",
+        "app/vision.html",
+        "runner_bridge/provenance.py"
+      ],
+      "visibility": "public",
+      "notes": "Makes the generation story explicit: receipts, evaluation context, score deltas, and promotion/public-issuance decision."
+    },
+    {
+      "id": "public-alpha-loop-proof",
+      "kind": "contract-plus-test",
+      "status": "ready",
+      "paths": [
+        "specs/010-autoresearch-alpha-public-loop.md",
+        "runner_bridge/examples/autoresearch-alpha-public-loop.json",
+        "tests/test_autoresearch_alpha_loop.py"
+      ],
+      "visibility": "public",
+      "notes": "Executable public alpha loop proof with better/equal/worse comparison contract."
+    },
+    {
+      "id": "local-private-holdout-boundary",
+      "kind": "contract-plus-test",
+      "status": "ready",
+      "paths": [
+        "docs/private-holdout-authoring.md",
+        "specs/012-private-holdout-pack.md",
+        "benchmarks/private-holdout-pack-template.json",
+        "tests/test_private_holdout_separation.py"
+      ],
+      "visibility": "public-plus-local-only-boundary",
+      "notes": "Proves the authoring and leak-separation contract without shipping teacher-only prompts."
+    },
+    {
+      "id": "erc8004-base-staged-identity",
+      "kind": "repo-code-plus-test",
+      "status": "ready_staged_not_minted",
+      "paths": [
+        "docs/erc8004-base-agent0-adapter.md",
+        "specs/013-erc8004-base-agent0-adapter.md",
+        "runner_bridge/product_integrations.py",
+        "app/agent0_base_adapter.mjs",
+        "tests/test_erc8004_base_agent0_adapter.py"
+      ],
+      "visibility": "public",
+      "notes": "Stages ERC-8004 issuance for promoted/public generations on Base without claiming a live mint."
+    },
+    {
+      "id": "final-submission-packet",
+      "kind": "submission-packet",
+      "status": "ready",
+      "paths": [
+        "submission/README.md",
+        "submission/judge-demo-script.md",
+        "submission/judge-qa-note.md",
+        "submission/pr-or-submission-summary.md",
+        "submission/conversation-log.md",
+        "submission/evidence-proof-manifest.json",
+        "submission/submission-metadata.json",
+        "submission/checklists/final-go-no-go.md"
+      ],
+      "visibility": "public",
+      "notes": "Canonical final submission packet artifacts for this review branch."
+    },
+    {
+      "id": "external-roundtrip-proof",
+      "kind": "live-proof",
+      "status": "ready",
+      "branch": "origin/review/clawith-vibe-roundtrip-demo-20260323-1000",
+      "commit": "4dab2a9866b86df4525d9698a7c844ab538ac61c",
+      "artifact_path": "submission/clawith-vibecosystem-roundtrip-proof.manifest.json",
+      "portable_evidence_paths": [
+        "submission/roundtrip-proof/README.md",
+        "submission/roundtrip-proof/roundtrip-proof.export.json",
+        "submission/roundtrip-proof/final-reply.txt"
+      ],
+      "audit_note_path": "submission/checklists/roundtrip-receipt-audit-2026-03-23.md",
+      "entrypoint": "scripts/clawith_ws_roundtrip.js + scripts/clawith_vibe_once.py",
+      "visibility": "proof-artifact",
+      "notes": "Tracked proof index plus portable export bundle show one external Clawith -> OpenClaw -> Claude/vibecosystem roundtrip path. This is not native parity proof."
+    },
+    {
+      "id": "live-base-mint",
+      "kind": "claim-boundary",
+      "status": "blocked_not_claimed",
+      "path": null,
+      "visibility": "blocked",
+      "notes": "Do not claim a live Base mint without a confirmed wallet-approved onchain receipt."
+    },
+    {
+      "id": "partner-track-completion",
+      "kind": "claim-boundary",
+      "status": "blocked_not_claimed",
+      "path": null,
+      "visibility": "blocked",
+      "notes": "Do not claim partner-track completion from this branch."
+    },
+    {
+      "id": "native-clawith-parity",
+      "kind": "claim-boundary",
+      "status": "blocked_not_claimed",
+      "path": null,
+      "visibility": "blocked",
+      "notes": "Do not claim native Clawith parity or native model-pool completion without separate direct proof."
+    },
+    {
+      "id": "sealed-certification",
+      "kind": "claim-boundary",
+      "status": "blocked_not_claimed",
+      "path": null,
+      "visibility": "blocked",
+      "notes": "Do not claim sealed certification, tamper-proof evaluation, or third-party-sealed holdouts."
+    }
+  ]
+}

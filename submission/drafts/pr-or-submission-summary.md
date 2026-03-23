@@ -1,0 +1,6 @@
+# PR / submission summary — archived draft
+
+Status: archived-superseded-by-final-packet
+Canonical final artifact: `submission/pr-or-submission-summary.md`
+
+This file is kept only as the pre-final handoff marker from the packet-prep lane. Use the canonical final artifact above for review or publish work.

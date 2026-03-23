@@ -54,15 +54,63 @@ nav .brand {
   margin-right: 1rem;
 }
 
-/* Demo banner */
-.demo-banner {
-  background: var(--rf-amber);
-  color: #000;
-  text-align: center;
-  padding: 0.45rem 0.75rem;
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
+/* Mode banner */
+.mode-banner {
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  padding: 0.55rem 0.85rem;
+  font-size: 0.8rem;
+}
+.mode-banner.tone-demo {
+  background: #fef3c7;
+  color: #854d0e;
+}
+.mode-banner.tone-live {
+  background: #dcfce7;
+  color: #166534;
+}
+.mode-banner.tone-warning {
+  background: #fde68a;
+  color: #854d0e;
+}
+.mode-banner.tone-error {
+  background: #fee2e2;
+  color: #991b1b;
+}
+.mode-banner-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.9rem;
+  flex-wrap: wrap;
+}
+.mode-banner-copy {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+.mode-banner-title {
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+.mode-banner-copy small {
+  display: block;
+  flex-basis: 100%;
+  margin-top: 0.15rem;
+  color: inherit;
+  opacity: 0.9;
+}
+.mode-banner-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.mode-banner-actions button {
+  margin: 0;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.72rem;
 }
 
 /* Status badges */
@@ -167,6 +215,10 @@ nav .brand {
   border-radius: 12px;
   padding: 0.85rem 1rem;
   background: var(--rf-bg-subtle);
+}
+.stack-list small {
+  display: block;
+  margin-top: 0.3rem;
 }
 .stack-label {
   display: block;
@@ -511,6 +563,15 @@ button[data-primary]:hover {
 }
 .redacted-copy {
   color: #475569;
+}
+
+.empty-state {
+  border-style: dashed;
+  background: var(--rf-bg-subtle);
+}
+.empty-state strong {
+  display: block;
+  margin-bottom: 0.35rem;
 }
 
 /* Utility */
