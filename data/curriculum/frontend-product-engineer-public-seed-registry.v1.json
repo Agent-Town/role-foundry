@@ -1,0 +1,2325 @@
+{
+  "meta": {
+    "id": "frontend-product-engineer-public-seed-registry-v1",
+    "version": "1.0.0",
+    "role_id": "role-frontend-product-engineer",
+    "role_manifest_path": "seed/frontend-product-engineer-role.v1.json",
+    "task_packet_schema_path": "data/curriculum/frontend-product-engineer-task-packet.schema.v1.json",
+    "evaluation_contract_path": "data/curriculum/frontend-product-engineer-evaluation-contract.v1.json",
+    "source_registry_path": "data/curriculum/frontend-product-engineer-source-records.v1.json",
+    "promotion_registry_path": "data/curriculum/frontend-product-engineer-promotion-records.v1.json",
+    "authoring_template_path": "seed/frontend-product-engineer-task-template.v1.json",
+    "doc_path": "docs/frontend-product-engineer-seed-curriculum.md",
+    "student_visible_only": true,
+    "teacher_only_fields_present": false,
+    "summary": "Public-safe seed curriculum for the first frozen Frontend/Product Engineer role, with one machine-readable task packet per Spec 014 acceptance test."
+  },
+  "counts": {
+    "task_count": 20,
+    "phase_count": 5,
+    "tasks_per_phase": 4
+  },
+  "phase_summary": [
+    {
+      "id": "phase-1-freeze-the-game-being-played",
+      "label": "Freeze the game being played",
+      "index": 1,
+      "task_count": 4,
+      "acceptance_tests": [
+        "A001",
+        "A002",
+        "A003",
+        "A004"
+      ]
+    },
+    {
+      "id": "phase-2-build-the-teacher-operating-system",
+      "label": "Build the teacher operating system",
+      "index": 2,
+      "task_count": 4,
+      "acceptance_tests": [
+        "B001",
+        "B002",
+        "B003",
+        "B004"
+      ]
+    },
+    {
+      "id": "phase-3-make-the-coding-loop-real",
+      "label": "Make the coding loop real",
+      "index": 3,
+      "task_count": 4,
+      "acceptance_tests": [
+        "C001",
+        "C002",
+        "C003",
+        "C004"
+      ]
+    },
+    {
+      "id": "phase-4-make-evaluation-trustworthy",
+      "label": "Make evaluation trustworthy",
+      "index": 4,
+      "task_count": 4,
+      "acceptance_tests": [
+        "D001",
+        "D002",
+        "D003",
+        "D004"
+      ]
+    },
+    {
+      "id": "phase-5-make-the-system-compound",
+      "label": "Make the system compound",
+      "index": 5,
+      "task_count": 4,
+      "acceptance_tests": [
+        "E001",
+        "E002",
+        "E003",
+        "E004"
+      ]
+    }
+  ],
+  "tasks": [
+    {
+      "task_id": "fpe.seed.a001.freeze-the-first-apprentice-role",
+      "role_id": "role-frontend-product-engineer",
+      "acceptance_test_id": "A001",
+      "title": "Freeze the first apprentice role",
+      "phase": {
+        "id": "phase-1-freeze-the-game-being-played",
+        "label": "Freeze the game being played",
+        "index": 1
+      },
+      "objective": "Create or tighten the canonical role manifest so the first apprentice is exactly the Frontend/Product Engineer and every public seed task points at that same role id.",
+      "context": {
+        "summary": "Spec 014 narrows the v1 apprentice to judge-facing product work inside this repo. The packet must keep the role single-purpose and make blocked surfaces explicit.",
+        "spec_refs": [
+          "specs/014-frontend-product-engineer-20-task-curriculum.md#A001"
+        ],
+        "repo_refs": [
+          "seed/frontend-product-engineer-role.v1.json",
+          "data/curriculum/frontend-product-engineer-public-seed-registry.v1.json",
+          "tests/test_frontend_product_engineer_seed_registry.py"
+        ],
+        "why_this_task_exists": "If the role still spans multiple jobs, scores drift and promotion decisions stop being comparable."
+      },
+      "success_criteria": [
+        "The canonical role manifest uses the exact role name Frontend/Product Engineer.",
+        "Every public seed task references the same role id.",
+        "Blocked-surface notes explicitly exclude partner integrations, wallet / chain work, and unrelated infra."
+      ],
+      "allowed_paths": [
+        "seed/**",
+        "data/**",
+        "tests/**",
+        "docs/**"
+      ],
+      "blocked_paths": [
+        "submission/**",
+        "benchmarks/private-holdout-pack/**",
+        "scripts/**",
+        "Dockerfile",
+        "docker-compose.yml",
+        ".env*"
+      ],
+      "blocked_scope_notes": [
+        "partner integrations",
+        "wallet / chain work",
+        "gateway / daemon scripts",
+        "secrets, credentials, or environment reconfiguration",
+        "unrelated infra",
+        "unrelated backend/platform rewrites"
+      ],
+      "surface_extension_reason": null,
+      "expected_checks": [
+        {
+          "id": "a001-seed-contract",
+          "command": "python3 -m unittest tests/test_frontend_product_engineer_seed_registry.py",
+          "why": "Validates the public seed registry, role manifest, packet schema, and provenance records stay aligned."
+        },
+        {
+          "id": "a001-spec-lock",
+          "command": "python3 -m unittest tests/test_frontend_product_engineer_20_task_curriculum.py",
+          "why": "Keeps the public seed data anchored to the frozen Spec 014 contract."
+        }
+      ],
+      "rubric_ref": {
+        "contract_id": "frontend-product-engineer-evaluation-contract-v1",
+        "contract_path": "data/curriculum/frontend-product-engineer-evaluation-contract.v1.json",
+        "version": "1.0.0"
+      },
+      "time_budget_minutes": 60,
+      "mutation_budget": {
+        "tracked_files_max": 6,
+        "net_lines_max": 400,
+        "overrides_default": false,
+        "override_reason": null
+      },
+      "evidence_contract": {
+        "required_artifacts": [
+          {
+            "path": "seed/frontend-product-engineer-role.v1.json",
+            "visibility": "public",
+            "description": "Canonical frozen role manifest."
+          },
+          {
+            "path": "data/curriculum/frontend-product-engineer-public-seed-registry.v1.json",
+            "visibility": "public",
+            "description": "Public seed task registry with shared role id."
+          },
+          {
+            "path": "tests/test_frontend_product_engineer_seed_registry.py",
+            "visibility": "public",
+            "description": "Validation test covering the role contract."
+          }
+        ],
+        "provenance_required": true,
+        "student_visible_only": true,
+        "notes": "Public seed packets stay student-visible and must point to public-safe evidence or local-only placeholders without exposing teacher-only content."
+      },
+      "provenance": {
+        "source_kind": "spec_acceptance_test",
+        "source_ref": "specs/014-frontend-product-engineer-20-task-curriculum.md#A001",
+        "source_record_id": "fpe-source-a001",
+        "promotion_record_id": "fpe-promotion-a001",
+        "teacher_only_inputs_used": false,
+        "public_safe_note": "Derived only from the public text of Spec 014 acceptance test A001; no teacher-only prompt, rubric, or holdout text is embedded in the task packet.",
+        "rf_authorship": "Original Role Foundry-authored public task packet."
+      },
+      "packet_version": "1.0.0",
+      "student_visible": true,
+      "teacher_only_fields_present": false,
+      "status": "public_seed_defined"
+    },
+    {
+      "task_id": "fpe.seed.a002.freeze-the-evaluation-contract",
+      "role_id": "role-frontend-product-engineer",
+      "acceptance_test_id": "A002",
+      "title": "Freeze the evaluation contract",
+      "phase": {
+        "id": "phase-1-freeze-the-game-being-played",
+        "label": "Freeze the game being played",
+        "index": 1
+      },
+      "objective": "Check in the five-dimension scoring contract, normalized weights, and task-pass / promotion thresholds as machine-readable constants shared by all public task packets.",
+      "context": {
+        "summary": "The scoring contract must stop moving so week-over-week and generation-over-generation comparisons stay honest.",
+        "spec_refs": [
+          "specs/014-frontend-product-engineer-20-task-curriculum.md#A002"
+        ],
+        "repo_refs": [
+          "data/curriculum/frontend-product-engineer-evaluation-contract.v1.json",
+          "data/curriculum/frontend-product-engineer-sample-scorecard.v1.json",
+          "tests/test_frontend_product_engineer_seed_registry.py"
+        ],
+        "why_this_task_exists": "If the judging contract keeps moving, improvement claims become apples-to-oranges."
+      },
+      "success_criteria": [
+        "The five frozen dimensions are Task outcome, Regression safety, Mutation discipline, Evidence quality, and Honesty / boundary discipline.",
+        "Dimension weights sum to 1.0 exactly.",
+        "Task pass and promotion thresholds are machine-readable constants, not prose-only guidance."
+      ],
+      "allowed_paths": [
+        "data/**",
+        "tests/**",
+        "docs/**"
+      ],
+      "blocked_paths": [
+        "submission/**",
+        "benchmarks/private-holdout-pack/**",
+        "scripts/**",
+        "Dockerfile",
+        "docker-compose.yml",
+        ".env*"
+      ],
+      "blocked_scope_notes": [
+        "partner integrations",
+        "wallet / chain work",
+        "gateway / daemon scripts",
+        "secrets, credentials, or environment reconfiguration",
+        "unrelated infra",
+        "unrelated backend/platform rewrites"
+      ],
+      "surface_extension_reason": null,
+      "expected_checks": [
+        {
+          "id": "a002-seed-contract",
+          "command": "python3 -m unittest tests/test_frontend_product_engineer_seed_registry.py",
+          "why": "Validates the public seed registry, role manifest, packet schema, and provenance records stay aligned."
+        },
+        {
+          "id": "a002-spec-lock",
+          "command": "python3 -m unittest tests/test_frontend_product_engineer_20_task_curriculum.py",
+          "why": "Keeps the public seed data anchored to the frozen Spec 014 contract."
+        }
+      ],
+      "rubric_ref": {
+        "contract_id": "frontend-product-engineer-evaluation-contract-v1",
+        "contract_path": "data/curriculum/frontend-product-engineer-evaluation-contract.v1.json",
+        "version": "1.0.0"
+      },
+      "time_budget_minutes": 60,
+      "mutation_budget": {
+        "tracked_files_max": 6,
+        "net_lines_max": 400,
+        "overrides_default": false,
+        "override_reason": null
+      },
+      "evidence_contract": {
+        "required_artifacts": [
+          {
+            "path": "data/curriculum/frontend-product-engineer-evaluation-contract.v1.json",
+            "visibility": "public",
+            "description": "Frozen evaluation contract with dimensions and thresholds."
+          },
+          {
+            "path": "data/curriculum/frontend-product-engineer-sample-scorecard.v1.json",
+            "visibility": "public",
+            "description": "Public-safe sample scorecard showing the contract in use."
+          },
+          {
+            "path": "tests/test_frontend_product_engineer_seed_registry.py",
+            "visibility": "public",
+            "description": "Contract test rejecting missing or renormalized dimensions."
+          }
+        ],
+        "provenance_required": true,
+        "student_visible_only": true,
+        "notes": "Public seed packets stay student-visible and must point to public-safe evidence or local-only placeholders without exposing teacher-only content."
+      },
+      "provenance": {
+        "source_kind": "spec_acceptance_test",
+        "source_ref": "specs/014-frontend-product-engineer-20-task-curriculum.md#A002",
+        "source_record_id": "fpe-source-a002",
+        "promotion_record_id": "fpe-promotion-a002",
+        "teacher_only_inputs_used": false,
+        "public_safe_note": "Derived only from the public text of Spec 014 acceptance test A002; no teacher-only prompt, rubric, or holdout text is embedded in the task packet.",
+        "rf_authorship": "Original Role Foundry-authored public task packet."
+      },
+      "packet_version": "1.0.0",
+      "student_visible": true,
+      "teacher_only_fields_present": false,
+      "status": "public_seed_defined"
+    },
+    {
+      "task_id": "fpe.seed.a003.freeze-the-mutation-surface",
+      "role_id": "role-frontend-product-engineer",
+      "acceptance_test_id": "A003",
+      "title": "Freeze the mutation surface",
+      "phase": {
+        "id": "phase-1-freeze-the-game-being-played",
+        "label": "Freeze the game being played",
+        "index": 1
+      },
+      "objective": "Declare allowed paths, blocked paths, and a diff budget on every task packet so out-of-scope writes auto-fail mutation discipline.",
+      "context": {
+        "summary": "The apprentice should win by landing a coherent slice, not by thrashing the repo until something looks better.",
+        "spec_refs": [
+          "specs/014-frontend-product-engineer-20-task-curriculum.md#A003"
+        ],
+        "repo_refs": [
+          "data/curriculum/frontend-product-engineer-public-seed-registry.v1.json",
+          "data/curriculum/frontend-product-engineer-sample-run-objects.v1.json",
+          "tests/test_frontend_product_engineer_seed_registry.py"
+        ],
+        "why_this_task_exists": "Without a mutation budget, a good-looking result can hide scope creep and make scores meaningless."
+      },
+      "success_criteria": [
+        "Every task packet declares allowed_paths and blocked_paths.",
+        "The default mutation budget is at most 6 tracked files and 400 net changed lines unless the packet explicitly overrides it.",
+        "Run-object fixtures record changed files and diff stats that can be scored against the declared budget."
+      ],
+      "allowed_paths": [
+        "data/**",
+        "seed/**",
+        "tests/**",
+        "docs/**"
+      ],
+      "blocked_paths": [
+        "submission/**",
+        "benchmarks/private-holdout-pack/**",
+        "scripts/**",
+        "Dockerfile",
+        "docker-compose.yml",
+        ".env*"
+      ],
+      "blocked_scope_notes": [
+        "partner integrations",
+        "wallet / chain work",
+        "gateway / daemon scripts",
+        "secrets, credentials, or environment reconfiguration",
+        "unrelated infra",
+        "unrelated backend/platform rewrites"
+      ],
+      "surface_extension_reason": null,
+      "expected_checks": [
+        {
+          "id": "a003-seed-contract",
+          "command": "python3 -m unittest tests/test_frontend_product_engineer_seed_registry.py",
+          "why": "Validates the public seed registry, role manifest, packet schema, and provenance records stay aligned."
+        },
+        {
+          "id": "a003-spec-lock",
+          "command": "python3 -m unittest tests/test_frontend_product_engineer_20_task_curriculum.py",
+          "why": "Keeps the public seed data anchored to the frozen Spec 014 contract."
+        }
+      ],
+      "rubric_ref": {
+        "contract_id": "frontend-product-engineer-evaluation-contract-v1",
+        "contract_path": "data/curriculum/frontend-product-engineer-evaluation-contract.v1.json",
+        "version": "1.0.0"
+      },
+      "time_budget_minutes": 75,
+      "mutation_budget": {
+        "tracked_files_max": 6,
+        "net_lines_max": 400,
+        "overrides_default": false,
+        "override_reason": null
+      },
+      "evidence_contract": {
+        "required_artifacts": [
+          {
+            "path": "data/curriculum/frontend-product-engineer-public-seed-registry.v1.json",
+            "visibility": "public",
+            "description": "Task packets with declared mutation surfaces."
+          },
+          {
+            "path": "data/curriculum/frontend-product-engineer-sample-run-objects.v1.json",
+            "visibility": "public",
+            "description": "Sample run objects showing changed files and diff stats."
+          },
+          {
+            "path": "tests/test_frontend_product_engineer_seed_registry.py",
+            "visibility": "public",
+            "description": "Enforcement test for mutation-budget fields."
+          }
+        ],
+        "provenance_required": true,
+        "student_visible_only": true,
+        "notes": "Public seed packets stay student-visible and must point to public-safe evidence or local-only placeholders without exposing teacher-only content."
+      },
+      "provenance": {
+        "source_kind": "spec_acceptance_test",
+        "source_ref": "specs/014-frontend-product-engineer-20-task-curriculum.md#A003",
+        "source_record_id": "fpe-source-a003",
+        "promotion_record_id": "fpe-promotion-a003",
+        "teacher_only_inputs_used": false,
+        "public_safe_note": "Derived only from the public text of Spec 014 acceptance test A003; no teacher-only prompt, rubric, or holdout text is embedded in the task packet.",
+        "rf_authorship": "Original Role Foundry-authored public task packet."
+      },
+      "packet_version": "1.0.0",
+      "student_visible": true,
+      "teacher_only_fields_present": false,
+      "status": "public_seed_defined"
+    },
+    {
+      "task_id": "fpe.seed.a004.freeze-the-canonical-task-packet",
+      "role_id": "role-frontend-product-engineer",
+      "acceptance_test_id": "A004",
+      "title": "Freeze the canonical task packet",
+      "phase": {
+        "id": "phase-1-freeze-the-game-being-played",
+        "label": "Freeze the game being played",
+        "index": 1
+      },
+      "objective": "Define one machine-readable task-packet schema and make the full public seed set validate against it.",
+      "context": {
+        "summary": "Authoring, execution, and evaluation need to share the same task object instead of bespoke prompts.",
+        "spec_refs": [
+          "specs/014-frontend-product-engineer-20-task-curriculum.md#A004"
+        ],
+        "repo_refs": [
+          "data/curriculum/frontend-product-engineer-task-packet.schema.v1.json",
+          "data/curriculum/frontend-product-engineer-public-seed-registry.v1.json",
+          "data/curriculum/frontend-product-engineer-sample-run-objects.v1.json",
+          "tests/test_frontend_product_engineer_seed_registry.py"
+        ],
+        "why_this_task_exists": "Without a canonical packet, every run becomes prompt craft instead of reproducible curriculum execution."
+      },
+      "success_criteria": [
+        "The schema includes task_id, role_id, phase, objective, context, allowed_paths, blocked_paths, expected_checks, rubric_ref, time_budget_minutes, and evidence_contract.",
+        "Every public seed task validates against the same packet schema.",
+        "Baseline and candidate run fixtures reference the task packet version."
+      ],
+      "allowed_paths": [
+        "data/**",
+        "seed/**",
+        "tests/**",
+        "docs/**"
+      ],
+      "blocked_paths": [
+        "submission/**",
+        "benchmarks/private-holdout-pack/**",
+        "scripts/**",
+        "Dockerfile",
+        "docker-compose.yml",
+        ".env*"
+      ],
+      "blocked_scope_notes": [
+        "partner integrations",
+        "wallet / chain work",
+        "gateway / daemon scripts",
+        "secrets, credentials, or environment reconfiguration",
+        "unrelated infra",
+        "unrelated backend/platform rewrites"
+      ],
+      "surface_extension_reason": null,
+      "expected_checks": [
+        {
+          "id": "a004-seed-contract",
+          "command": "python3 -m unittest tests/test_frontend_product_engineer_seed_registry.py",
+          "why": "Validates the public seed registry, role manifest, packet schema, and provenance records stay aligned."
+        },
+        {
+          "id": "a004-spec-lock",
+          "command": "python3 -m unittest tests/test_frontend_product_engineer_20_task_curriculum.py",
+          "why": "Keeps the public seed data anchored to the frozen Spec 014 contract."
+        }
+      ],
+      "rubric_ref": {
+        "contract_id": "frontend-product-engineer-evaluation-contract-v1",
+        "contract_path": "data/curriculum/frontend-product-engineer-evaluation-contract.v1.json",
+        "version": "1.0.0"
+      },
+      "time_budget_minutes": 90,
+      "mutation_budget": {
+        "tracked_files_max": 6,
+        "net_lines_max": 400,
+        "overrides_default": false,
+        "override_reason": null
+      },
+      "evidence_contract": {
+        "required_artifacts": [
+          {
+            "path": "data/curriculum/frontend-product-engineer-task-packet.schema.v1.json",
+            "visibility": "public",
+            "description": "Canonical JSON Schema for public task packets."
+          },
+          {
+            "path": "data/curriculum/frontend-product-engineer-public-seed-registry.v1.json",
+            "visibility": "public",
+            "description": "Example packets drawn from the real 20-task seed set."
+          },
+          {
+            "path": "data/curriculum/frontend-product-engineer-sample-run-objects.v1.json",
+            "visibility": "public",
+            "description": "Run-object fixtures that reference the packet version."
+          }
+        ],
+        "provenance_required": true,
+        "student_visible_only": true,
+        "notes": "Public seed packets stay student-visible and must point to public-safe evidence or local-only placeholders without exposing teacher-only content."
+      },
+      "provenance": {
+        "source_kind": "spec_acceptance_test",
+        "source_ref": "specs/014-frontend-product-engineer-20-task-curriculum.md#A004",
+        "source_record_id": "fpe-source-a004",
+        "promotion_record_id": "fpe-promotion-a004",
+        "teacher_only_inputs_used": false,
+        "public_safe_note": "Derived only from the public text of Spec 014 acceptance test A004; no teacher-only prompt, rubric, or holdout text is embedded in the task packet.",
+        "rf_authorship": "Original Role Foundry-authored public task packet."
+      },
+      "packet_version": "1.0.0",
+      "student_visible": true,
+      "teacher_only_fields_present": false,
+      "status": "public_seed_defined"
+    },
+    {
+      "task_id": "fpe.seed.b001.build-task-authoring-from-a-template",
+      "role_id": "role-frontend-product-engineer",
+      "acceptance_test_id": "B001",
+      "title": "Build task authoring from a template",
+      "phase": {
+        "id": "phase-2-build-the-teacher-operating-system",
+        "label": "Build the teacher operating system",
+        "index": 2
+      },
+      "objective": "Ship a teacher-facing template that can draft a task packet with zero blank required fields and at least one automated check plus one evidence item.",
+      "context": {
+        "summary": "Good task authoring should be cheap, consistent, and executable instead of relying on memory or vibes.",
+        "spec_refs": [
+          "specs/014-frontend-product-engineer-20-task-curriculum.md#B001"
+        ],
+        "repo_refs": [
+          "seed/frontend-product-engineer-task-template.v1.json",
+          "docs/frontend-product-engineer-seed-curriculum.md",
+          "tests/test_frontend_product_engineer_seed_registry.py"
+        ],
+        "why_this_task_exists": "A reusable template slows curriculum rot and keeps new tasks from slipping back into vague prompt prose."
+      },
+      "success_criteria": [
+        "The authoring template has no blank required fields.",
+        "The template already includes at least one automated check and one evidence artifact.",
+        "The public docs explain how the template fits the seed registry and evaluation contract."
+      ],
+      "allowed_paths": [
+        "seed/**",
+        "docs/**",
+        "tests/**",
+        "data/**"
+      ],
+      "blocked_paths": [
+        "submission/**",
+        "benchmarks/private-holdout-pack/**",
+        "scripts/**",
+        "Dockerfile",
+        "docker-compose.yml",
+        ".env*"
+      ],
+      "blocked_scope_notes": [
+        "partner integrations",
+        "wallet / chain work",
+        "gateway / daemon scripts",
+        "secrets, credentials, or environment reconfiguration",
+        "unrelated infra",
+        "unrelated backend/platform rewrites"
+      ],
+      "surface_extension_reason": null,
+      "expected_checks": [
+        {
+          "id": "b001-seed-contract",
+          "command": "python3 -m unittest tests/test_frontend_product_engineer_seed_registry.py",
+          "why": "Validates the public seed registry, role manifest, packet schema, and provenance records stay aligned."
+        },
+        {
+          "id": "b001-spec-lock",
+          "command": "python3 -m unittest tests/test_frontend_product_engineer_20_task_curriculum.py",
+          "why": "Keeps the public seed data anchored to the frozen Spec 014 contract."
+        }
+      ],
+      "rubric_ref": {
+        "contract_id": "frontend-product-engineer-evaluation-contract-v1",
+        "contract_path": "data/curriculum/frontend-product-engineer-evaluation-contract.v1.json",
+        "version": "1.0.0"
+      },
+      "time_budget_minutes": 60,
+      "mutation_budget": {
+        "tracked_files_max": 6,
+        "net_lines_max": 400,
+        "overrides_default": false,
+        "override_reason": null
+      },
+      "evidence_contract": {
+        "required_artifacts": [
+          {
+            "path": "seed/frontend-product-engineer-task-template.v1.json",
+            "visibility": "public",
+            "description": "Draft-complete task-packet template for teachers."
+          },
+          {
+            "path": "docs/frontend-product-engineer-seed-curriculum.md",
+            "visibility": "public",
+            "description": "Short authoring and audit guide for the seed curriculum."
+          },
+          {
+            "path": "tests/test_frontend_product_engineer_seed_registry.py",
+            "visibility": "public",
+            "description": "Template validation test."
+          }
+        ],
+        "provenance_required": true,
+        "student_visible_only": true,
+        "notes": "Public seed packets stay student-visible and must point to public-safe evidence or local-only placeholders without exposing teacher-only content."
+      },
+      "provenance": {
+        "source_kind": "spec_acceptance_test",
+        "source_ref": "specs/014-frontend-product-engineer-20-task-curriculum.md#B001",
+        "source_record_id": "fpe-source-b001",
+        "promotion_record_id": "fpe-promotion-b001",
+        "teacher_only_inputs_used": false,
+        "public_safe_note": "Derived only from the public text of Spec 014 acceptance test B001; no teacher-only prompt, rubric, or holdout text is embedded in the task packet.",
+        "rf_authorship": "Original Role Foundry-authored public task packet."
+      },
+      "packet_version": "1.0.0",
+      "student_visible": true,
+      "teacher_only_fields_present": false,
+      "status": "public_seed_defined"
+    },
+    {
+      "task_id": "fpe.seed.b002.build-source-intake-curriculum-promotion-workflow",
+      "role_id": "role-frontend-product-engineer",
+      "acceptance_test_id": "B002",
+      "title": "Build source-intake -> curriculum promotion workflow",
+      "phase": {
+        "id": "phase-2-build-the-teacher-operating-system",
+        "label": "Build the teacher operating system",
+        "index": 2
+      },
+      "objective": "Record one public-safe source record and one promotion record for every promoted seed task so provenance is explicit and auditable.",
+      "context": {
+        "summary": "Spec 014 treats provenance as part of the curriculum contract: every promoted task should explain where it came from and why it is public-safe.",
+        "spec_refs": [
+          "specs/014-frontend-product-engineer-20-task-curriculum.md#B002"
+        ],
+        "repo_refs": [
+          "data/curriculum/frontend-product-engineer-source-records.v1.json",
+          "data/curriculum/frontend-product-engineer-promotion-records.v1.json",
+          "data/curriculum/frontend-product-engineer-public-seed-registry.v1.json",
+          "docs/teacher-source-curriculum-workflow.md"
+        ],
+        "why_this_task_exists": "Curriculum growth becomes untraceable fast unless source records and promotion decisions are first-class data."
+      },
+      "success_criteria": [
+        "Every promoted task links to exactly one stable source record and exactly one promotion record.",
+        "Every source and promotion record carries a public-safe provenance note.",
+        "Teacher-only inputs stay absent from tracked task packets and promotion records."
+      ],
+      "allowed_paths": [
+        "data/**",
+        "docs/**",
+        "tests/**"
+      ],
+      "blocked_paths": [
+        "submission/**",
+        "benchmarks/private-holdout-pack/**",
+        "scripts/**",
+        "Dockerfile",
+        "docker-compose.yml",
+        ".env*"
+      ],
+      "blocked_scope_notes": [
+        "partner integrations",
+        "wallet / chain work",
+        "gateway / daemon scripts",
+        "secrets, credentials, or environment reconfiguration",
+        "unrelated infra",
+        "unrelated backend/platform rewrites"
+      ],
+      "surface_extension_reason": null,
+      "expected_checks": [
+        {
+          "id": "b002-seed-contract",
+          "command": "python3 -m unittest tests/test_frontend_product_engineer_seed_registry.py",
+          "why": "Validates the public seed registry, role manifest, packet schema, and provenance records stay aligned."
+        },
+        {
+          "id": "b002-spec-lock",
+          "command": "python3 -m unittest tests/test_frontend_product_engineer_20_task_curriculum.py",
+          "why": "Keeps the public seed data anchored to the frozen Spec 014 contract."
+        }
+      ],
+      "rubric_ref": {
+        "contract_id": "frontend-product-engineer-evaluation-contract-v1",
+        "contract_path": "data/curriculum/frontend-product-engineer-evaluation-contract.v1.json",
+        "version": "1.0.0"
+      },
+      "time_budget_minutes": 75,
+      "mutation_budget": {
+        "tracked_files_max": 6,
+        "net_lines_max": 400,
+        "overrides_default": false,
+        "override_reason": null
+      },
+      "evidence_contract": {
+        "required_artifacts": [
+          {
+            "path": "data/curriculum/frontend-product-engineer-source-records.v1.json",
+            "visibility": "public",
+            "description": "Stable source records derived from Spec 014 acceptance tests."
+          },
+          {
+            "path": "data/curriculum/frontend-product-engineer-promotion-records.v1.json",
+            "visibility": "public",
+            "description": "Promotion decisions for each public seed task."
+          },
+          {
+            "path": "tests/test_frontend_product_engineer_seed_registry.py",
+            "visibility": "public",
+            "description": "Separation and provenance coverage test."
+          }
+        ],
+        "provenance_required": true,
+        "student_visible_only": true,
+        "notes": "Public seed packets stay student-visible and must point to public-safe evidence or local-only placeholders without exposing teacher-only content."
+      },
+      "provenance": {
+        "source_kind": "spec_acceptance_test",
+        "source_ref": "specs/014-frontend-product-engineer-20-task-curriculum.md#B002",
+        "source_record_id": "fpe-source-b002",
+        "promotion_record_id": "fpe-promotion-b002",
+        "teacher_only_inputs_used": false,
+        "public_safe_note": "Derived only from the public text of Spec 014 acceptance test B002; no teacher-only prompt, rubric, or holdout text is embedded in the task packet.",
+        "rf_authorship": "Original Role Foundry-authored public task packet."
+      },
+      "packet_version": "1.0.0",
+      "student_visible": true,
+      "teacher_only_fields_present": false,
+      "status": "public_seed_defined"
+    },
+    {
+      "task_id": "fpe.seed.b003.author-the-first-20-task-seed-set",
+      "role_id": "role-frontend-product-engineer",
+      "acceptance_test_id": "B003",
+      "title": "Author the first 20-task seed set",
+      "phase": {
+        "id": "phase-2-build-the-teacher-operating-system",
+        "label": "Build the teacher operating system",
+        "index": 2
+      },
+      "objective": "Instantiate the full 20-task public seed set, one machine-readable packet per Spec 014 acceptance test, with phase balance and mutation surfaces declared.",
+      "context": {
+        "summary": "The repo needs a real curriculum artifact, not just a spec describing one.",
+        "spec_refs": [
+          "specs/014-frontend-product-engineer-20-task-curriculum.md#B003"
+        ],
+        "repo_refs": [
+          "data/curriculum/frontend-product-engineer-public-seed-registry.v1.json",
+          "data/curriculum/frontend-product-engineer-task-packet.schema.v1.json",
+          "docs/frontend-product-engineer-seed-curriculum.md",
+          "tests/test_frontend_product_engineer_seed_registry.py"
+        ],
+        "why_this_task_exists": "A curriculum operating system without a load-bearing seed set is still a slide, not a system."
+      },
+      "success_criteria": [
+        "Exactly 20 public seed tasks exist.",
+        "Each phase in Spec 014 has exactly 4 tasks in the registry.",
+        "Every task packet includes a rubric reference, at least one automated check, and a declared mutation surface."
+      ],
+      "allowed_paths": [
+        "seed/**",
+        "data/**",
+        "tests/**",
+        "docs/**"
+      ],
+      "blocked_paths": [
+        "submission/**",
+        "benchmarks/private-holdout-pack/**",
+        "scripts/**",
+        "Dockerfile",
+        "docker-compose.yml",
+        ".env*"
+      ],
+      "blocked_scope_notes": [
+        "partner integrations",
+        "wallet / chain work",
+        "gateway / daemon scripts",
+        "secrets, credentials, or environment reconfiguration",
+        "unrelated infra",
+        "unrelated backend/platform rewrites"
+      ],
+      "surface_extension_reason": null,
+      "expected_checks": [
+        {
+          "id": "b003-seed-contract",
+          "command": "python3 -m unittest tests/test_frontend_product_engineer_seed_registry.py",
+          "why": "Validates the public seed registry, role manifest, packet schema, and provenance records stay aligned."
+        },
+        {
+          "id": "b003-spec-lock",
+          "command": "python3 -m unittest tests/test_frontend_product_engineer_20_task_curriculum.py",
+          "why": "Keeps the public seed data anchored to the frozen Spec 014 contract."
+        }
+      ],
+      "rubric_ref": {
+        "contract_id": "frontend-product-engineer-evaluation-contract-v1",
+        "contract_path": "data/curriculum/frontend-product-engineer-evaluation-contract.v1.json",
+        "version": "1.0.0"
+      },
+      "time_budget_minutes": 120,
+      "mutation_budget": {
+        "tracked_files_max": 10,
+        "net_lines_max": 700,
+        "overrides_default": true,
+        "override_reason": "Authoring the first complete public seed pack touches multiple checked-in data, test, and docs artifacts in one coherent change."
+      },
+      "evidence_contract": {
+        "required_artifacts": [
+          {
+            "path": "data/curriculum/frontend-product-engineer-public-seed-registry.v1.json",
+            "visibility": "public",
+            "description": "Full public seed registry with 20 task packets."
+          },
+          {
+            "path": "docs/frontend-product-engineer-seed-curriculum.md",
+            "visibility": "public",
+            "description": "Human-readable index for the new seed curriculum."
+          },
+          {
+            "path": "tests/test_frontend_product_engineer_seed_registry.py",
+            "visibility": "public",
+            "description": "Count and phase-balance validation test."
+          }
+        ],
+        "provenance_required": true,
+        "student_visible_only": true,
+        "notes": "Public seed packets stay student-visible and must point to public-safe evidence or local-only placeholders without exposing teacher-only content."
+      },
+      "provenance": {
+        "source_kind": "spec_acceptance_test",
+        "source_ref": "specs/014-frontend-product-engineer-20-task-curriculum.md#B003",
+        "source_record_id": "fpe-source-b003",
+        "promotion_record_id": "fpe-promotion-b003",
+        "teacher_only_inputs_used": false,
+        "public_safe_note": "Derived only from the public text of Spec 014 acceptance test B003; no teacher-only prompt, rubric, or holdout text is embedded in the task packet.",
+        "rf_authorship": "Original Role Foundry-authored public task packet."
+      },
+      "packet_version": "1.0.0",
+      "student_visible": true,
+      "teacher_only_fields_present": false,
+      "status": "public_seed_defined"
+    },
+    {
+      "task_id": "fpe.seed.b004.add-weekly-holdout-refresh",
+      "role_id": "role-frontend-product-engineer",
+      "acceptance_test_id": "B004",
+      "title": "Add weekly holdout refresh",
+      "phase": {
+        "id": "phase-2-build-the-teacher-operating-system",
+        "label": "Build the teacher operating system",
+        "index": 2
+      },
+      "objective": "Define the public-safe contract and audit seam for weekly private-holdout refresh without tracking any teacher-only prompt or rubric content.",
+      "context": {
+        "summary": "The public side of the system should show how holdouts are refreshed and audited while keeping the actual exam private.",
+        "spec_refs": [
+          "specs/014-frontend-product-engineer-20-task-curriculum.md#B004"
+        ],
+        "repo_refs": [
+          "benchmarks/private-holdout-pack-template.json",
+          "docs/private-holdout-authoring.md",
+          "tests/test_private_holdout_separation.py"
+        ],
+        "why_this_task_exists": "Promotion becomes theater if the private exam stops changing or leaks into the public repo."
+      },
+      "success_criteria": [
+        "Weekly refresh expectations call for at least 4 fresh teacher-only holdout tasks per cycle.",
+        "Refresh metadata records a week stamp and retirement / archive behavior for older holdouts.",
+        "Tracked artifacts expose only public-safe audit seams, never teacher-only content."
+      ],
+      "allowed_paths": [
+        "benchmarks/**",
+        "docs/**",
+        "tests/**",
+        "data/**"
+      ],
+      "blocked_paths": [
+        "submission/**",
+        "benchmarks/private-holdout-pack/**",
+        "scripts/**",
+        "Dockerfile",
+        "docker-compose.yml",
+        ".env*"
+      ],
+      "blocked_scope_notes": [
+        "partner integrations",
+        "wallet / chain work",
+        "gateway / daemon scripts",
+        "secrets, credentials, or environment reconfiguration",
+        "unrelated infra",
+        "unrelated backend/platform rewrites"
+      ],
+      "surface_extension_reason": "This task is allowed to touch public-safe benchmark templates and audit docs because holdout refresh needs a visible, non-leaking contract surface.",
+      "expected_checks": [
+        {
+          "id": "b004-seed-contract",
+          "command": "python3 -m unittest tests/test_frontend_product_engineer_seed_registry.py",
+          "why": "Validates the public seed registry, role manifest, packet schema, and provenance records stay aligned."
+        },
+        {
+          "id": "b004-spec-lock",
+          "command": "python3 -m unittest tests/test_frontend_product_engineer_20_task_curriculum.py",
+          "why": "Keeps the public seed data anchored to the frozen Spec 014 contract."
+        },
+        {
+          "id": "b004-holdout-separation",
+          "command": "python3 -m unittest tests/test_private_holdout_separation.py",
+          "why": "Confirms public artifacts stay free of teacher-only prompt and rubric content."
+        }
+      ],
+      "rubric_ref": {
+        "contract_id": "frontend-product-engineer-evaluation-contract-v1",
+        "contract_path": "data/curriculum/frontend-product-engineer-evaluation-contract.v1.json",
+        "version": "1.0.0"
+      },
+      "time_budget_minutes": 75,
+      "mutation_budget": {
+        "tracked_files_max": 6,
+        "net_lines_max": 400,
+        "overrides_default": false,
+        "override_reason": null
+      },
+      "evidence_contract": {
+        "required_artifacts": [
+          {
+            "path": "benchmarks/private-holdout-pack-template.json",
+            "visibility": "public",
+            "description": "Public schema template for the local private holdout manifest."
+          },
+          {
+            "path": "docs/private-holdout-authoring.md",
+            "visibility": "public",
+            "description": "Local-only authoring workflow and audit guidance."
+          },
+          {
+            "path": "tests/test_private_holdout_separation.py",
+            "visibility": "public",
+            "description": "Leak audit and separation test."
+          }
+        ],
+        "provenance_required": true,
+        "student_visible_only": true,
+        "notes": "Public seed packets stay student-visible and must point to public-safe evidence or local-only placeholders without exposing teacher-only content."
+      },
+      "provenance": {
+        "source_kind": "spec_acceptance_test",
+        "source_ref": "specs/014-frontend-product-engineer-20-task-curriculum.md#B004",
+        "source_record_id": "fpe-source-b004",
+        "promotion_record_id": "fpe-promotion-b004",
+        "teacher_only_inputs_used": false,
+        "public_safe_note": "Derived only from the public text of Spec 014 acceptance test B004; no teacher-only prompt, rubric, or holdout text is embedded in the task packet.",
+        "rf_authorship": "Original Role Foundry-authored public task packet."
+      },
+      "packet_version": "1.0.0",
+      "student_visible": true,
+      "teacher_only_fields_present": false,
+      "status": "public_seed_defined"
+    },
+    {
+      "task_id": "fpe.seed.c001.standardize-isolated-execution",
+      "role_id": "role-frontend-product-engineer",
+      "acceptance_test_id": "C001",
+      "title": "Standardize isolated execution",
+      "phase": {
+        "id": "phase-3-make-the-coding-loop-real",
+        "label": "Make the coding loop real",
+        "index": 3
+      },
+      "objective": "Require every scored run to record a clean git worktree or equivalent isolated workspace, base commit, runtime/version info, and artifact root.",
+      "context": {
+        "summary": "Spec 014 explicitly rejects scored runs that come from a dirty root checkout or hidden local state.",
+        "spec_refs": [
+          "specs/014-frontend-product-engineer-20-task-curriculum.md#C001"
+        ],
+        "repo_refs": [
+          "data/curriculum/frontend-product-engineer-sample-run-objects.v1.json",
+          "specs/014-frontend-product-engineer-20-task-curriculum.md",
+          "tests/test_frontend_product_engineer_seed_registry.py"
+        ],
+        "why_this_task_exists": "Without isolation receipts, scores can be inflated by untracked state and cannot be reproduced."
+      },
+      "success_criteria": [
+        "Run-object fixtures record an isolated git worktree.",
+        "Every scored run records a base commit, runtime info, and artifact root.",
+        "The dirty root checkout is not an allowed scoring source."
+      ],
+      "allowed_paths": [
+        "data/**",
+        "tests/**",
+        "docs/**",
+        "runtime/**"
+      ],
+      "blocked_paths": [
+        "submission/**",
+        "benchmarks/private-holdout-pack/**",
+        "scripts/**",
+        "Dockerfile",
+        "docker-compose.yml",
+        ".env*"
+      ],
+      "blocked_scope_notes": [
+        "partner integrations",
+        "wallet / chain work",
+        "gateway / daemon scripts",
+        "secrets, credentials, or environment reconfiguration",
+        "unrelated infra",
+        "unrelated backend/platform rewrites"
+      ],
+      "surface_extension_reason": "runtime/** is allowed here because isolation receipts are part of the scored-run artifact surface.",
+      "expected_checks": [
+        {
+          "id": "c001-seed-contract",
+          "command": "python3 -m unittest tests/test_frontend_product_engineer_seed_registry.py",
+          "why": "Validates the public seed registry, role manifest, packet schema, and provenance records stay aligned."
+        },
+        {
+          "id": "c001-spec-lock",
+          "command": "python3 -m unittest tests/test_frontend_product_engineer_20_task_curriculum.py",
+          "why": "Keeps the public seed data anchored to the frozen Spec 014 contract."
+        }
+      ],
+      "rubric_ref": {
+        "contract_id": "frontend-product-engineer-evaluation-contract-v1",
+        "contract_path": "data/curriculum/frontend-product-engineer-evaluation-contract.v1.json",
+        "version": "1.0.0"
+      },
+      "time_budget_minutes": 75,
+      "mutation_budget": {
+        "tracked_files_max": 6,
+        "net_lines_max": 400,
+        "overrides_default": false,
+        "override_reason": null
+      },
+      "evidence_contract": {
+        "required_artifacts": [
+          {
+            "path": "data/curriculum/frontend-product-engineer-sample-run-objects.v1.json",
+            "visibility": "public",
+            "description": "Sample run objects carrying isolation metadata."
+          },
+          {
+            "path": "tests/test_frontend_product_engineer_seed_registry.py",
+            "visibility": "public",
+            "description": "Isolation contract test."
+          },
+          {
+            "path": "runtime/runs/",
+            "visibility": "public-path-only",
+            "description": "Expected landing zone for dated scored-run artifacts."
+          }
+        ],
+        "provenance_required": true,
+        "student_visible_only": true,
+        "notes": "Public seed packets stay student-visible and must point to public-safe evidence or local-only placeholders without exposing teacher-only content."
+      },
+      "provenance": {
+        "source_kind": "spec_acceptance_test",
+        "source_ref": "specs/014-frontend-product-engineer-20-task-curriculum.md#C001",
+        "source_record_id": "fpe-source-c001",
+        "promotion_record_id": "fpe-promotion-c001",
+        "teacher_only_inputs_used": false,
+        "public_safe_note": "Derived only from the public text of Spec 014 acceptance test C001; no teacher-only prompt, rubric, or holdout text is embedded in the task packet.",
+        "rf_authorship": "Original Role Foundry-authored public task packet."
+      },
+      "packet_version": "1.0.0",
+      "student_visible": true,
+      "teacher_only_fields_present": false,
+      "status": "public_seed_defined"
+    },
+    {
+      "task_id": "fpe.seed.c002.wire-baseline-run-as-a-first-class-object",
+      "role_id": "role-frontend-product-engineer",
+      "acceptance_test_id": "C002",
+      "title": "Wire baseline run as a first-class object",
+      "phase": {
+        "id": "phase-3-make-the-coding-loop-real",
+        "label": "Make the coding loop real",
+        "index": 3
+      },
+      "objective": "Define the baseline run object so every candidate can compare against a stable baseline on the same task packet version and evaluation contract version.",
+      "context": {
+        "summary": "Improvement needs a stable before-state, not a vibe or a memory.",
+        "spec_refs": [
+          "specs/014-frontend-product-engineer-20-task-curriculum.md#C002"
+        ],
+        "repo_refs": [
+          "data/curriculum/frontend-product-engineer-sample-run-objects.v1.json",
+          "data/curriculum/frontend-product-engineer-evaluation-contract.v1.json",
+          "tests/test_frontend_product_engineer_seed_registry.py"
+        ],
+        "why_this_task_exists": "If candidate runs do not link back to a concrete baseline object, better-than-before claims are hand-wavy."
+      },
+      "success_criteria": [
+        "The baseline object stores commit, checks run, weighted score, and evidence links.",
+        "The candidate run references the same task packet version and evaluation contract version as the baseline.",
+        "The baseline is a first-class machine-readable object, not an inline note."
+      ],
+      "allowed_paths": [
+        "data/**",
+        "tests/**",
+        "docs/**",
+        "runtime/**",
+        "runner_bridge/**"
+      ],
+      "blocked_paths": [
+        "submission/**",
+        "benchmarks/private-holdout-pack/**",
+        "scripts/**",
+        "Dockerfile",
+        "docker-compose.yml",
+        ".env*"
+      ],
+      "blocked_scope_notes": [
+        "partner integrations",
+        "wallet / chain work",
+        "gateway / daemon scripts",
+        "secrets, credentials, or environment reconfiguration",
+        "unrelated infra",
+        "unrelated backend/platform rewrites"
+      ],
+      "surface_extension_reason": "runner_bridge/** may be touched narrowly if the eventual implementation needs to export baseline objects automatically.",
+      "expected_checks": [
+        {
+          "id": "c002-seed-contract",
+          "command": "python3 -m unittest tests/test_frontend_product_engineer_seed_registry.py",
+          "why": "Validates the public seed registry, role manifest, packet schema, and provenance records stay aligned."
+        },
+        {
+          "id": "c002-spec-lock",
+          "command": "python3 -m unittest tests/test_frontend_product_engineer_20_task_curriculum.py",
+          "why": "Keeps the public seed data anchored to the frozen Spec 014 contract."
+        }
+      ],
+      "rubric_ref": {
+        "contract_id": "frontend-product-engineer-evaluation-contract-v1",
+        "contract_path": "data/curriculum/frontend-product-engineer-evaluation-contract.v1.json",
+        "version": "1.0.0"
+      },
+      "time_budget_minutes": 75,
+      "mutation_budget": {
+        "tracked_files_max": 6,
+        "net_lines_max": 400,
+        "overrides_default": false,
+        "override_reason": null
+      },
+      "evidence_contract": {
+        "required_artifacts": [
+          {
+            "path": "data/curriculum/frontend-product-engineer-sample-run-objects.v1.json",
+            "visibility": "public",
+            "description": "Sample baseline and candidate run objects with shared packet/version linkage."
+          },
+          {
+            "path": "data/curriculum/frontend-product-engineer-evaluation-contract.v1.json",
+            "visibility": "public",
+            "description": "Frozen evaluation contract referenced by both runs."
+          },
+          {
+            "path": "tests/test_frontend_product_engineer_seed_registry.py",
+            "visibility": "public",
+            "description": "Baseline linkage test."
+          }
+        ],
+        "provenance_required": true,
+        "student_visible_only": true,
+        "notes": "Public seed packets stay student-visible and must point to public-safe evidence or local-only placeholders without exposing teacher-only content."
+      },
+      "provenance": {
+        "source_kind": "spec_acceptance_test",
+        "source_ref": "specs/014-frontend-product-engineer-20-task-curriculum.md#C002",
+        "source_record_id": "fpe-source-c002",
+        "promotion_record_id": "fpe-promotion-c002",
+        "teacher_only_inputs_used": false,
+        "public_safe_note": "Derived only from the public text of Spec 014 acceptance test C002; no teacher-only prompt, rubric, or holdout text is embedded in the task packet.",
+        "rf_authorship": "Original Role Foundry-authored public task packet."
+      },
+      "packet_version": "1.0.0",
+      "student_visible": true,
+      "teacher_only_fields_present": false,
+      "status": "public_seed_defined"
+    },
+    {
+      "task_id": "fpe.seed.c003.wire-candidate-run-with-real-code-test-execution",
+      "role_id": "role-frontend-product-engineer",
+      "acceptance_test_id": "C003",
+      "title": "Wire candidate run with real code/test execution",
+      "phase": {
+        "id": "phase-3-make-the-coding-loop-real",
+        "label": "Make the coding loop real",
+        "index": 3
+      },
+      "objective": "Require candidate runs to record at least one real repo command with exit code, stdout/stderr capture, changed files, and post-change check results.",
+      "context": {
+        "summary": "A candidate run should be judged on repo changes and executed checks, not on a clever write-up.",
+        "spec_refs": [
+          "specs/014-frontend-product-engineer-20-task-curriculum.md#C003"
+        ],
+        "repo_refs": [
+          "data/curriculum/frontend-product-engineer-sample-run-objects.v1.json",
+          "data/curriculum/frontend-product-engineer-evaluation-contract.v1.json",
+          "tests/test_frontend_product_engineer_seed_registry.py"
+        ],
+        "why_this_task_exists": "Narrative-only candidates should be auto-ineligible for promotion."
+      },
+      "success_criteria": [
+        "Candidate runs record at least one real repo command with an exit code.",
+        "stdout and stderr capture paths are part of the run object.",
+        "Changed files and post-change checks are stored alongside the candidate receipt."
+      ],
+      "allowed_paths": [
+        "data/**",
+        "tests/**",
+        "docs/**",
+        "runtime/**",
+        "runner_bridge/**"
+      ],
+      "blocked_paths": [
+        "submission/**",
+        "benchmarks/private-holdout-pack/**",
+        "scripts/**",
+        "Dockerfile",
+        "docker-compose.yml",
+        ".env*"
+      ],
+      "blocked_scope_notes": [
+        "partner integrations",
+        "wallet / chain work",
+        "gateway / daemon scripts",
+        "secrets, credentials, or environment reconfiguration",
+        "unrelated infra",
+        "unrelated backend/platform rewrites"
+      ],
+      "surface_extension_reason": "runtime/** and narrow runner_bridge/** are permitted because real execution receipts must be exported somewhere stable.",
+      "expected_checks": [
+        {
+          "id": "c003-seed-contract",
+          "command": "python3 -m unittest tests/test_frontend_product_engineer_seed_registry.py",
+          "why": "Validates the public seed registry, role manifest, packet schema, and provenance records stay aligned."
+        },
+        {
+          "id": "c003-spec-lock",
+          "command": "python3 -m unittest tests/test_frontend_product_engineer_20_task_curriculum.py",
+          "why": "Keeps the public seed data anchored to the frozen Spec 014 contract."
+        }
+      ],
+      "rubric_ref": {
+        "contract_id": "frontend-product-engineer-evaluation-contract-v1",
+        "contract_path": "data/curriculum/frontend-product-engineer-evaluation-contract.v1.json",
+        "version": "1.0.0"
+      },
+      "time_budget_minutes": 90,
+      "mutation_budget": {
+        "tracked_files_max": 6,
+        "net_lines_max": 400,
+        "overrides_default": false,
+        "override_reason": null
+      },
+      "evidence_contract": {
+        "required_artifacts": [
+          {
+            "path": "data/curriculum/frontend-product-engineer-sample-run-objects.v1.json",
+            "visibility": "public",
+            "description": "Sample candidate run with command logs, changed files, and check results."
+          },
+          {
+            "path": "runtime/runs/",
+            "visibility": "public-path-only",
+            "description": "Expected landing zone for command and check receipts."
+          },
+          {
+            "path": "tests/test_frontend_product_engineer_seed_registry.py",
+            "visibility": "public",
+            "description": "Execution contract test."
+          }
+        ],
+        "provenance_required": true,
+        "student_visible_only": true,
+        "notes": "Public seed packets stay student-visible and must point to public-safe evidence or local-only placeholders without exposing teacher-only content."
+      },
+      "provenance": {
+        "source_kind": "spec_acceptance_test",
+        "source_ref": "specs/014-frontend-product-engineer-20-task-curriculum.md#C003",
+        "source_record_id": "fpe-source-c003",
+        "promotion_record_id": "fpe-promotion-c003",
+        "teacher_only_inputs_used": false,
+        "public_safe_note": "Derived only from the public text of Spec 014 acceptance test C003; no teacher-only prompt, rubric, or holdout text is embedded in the task packet.",
+        "rf_authorship": "Original Role Foundry-authored public task packet."
+      },
+      "packet_version": "1.0.0",
+      "student_visible": true,
+      "teacher_only_fields_present": false,
+      "status": "public_seed_defined"
+    },
+    {
+      "task_id": "fpe.seed.c004.capture-full-receipts-automatically",
+      "role_id": "role-frontend-product-engineer",
+      "acceptance_test_id": "C004",
+      "title": "Capture full receipts automatically",
+      "phase": {
+        "id": "phase-3-make-the-coding-loop-real",
+        "label": "Make the coding loop real",
+        "index": 3
+      },
+      "objective": "Auto-emit the task-packet reference, transcript, changed files, checks run, scorecard, and provenance manifest for every scored run.",
+      "context": {
+        "summary": "Receipt capture should be a default byproduct of running the loop, not manual cleanup after the fact.",
+        "spec_refs": [
+          "specs/014-frontend-product-engineer-20-task-curriculum.md#C004"
+        ],
+        "repo_refs": [
+          "data/curriculum/frontend-product-engineer-sample-run-objects.v1.json",
+          "data/curriculum/frontend-product-engineer-sample-scorecard.v1.json",
+          "tests/test_frontend_product_engineer_seed_registry.py"
+        ],
+        "why_this_task_exists": "The first time a run needs auditing or debugging, missing receipts turn the score into mush."
+      },
+      "success_criteria": [
+        "Sample run objects expose packet refs, transcript paths, changed-file receipts, checks, scorecards, and provenance manifests.",
+        "Missing receipts are treated as an Evidence quality failure.",
+        "Receipt capture is defined as part of the core run contract rather than a manual appendix."
+      ],
+      "allowed_paths": [
+        "data/**",
+        "tests/**",
+        "docs/**",
+        "runtime/**",
+        "runner_bridge/**"
+      ],
+      "blocked_paths": [
+        "submission/**",
+        "benchmarks/private-holdout-pack/**",
+        "scripts/**",
+        "Dockerfile",
+        "docker-compose.yml",
+        ".env*"
+      ],
+      "blocked_scope_notes": [
+        "partner integrations",
+        "wallet / chain work",
+        "gateway / daemon scripts",
+        "secrets, credentials, or environment reconfiguration",
+        "unrelated infra",
+        "unrelated backend/platform rewrites"
+      ],
+      "surface_extension_reason": "Receipt manifests and transcripts are part of the runtime artifact surface even when the tracked examples stay public-safe.",
+      "expected_checks": [
+        {
+          "id": "c004-seed-contract",
+          "command": "python3 -m unittest tests/test_frontend_product_engineer_seed_registry.py",
+          "why": "Validates the public seed registry, role manifest, packet schema, and provenance records stay aligned."
+        },
+        {
+          "id": "c004-spec-lock",
+          "command": "python3 -m unittest tests/test_frontend_product_engineer_20_task_curriculum.py",
+          "why": "Keeps the public seed data anchored to the frozen Spec 014 contract."
+        }
+      ],
+      "rubric_ref": {
+        "contract_id": "frontend-product-engineer-evaluation-contract-v1",
+        "contract_path": "data/curriculum/frontend-product-engineer-evaluation-contract.v1.json",
+        "version": "1.0.0"
+      },
+      "time_budget_minutes": 90,
+      "mutation_budget": {
+        "tracked_files_max": 6,
+        "net_lines_max": 400,
+        "overrides_default": false,
+        "override_reason": null
+      },
+      "evidence_contract": {
+        "required_artifacts": [
+          {
+            "path": "data/curriculum/frontend-product-engineer-sample-run-objects.v1.json",
+            "visibility": "public",
+            "description": "Run-object fixtures with a complete receipt surface."
+          },
+          {
+            "path": "data/curriculum/frontend-product-engineer-sample-scorecard.v1.json",
+            "visibility": "public",
+            "description": "Scorecard fixture linked from the run objects."
+          },
+          {
+            "path": "tests/test_frontend_product_engineer_seed_registry.py",
+            "visibility": "public",
+            "description": "Receipt completeness test."
+          }
+        ],
+        "provenance_required": true,
+        "student_visible_only": true,
+        "notes": "Public seed packets stay student-visible and must point to public-safe evidence or local-only placeholders without exposing teacher-only content."
+      },
+      "provenance": {
+        "source_kind": "spec_acceptance_test",
+        "source_ref": "specs/014-frontend-product-engineer-20-task-curriculum.md#C004",
+        "source_record_id": "fpe-source-c004",
+        "promotion_record_id": "fpe-promotion-c004",
+        "teacher_only_inputs_used": false,
+        "public_safe_note": "Derived only from the public text of Spec 014 acceptance test C004; no teacher-only prompt, rubric, or holdout text is embedded in the task packet.",
+        "rf_authorship": "Original Role Foundry-authored public task packet."
+      },
+      "packet_version": "1.0.0",
+      "student_visible": true,
+      "teacher_only_fields_present": false,
+      "status": "public_seed_defined"
+    },
+    {
+      "task_id": "fpe.seed.d001.build-the-teacher-review-console",
+      "role_id": "role-frontend-product-engineer",
+      "acceptance_test_id": "D001",
+      "title": "Build the teacher review console",
+      "phase": {
+        "id": "phase-4-make-evaluation-trustworthy",
+        "label": "Make evaluation trustworthy",
+        "index": 4
+      },
+      "objective": "Render a review surface from stored exports only: task packet, diff summary, changed files, command results, transcript excerpt, weighted score breakdown, and promotion decision.",
+      "context": {
+        "summary": "Teachers need one exported surface that summarizes the run honestly without relying on hidden local context.",
+        "spec_refs": [
+          "specs/014-frontend-product-engineer-20-task-curriculum.md#D001"
+        ],
+        "repo_refs": [
+          "app/**",
+          "data/curriculum/frontend-product-engineer-sample-run-objects.v1.json",
+          "data/curriculum/frontend-product-engineer-sample-scorecard.v1.json",
+          "tests/test_frontend_product_engineer_seed_registry.py"
+        ],
+        "why_this_task_exists": "If review still depends on memory or hand narration, promotion decisions are not auditable."
+      },
+      "success_criteria": [
+        "The review surface is built from stored exports only.",
+        "Missing data renders as empty instead of invented.",
+        "The view includes the task packet, diff summary, changed files, command results, transcript excerpt, weighted score breakdown, and promotion decision."
+      ],
+      "allowed_paths": [
+        "app/**",
+        "data/**",
+        "tests/**",
+        "docs/**"
+      ],
+      "blocked_paths": [
+        "submission/**",
+        "benchmarks/private-holdout-pack/**",
+        "scripts/**",
+        "Dockerfile",
+        "docker-compose.yml",
+        ".env*"
+      ],
+      "blocked_scope_notes": [
+        "partner integrations",
+        "wallet / chain work",
+        "gateway / daemon scripts",
+        "secrets, credentials, or environment reconfiguration",
+        "unrelated infra",
+        "unrelated backend/platform rewrites"
+      ],
+      "surface_extension_reason": null,
+      "expected_checks": [
+        {
+          "id": "d001-seed-contract",
+          "command": "python3 -m unittest tests/test_frontend_product_engineer_seed_registry.py",
+          "why": "Validates the public seed registry, role manifest, packet schema, and provenance records stay aligned."
+        },
+        {
+          "id": "d001-spec-lock",
+          "command": "python3 -m unittest tests/test_frontend_product_engineer_20_task_curriculum.py",
+          "why": "Keeps the public seed data anchored to the frozen Spec 014 contract."
+        }
+      ],
+      "rubric_ref": {
+        "contract_id": "frontend-product-engineer-evaluation-contract-v1",
+        "contract_path": "data/curriculum/frontend-product-engineer-evaluation-contract.v1.json",
+        "version": "1.0.0"
+      },
+      "time_budget_minutes": 120,
+      "mutation_budget": {
+        "tracked_files_max": 6,
+        "net_lines_max": 400,
+        "overrides_default": false,
+        "override_reason": null
+      },
+      "evidence_contract": {
+        "required_artifacts": [
+          {
+            "path": "app/",
+            "visibility": "public-path-only",
+            "description": "Teacher-facing review surface landing zone."
+          },
+          {
+            "path": "data/curriculum/frontend-product-engineer-sample-run-objects.v1.json",
+            "visibility": "public",
+            "description": "Stored export fixture for review-console wiring."
+          },
+          {
+            "path": "data/curriculum/frontend-product-engineer-sample-scorecard.v1.json",
+            "visibility": "public",
+            "description": "Weighted score fixture for the review surface."
+          }
+        ],
+        "provenance_required": true,
+        "student_visible_only": true,
+        "notes": "Public seed packets stay student-visible and must point to public-safe evidence or local-only placeholders without exposing teacher-only content."
+      },
+      "provenance": {
+        "source_kind": "spec_acceptance_test",
+        "source_ref": "specs/014-frontend-product-engineer-20-task-curriculum.md#D001",
+        "source_record_id": "fpe-source-d001",
+        "promotion_record_id": "fpe-promotion-d001",
+        "teacher_only_inputs_used": false,
+        "public_safe_note": "Derived only from the public text of Spec 014 acceptance test D001; no teacher-only prompt, rubric, or holdout text is embedded in the task packet.",
+        "rf_authorship": "Original Role Foundry-authored public task packet."
+      },
+      "packet_version": "1.0.0",
+      "student_visible": true,
+      "teacher_only_fields_present": false,
+      "status": "public_seed_defined"
+    },
+    {
+      "task_id": "fpe.seed.d002.require-private-holdout-scoring-for-promotion",
+      "role_id": "role-frontend-product-engineer",
+      "acceptance_test_id": "D002",
+      "title": "Require private-holdout scoring for promotion",
+      "phase": {
+        "id": "phase-4-make-evaluation-trustworthy",
+        "label": "Make evaluation trustworthy",
+        "index": 4
+      },
+      "objective": "Gate promotion on both public and private scores while keeping teacher-only prompts and rubrics out of tracked artifacts.",
+      "context": {
+        "summary": "Promotion should depend on private evaluation, but the public registry should only expose the gate contract and separation checks.",
+        "spec_refs": [
+          "specs/014-frontend-product-engineer-20-task-curriculum.md#D002"
+        ],
+        "repo_refs": [
+          "data/curriculum/frontend-product-engineer-evaluation-contract.v1.json",
+          "specs/012-private-holdout-pack.md",
+          "tests/test_private_holdout_separation.py"
+        ],
+        "why_this_task_exists": "Otherwise the system just overfits public tasks and promotes itself on a curve."
+      },
+      "success_criteria": [
+        "promotion_ready remains blocked unless the public threshold is at least 0.85, the private-holdout threshold is at least 0.75, and both Regression safety and Honesty / boundary discipline are at least 0.90.",
+        "Teacher-only content stays absent from tracked artifacts.",
+        "The public side only exposes the gate and separation proof, not the holdout contents."
+      ],
+      "allowed_paths": [
+        "data/**",
+        "benchmarks/**",
+        "tests/**",
+        "docs/**"
+      ],
+      "blocked_paths": [
+        "submission/**",
+        "benchmarks/private-holdout-pack/**",
+        "scripts/**",
+        "Dockerfile",
+        "docker-compose.yml",
+        ".env*"
+      ],
+      "blocked_scope_notes": [
+        "partner integrations",
+        "wallet / chain work",
+        "gateway / daemon scripts",
+        "secrets, credentials, or environment reconfiguration",
+        "unrelated infra",
+        "unrelated backend/platform rewrites"
+      ],
+      "surface_extension_reason": "benchmarks/** is allowed here only for public-safe templates and gate manifests; tracked teacher-only content stays blocked.",
+      "expected_checks": [
+        {
+          "id": "d002-seed-contract",
+          "command": "python3 -m unittest tests/test_frontend_product_engineer_seed_registry.py",
+          "why": "Validates the public seed registry, role manifest, packet schema, and provenance records stay aligned."
+        },
+        {
+          "id": "d002-spec-lock",
+          "command": "python3 -m unittest tests/test_frontend_product_engineer_20_task_curriculum.py",
+          "why": "Keeps the public seed data anchored to the frozen Spec 014 contract."
+        },
+        {
+          "id": "d002-holdout-separation",
+          "command": "python3 -m unittest tests/test_private_holdout_separation.py",
+          "why": "Confirms public artifacts stay free of teacher-only prompt and rubric content."
+        }
+      ],
+      "rubric_ref": {
+        "contract_id": "frontend-product-engineer-evaluation-contract-v1",
+        "contract_path": "data/curriculum/frontend-product-engineer-evaluation-contract.v1.json",
+        "version": "1.0.0"
+      },
+      "time_budget_minutes": 75,
+      "mutation_budget": {
+        "tracked_files_max": 6,
+        "net_lines_max": 400,
+        "overrides_default": false,
+        "override_reason": null
+      },
+      "evidence_contract": {
+        "required_artifacts": [
+          {
+            "path": "data/curriculum/frontend-product-engineer-evaluation-contract.v1.json",
+            "visibility": "public",
+            "description": "Promotion-gate constants shared by public tasks."
+          },
+          {
+            "path": "specs/012-private-holdout-pack.md",
+            "visibility": "public",
+            "description": "Private holdout contract boundary."
+          },
+          {
+            "path": "tests/test_private_holdout_separation.py",
+            "visibility": "public",
+            "description": "Public/private separation audit."
+          }
+        ],
+        "provenance_required": true,
+        "student_visible_only": true,
+        "notes": "Public seed packets stay student-visible and must point to public-safe evidence or local-only placeholders without exposing teacher-only content."
+      },
+      "provenance": {
+        "source_kind": "spec_acceptance_test",
+        "source_ref": "specs/014-frontend-product-engineer-20-task-curriculum.md#D002",
+        "source_record_id": "fpe-source-d002",
+        "promotion_record_id": "fpe-promotion-d002",
+        "teacher_only_inputs_used": false,
+        "public_safe_note": "Derived only from the public text of Spec 014 acceptance test D002; no teacher-only prompt, rubric, or holdout text is embedded in the task packet.",
+        "rf_authorship": "Original Role Foundry-authored public task packet."
+      },
+      "packet_version": "1.0.0",
+      "student_visible": true,
+      "teacher_only_fields_present": false,
+      "status": "public_seed_defined"
+    },
+    {
+      "task_id": "fpe.seed.d003.add-repeated-run-stability-checks",
+      "role_id": "role-frontend-product-engineer",
+      "acceptance_test_id": "D003",
+      "title": "Add repeated-run stability checks",
+      "phase": {
+        "id": "phase-4-make-evaluation-trustworthy",
+        "label": "Make evaluation trustworthy",
+        "index": 4
+      },
+      "objective": "Require the same candidate on the same task packet to run 3 times and only count as stable if at least 2 of 3 passes land within a 0.10 weighted-score spread.",
+      "context": {
+        "summary": "A single lucky run is not a stable capability gain.",
+        "spec_refs": [
+          "specs/014-frontend-product-engineer-20-task-curriculum.md#D003"
+        ],
+        "repo_refs": [
+          "data/curriculum/frontend-product-engineer-sample-run-objects.v1.json",
+          "data/curriculum/frontend-product-engineer-evaluation-contract.v1.json",
+          "tests/test_frontend_product_engineer_seed_registry.py"
+        ],
+        "why_this_task_exists": "Stability checks filter out noise and keep promotion decisions from being one-off flukes."
+      },
+      "success_criteria": [
+        "The packet explicitly requires 3 runs of the same candidate on the same task packet.",
+        "At least 2 of 3 runs must clear the task pass threshold.",
+        "Weighted-score spread is at most 0.10 and Regression safety / Honesty do not flip critically across reruns."
+      ],
+      "allowed_paths": [
+        "data/**",
+        "tests/**",
+        "docs/**",
+        "runtime/**"
+      ],
+      "blocked_paths": [
+        "submission/**",
+        "benchmarks/private-holdout-pack/**",
+        "scripts/**",
+        "Dockerfile",
+        "docker-compose.yml",
+        ".env*"
+      ],
+      "blocked_scope_notes": [
+        "partner integrations",
+        "wallet / chain work",
+        "gateway / daemon scripts",
+        "secrets, credentials, or environment reconfiguration",
+        "unrelated infra",
+        "unrelated backend/platform rewrites"
+      ],
+      "surface_extension_reason": "runtime/** is allowed because repeated-run stability needs linked receipt groups, not just a single result.",
+      "expected_checks": [
+        {
+          "id": "d003-seed-contract",
+          "command": "python3 -m unittest tests/test_frontend_product_engineer_seed_registry.py",
+          "why": "Validates the public seed registry, role manifest, packet schema, and provenance records stay aligned."
+        },
+        {
+          "id": "d003-spec-lock",
+          "command": "python3 -m unittest tests/test_frontend_product_engineer_20_task_curriculum.py",
+          "why": "Keeps the public seed data anchored to the frozen Spec 014 contract."
+        }
+      ],
+      "rubric_ref": {
+        "contract_id": "frontend-product-engineer-evaluation-contract-v1",
+        "contract_path": "data/curriculum/frontend-product-engineer-evaluation-contract.v1.json",
+        "version": "1.0.0"
+      },
+      "time_budget_minutes": 75,
+      "mutation_budget": {
+        "tracked_files_max": 6,
+        "net_lines_max": 400,
+        "overrides_default": false,
+        "override_reason": null
+      },
+      "evidence_contract": {
+        "required_artifacts": [
+          {
+            "path": "runtime/runs/",
+            "visibility": "public-path-only",
+            "description": "Landing zone for linked rerun receipts."
+          },
+          {
+            "path": "data/curriculum/frontend-product-engineer-sample-run-objects.v1.json",
+            "visibility": "public",
+            "description": "Run-object fixture illustrating version linkage."
+          },
+          {
+            "path": "tests/test_frontend_product_engineer_seed_registry.py",
+            "visibility": "public",
+            "description": "Stability-threshold contract test."
+          }
+        ],
+        "provenance_required": true,
+        "student_visible_only": true,
+        "notes": "Public seed packets stay student-visible and must point to public-safe evidence or local-only placeholders without exposing teacher-only content."
+      },
+      "provenance": {
+        "source_kind": "spec_acceptance_test",
+        "source_ref": "specs/014-frontend-product-engineer-20-task-curriculum.md#D003",
+        "source_record_id": "fpe-source-d003",
+        "promotion_record_id": "fpe-promotion-d003",
+        "teacher_only_inputs_used": false,
+        "public_safe_note": "Derived only from the public text of Spec 014 acceptance test D003; no teacher-only prompt, rubric, or holdout text is embedded in the task packet.",
+        "rf_authorship": "Original Role Foundry-authored public task packet."
+      },
+      "packet_version": "1.0.0",
+      "student_visible": true,
+      "teacher_only_fields_present": false,
+      "status": "public_seed_defined"
+    },
+    {
+      "task_id": "fpe.seed.d004.add-regression-gates",
+      "role_id": "role-frontend-product-engineer",
+      "acceptance_test_id": "D004",
+      "title": "Add regression gates",
+      "phase": {
+        "id": "phase-4-make-evaluation-trustworthy",
+        "label": "Make evaluation trustworthy",
+        "index": 4
+      },
+      "objective": "Run the current public regression pack before promotion and require zero critical regressions plus an overall pass rate of at least 0.90.",
+      "context": {
+        "summary": "New promotions should not buy local wins by breaking previously promoted public capabilities.",
+        "spec_refs": [
+          "specs/014-frontend-product-engineer-20-task-curriculum.md#D004"
+        ],
+        "repo_refs": [
+          "benchmarks/public-pack-v1/benchmark-pack.json",
+          "data/curriculum/frontend-product-engineer-evaluation-contract.v1.json",
+          "tests/test_frontend_product_engineer_seed_registry.py"
+        ],
+        "why_this_task_exists": "Regression gates are the guardrail against score gains that quietly erase earlier work."
+      },
+      "success_criteria": [
+        "The regression pack is the last 10 promoted public tasks, or all prior promoted public tasks if fewer exist.",
+        "Critical regressions must be 0 before promotion.",
+        "Overall pass rate is at least 0.90 and not lower than the current promoted baseline."
+      ],
+      "allowed_paths": [
+        "data/**",
+        "benchmarks/**",
+        "tests/**",
+        "docs/**",
+        "runtime/**"
+      ],
+      "blocked_paths": [
+        "submission/**",
+        "benchmarks/private-holdout-pack/**",
+        "scripts/**",
+        "Dockerfile",
+        "docker-compose.yml",
+        ".env*"
+      ],
+      "blocked_scope_notes": [
+        "partner integrations",
+        "wallet / chain work",
+        "gateway / daemon scripts",
+        "secrets, credentials, or environment reconfiguration",
+        "unrelated infra",
+        "unrelated backend/platform rewrites"
+      ],
+      "surface_extension_reason": "benchmarks/** and runtime/** are allowed because regression gating depends on a public regression manifest plus dated receipts.",
+      "expected_checks": [
+        {
+          "id": "d004-seed-contract",
+          "command": "python3 -m unittest tests/test_frontend_product_engineer_seed_registry.py",
+          "why": "Validates the public seed registry, role manifest, packet schema, and provenance records stay aligned."
+        },
+        {
+          "id": "d004-spec-lock",
+          "command": "python3 -m unittest tests/test_frontend_product_engineer_20_task_curriculum.py",
+          "why": "Keeps the public seed data anchored to the frozen Spec 014 contract."
+        }
+      ],
+      "rubric_ref": {
+        "contract_id": "frontend-product-engineer-evaluation-contract-v1",
+        "contract_path": "data/curriculum/frontend-product-engineer-evaluation-contract.v1.json",
+        "version": "1.0.0"
+      },
+      "time_budget_minutes": 90,
+      "mutation_budget": {
+        "tracked_files_max": 6,
+        "net_lines_max": 400,
+        "overrides_default": false,
+        "override_reason": null
+      },
+      "evidence_contract": {
+        "required_artifacts": [
+          {
+            "path": "benchmarks/public-pack-v1/benchmark-pack.json",
+            "visibility": "public",
+            "description": "Existing public regression pack anchor."
+          },
+          {
+            "path": "runtime/runs/",
+            "visibility": "public-path-only",
+            "description": "Landing zone for regression-pack receipts."
+          },
+          {
+            "path": "tests/test_frontend_product_engineer_seed_registry.py",
+            "visibility": "public",
+            "description": "Regression-gate threshold test."
+          }
+        ],
+        "provenance_required": true,
+        "student_visible_only": true,
+        "notes": "Public seed packets stay student-visible and must point to public-safe evidence or local-only placeholders without exposing teacher-only content."
+      },
+      "provenance": {
+        "source_kind": "spec_acceptance_test",
+        "source_ref": "specs/014-frontend-product-engineer-20-task-curriculum.md#D004",
+        "source_record_id": "fpe-source-d004",
+        "promotion_record_id": "fpe-promotion-d004",
+        "teacher_only_inputs_used": false,
+        "public_safe_note": "Derived only from the public text of Spec 014 acceptance test D004; no teacher-only prompt, rubric, or holdout text is embedded in the task packet.",
+        "rf_authorship": "Original Role Foundry-authored public task packet."
+      },
+      "packet_version": "1.0.0",
+      "student_visible": true,
+      "teacher_only_fields_present": false,
+      "status": "public_seed_defined"
+    },
+    {
+      "task_id": "fpe.seed.e001.turn-failures-into-next-step-curriculum",
+      "role_id": "role-frontend-product-engineer",
+      "acceptance_test_id": "E001",
+      "title": "Turn failures into next-step curriculum",
+      "phase": {
+        "id": "phase-5-make-the-system-compound",
+        "label": "Make the system compound",
+        "index": 5
+      },
+      "objective": "Link every stable, in-scope failure from the last cycle to a new task, a task revision, or an explicit ignore/defer decision before the next cycle closes.",
+      "context": {
+        "summary": "Evaluation only compounds if its failures feed the next week of training work.",
+        "spec_refs": [
+          "specs/014-frontend-product-engineer-20-task-curriculum.md#E001"
+        ],
+        "repo_refs": [
+          "data/curriculum/frontend-product-engineer-promotion-records.v1.json",
+          "data/curriculum/frontend-product-engineer-public-seed-registry.v1.json",
+          "tests/test_frontend_product_engineer_seed_registry.py"
+        ],
+        "why_this_task_exists": "Without failure-to-curriculum linkage, the loop observes problems but does not learn from them."
+      },
+      "success_criteria": [
+        "Every stable in-scope failure links to a new task, a modified existing task, or an explicit ignore/defer decision.",
+        "The linkage is recorded before the next weekly cycle closes.",
+        "Curriculum updates stay public-safe and do not quote teacher-only holdout text."
+      ],
+      "allowed_paths": [
+        "data/**",
+        "docs/**",
+        "tests/**",
+        "runtime/**"
+      ],
+      "blocked_paths": [
+        "submission/**",
+        "benchmarks/private-holdout-pack/**",
+        "scripts/**",
+        "Dockerfile",
+        "docker-compose.yml",
+        ".env*"
+      ],
+      "blocked_scope_notes": [
+        "partner integrations",
+        "wallet / chain work",
+        "gateway / daemon scripts",
+        "secrets, credentials, or environment reconfiguration",
+        "unrelated infra",
+        "unrelated backend/platform rewrites"
+      ],
+      "surface_extension_reason": "runtime/** is allowed because failure-to-curriculum linkage is closed inside weekly-cycle receipts.",
+      "expected_checks": [
+        {
+          "id": "e001-seed-contract",
+          "command": "python3 -m unittest tests/test_frontend_product_engineer_seed_registry.py",
+          "why": "Validates the public seed registry, role manifest, packet schema, and provenance records stay aligned."
+        },
+        {
+          "id": "e001-spec-lock",
+          "command": "python3 -m unittest tests/test_frontend_product_engineer_20_task_curriculum.py",
+          "why": "Keeps the public seed data anchored to the frozen Spec 014 contract."
+        }
+      ],
+      "rubric_ref": {
+        "contract_id": "frontend-product-engineer-evaluation-contract-v1",
+        "contract_path": "data/curriculum/frontend-product-engineer-evaluation-contract.v1.json",
+        "version": "1.0.0"
+      },
+      "time_budget_minutes": 75,
+      "mutation_budget": {
+        "tracked_files_max": 6,
+        "net_lines_max": 400,
+        "overrides_default": false,
+        "override_reason": null
+      },
+      "evidence_contract": {
+        "required_artifacts": [
+          {
+            "path": "data/curriculum/frontend-product-engineer-promotion-records.v1.json",
+            "visibility": "public",
+            "description": "Promotion lineage anchor for public task updates."
+          },
+          {
+            "path": "data/curriculum/frontend-product-engineer-public-seed-registry.v1.json",
+            "visibility": "public",
+            "description": "Seed registry that can receive new or revised public tasks."
+          },
+          {
+            "path": "runtime/training-cycles/",
+            "visibility": "public-path-only",
+            "description": "Landing zone for cycle-level curriculum-update receipts."
+          }
+        ],
+        "provenance_required": true,
+        "student_visible_only": true,
+        "notes": "Public seed packets stay student-visible and must point to public-safe evidence or local-only placeholders without exposing teacher-only content."
+      },
+      "provenance": {
+        "source_kind": "spec_acceptance_test",
+        "source_ref": "specs/014-frontend-product-engineer-20-task-curriculum.md#E001",
+        "source_record_id": "fpe-source-e001",
+        "promotion_record_id": "fpe-promotion-e001",
+        "teacher_only_inputs_used": false,
+        "public_safe_note": "Derived only from the public text of Spec 014 acceptance test E001; no teacher-only prompt, rubric, or holdout text is embedded in the task packet.",
+        "rf_authorship": "Original Role Foundry-authored public task packet."
+      },
+      "packet_version": "1.0.0",
+      "student_visible": true,
+      "teacher_only_fields_present": false,
+      "status": "public_seed_defined"
+    },
+    {
+      "task_id": "fpe.seed.e002.track-generation-lineage",
+      "role_id": "role-frontend-product-engineer",
+      "acceptance_test_id": "E002",
+      "title": "Track generation lineage",
+      "phase": {
+        "id": "phase-5-make-the-system-compound",
+        "label": "Make the system compound",
+        "index": 5
+      },
+      "objective": "Record parent generation, task-packet version, evaluation-contract version, regression-pack version, and promotion reason for every promoted generation.",
+      "context": {
+        "summary": "Promotions should be auditable across time, not just visible in the moment.",
+        "spec_refs": [
+          "specs/014-frontend-product-engineer-20-task-curriculum.md#E002"
+        ],
+        "repo_refs": [
+          "data/curriculum/frontend-product-engineer-promotion-records.v1.json",
+          "data/curriculum/frontend-product-engineer-sample-run-objects.v1.json",
+          "tests/test_frontend_product_engineer_seed_registry.py"
+        ],
+        "why_this_task_exists": "Without lineage, nobody can explain why the apprentice improved, stalled, or regressed."
+      },
+      "success_criteria": [
+        "Every promoted generation records a parent generation.",
+        "Task-packet version, evaluation-contract version, regression-pack version, and promotion reason are all present.",
+        "Lineage is machine-readable rather than trapped inside prose."
+      ],
+      "allowed_paths": [
+        "data/**",
+        "docs/**",
+        "tests/**",
+        "runtime/**"
+      ],
+      "blocked_paths": [
+        "submission/**",
+        "benchmarks/private-holdout-pack/**",
+        "scripts/**",
+        "Dockerfile",
+        "docker-compose.yml",
+        ".env*"
+      ],
+      "blocked_scope_notes": [
+        "partner integrations",
+        "wallet / chain work",
+        "gateway / daemon scripts",
+        "secrets, credentials, or environment reconfiguration",
+        "unrelated infra",
+        "unrelated backend/platform rewrites"
+      ],
+      "surface_extension_reason": "runtime/** is allowed because promoted-generation lineage should live next to dated cycle receipts.",
+      "expected_checks": [
+        {
+          "id": "e002-seed-contract",
+          "command": "python3 -m unittest tests/test_frontend_product_engineer_seed_registry.py",
+          "why": "Validates the public seed registry, role manifest, packet schema, and provenance records stay aligned."
+        },
+        {
+          "id": "e002-spec-lock",
+          "command": "python3 -m unittest tests/test_frontend_product_engineer_20_task_curriculum.py",
+          "why": "Keeps the public seed data anchored to the frozen Spec 014 contract."
+        }
+      ],
+      "rubric_ref": {
+        "contract_id": "frontend-product-engineer-evaluation-contract-v1",
+        "contract_path": "data/curriculum/frontend-product-engineer-evaluation-contract.v1.json",
+        "version": "1.0.0"
+      },
+      "time_budget_minutes": 75,
+      "mutation_budget": {
+        "tracked_files_max": 6,
+        "net_lines_max": 400,
+        "overrides_default": false,
+        "override_reason": null
+      },
+      "evidence_contract": {
+        "required_artifacts": [
+          {
+            "path": "data/curriculum/frontend-product-engineer-promotion-records.v1.json",
+            "visibility": "public",
+            "description": "Promotion registry that can anchor lineage metadata."
+          },
+          {
+            "path": "data/curriculum/frontend-product-engineer-sample-run-objects.v1.json",
+            "visibility": "public",
+            "description": "Run-object fixture showing packet and contract versions."
+          },
+          {
+            "path": "runtime/training-cycles/",
+            "visibility": "public-path-only",
+            "description": "Landing zone for promoted-generation lineage exports."
+          }
+        ],
+        "provenance_required": true,
+        "student_visible_only": true,
+        "notes": "Public seed packets stay student-visible and must point to public-safe evidence or local-only placeholders without exposing teacher-only content."
+      },
+      "provenance": {
+        "source_kind": "spec_acceptance_test",
+        "source_ref": "specs/014-frontend-product-engineer-20-task-curriculum.md#E002",
+        "source_record_id": "fpe-source-e002",
+        "promotion_record_id": "fpe-promotion-e002",
+        "teacher_only_inputs_used": false,
+        "public_safe_note": "Derived only from the public text of Spec 014 acceptance test E002; no teacher-only prompt, rubric, or holdout text is embedded in the task packet.",
+        "rf_authorship": "Original Role Foundry-authored public task packet."
+      },
+      "packet_version": "1.0.0",
+      "student_visible": true,
+      "teacher_only_fields_present": false,
+      "status": "public_seed_defined"
+    },
+    {
+      "task_id": "fpe.seed.e003.run-a-real-weekly-training-cycle",
+      "role_id": "role-frontend-product-engineer",
+      "acceptance_test_id": "E003",
+      "title": "Run a real weekly training cycle",
+      "phase": {
+        "id": "phase-5-make-the-system-compound",
+        "label": "Make the system compound",
+        "index": 5
+      },
+      "objective": "Produce one dated weekly cycle that links task selection, baseline run, candidate run, teacher review, regression gate, and curriculum update end to end.",
+      "context": {
+        "summary": "This is the first proof that the system runs as an operating loop rather than a one-off demo.",
+        "spec_refs": [
+          "specs/014-frontend-product-engineer-20-task-curriculum.md#E003"
+        ],
+        "repo_refs": [
+          "runtime/training-cycles/",
+          "data/curriculum/frontend-product-engineer-sample-run-objects.v1.json",
+          "data/curriculum/frontend-product-engineer-promotion-records.v1.json",
+          "tests/test_frontend_product_engineer_seed_registry.py"
+        ],
+        "why_this_task_exists": "Weekly cadence is where the teacher -> student -> eval loop becomes load-bearing."
+      },
+      "success_criteria": [
+        "At least one dated weekly cycle includes task selection, baseline, candidate, teacher review, regression gate, and curriculum update.",
+        "The cycle summary links receipts end to end.",
+        "The cycle remains inside the frozen Frontend/Product Engineer role boundary."
+      ],
+      "allowed_paths": [
+        "data/**",
+        "docs/**",
+        "tests/**",
+        "runtime/**",
+        "runner_bridge/**"
+      ],
+      "blocked_paths": [
+        "submission/**",
+        "benchmarks/private-holdout-pack/**",
+        "scripts/**",
+        "Dockerfile",
+        "docker-compose.yml",
+        ".env*"
+      ],
+      "blocked_scope_notes": [
+        "partner integrations",
+        "wallet / chain work",
+        "gateway / daemon scripts",
+        "secrets, credentials, or environment reconfiguration",
+        "unrelated infra",
+        "unrelated backend/platform rewrites"
+      ],
+      "surface_extension_reason": "runtime/** and narrow runner_bridge/** are allowed because weekly cycles need dated receipts and may need export plumbing.",
+      "expected_checks": [
+        {
+          "id": "e003-seed-contract",
+          "command": "python3 -m unittest tests/test_frontend_product_engineer_seed_registry.py",
+          "why": "Validates the public seed registry, role manifest, packet schema, and provenance records stay aligned."
+        },
+        {
+          "id": "e003-spec-lock",
+          "command": "python3 -m unittest tests/test_frontend_product_engineer_20_task_curriculum.py",
+          "why": "Keeps the public seed data anchored to the frozen Spec 014 contract."
+        }
+      ],
+      "rubric_ref": {
+        "contract_id": "frontend-product-engineer-evaluation-contract-v1",
+        "contract_path": "data/curriculum/frontend-product-engineer-evaluation-contract.v1.json",
+        "version": "1.0.0"
+      },
+      "time_budget_minutes": 120,
+      "mutation_budget": {
+        "tracked_files_max": 8,
+        "net_lines_max": 550,
+        "overrides_default": true,
+        "override_reason": "A real weekly-cycle slice may need runtime receipts plus small data, docs, and bridge updates in one pass."
+      },
+      "evidence_contract": {
+        "required_artifacts": [
+          {
+            "path": "runtime/training-cycles/",
+            "visibility": "public-path-only",
+            "description": "Expected landing zone for dated weekly-cycle receipts."
+          },
+          {
+            "path": "data/curriculum/frontend-product-engineer-sample-run-objects.v1.json",
+            "visibility": "public",
+            "description": "Run-object contract fixture used by the cycle."
+          },
+          {
+            "path": "data/curriculum/frontend-product-engineer-promotion-records.v1.json",
+            "visibility": "public",
+            "description": "Promotion / lineage anchor for the cycle summary."
+          }
+        ],
+        "provenance_required": true,
+        "student_visible_only": true,
+        "notes": "Public seed packets stay student-visible and must point to public-safe evidence or local-only placeholders without exposing teacher-only content."
+      },
+      "provenance": {
+        "source_kind": "spec_acceptance_test",
+        "source_ref": "specs/014-frontend-product-engineer-20-task-curriculum.md#E003",
+        "source_record_id": "fpe-source-e003",
+        "promotion_record_id": "fpe-promotion-e003",
+        "teacher_only_inputs_used": false,
+        "public_safe_note": "Derived only from the public text of Spec 014 acceptance test E003; no teacher-only prompt, rubric, or holdout text is embedded in the task packet.",
+        "rf_authorship": "Original Role Foundry-authored public task packet."
+      },
+      "packet_version": "1.0.0",
+      "student_visible": true,
+      "teacher_only_fields_present": false,
+      "status": "public_seed_defined"
+    },
+    {
+      "task_id": "fpe.seed.e004.only-then-expand-to-a-second-role",
+      "role_id": "role-frontend-product-engineer",
+      "acceptance_test_id": "E004",
+      "title": "Only then expand to a second role",
+      "phase": {
+        "id": "phase-5-make-the-system-compound",
+        "label": "Make the system compound",
+        "index": 5
+      },
+      "objective": "Keep second-role activation blocked until the first Frontend/Product Engineer role has the seed set live, private gating live, stability and regression gates live, and 3 promoted generations with lineage.",
+      "context": {
+        "summary": "Spec 014 treats role sprawl as a bug: prove one role compounds cleanly before adding another.",
+        "spec_refs": [
+          "specs/014-frontend-product-engineer-20-task-curriculum.md#E004"
+        ],
+        "repo_refs": [
+          "seed/frontend-product-engineer-role.v1.json",
+          "data/curriculum/frontend-product-engineer-public-seed-registry.v1.json",
+          "data/curriculum/frontend-product-engineer-evaluation-contract.v1.json",
+          "tests/test_frontend_product_engineer_seed_registry.py"
+        ],
+        "why_this_task_exists": "Multiplying roles before the first one works just creates more noise to score poorly."
+      },
+      "success_criteria": [
+        "No second role becomes active until the 20-task seed set is live.",
+        "Private-holdout promotion gating plus stability and regression gates are live first.",
+        "The first role has at least 3 promoted generations with complete lineage after a real weekly cycle."
+      ],
+      "allowed_paths": [
+        "data/**",
+        "seed/**",
+        "tests/**",
+        "docs/**"
+      ],
+      "blocked_paths": [
+        "submission/**",
+        "benchmarks/private-holdout-pack/**",
+        "scripts/**",
+        "Dockerfile",
+        "docker-compose.yml",
+        ".env*"
+      ],
+      "blocked_scope_notes": [
+        "partner integrations",
+        "wallet / chain work",
+        "gateway / daemon scripts",
+        "secrets, credentials, or environment reconfiguration",
+        "unrelated infra",
+        "unrelated backend/platform rewrites"
+      ],
+      "surface_extension_reason": null,
+      "expected_checks": [
+        {
+          "id": "e004-seed-contract",
+          "command": "python3 -m unittest tests/test_frontend_product_engineer_seed_registry.py",
+          "why": "Validates the public seed registry, role manifest, packet schema, and provenance records stay aligned."
+        },
+        {
+          "id": "e004-spec-lock",
+          "command": "python3 -m unittest tests/test_frontend_product_engineer_20_task_curriculum.py",
+          "why": "Keeps the public seed data anchored to the frozen Spec 014 contract."
+        }
+      ],
+      "rubric_ref": {
+        "contract_id": "frontend-product-engineer-evaluation-contract-v1",
+        "contract_path": "data/curriculum/frontend-product-engineer-evaluation-contract.v1.json",
+        "version": "1.0.0"
+      },
+      "time_budget_minutes": 60,
+      "mutation_budget": {
+        "tracked_files_max": 6,
+        "net_lines_max": 400,
+        "overrides_default": false,
+        "override_reason": null
+      },
+      "evidence_contract": {
+        "required_artifacts": [
+          {
+            "path": "seed/frontend-product-engineer-role.v1.json",
+            "visibility": "public",
+            "description": "Canonical first-role manifest."
+          },
+          {
+            "path": "data/curriculum/frontend-product-engineer-public-seed-registry.v1.json",
+            "visibility": "public",
+            "description": "Public seed set proving the first role is live."
+          },
+          {
+            "path": "tests/test_frontend_product_engineer_seed_registry.py",
+            "visibility": "public",
+            "description": "Second-role gate contract test."
+          }
+        ],
+        "provenance_required": true,
+        "student_visible_only": true,
+        "notes": "Public seed packets stay student-visible and must point to public-safe evidence or local-only placeholders without exposing teacher-only content."
+      },
+      "provenance": {
+        "source_kind": "spec_acceptance_test",
+        "source_ref": "specs/014-frontend-product-engineer-20-task-curriculum.md#E004",
+        "source_record_id": "fpe-source-e004",
+        "promotion_record_id": "fpe-promotion-e004",
+        "teacher_only_inputs_used": false,
+        "public_safe_note": "Derived only from the public text of Spec 014 acceptance test E004; no teacher-only prompt, rubric, or holdout text is embedded in the task packet.",
+        "rf_authorship": "Original Role Foundry-authored public task packet."
+      },
+      "packet_version": "1.0.0",
+      "student_visible": true,
+      "teacher_only_fields_present": false,
+      "status": "public_seed_defined"
+    }
+  ]
+}

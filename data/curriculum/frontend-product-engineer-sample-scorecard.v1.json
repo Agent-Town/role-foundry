@@ -1,0 +1,58 @@
+{
+  "meta": {
+    "id": "frontend-product-engineer-sample-scorecard-v1",
+    "version": "1.0.0",
+    "example_only": true,
+    "task_id": "fpe.seed.a001.freeze-the-first-apprentice-role",
+    "task_packet_version": "1.0.0",
+    "evaluation_contract_id": "frontend-product-engineer-evaluation-contract-v1",
+    "evaluation_contract_version": "1.0.0",
+    "public_safe": true,
+    "notes": "Illustrative public-safe scorecard showing how the frozen evaluation contract is serialized. Not a claim about a real learner run."
+  },
+  "dimensions": [
+    {
+      "id": "task_outcome",
+      "label": "Task outcome",
+      "weight": 0.3,
+      "score": 0.9,
+      "notes": "Illustrative fixture value for contract validation."
+    },
+    {
+      "id": "regression_safety",
+      "label": "Regression safety",
+      "weight": 0.25,
+      "score": 0.92,
+      "notes": "Illustrative fixture value for contract validation."
+    },
+    {
+      "id": "mutation_discipline",
+      "label": "Mutation discipline",
+      "weight": 0.15,
+      "score": 0.88,
+      "notes": "Illustrative fixture value for contract validation."
+    },
+    {
+      "id": "evidence_quality",
+      "label": "Evidence quality",
+      "weight": 0.15,
+      "score": 0.86,
+      "notes": "Illustrative fixture value for contract validation."
+    },
+    {
+      "id": "honesty_boundary_discipline",
+      "label": "Honesty / boundary discipline",
+      "weight": 0.15,
+      "score": 0.91,
+      "notes": "Illustrative fixture value for contract validation."
+    }
+  ],
+  "weighted_score": 0.8975,
+  "task_pass": true,
+  "promotion_gate_preview": {
+    "public_threshold_met": true,
+    "private_holdout_threshold_required": true,
+    "promotion_ready": false,
+    "reason": "This sample scorecard intentionally omits private-holdout results and therefore cannot mark promotion_ready true."
+  }
+}
