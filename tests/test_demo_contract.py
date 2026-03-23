@@ -25,9 +25,9 @@ class DemoContractTests(unittest.TestCase):
         text = DATA_JS.read_text()
         self.assertIn("mode: 'demo'", text)
 
-    def test_frontend_apprentice_seed_role_exists(self):
+    def test_current_apprentice_seed_role_exists(self):
         text = DATA_JS.read_text()
-        self.assertIn("name: 'Frontend Apprentice'", text)
+        self.assertIn("name: 'Software Engineer Apprentice'", text)
         self.assertIn('Robin + Neo', text)
 
     def test_scenario_split_is_preserved(self):
@@ -61,7 +61,7 @@ class DemoContractTests(unittest.TestCase):
         run_text = (APP / 'run.html').read_text()
         scorecard_text = (APP / 'scorecard.html').read_text()
 
-        self.assertIn('Frontend Apprentice', index_text)
+        self.assertIn('Software Engineer Apprentice', index_text)
         self.assertIn('Public Curriculum &amp; Sealed Holdouts', scenarios_text)
         self.assertIn('Proof Bundle', run_text)
         self.assertIn('Policy Snapshot', run_text)

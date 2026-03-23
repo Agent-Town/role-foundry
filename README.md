@@ -192,9 +192,11 @@ Using different model families for building and judging reduces correlated self-
 - `docs/runner-bridge.md` — bridge path, teacher evaluation contract, comparison receipts, and explicit auth deferral
 - `docs/public-benchmark-pack-v1.md` — public-safe benchmark pack scope, blocked families, and local private-holdout path
 - `docs/software-engineer-curriculum-sources.md` — narrow public source inventory for the software-engineering apprentice
+- `docs/teacher-source-curriculum-workflow.md` — discover → curate → promote workflow for teacher-driven curriculum extension
 - `docs/private-holdout-authoring.md` — local-only teacher workflow for authoring and auditing fresh holdouts
 - `docs/swe-bench-holdout-extension.md` — teacher-only process for small manually curated SWE-bench-derived holdout episodes
 - `docs/conversation-log.md` — curated build log for the submission
+- `submission/` — final submission packaging templates and review checklists
 - `docs/agent-town-connection.md` — Agent Town relationship
 - `docs/synthesis-hackathon-ideation.md` — ideation and ranking
 - `docs/synthesis-hackathon-stack-architecture.md` — architecture notes

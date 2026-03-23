@@ -1,0 +1,87 @@
+{
+  "status": "draft-template",
+  "generated_from_branch": "review/submission-readiness-pass-20260323-0910",
+  "generated_from_base": "origin/submission/active-base-20260323-0711",
+  "artifacts": [
+    {
+      "id": "conversation-log-source",
+      "kind": "conversation_log_source",
+      "status": "ready",
+      "path": "docs/conversation-log.md",
+      "visibility": "public",
+      "notes": "Curated repo-visible source for the final packaged conversation log."
+    },
+    {
+      "id": "vision-system-overview-ui",
+      "kind": "ui_surface",
+      "status": "ready",
+      "path": "app/vision.html",
+      "visibility": "public",
+      "notes": "Judge-facing vision/system overview surface."
+    },
+    {
+      "id": "teacher-source-intake",
+      "kind": "curriculum_source_registry",
+      "status": "ready",
+      "path": "data/source-research/software-engineer-source-intake.v1.json",
+      "visibility": "public",
+      "notes": "Source intake ledger with promoted Playwright family and blocked teacher-only SWE-bench direction."
+    },
+    {
+      "id": "teacher-source-workflow",
+      "kind": "workflow_doc",
+      "status": "ready",
+      "path": "docs/teacher-source-curriculum-workflow.md",
+      "visibility": "public",
+      "notes": "Discover -> curate -> promote workflow for teacher-driven curriculum extension."
+    },
+    {
+      "id": "public-benchmark-pack-v1",
+      "kind": "benchmark_pack",
+      "status": "ready",
+      "path": "benchmarks/public-pack-v1/benchmark-pack.json",
+      "visibility": "public",
+      "notes": "Public-safe benchmark pack; not a sealed-eval proof artifact."
+    },
+    {
+      "id": "private-holdout-claim-boundary",
+      "kind": "claim_boundary_doc",
+      "status": "ready",
+      "path": "docs/private-holdout-authoring.md",
+      "visibility": "public",
+      "notes": "Documents what local private-holdout execution allows and what remains blocked."
+    },
+    {
+      "id": "runner-bridge-claim-boundary",
+      "kind": "claim_boundary_doc",
+      "status": "ready",
+      "path": "docs/runner-bridge.md",
+      "visibility": "public",
+      "notes": "Documents public-regression vs local-private-holdout vs blocked sealed-eval claims."
+    },
+    {
+      "id": "live-roundtrip-capture",
+      "kind": "live_proof",
+      "status": "pending_active_lane",
+      "path": null,
+      "visibility": "pending",
+      "lane": "role-foundry-clawith-vibe-roundtrip-demo",
+      "notes": "Do not claim this until a real capture artifact exists."
+    },
+    {
+      "id": "native-model-pool-smoke",
+      "kind": "live_proof",
+      "status": "pending_active_lane",
+      "path": null,
+      "visibility": "pending",
+      "lane": "role-foundry-clawith-native-agent-bringup",
+      "notes": "Do not claim this until smoke output and exact setup notes exist."
+    }
+  ],
+  "checklist": [
+    "Every claimed artifact has a real repo path or an explicit pending status.",
+    "No teacher-only prompt text is copied into public packaging artifacts.",
+    "Pending active-lane evidence remains marked pending and unclaimed.",
+    "Public benchmark artifacts are not misrepresented as sealed-eval proof."
+  ]
+}
