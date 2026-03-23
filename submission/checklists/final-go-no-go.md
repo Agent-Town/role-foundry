@@ -26,21 +26,23 @@ If any required item is false, it is a **no-go**.
 - [ ] Public alpha loop proof is cited with exact source files.
 - [ ] Private-holdout separation proof is cited with exact source files.
 - [ ] Roundtrip proof is cited with exact artifact paths and exact commit SHA.
+- [ ] Reviewer-facing proof paths point at `submission/clawith-vibecosystem-roundtrip-proof.manifest.json` and `submission/roundtrip-proof/`, not raw `artifacts/...` dirs.
 - [ ] Any placeholder `FILL_*` tokens have been removed from final user-facing artifacts.
 
 ## 4. Submission packet completeness
 
-- [ ] `submission/drafts/judge-demo-script.md` has been finalized or copied into the final packet.
-- [ ] `submission/drafts/pr-or-submission-summary.md` has been finalized.
-- [ ] `submission/drafts/conversation-log.roundtrip-ready.md` has been finalized.
-- [ ] `submission/drafts/evidence-proof-manifest.roundtrip-ready.json` has been finalized.
-- [ ] `submission/drafts/submission-metadata.roundtrip-ready.json` has been finalized.
+- [ ] `submission/judge-demo-script.md` is the canonical live walkthrough.
+- [ ] `submission/pr-or-submission-summary.md` is the canonical written summary.
+- [ ] `submission/conversation-log.md` is the canonical final conversation log.
+- [ ] `submission/evidence-proof-manifest.json` is the canonical final proof inventory.
+- [ ] `submission/submission-metadata.json` is the canonical final metadata file.
+- [ ] `submission/drafts/` is clearly archived and no longer the canonical packet.
 - [ ] The final packet distinguishes **repo-visible proof** from **local-only proof**.
 
 ## 5. Hygiene
 
-- [ ] JSON drafts validate.
-- [ ] Markdown drafts are readable and placeholder-free where required.
+- [ ] JSON packet files validate.
+- [ ] Markdown packet files are readable and placeholder-free where required.
 - [ ] `git diff --check` is clean.
 - [ ] The dirty root checkout was never edited by this lane.
 - [ ] Final branch is pushed and the exact commit SHA is recorded.

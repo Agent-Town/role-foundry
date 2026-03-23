@@ -1,0 +1,97 @@
+{
+  "status": "final-review-ready",
+  "final_review_branch": "review/submission-finalization-pass-20260323-1159",
+  "final_review_commit": "FILL_FINAL_REVIEW_COMMIT",
+  "artifacts": [
+    {
+      "id": "framework-story",
+      "kind": "repo-doc",
+      "status": "ready",
+      "path": "README.md",
+      "visibility": "public",
+      "notes": "Frames Role Foundry as a role-training, evaluation, and promotion system."
+    },
+    {
+      "id": "software-engineer-apprentice-story",
+      "kind": "repo-doc",
+      "status": "ready",
+      "path": "README.md",
+      "visibility": "public",
+      "notes": "Defines the first concrete role as the Software Engineer apprentice."
+    },
+    {
+      "id": "public-alpha-loop-proof",
+      "kind": "contract-plus-test",
+      "status": "ready",
+      "paths": [
+        "specs/010-autoresearch-alpha-public-loop.md",
+        "runner_bridge/examples/autoresearch-alpha-public-loop.json",
+        "tests/test_autoresearch_alpha_loop.py"
+      ],
+      "visibility": "public",
+      "notes": "Executable public alpha loop proof with better/equal/worse comparison contract."
+    },
+    {
+      "id": "local-private-holdout-boundary",
+      "kind": "contract-plus-test",
+      "status": "ready",
+      "paths": [
+        "docs/private-holdout-authoring.md",
+        "specs/012-private-holdout-pack.md",
+        "benchmarks/private-holdout-pack-template.json",
+        "tests/test_private_holdout_separation.py"
+      ],
+      "visibility": "public-plus-local-only-boundary",
+      "notes": "Proves the authoring and leak-separation contract without shipping teacher-only prompts."
+    },
+    {
+      "id": "final-submission-packet",
+      "kind": "submission-packet",
+      "status": "ready",
+      "paths": [
+        "submission/README.md",
+        "submission/judge-demo-script.md",
+        "submission/pr-or-submission-summary.md",
+        "submission/conversation-log.md",
+        "submission/evidence-proof-manifest.json",
+        "submission/submission-metadata.json",
+        "submission/checklists/final-go-no-go.md"
+      ],
+      "visibility": "public",
+      "notes": "Canonical final submission packet artifacts for this review branch."
+    },
+    {
+      "id": "external-roundtrip-proof",
+      "kind": "live-proof",
+      "status": "ready",
+      "branch": "origin/review/clawith-vibe-roundtrip-demo-20260323-1000",
+      "commit": "4dab2a9866b86df4525d9698a7c844ab538ac61c",
+      "artifact_path": "submission/clawith-vibecosystem-roundtrip-proof.manifest.json",
+      "portable_evidence_paths": [
+        "submission/roundtrip-proof/README.md",
+        "submission/roundtrip-proof/roundtrip-proof.export.json",
+        "submission/roundtrip-proof/final-reply.txt"
+      ],
+      "audit_note_path": "submission/checklists/roundtrip-receipt-audit-2026-03-23.md",
+      "entrypoint": "scripts/clawith_ws_roundtrip.js + scripts/clawith_vibe_once.py",
+      "visibility": "proof-artifact",
+      "notes": "Tracked proof index plus portable export bundle show one external Clawith -> OpenClaw -> Claude/vibecosystem roundtrip path. This is not native parity proof."
+    },
+    {
+      "id": "native-clawith-parity",
+      "kind": "claim-boundary",
+      "status": "blocked_not_claimed",
+      "path": null,
+      "visibility": "blocked",
+      "notes": "Do not claim native Clawith parity or native model-pool completion without separate direct proof."
+    },
+    {
+      "id": "sealed-certification",
+      "kind": "claim-boundary",
+      "status": "blocked_not_claimed",
+      "path": null,
+      "visibility": "blocked",
+      "notes": "Do not claim sealed certification, tamper-proof evaluation, or third-party-sealed holdouts."
+    }
+  ]
+}

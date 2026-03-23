@@ -1,5 +1,8 @@
 # Submission candidate merge/review checklist
 
+Historical note: this file records the clean candidate-merge review that produced the base for the finalization branch.
+Use `submission/checklists/final-go-no-go.md` for the live publish gate.
+
 Repo submission base:
 - branch: `origin/submission/active-base-20260323-0711`
 - commit: `0dcdc40`
@@ -30,7 +33,7 @@ Review checklist
 
 - [ ] Confirm merged demo/docs surfaces keep roundtrip claims scoped to the external gateway + Claude/vibecosystem executor lane.
 - [ ] Confirm no submission artifact rewrites the proof as native model-pool parity, general upstream Clawith parity, sealed certification, or tamper-proof evaluation.
-- [ ] Confirm tracked proof references point at `submission/clawith-vibecosystem-roundtrip-proof.manifest.json` and keep raw receipt dirs local-only.
+- [ ] Confirm tracked proof references point at `submission/clawith-vibecosystem-roundtrip-proof.manifest.json` and the portable bundle under `submission/roundtrip-proof/`, while raw receipt dirs remain local-only.
 - [ ] Confirm demo-packet drafts were updated to cite the already-landed roundtrip proof rather than a future placeholder lane.
 - [ ] Run JSON sanity for touched submission files.
 - [ ] Run `/opt/homebrew/bin/pytest -q tests/test_vision_and_swe_bench_separation.py tests/test_teacher_source_curriculum.py tests/test_public_benchmark_pack_v1.py tests/test_autoresearch_alpha_loop.py tests/test_private_holdout_separation.py tests/test_demo_contract.py tests/test_milestone3_contract.py`

@@ -10,7 +10,18 @@
     "scripts/clawith_vibe_once.py",
     "scripts/clawith_ws_roundtrip.js"
   ],
-  "receipt_roots": [
+  "portable_evidence_bundle": {
+    "status": "tracked_sanitized_export",
+    "directory": "submission/roundtrip-proof",
+    "paths": [
+      "submission/roundtrip-proof/README.md",
+      "submission/roundtrip-proof/roundtrip-proof.export.json",
+      "submission/roundtrip-proof/final-reply.txt"
+    ],
+    "audit_note_path": "submission/checklists/roundtrip-receipt-audit-2026-03-23.md",
+    "notes": "Use these repo-visible paths in tracked packet materials. Raw receipt trees remain local-only and untracked."
+  },
+  "maintainer_local_receipt_roots": [
     {
       "id": "websocket-roundtrip",
       "status": "local_only_referenced_not_committed",
@@ -69,7 +80,8 @@
     "This does not prove broad production hardening for the external executor lane."
   ],
   "review_notes": [
-    "This tracked manifest exists so submission packaging can cite the proof without committing the raw receipt directories.",
-    "If the local receipt directories move, update this manifest before publishing."
+    "Tracked packet files should cite the portable bundle under submission/roundtrip-proof/ instead of raw artifacts/... paths.",
+    "Maintainer-local receipt roots remain indexed for deep revalidation only; they are not required for basic packet review.",
+    "Do not upgrade this proof into native Clawith parity or sealed evaluation claims."
   ]
 }

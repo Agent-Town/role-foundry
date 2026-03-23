@@ -1,9 +1,10 @@
 # Proof-fold landing checklist
 
-Use this the moment the active roundtrip-proof lane lands.
-The goal is to replace placeholders fast without widening scope or inventing claims.
+Historical note: this was the working checklist used to land the roundtrip-proof fold.
+The canonical final packet now lives under `submission/` (without the `drafts/` prefix).
+Keep this file only as lineage; do not use it as the live publish checklist.
 
-## Inputs to collect from the proof-fold lane
+## Inputs that were required from the proof-fold lane
 
 - [ ] Final proof branch name
 - [ ] Final proof commit SHA
@@ -13,7 +14,7 @@ The goal is to replace placeholders fast without widening scope or inventing cla
 - [ ] One sentence describing what the proof demonstrates
 - [ ] One sentence stating what it still does **not** prove
 
-## Files to update immediately
+## Files that were updated during the fold
 
 - [ ] `submission/drafts/judge-demo-script.md`
 - [ ] `submission/drafts/pr-or-submission-summary.md`
