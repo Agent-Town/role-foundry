@@ -107,6 +107,11 @@ def run_alpha_loop(
         backend_command=backend_command,
     )
 
+    execution_policy = benchmark_pack.get("execution_policy") or {}
+    loop_verifier_commands = execution_policy.get("recommended_verifier_commands")
+    if not isinstance(loop_verifier_commands, list) or not loop_verifier_commands:
+        loop_verifier_commands = None
+
     baseline_stage_config = _stage_config(config, "baseline-eval")
     baseline_request = _prepare_teacher_stage_request(
         stage_key="baseline-eval",
@@ -114,6 +119,11 @@ def run_alpha_loop(
         private_holdout_pack=private_holdout_pack,
     )
     baseline_result = bridge.run(RunRequest.from_dict(baseline_request))
+    _patch_provenance_receipt_verifier_gates(
+        artifacts_root / str(baseline_request.get("run_id")),
+        loop_verifier_commands,
+        "LocalReplayRunner",
+    )
     baseline_stage = _build_stage_receipt(
         stage_key="baseline-eval",
         stage_config=baseline_stage_config,
@@ -122,6 +132,7 @@ def run_alpha_loop(
         artifacts_root=artifacts_root,
         baseline_run_id=None,
         candidate_student_run_id=None,
+        verifier_commands_override=loop_verifier_commands,
     )
 
     candidate_teacher_stage_config = _stage_config(config, "candidate-teacher-eval")
@@ -133,6 +144,11 @@ def run_alpha_loop(
         benchmark_pack,
     )
     candidate_student_result = bridge.run(RunRequest.from_dict(candidate_student_request))
+    _patch_provenance_receipt_verifier_gates(
+        artifacts_root / str(candidate_student_request.get("run_id")),
+        loop_verifier_commands,
+        "LocalReplayRunner",
+    )
     candidate_student_stage = _build_stage_receipt(
         stage_key="candidate-student",
         stage_config=candidate_student_stage_config,
@@ -141,6 +157,7 @@ def run_alpha_loop(
         artifacts_root=artifacts_root,
         baseline_run_id=baseline_stage["run_id"],
         candidate_student_run_id=None,
+        verifier_commands_override=loop_verifier_commands,
     )
 
     candidate_teacher_request = _prepare_teacher_stage_request(
@@ -150,6 +167,11 @@ def run_alpha_loop(
         private_holdout_pack=private_holdout_pack,
     )
     candidate_teacher_result = bridge.run(RunRequest.from_dict(candidate_teacher_request))
+    _patch_provenance_receipt_verifier_gates(
+        artifacts_root / str(candidate_teacher_request.get("run_id")),
+        loop_verifier_commands,
+        "LocalReplayRunner",
+    )
     candidate_teacher_stage = _build_stage_receipt(
         stage_key="candidate-teacher-eval",
         stage_config=candidate_teacher_stage_config,
@@ -158,6 +180,7 @@ def run_alpha_loop(
         artifacts_root=artifacts_root,
         baseline_run_id=baseline_stage["run_id"],
         candidate_student_run_id=candidate_student_stage["run_id"],
+        verifier_commands_override=loop_verifier_commands,
     )
 
     comparison = _build_comparison(
@@ -174,6 +197,12 @@ def run_alpha_loop(
             "candidate-teacher-eval": candidate_teacher_stage,
         },
     )
+
+    verifier_gate_summary = _build_verifier_gate_summary({
+        "baseline-eval": baseline_stage,
+        "candidate-student": candidate_student_stage,
+        "candidate-teacher-eval": candidate_teacher_stage,
+    })
 
     receipt = {
         "ok": all(
@@ -194,6 +223,7 @@ def run_alpha_loop(
         },
         "comparison": comparison,
         "verdict": comparison.get("verdict"),
+        "verifier_gate": verifier_gate_summary,
         "artifact_coverage": artifact_coverage,
         "outputs": {
             "request_copy_path": "autoresearch-alpha.request.json",
@@ -481,6 +511,7 @@ def _build_stage_receipt(
     artifacts_root: Path,
     baseline_run_id: str | None,
     candidate_student_run_id: str | None,
+    verifier_commands_override: list[str] | None = None,
 ) -> dict[str, Any]:
     stage_meta = dict(STAGE_ORDER)[stage_key]
     run_id = str(request.get("run_id"))
@@ -513,11 +544,20 @@ def _build_stage_receipt(
 
     receipt_completeness = _build_stage_receipt_completeness(run_dir, artifact_bundle, stored_result)
 
+    verifier_contract = _build_verifier_contract(
+        stage_key=stage_key,
+        request=request,
+        artifact_bundle=artifact_bundle,
+        runner=scorecard.get("runner") if isinstance(scorecard, dict) else "LocalReplayRunner",
+        verifier_commands_override=verifier_commands_override,
+    )
+
     stage = {
         "run_id": run_id,
         "status": result.get("status"),
         "total_score": export_result.get("machine_score"),
         "aggregate_score": aggregate_score,
+        "verifier_contract": verifier_contract,
         "lineage": {
             "sequence_id": request.get("scenario_set_id"),
             "root_run_id": baseline_run_id or run_id,
@@ -542,6 +582,164 @@ def _build_stage_receipt(
         },
     }
     return stage
+
+
+def _build_verifier_contract(
+    *,
+    stage_key: str,
+    request: dict[str, Any],
+    artifact_bundle: dict[str, Any],
+    runner: str,
+    verifier_commands_override: list[str] | None = None,
+) -> dict[str, Any]:
+    """Build an honest verifier-contract block for a stage receipt.
+
+    In the local-replay alpha path, verifier commands are never actually
+    executed.  This function surfaces the required commands and marks each
+    one as ``not_executed`` so downstream consumers can distinguish a real
+    green gate from a replay that never ran the checks.
+    """
+    is_local_replay = runner == "LocalReplayRunner"
+
+    required_commands = _extract_required_verifier_commands(
+        request, artifact_bundle, verifier_commands_override=verifier_commands_override,
+    )
+
+    command_results = []
+    for command in required_commands:
+        command_results.append({
+            "command": command,
+            "execution_status": "not_executed" if is_local_replay else "unknown",
+            "exit_code": None,
+            "honesty_note": (
+                "Local-replay alpha path does not execute verifier commands."
+                if is_local_replay
+                else "Execution status was not captured by the runner."
+            ),
+        })
+
+    has_commands = len(required_commands) > 0
+    all_executed = has_commands and all(
+        cr["execution_status"] == "executed" for cr in command_results
+    )
+    all_passed = all_executed and all(
+        cr.get("exit_code") == 0 for cr in command_results
+    )
+
+    if is_local_replay:
+        gate_status = "not_executed"
+        gate_honesty_note = (
+            "The local-replay runner produces deterministic receipts without "
+            "executing verifier commands. Gate status will become meaningful "
+            "when a live-execution backend is wired."
+        )
+    elif not has_commands:
+        gate_status = "no_commands"
+        gate_honesty_note = "No verifier commands were specified for this stage."
+    elif all_passed:
+        gate_status = "pass"
+        gate_honesty_note = "All verifier commands executed and returned exit code 0."
+    elif all_executed:
+        gate_status = "fail"
+        gate_honesty_note = "One or more verifier commands returned a non-zero exit code."
+    else:
+        gate_status = "incomplete"
+        gate_honesty_note = "Not all verifier commands have execution results."
+
+    return {
+        "stage_key": stage_key,
+        "runner": runner,
+        "required_commands": required_commands,
+        "command_results": command_results,
+        "gate_status": gate_status,
+        "honesty_note": gate_honesty_note,
+    }
+
+
+def _extract_required_verifier_commands(
+    request: dict[str, Any],
+    artifact_bundle: dict[str, Any],
+    *,
+    verifier_commands_override: list[str] | None = None,
+) -> list[str]:
+    """Collect verifier commands from the request, artifact bundle, or override.
+
+    Teacher stages (baseline-eval, candidate-teacher-eval) do not carry a
+    ``student_prompt_pack``, so their request/artifact_bundle will not contain
+    verifier commands.  The ``verifier_commands_override`` parameter lets the
+    caller inject the commands from the benchmark-pack execution policy so
+    that every stage receipt surfaces the same contract.
+    """
+    commands: list[str] = []
+    seen: set[str] = set()
+
+    for source in (
+        ((request.get("student_prompt_pack") or {}).get("repo_task_pack") or {}).get("recommended_verifier_commands"),
+        ((artifact_bundle.get("student_view") or {}).get("repo_task_pack") or {}).get("recommended_verifier_commands"),
+        verifier_commands_override,
+    ):
+        if isinstance(source, list):
+            for cmd in source:
+                cmd_str = str(cmd)
+                if cmd_str not in seen:
+                    seen.add(cmd_str)
+                    commands.append(cmd_str)
+
+    return commands
+
+
+def _patch_provenance_receipt_verifier_gates(
+    run_dir: Path,
+    verifier_commands: list[str] | None,
+    runner: str,
+) -> None:
+    """Add ``verifier_gate`` to baseline.json and evaluation.json receipts.
+
+    The provenance writer (called by the bridge) creates these files but does
+    not have access to the benchmark-pack execution policy.  This post-hoc
+    patch adds the gate so that every provenance receipt surfaces the same
+    verifier-command contract.  ``candidate.json`` already has the gate from
+    the provenance writer, so it is left untouched.
+    """
+    receipts_dir = run_dir / "receipts"
+    if not receipts_dir.is_dir():
+        return
+
+    commands = verifier_commands if isinstance(verifier_commands, list) else []
+    is_local_replay = runner == "LocalReplayRunner"
+
+    if commands:
+        gate = {
+            "status": "not_executed" if is_local_replay else "unknown",
+            "required_commands": list(commands),
+            "executed_count": 0 if is_local_replay else None,
+            "honesty_note": (
+                "Local-replay alpha path does not execute verifier commands. "
+                "These commands should be run by a live-execution backend to "
+                "produce a meaningful gate result."
+                if is_local_replay
+                else "Verifier command execution status was not captured."
+            ),
+        }
+    else:
+        gate = {
+            "status": "no_commands",
+            "required_commands": [],
+            "executed_count": 0,
+            "honesty_note": "No verifier commands were specified in the execution policy.",
+        }
+
+    for receipt_name in ("baseline.json", "evaluation.json"):
+        receipt_path = receipts_dir / receipt_name
+        if not receipt_path.exists():
+            continue
+        try:
+            receipt = json.loads(receipt_path.read_text())
+        except (json.JSONDecodeError, OSError):
+            continue
+        if "verifier_gate" not in receipt:
+            receipt["verifier_gate"] = gate
+            receipt_path.write_text(json.dumps(receipt, indent=2))
 
 
 def _build_stage_receipt_completeness(
@@ -638,6 +836,52 @@ def _build_comparison(
             ),
         },
         "reasons": reasons,
+    }
+
+
+def _build_verifier_gate_summary(
+    stages: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    """Build an aggregate verifier gate across all stages."""
+    stage_statuses: dict[str, str] = {}
+    total_commands = 0
+    executed_commands = 0
+
+    for stage_key, stage in stages.items():
+        vc = stage.get("verifier_contract") or {}
+        gate_status = vc.get("gate_status", "unknown")
+        stage_statuses[stage_key] = gate_status
+        for cr in vc.get("command_results", []):
+            total_commands += 1
+            if cr.get("execution_status") == "executed":
+                executed_commands += 1
+
+    all_not_executed = all(s == "not_executed" for s in stage_statuses.values())
+    any_fail = any(s == "fail" for s in stage_statuses.values())
+
+    if all_not_executed:
+        aggregate_status = "not_executed"
+        honesty_note = (
+            "All stages used the local-replay runner. No verifier commands were "
+            "actually executed. This alpha loop proves receipt structure and "
+            "evaluation-contract wiring, not real code execution."
+        )
+    elif any_fail:
+        aggregate_status = "fail"
+        honesty_note = "One or more stages had failing verifier commands."
+    elif all(s == "pass" for s in stage_statuses.values()):
+        aggregate_status = "pass"
+        honesty_note = "All verifier commands across all stages passed."
+    else:
+        aggregate_status = "incomplete"
+        honesty_note = "Not all stages have complete verifier execution results."
+
+    return {
+        "aggregate_status": aggregate_status,
+        "stage_statuses": stage_statuses,
+        "total_commands": total_commands,
+        "executed_commands": executed_commands,
+        "honesty_note": honesty_note,
     }
 
 

@@ -283,6 +283,11 @@ def _build_candidate_receipt(
                 rtp_summary["recommended_verifier_commands"] = list(rvc)
             prompt_pack_summary["repo_task_pack"] = rtp_summary
 
+    verifier_gate = _build_receipt_verifier_gate(
+        prompt_pack_summary,
+        result,
+    )
+
     receipt = {
         "receipt_id": f"candidate:{run_id}",
         "kind": "candidate",
@@ -293,6 +298,7 @@ def _build_candidate_receipt(
         "objective": workspace.get("objective"),
         "workspace_snapshot": workspace,
         "student_prompt_pack": prompt_pack_summary,
+        "verifier_gate": verifier_gate,
         "evidence_refs": [entry["evidence_id"] for entry in evidence],
     }
     return receipt, evidence
@@ -520,6 +526,49 @@ def _build_evaluation_receipt(
         "evidence_refs": [entry["evidence_id"] for entry in evidence],
     }
     return receipt, evidence
+
+
+def _build_receipt_verifier_gate(
+    prompt_pack_summary: dict[str, Any] | None,
+    result: dict[str, Any],
+) -> dict[str, Any]:
+    """Build verifier gate info for a candidate receipt.
+
+    This makes the receipt self-describing about whether verifier commands
+    were specified and whether they were actually executed.  In local-replay
+    alpha, the honest answer is always ``not_executed``.
+    """
+    commands: list[str] = []
+    if isinstance(prompt_pack_summary, dict):
+        rtp = prompt_pack_summary.get("repo_task_pack")
+        if isinstance(rtp, dict):
+            rvc = rtp.get("recommended_verifier_commands")
+            if isinstance(rvc, list):
+                commands = [str(cmd) for cmd in rvc]
+
+    runner = (result.get("scorecard") or {}).get("runner") if isinstance(result.get("scorecard"), dict) else None
+    is_local_replay = runner == "LocalReplayRunner"
+
+    if not commands:
+        return {
+            "status": "no_commands",
+            "required_commands": [],
+            "executed_count": 0,
+            "honesty_note": "No verifier commands were specified in the prompt pack.",
+        }
+
+    return {
+        "status": "not_executed" if is_local_replay else "unknown",
+        "required_commands": commands,
+        "executed_count": 0 if is_local_replay else None,
+        "honesty_note": (
+            "Local-replay alpha path does not execute verifier commands. "
+            "These commands should be run by a live-execution backend to "
+            "produce a meaningful gate result."
+            if is_local_replay
+            else "Verifier command execution status was not captured."
+        ),
+    }
 
 
 def _build_artifact_inventory(

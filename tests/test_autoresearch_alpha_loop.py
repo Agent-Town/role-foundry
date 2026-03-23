@@ -465,5 +465,243 @@ class AutoresearchAlphaDocumentationTests(unittest.TestCase):
         self.assertIn("recommended_verifier_commands", runner_doc)
 
 
+class StepCVerifierContractTests(unittest.TestCase):
+    """Step C eval-contract: verifier gate fields are honest and inspectable."""
+
+    def test_verifier_contract_present_in_all_stages(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            artifacts_root = Path(tmpdir) / "artifacts"
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "runner_bridge.autoresearch_alpha",
+                    "--request",
+                    str(EXAMPLE_REQUEST),
+                    "--artifacts-root",
+                    str(artifacts_root),
+                ],
+                capture_output=True,
+                text=True,
+                cwd=ROOT,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            receipt = json.loads((artifacts_root / "autoresearch-alpha.json").read_text())
+
+            for stage_key in ("baseline-eval", "candidate-student", "candidate-teacher-eval"):
+                stage = receipt["stages"][stage_key]
+                vc = stage.get("verifier_contract")
+                self.assertIsNotNone(vc, f"{stage_key} missing verifier_contract")
+                self.assertEqual(vc["stage_key"], stage_key)
+                self.assertEqual(vc["runner"], "LocalReplayRunner")
+                self.assertEqual(
+                    vc["gate_status"],
+                    "not_executed",
+                    f"{stage_key} gate_status should be 'not_executed' in local-replay",
+                )
+                self.assertIsInstance(vc["required_commands"], list)
+                self.assertIn("honesty_note", vc)
+                self.assertIn("local-replay", vc["honesty_note"].lower())
+
+                for cr in vc["command_results"]:
+                    self.assertEqual(cr["execution_status"], "not_executed")
+                    self.assertIsNone(cr["exit_code"])
+
+    def test_candidate_student_stage_has_verifier_commands(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            artifacts_root = Path(tmpdir) / "artifacts"
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "runner_bridge.autoresearch_alpha",
+                    "--request",
+                    str(EXAMPLE_REQUEST),
+                    "--artifacts-root",
+                    str(artifacts_root),
+                ],
+                capture_output=True,
+                text=True,
+                cwd=ROOT,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            receipt = json.loads((artifacts_root / "autoresearch-alpha.json").read_text())
+
+            student_vc = receipt["stages"]["candidate-student"]["verifier_contract"]
+            self.assertTrue(
+                len(student_vc["required_commands"]) > 0,
+                "candidate-student should have verifier commands from the benchmark pack",
+            )
+            self.assertEqual(
+                len(student_vc["command_results"]),
+                len(student_vc["required_commands"]),
+            )
+
+    def test_top_level_verifier_gate_summary(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            artifacts_root = Path(tmpdir) / "artifacts"
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "runner_bridge.autoresearch_alpha",
+                    "--request",
+                    str(EXAMPLE_REQUEST),
+                    "--artifacts-root",
+                    str(artifacts_root),
+                ],
+                capture_output=True,
+                text=True,
+                cwd=ROOT,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            receipt = json.loads((artifacts_root / "autoresearch-alpha.json").read_text())
+
+            vg = receipt.get("verifier_gate")
+            self.assertIsNotNone(vg, "top-level verifier_gate missing")
+            self.assertEqual(vg["aggregate_status"], "not_executed")
+            self.assertIn("local-replay", vg["honesty_note"].lower())
+            self.assertIsInstance(vg["stage_statuses"], dict)
+            for stage_key in ("baseline-eval", "candidate-student", "candidate-teacher-eval"):
+                self.assertEqual(vg["stage_statuses"][stage_key], "not_executed")
+            self.assertEqual(vg["executed_commands"], 0)
+            self.assertGreater(vg["total_commands"], 0)
+
+    def test_candidate_receipt_has_verifier_gate(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            artifacts_root = Path(tmpdir) / "artifacts"
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "runner_bridge.autoresearch_alpha",
+                    "--request",
+                    str(EXAMPLE_REQUEST),
+                    "--artifacts-root",
+                    str(artifacts_root),
+                ],
+                capture_output=True,
+                text=True,
+                cwd=ROOT,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+
+            candidate_receipt = json.loads(
+                (artifacts_root / "run-eval-001-student" / "receipts" / "candidate.json").read_text()
+            )
+            vg = candidate_receipt.get("verifier_gate")
+            self.assertIsNotNone(vg, "candidate receipt missing verifier_gate")
+            self.assertEqual(vg["status"], "not_executed")
+            self.assertIsInstance(vg["required_commands"], list)
+            self.assertTrue(len(vg["required_commands"]) > 0)
+            self.assertEqual(vg["executed_count"], 0)
+            self.assertIn("local-replay", vg["honesty_note"].lower())
+
+    def test_all_stages_have_verifier_commands(self):
+        """Every stage receipt (not just candidate-student) must surface verifier commands."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            artifacts_root = Path(tmpdir) / "artifacts"
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "runner_bridge.autoresearch_alpha",
+                    "--request",
+                    str(EXAMPLE_REQUEST),
+                    "--artifacts-root",
+                    str(artifacts_root),
+                ],
+                capture_output=True,
+                text=True,
+                cwd=ROOT,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            receipt = json.loads((artifacts_root / "autoresearch-alpha.json").read_text())
+
+            for stage_key in ("baseline-eval", "candidate-student", "candidate-teacher-eval"):
+                vc = receipt["stages"][stage_key]["verifier_contract"]
+                self.assertTrue(
+                    len(vc["required_commands"]) > 0,
+                    f"{stage_key} should have verifier commands from the benchmark pack",
+                )
+                self.assertEqual(
+                    len(vc["command_results"]),
+                    len(vc["required_commands"]),
+                    f"{stage_key} command_results length should match required_commands",
+                )
+                for cr in vc["command_results"]:
+                    self.assertEqual(cr["execution_status"], "not_executed")
+                    self.assertIsNone(cr["exit_code"])
+
+    def test_baseline_receipt_has_verifier_gate(self):
+        """baseline.json provenance receipt should include verifier_gate."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            artifacts_root = Path(tmpdir) / "artifacts"
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "runner_bridge.autoresearch_alpha",
+                    "--request",
+                    str(EXAMPLE_REQUEST),
+                    "--artifacts-root",
+                    str(artifacts_root),
+                ],
+                capture_output=True,
+                text=True,
+                cwd=ROOT,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+
+            baseline_path = artifacts_root / "run-eval-002" / "receipts" / "baseline.json"
+            self.assertTrue(baseline_path.exists(), "baseline.json receipt should exist")
+            baseline_receipt = json.loads(baseline_path.read_text())
+            vg = baseline_receipt.get("verifier_gate")
+            self.assertIsNotNone(vg, "baseline receipt missing verifier_gate")
+            self.assertEqual(vg["status"], "not_executed")
+            self.assertIsInstance(vg["required_commands"], list)
+            self.assertTrue(len(vg["required_commands"]) > 0)
+            self.assertEqual(vg["executed_count"], 0)
+            self.assertIn("local-replay", vg["honesty_note"].lower())
+
+    def test_evaluation_receipt_has_verifier_gate(self):
+        """evaluation.json provenance receipt should include verifier_gate."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            artifacts_root = Path(tmpdir) / "artifacts"
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "runner_bridge.autoresearch_alpha",
+                    "--request",
+                    str(EXAMPLE_REQUEST),
+                    "--artifacts-root",
+                    str(artifacts_root),
+                ],
+                capture_output=True,
+                text=True,
+                cwd=ROOT,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+
+            eval_path = artifacts_root / "run-eval-002" / "receipts" / "evaluation.json"
+            self.assertTrue(eval_path.exists(), "evaluation.json receipt should exist")
+            eval_receipt = json.loads(eval_path.read_text())
+            vg = eval_receipt.get("verifier_gate")
+            self.assertIsNotNone(vg, "evaluation receipt missing verifier_gate")
+            self.assertEqual(vg["status"], "not_executed")
+            self.assertIsInstance(vg["required_commands"], list)
+            self.assertTrue(len(vg["required_commands"]) > 0)
+            self.assertEqual(vg["executed_count"], 0)
+            self.assertIn("local-replay", vg["honesty_note"].lower())
+
+
 if __name__ == "__main__":
     unittest.main()
