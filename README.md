@@ -2,13 +2,13 @@
 
 ## The framework
 
-Role Foundry is a **framework for training AI apprentices under honest, holdout-aware evaluation**. It is designed to train different roles over time — each role gets a public curriculum, sealed holdout evaluations, named teachers, visible score deltas, and proof bundles.
+Role Foundry is a **framework for training AI apprentices under honest, holdout-aware evaluation**. The core unit is a **generation**: each evaluated generation leaves an inspectable provenance chain — receipt bundle, evaluation context, score deltas, and a promotion decision. Promoted public generations can then be staged for **ERC-8004** issuance on **Base** through a thin Role Foundry-owned adapter.
 
 The framework handles the training loop. The role defines what the apprentice learns.
 
 ## The current concrete example
 
-The current alpha demo ships one concrete role: a **Software Engineer apprentice** that implements Role Foundry product slices under hidden-eval review. Robin + Neo are the teachers. The apprentice builds the system it is being trained by.
+The current alpha demo ships one concrete role: a **Software Engineer apprentice** that implements Role Foundry product slices under public-regression and local private-holdout review. Robin + Neo are the teachers. The apprentice builds the system it is being trained by.
 
 **Honest scope note:** The currently shipped curriculum slices are frontend/product-heavy because that is what the alpha app exposes. The “Software Engineer” framing reflects the intended breadth — code review, regression prevention, documentation honesty — not a claim that all those curriculum families are shipped today.
 
@@ -30,6 +30,7 @@ The current alpha demo ships one concrete role: a **Software Engineer apprentice
 7. **Failure → curriculum loop** — failed holdout themes become the next public teaching themes without exposing hidden prompt text
 8. **Iteration history** — score deltas over time stay visible in both the UI and stored run data
 9. **Proof bundle** — receipt summary, changed files, policy snapshot, and transcript excerpt
+10. **Portable identity path** — promoted public generations can be drafted for ERC-8004 issuance on Base without faking a wallet transaction
 
 This is the point of Role Foundry: make capability visible with honest evaluation instead of vibes.
 
@@ -38,10 +39,11 @@ This is the point of Role Foundry: make capability visible with honest evaluatio
 1. **Teachers define a role** — what good work looks like for this apprentice
 2. **Role Foundry publishes public curriculum** — scenarios the apprentice can practice on
 3. **Role Foundry keeps fresh hidden holdouts teacher-only** — the public repo carries the contract/template/tests for that lane, not the private prompts themselves
-4. **The apprentice ships a slice** — copy, UI, scorecard, or artifact surface
-5. **Teacher judges the run** — a teacher scorecard records per-scenario notes plus an aggregate score
-6. **Failures become curriculum** — only the failure themes are promoted, never the hidden prompt text
-7. **Iteration history records deltas** — later runs show what improved overall and on holdout-facing review
+4. **The apprentice ships a generation** — copy, UI, scorecard, or artifact surface
+5. **Teacher judges the generation** — receipts, scorecard context, and aggregate score become part of the generation record
+6. **Later generations record deltas** — the next run makes the better/equal/worse movement explicit
+7. **Humans decide what gets promoted** — public curriculum themes and readiness evidence can move forward without leaking hidden prompt text
+8. **Promoted public generations can be staged for ERC-8004 issuance** — Base is the current portable-identity target
 
 ## Curriculum extension
 
@@ -154,16 +156,16 @@ That request file stays local-only, points `private_holdout_manifest` at the git
 
 ## ERC-8004 / Base / agent0-sdk adapter
 
-The repo now ships a narrow adapter for ERC-8004 agent registration on **Base** through the `agent0-sdk` mint shape:
+The repo now ships a narrow adapter that turns the generation-provenance chain into a portable identity path on **Base** through the `agent0-sdk` mint shape:
 
-- `runner_bridge/product_integrations.py` — generates a local ERC-8004 registration draft, completion template, and agent0 Base adapter contract after each run. No onchain writes.
+- `runner_bridge/product_integrations.py` — after each evaluated generation, writes a local ERC-8004 registration draft, completion template, and agent0 Base adapter contract tied back to the existing receipt/scorecard artifacts. No onchain writes.
 - `app/agent0_base_adapter.mjs` — thin browser adapter following the agent0 mint shape: `discoverEip6963Providers` → `connectEip1193` → `SDK({ chainId, rpcUrl, walletProvider })` → `createAgent(...)` → `registerHTTP(tokenUri)`.
 
 **Target chains:** Base Sepolia (chain id 84532, review/demo default) and Base Mainnet (chain id 8453, explicit submission target). Both are env-driven via `BASE_SEPOLIA_RPC_URL` / `BASE_MAINNET_RPC_URL`.
 
-**What is real now:** registration drafts, completion templates, the browser adapter module, and wired-vs-pending diagnostics.
+**What is real now:** registration drafts, completion templates, the browser adapter module, wired-vs-pending diagnostics, and a reviewer-visible story that promoted/public generations are the ones eligible for public issuance.
 
-**What is pending:** agent0-sdk availability, configured Base RPC URL, and an actual wallet-approved mint. No minting has been claimed or faked.
+**What is pending:** agent0-sdk availability, configured Base RPC URL + registry override, a human promotion/public-issuance decision, and an actual wallet-approved mint. No minting has been claimed or faked.
 
 See `docs/erc8004-base-agent0-adapter.md` for usage and `specs/013-erc8004-base-agent0-adapter.md` for the full spec.
 

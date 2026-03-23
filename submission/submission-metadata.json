@@ -3,24 +3,28 @@
   "project": {
     "name": "Role Foundry",
     "repo_url": "https://github.com/Agent-Town/role-foundry",
-    "final_review_branch": "review/submission-finalization-pass-20260323-1159",
+    "final_review_branch": "review/submission-erc-provenance-20260323-1240",
     "final_review_commit": "2c4e23f6f0e2e8682dda48fa26c796f20c091eef",
     "final_review_commit_strategy": "content_freeze_commit_recorded_by_followup_stamp_commit"
   },
   "summary": {
-    "one_liner": "Role Foundry is a role-training, evaluation, and promotion system for AI apprentices; the current submission proves a Software Engineer apprentice public alpha loop, a local private-holdout honesty boundary, and an external Clawith -> OpenClaw -> Claude/vibecosystem roundtrip path without claiming native parity or sealed certification.",
+    "one_liner": "Role Foundry is a role-training, evaluation, and promotion system for AI apprentices; this branch makes the generation provenance chain explicit by showing that each evaluated generation carries receipts, evaluation context, score deltas, and a promotion/public-issuance decision, while the current evidence proves a Software Engineer apprentice public alpha loop, a local private-holdout honesty boundary, a staged ERC-8004/Base issuance path, and an external Clawith -> OpenClaw -> Claude/vibecosystem roundtrip path without claiming live minting, native parity, or sealed certification.",
     "current_role": "Software Engineer apprentice",
     "scope_note": "The shipped public curriculum remains frontend/product-heavy even though the role framing is broader software engineering.",
+    "generation_provenance_status": "proven",
     "public_alpha_loop_status": "proven",
     "local_private_holdout_boundary_status": "proven",
+    "erc8004_base_staged_identity_status": "proven_staged_not_minted",
     "external_roundtrip_status": "ready",
     "native_clawith_parity_status": "not_claimed",
+    "live_base_mint_status": "not_claimed",
     "sealed_certification_status": "not_claimed"
   },
   "stack": {
     "agent_framework": "OpenClaw",
     "agent_harness": "openclaw",
     "control_plane": "Clawith",
+    "identity_layer": "ERC-8004 via agent0-sdk/Base adapter (staged)",
     "execution_backends": [
       "Claude + vibecosystem",
       "Codex",
@@ -28,6 +32,15 @@
     ]
   },
   "proof": {
+    "generation_provenance": {
+      "status": "ready",
+      "paths": [
+        "README.md",
+        "app/vision.html",
+        "runner_bridge/provenance.py"
+      ],
+      "note": "Each evaluated generation is framed through receipts, evaluation context, score deltas, and a promotion/public-issuance decision."
+    },
     "public_alpha_loop": {
       "status": "ready",
       "paths": [
@@ -44,6 +57,21 @@
         "benchmarks/private-holdout-pack-template.json",
         "tests/test_private_holdout_separation.py"
       ]
+    },
+    "erc8004_base_adapter": {
+      "status": "ready_staged_not_minted",
+      "paths": [
+        "docs/erc8004-base-agent0-adapter.md",
+        "specs/013-erc8004-base-agent0-adapter.md",
+        "runner_bridge/product_integrations.py",
+        "app/agent0_base_adapter.mjs",
+        "tests/test_erc8004_base_agent0_adapter.py"
+      ],
+      "target_chains": [
+        "Base Sepolia (84532)",
+        "Base Mainnet (8453)"
+      ],
+      "note": "Promoted/public generations can be staged for ERC-8004 issuance through a thin Role Foundry-owned adapter; no live mint is claimed."
     },
     "external_roundtrip": {
       "status": "ready",
@@ -63,12 +91,16 @@
   "claim_boundary": {
     "allowed": [
       "Role-training, evaluation, and promotion framing",
+      "Generation provenance framing: receipts, evaluation context, score deltas, promotion/public-issuance decision",
       "Software Engineer apprentice as the first concrete shipped role",
       "Executable public alpha loop proof",
       "Local private-holdout honesty boundary",
+      "Staged ERC-8004/Base issuance path for promoted/public generations",
       "External Clawith -> OpenClaw -> Claude/vibecosystem roundtrip proof indexed by the tracked manifest and portable bundle"
     ],
     "not_claimed": [
+      "Live Base mint on Sepolia or mainnet",
+      "Partner-track completion",
       "Native Clawith parity",
       "Native model-pool completion",
       "Sealed certification",
@@ -78,9 +110,9 @@
   },
   "remaining_optional_work": [
     {
-      "label": "ERC-8004 + Base via Agent0 SDK",
-      "needed_for": "Identity / onchain differentiator beyond the current honest submission floor",
-      "status": "separate_optional_lane"
+      "label": "Live Base mint receipt",
+      "needed_for": "Any claim that a Role Foundry generation was actually minted as an ERC-8004 identity on Base",
+      "status": "pending_not_claimed"
     },
     {
       "label": "Native Clawith model-pool smoke evidence",

@@ -2,9 +2,18 @@
 
 ## What this is
 
-A thin, Role Foundry-owned adapter that wires ERC-8004 agent registration on **Base** through the `agent0-sdk` mint shape. Two layers:
+A thin, Role Foundry-owned adapter that turns a reviewed generation into a **portable identity handoff** on **Base** through the `agent0-sdk` mint shape.
 
-1. **Python integration writer** (`runner_bridge/product_integrations.py`) — runs after each evaluation run and emits local registration drafts, completion templates, and adapter contracts. No onchain writes.
+The important sequencing is deliberate:
+
+1. A generation runs.
+2. Role Foundry records receipts, evaluation context, and score deltas.
+3. Humans decide whether that generation is worth promoting publicly.
+4. Only then should that public/promoted generation be discussed as an ERC-8004 issuance candidate.
+
+Two layers are landed on this branch:
+
+1. **Python integration writer** (`runner_bridge/product_integrations.py`) — runs after each evaluation run and emits local registration drafts, completion templates, and adapter contracts tied back to the existing receipt bundle. No onchain writes.
 
 2. **Browser adapter** (`app/agent0_base_adapter.mjs`) — thin ESM module that follows the agent0 mint shape for browser-side registration. Only triggers a wallet tx when `mintAgent()` is called.
 
@@ -76,7 +85,7 @@ summary = write_product_integrations(
     target_chain="base_sepolia",  # or "base_mainnet"
 )
 # summary["status_by_integration"]["agent0_base_adapter"]
-#   "staged" (no RPC URL) or "ready" (RPC URL configured)
+#   "staged" (no RPC URL / registry) or "ready" (RPC URL + registry configured)
 ```
 
 ## What is real now
@@ -87,13 +96,15 @@ summary = write_product_integrations(
 - Readiness diagnostic that reports exactly what is wired vs pending.
 - Verifiable receipt hashing of stable artifacts only (request.json, transcript, receipts/*).
 - Explicit Base RPC + registry config requirement (no reliance on agent0-sdk defaults).
+- A clean story that **promoted/public generations** are the ones eligible to be issued, even though draft files can be written locally for any evaluated generation.
 
 ## What is pending
 
 - agent0-sdk availability (npm install or vendored bundle).
 - Configured Base RPC URL + identity registry address in the environment.
+- A human promotion/public-issuance decision for the specific generation.
 - An actual wallet-approved mint on Base Sepolia or Mainnet.
-- IPFS registration (registerIPFS) as an alternative to registerHTTP.
+- IPFS registration (`registerIPFS`) as an alternative to `registerHTTP`.
 
 ## Claim boundary
 
@@ -103,5 +114,7 @@ Do **not** claim:
 - Partner-track completion.
 
 Do claim:
-- "Role Foundry drafts ERC-8004 registrations targeting Base and wires the agent0-sdk mint path."
+- "Role Foundry drafts ERC-8004 registrations targeting Base and wires the agent0-sdk mint path through a thin adapter."
+- "Each reviewed generation can carry receipts, evaluation context, score deltas, and an issuance-ready identity draft."
+- "Promoted/public generations are the intended portable-identity layer."
 - "The adapter makes wired-vs-pending explicit."

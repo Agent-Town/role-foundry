@@ -47,17 +47,18 @@
   <section class="hero-callout" style="display: block;">
     <span class="eyebrow">The framework</span>
     <h2 style="margin-top: 0.35rem;">Role Foundry trains roles, not just models</h2>
-    <p>Role Foundry is designed to train different <strong>roles</strong> over time. A role is a named apprentice with a public curriculum, sealed holdout evaluations, named teachers, and visible score deltas. The framework handles the training loop; the role defines what the apprentice learns.</p>
+    <p>Role Foundry is designed to train different <strong>roles</strong> over time. Each evaluated generation leaves an inspectable provenance chain: receipt bundle, evaluation context, score deltas, and a promotion decision. Promoted public generations can then be staged for ERC-8004 issuance on Base. The framework handles the training loop; the role defines what the apprentice learns.</p>
     <div class="grid-2" style="margin-top: 1.25rem;">
       <article class="card">
         <h3>What every role gets</h3>
         <ul>
           <li>A <strong>public curriculum</strong> the apprentice can practice on</li>
-          <li><strong>Sealed holdouts</strong> the apprentice cannot see, for honest evaluation</li>
-          <li><strong>Named teachers</strong> who score runs and promote failure themes</li>
-          <li><strong>Visible score deltas</strong> between runs, especially on holdouts</li>
+          <li><strong>Local/private holdout discipline</strong> for teacher-only evaluation material</li>
+          <li><strong>Named teachers</strong> who score generations and promote failure themes</li>
+          <li><strong>Visible score deltas</strong> between generations</li>
           <li><strong>Proof bundles</strong> with receipts judges can inspect</li>
           <li>A <strong>failure-to-curriculum loop</strong> that improves teaching without leaking the exam</li>
+          <li>An <strong>ERC-8004 issuance path</strong> for promoted public generations</li>
         </ul>
       </article>
       <article class="card">
@@ -76,7 +77,7 @@
   <article class="judge-callout">
     <span class="eyebrow">Current concrete example</span>
     <h3 style="margin-top: 0.35rem;">Software Engineer apprentice improving Role Foundry itself</h3>
-    <p>The current alpha demo ships one concrete role: a <strong>Software Engineer apprentice</strong> that implements Role Foundry product slices under hidden-eval review. Robin + Neo are the teachers. The apprentice builds the system it is being trained by.</p>
+    <p>The current alpha demo ships one concrete role: a <strong>Software Engineer apprentice</strong> that implements Role Foundry product slices under public-regression and local private-holdout review. Robin + Neo are the teachers. The apprentice builds the system it is being trained by.</p>
     <p style="margin-top: 0.5rem; color: var(--rf-text-muted); font-size: 0.9rem;"><strong>Honest scope note:</strong> The currently shipped curriculum slices are frontend/product-heavy because that is what the alpha app exposes. The "Software Engineer" framing reflects the intended breadth of the role — code review, regression prevention, documentation honesty — not a claim that all those curriculum families are shipped today.</p>
   </article>
 
@@ -87,17 +88,19 @@
       <ol>
         <li><strong>Teachers define a role</strong> — what good work looks like for this apprentice</li>
         <li><strong>Public curriculum is published</strong> — scenarios the apprentice can train on</li>
-        <li><strong>Sealed holdouts stay teacher-only</strong> — the exam the apprentice cannot see</li>
-        <li><strong>The apprentice ships work</strong> — a slice, a fix, an artifact</li>
-        <li><strong>Teachers score the run</strong> — per-scenario notes, aggregate score, holdout deltas</li>
-        <li><strong>Failures become curriculum</strong> — themes are promoted, hidden prompts stay sealed</li>
+        <li><strong>Local/private holdouts stay teacher-only</strong> — the apprentice never sees that material in tracked artifacts</li>
+        <li><strong>The apprentice ships a generation</strong> — a slice, a fix, an artifact</li>
+        <li><strong>Teachers score the generation</strong> — per-scenario notes, aggregate score, and evidence become part of the record</li>
+        <li><strong>Later generations show deltas</strong> — judges can see what improved</li>
+        <li><strong>Humans decide what gets promoted</strong> — public curriculum and readiness evidence move forward without leaking hidden prompts</li>
+        <li><strong>Promoted public generations can be staged for ERC-8004 issuance</strong> — Base is the current portable-identity target</li>
       </ol>
     </article>
     <article class="card">
       <h3>Key separations</h3>
       <ul>
-        <li><strong>Student vs teacher access:</strong> the apprentice sees public curriculum only; teachers see sealed holdouts and scoring internals</li>
-        <li><strong>Public vs holdout evaluation:</strong> passing public curriculum is practice; fresh teacher-only holdouts are the stronger signal once they exist outside the public repo</li>
+        <li><strong>Student vs teacher access:</strong> the apprentice sees public curriculum only; teachers see local/private holdouts and scoring internals</li>
+        <li><strong>Public vs local/private evaluation:</strong> passing public curriculum is practice; fresh teacher-only holdouts are the stronger signal once they exist outside the public repo</li>
         <li><strong>Demo vs live mode:</strong> demo ships pre-baked data for judges; live mode consumes configured exports from the runner bridge</li>
         <li><strong>Framework vs role:</strong> the training loop is general; the curriculum content is role-specific</li>
       </ul>
@@ -136,7 +139,7 @@
     <ul>
       <li><strong>The framework</strong> is general: any role can use the training loop, holdout separation, scoring, and proof bundles.</li>
       <li><strong>The current example</strong> is specific: one Software Engineer apprentice, two teachers, frontend/product-heavy curriculum, honest about what is shipped vs planned.</li>
-      <li><strong>The proof</strong> is in the receipts: judges can see exactly what the apprentice did, how it scored, and what improved.</li>
+      <li><strong>The proof</strong> is in the provenance chain: judges can see what generation ran, how it scored, what improved, and whether it stayed local, was promoted publicly, or was staged for identity issuance.</li>
     </ul>
   </article>
 </main>

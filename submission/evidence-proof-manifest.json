@@ -1,6 +1,6 @@
 {
   "status": "final-review-ready",
-  "final_review_branch": "review/submission-finalization-pass-20260323-1159",
+  "final_review_branch": "review/submission-erc-provenance-20260323-1240",
   "final_review_commit": "2c4e23f6f0e2e8682dda48fa26c796f20c091eef",
   "final_review_commit_strategy": "content_freeze_commit_recorded_by_followup_stamp_commit",
   "artifacts": [
@@ -19,6 +19,18 @@
       "path": "README.md",
       "visibility": "public",
       "notes": "Defines the first concrete role as the Software Engineer apprentice."
+    },
+    {
+      "id": "generation-provenance-story",
+      "kind": "repo-doc-plus-bridge",
+      "status": "ready",
+      "paths": [
+        "README.md",
+        "app/vision.html",
+        "runner_bridge/provenance.py"
+      ],
+      "visibility": "public",
+      "notes": "Makes the generation story explicit: receipts, evaluation context, score deltas, and promotion/public-issuance decision."
     },
     {
       "id": "public-alpha-loop-proof",
@@ -46,12 +58,27 @@
       "notes": "Proves the authoring and leak-separation contract without shipping teacher-only prompts."
     },
     {
+      "id": "erc8004-base-staged-identity",
+      "kind": "repo-code-plus-test",
+      "status": "ready_staged_not_minted",
+      "paths": [
+        "docs/erc8004-base-agent0-adapter.md",
+        "specs/013-erc8004-base-agent0-adapter.md",
+        "runner_bridge/product_integrations.py",
+        "app/agent0_base_adapter.mjs",
+        "tests/test_erc8004_base_agent0_adapter.py"
+      ],
+      "visibility": "public",
+      "notes": "Stages ERC-8004 issuance for promoted/public generations on Base without claiming a live mint."
+    },
+    {
       "id": "final-submission-packet",
       "kind": "submission-packet",
       "status": "ready",
       "paths": [
         "submission/README.md",
         "submission/judge-demo-script.md",
+        "submission/judge-qa-note.md",
         "submission/pr-or-submission-summary.md",
         "submission/conversation-log.md",
         "submission/evidence-proof-manifest.json",
@@ -77,6 +104,22 @@
       "entrypoint": "scripts/clawith_ws_roundtrip.js + scripts/clawith_vibe_once.py",
       "visibility": "proof-artifact",
       "notes": "Tracked proof index plus portable export bundle show one external Clawith -> OpenClaw -> Claude/vibecosystem roundtrip path. This is not native parity proof."
+    },
+    {
+      "id": "live-base-mint",
+      "kind": "claim-boundary",
+      "status": "blocked_not_claimed",
+      "path": null,
+      "visibility": "blocked",
+      "notes": "Do not claim a live Base mint without a confirmed wallet-approved onchain receipt."
+    },
+    {
+      "id": "partner-track-completion",
+      "kind": "claim-boundary",
+      "status": "blocked_not_claimed",
+      "path": null,
+      "visibility": "blocked",
+      "notes": "Do not claim partner-track completion from this branch."
     },
     {
       "id": "native-clawith-parity",
