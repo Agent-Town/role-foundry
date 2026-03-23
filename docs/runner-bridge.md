@@ -228,12 +228,18 @@ When `LocalReplayRunner` processes a packet-driven request, `result.json` includ
     ],
     "mutation_enforcement": "not_enforced",
     "path_constraint_enforcement": "not_enforced",
+    "mutation_surface_audit": {
+      "status": "unavailable",
+      "source": { "kind": "unavailable" },
+      "honesty_note": "No diffable git worktree metadata was provided in workspace_snapshot. This run cannot honestly claim mutation-surface compliance."
+    },
+    "mutation_surface_audit_path": "receipts/mutation-surface-audit.json",
     "honesty_note": "LocalReplayRunner is a zero-secret replay backend..."
   }
 }
 ```
 
-This makes it explicit that LocalReplayRunner does not execute task commands, enforce mutation budgets, or enforce path constraints. A live execution backend will replace these with actual results.
+This makes it explicit that LocalReplayRunner does not execute task commands, enforce mutation budgets, or enforce path constraints. When a real worktree diff is available, the bridge can still audit the actual changed-file surface against the packet contract. When no diff exists, the receipt says so plainly instead of implying the surface passed.
 
 ### PacketRunObject contents
 

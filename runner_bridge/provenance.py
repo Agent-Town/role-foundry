@@ -116,6 +116,11 @@ def write_receipt_provenance(
         )
     )
 
+    mutation_surface_audit_path = None
+    mutation_surface_audit_receipt = receipts_dir / "mutation-surface-audit.json"
+    if mutation_surface_audit_receipt.exists():
+        mutation_surface_audit_path = _relative_path(run_dir, mutation_surface_audit_receipt)
+
     manifest_path = receipts_dir / "manifest.json"
     manifest = {
         "version": 1,
@@ -126,6 +131,7 @@ def write_receipt_provenance(
             "episode_receipt_paths": receipt_paths,
             "evidence_index_path": _relative_path(run_dir, evidence_index_path),
             "summary_path": _relative_path(run_dir, summary_path),
+            "mutation_surface_audit_path": mutation_surface_audit_path,
         },
         "artifacts": _build_artifact_inventory(
             run_dir,
@@ -140,6 +146,7 @@ def write_receipt_provenance(
         "receipt_manifest_path": _relative_path(run_dir, manifest_path),
         "evidence_index_path": _relative_path(run_dir, evidence_index_path),
         "summary_path": _relative_path(run_dir, summary_path),
+        "mutation_surface_audit_path": mutation_surface_audit_path,
         "episode_receipt_paths": receipt_paths,
         "evidence_entry_count": len(evidence_entries),
     }
@@ -150,6 +157,7 @@ def write_receipt_provenance(
             "receipt_manifest_path": provenance["receipt_manifest_path"],
             "evidence_index_path": provenance["evidence_index_path"],
             "summary_path": provenance["summary_path"],
+            "mutation_surface_audit_path": provenance["mutation_surface_audit_path"],
         }
     )
     artifact_bundle["receipts"] = artifact_receipts
@@ -259,6 +267,37 @@ def _build_candidate_receipt(
             }
         )
 
+    execution_honesty = result.get("execution_honesty") if isinstance(result.get("execution_honesty"), dict) else {}
+    mutation_surface_audit = execution_honesty.get("mutation_surface_audit")
+    if isinstance(mutation_surface_audit, dict):
+        audit_sources = [
+            _json_source(
+                "result.json",
+                "/execution_honesty/mutation_surface_audit",
+                visibility="public",
+            )
+        ]
+        artifact_receipts = artifact_bundle.get("receipts") if isinstance(artifact_bundle.get("receipts"), dict) else {}
+        mutation_surface_audit_path = artifact_receipts.get("mutation_surface_audit_path")
+        if mutation_surface_audit_path:
+            audit_sources.append(
+                _json_source(
+                    str(mutation_surface_audit_path),
+                    "/",
+                    visibility="public",
+                )
+            )
+        evidence.append(
+            {
+                "evidence_id": "candidate-mutation-surface-audit",
+                "receipt_id": f"candidate:{run_id}",
+                "kind": "mutation_surface_audit",
+                "label": "Mutation-surface audit",
+                "summary": mutation_surface_audit.get("status", "unknown"),
+                "sources": audit_sources,
+            }
+        )
+
     prompt_pack_summary = None
     if student_view:
         prompt_pack_summary = {
@@ -298,6 +337,7 @@ def _build_candidate_receipt(
         "objective": workspace.get("objective"),
         "workspace_snapshot": workspace,
         "student_prompt_pack": prompt_pack_summary,
+        "mutation_surface_audit": mutation_surface_audit,
         "verifier_gate": verifier_gate,
         "evidence_refs": [entry["evidence_id"] for entry in evidence],
     }
@@ -600,6 +640,7 @@ def _build_artifact_inventory(
         [
             (evidence_index_path, "public", "Receipt evidence index", "receipt-provenance"),
             (summary_path, "public", "Human-readable receipt summary", "receipt-provenance"),
+            (run_dir / "receipts" / "mutation-surface-audit.json", "public", "Mutation-surface audit receipt", "receipt-provenance"),
         ]
     )
 
@@ -657,6 +698,21 @@ def _build_summary_markdown(
             "- `result.json` — normalized bridge result",
         ]
     )
+
+    execution_honesty = result.get("execution_honesty") if isinstance(result.get("execution_honesty"), dict) else {}
+    mutation_surface_audit = execution_honesty.get("mutation_surface_audit")
+    if isinstance(mutation_surface_audit, dict):
+        source = mutation_surface_audit.get("source") if isinstance(mutation_surface_audit.get("source"), dict) else {}
+        lines.extend(
+            [
+                "",
+                "## Mutation-surface audit",
+                "- Receipt: `receipts/mutation-surface-audit.json`",
+                f"- Status: `{mutation_surface_audit.get('status', 'unknown')}`",
+                f"- Diff source: `{source.get('kind', 'unknown')}`",
+                f"- Note: {mutation_surface_audit.get('honesty_note', '')}",
+            ]
+        )
 
     teacher_output = artifact_bundle.get("teacher_output") if isinstance(artifact_bundle.get("teacher_output"), dict) else {}
     aggregate = teacher_output.get("aggregate_score") if isinstance(teacher_output.get("aggregate_score"), dict) else None

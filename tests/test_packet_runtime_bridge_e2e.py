@@ -219,6 +219,15 @@ class TestExecutionHonesty(unittest.TestCase):
         self.assertEqual(eh["mutation_enforcement"], "not_enforced")
         self.assertEqual(eh["path_constraint_enforcement"], "not_enforced")
 
+    def test_execution_honesty_reports_unavailable_mutation_audit_when_no_diff_exists(self):
+        result = self._run_and_load_result("A001", "hon-mut-a001")
+        eh = result["execution_honesty"]
+        audit = eh["mutation_surface_audit"]
+        self.assertEqual(audit["status"], "unavailable")
+        self.assertEqual(audit["source"]["kind"], "unavailable")
+        self.assertIn("cannot honestly claim mutation-surface compliance", audit["honesty_note"])
+        self.assertEqual(eh["mutation_surface_audit_path"], "receipts/mutation-surface-audit.json")
+
 
 class TestRequestPrivateJsonCarriesPacketRuntime(unittest.TestCase):
     """request.private.json carries the packet_runtime block when run via --packet."""
@@ -298,6 +307,20 @@ class TestFullArtifactLayout(unittest.TestCase):
         receipts = self.run_dir / "receipts"
         self.assertTrue(receipts.exists())
         self.assertTrue(receipts.is_dir())
+
+    def test_mutation_surface_audit_receipt_exists_and_is_honest(self):
+        receipt_path = self.run_dir / "receipts" / "mutation-surface-audit.json"
+        self.assertTrue(receipt_path.exists())
+        receipt = json.loads(receipt_path.read_text())
+        self.assertEqual(receipt["status"], "unavailable")
+        self.assertEqual(receipt["source"]["kind"], "unavailable")
+
+    def test_candidate_receipt_carries_mutation_surface_audit(self):
+        candidate_path = self.run_dir / "receipts" / "candidate.json"
+        candidate = json.loads(candidate_path.read_text())
+        audit = candidate["mutation_surface_audit"]
+        self.assertEqual(audit["status"], "unavailable")
+        self.assertIn("candidate-mutation-surface-audit", candidate["evidence_refs"])
 
 
 class TestSubprocessCLI(unittest.TestCase):
