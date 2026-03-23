@@ -24,6 +24,7 @@ That makes the core claim legible:
 6. **Failure → curriculum loop** — failed holdout themes become the next public teaching themes without exposing hidden prompt text
 7. **Iteration history** — score deltas over time stay visible in both the UI and stored run data
 8. **Proof bundle** — receipt summary, changed files, policy snapshot, and transcript excerpt
+9. **Trust integrations** — hashed receipt bundle, local guardrail checks, ERC-8004 draft readiness, and constrained MetaMask delegation intent
 
 This is the point of Role Foundry: make capability visible with honest evaluation instead of vibes.
 
@@ -95,6 +96,7 @@ The first honest runner-bridge slice is now in the repo. It is intentionally sma
 - optional `teacher_evaluation` input produces a teacher scorecard, public curriculum themes, and iteration history deltas
 - the bridge stores a redacted `request.json` plus a raw `request.private.json` so sealed holdout prompts stay out of student-facing artifacts
 - the bridge also emits a receipt provenance pack (`receipts/manifest.json`, baseline/candidate/evaluation exports, `receipts/evidence-index.json`, and `receipts/summary.md`) so judges can trace a run back to its source artifacts without changing the scoring semantics
+- each run now also gets a product-integration bundle (`integrations/trust-bundle.json`, ERC-8004 draft/completion template, and MetaMask delegation intent) so the repo can make honest trust/identity claims without faking live wallet or onchain success
 - if you pass `--clawith-url`, the bridge patches run state into a Clawith-compatible control plane
 - if you omit `--clawith-url`, you can still exercise the artifact/transcript contract locally
 
@@ -191,6 +193,7 @@ Using different model families for building and judging reduces correlated self-
 - `docs/clawith-integration.md` — live-mode setup, prerequisites, image contract, and read-only probe lane
 - `docs/clawith-adapter-bringup.md` — seam-to-upstream mapping matrix and adapter-first bring-up prereqs
 - `docs/runner-bridge.md` — bridge path, teacher evaluation contract, comparison receipts, and explicit auth deferral
+- `docs/product-core-integrations.md` — honest readiness states for receipts, Locus, ERC-8004, and MetaMask Delegation
 - `docs/public-benchmark-pack-v1.md` — public-safe benchmark pack scope, blocked families, and local private-holdout path
 - `docs/private-holdout-authoring.md` — local-only teacher workflow for authoring and auditing fresh holdouts
 - `docs/conversation-log.md` — curated build log for the submission
@@ -205,6 +208,7 @@ Using different model families for building and judging reduces correlated self-
 - `specs/010-autoresearch-alpha-public-loop.md` — the first executable public alpha loop with integrity gate
 - `specs/011-live-ui-read-model.md` — read-only browser adapter for configured live/read-model exports
 - `specs/012-private-holdout-pack.md` — local-only private holdout contract without shipping teacher material
+- `specs/013-product-core-integrations.md` — implementation-ready trust integration contract for receipts, guardrails, ERC-8004, and MetaMask Delegation
 
 ## License
 

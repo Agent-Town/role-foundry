@@ -271,6 +271,109 @@
           </div>
         </article>
       </div>
+
+      <section x-show="$store.app.getArtifact(detailRun).integration_bundle">
+        <div class="section-header-row">
+          <div>
+            <h2>Trust Integrations</h2>
+            <p>Real product trust surfaces: hashed receipts, local guardrails, ERC-8004 identity draft, and constrained delegation scope.</p>
+          </div>
+          <span class="badge badge-training">honest readiness</span>
+        </div>
+
+        <div class="grid-2">
+          <article class="card">
+            <div class="card-header-row">
+              <h3>Verifiable Receipts / Scorecards</h3>
+              <span class="badge badge-pass" x-text="$store.app.getArtifact(detailRun).integration_bundle.verifiable_receipts?.status || '—'"></span>
+            </div>
+            <ul class="checklist dense-checklist">
+              <template x-for="check in $store.app.getArtifact(detailRun).integration_bundle.verifiable_receipts?.checks || []" :key="check.id || check.label">
+                <li class="checklist-item">
+                  <span class="checklist-icon criteria" x-text="check.passed ? '✓' : '!' "></span>
+                  <span x-text="check.label"></span>
+                </li>
+              </template>
+            </ul>
+            <p><small x-text="'Public artifact hashes: ' + Object.keys($store.app.getArtifact(detailRun).integration_bundle.verifiable_receipts?.public_artifact_hashes || {}).length"></small></p>
+          </article>
+
+          <article class="card">
+            <div class="card-header-row">
+              <h3>Locus Guardrails</h3>
+              <span class="badge" :class="$store.app.getArtifact(detailRun).integration_bundle.locus_guardrails?.status === 'blocked' ? 'badge-fail' : 'badge-pass'" x-text="$store.app.getArtifact(detailRun).integration_bundle.locus_guardrails?.status || '—'"></span>
+            </div>
+            <p><small x-text="($store.app.getArtifact(detailRun).integration_bundle.locus_guardrails?.provider || 'Locus') + ' · ' + ($store.app.getArtifact(detailRun).integration_bundle.locus_guardrails?.mode || 'local-contract')"></small></p>
+            <ul class="checklist dense-checklist">
+              <template x-for="check in $store.app.getArtifact(detailRun).integration_bundle.locus_guardrails?.checks || []" :key="check.id || check.label">
+                <li class="checklist-item">
+                  <span class="checklist-icon criteria" x-text="check.passed ? '✓' : '!' "></span>
+                  <span x-text="check.label"></span>
+                </li>
+              </template>
+            </ul>
+          </article>
+        </div>
+
+        <div class="grid-2">
+          <article class="card">
+            <div class="card-header-row">
+              <h3>ERC-8004 Identity</h3>
+              <span class="badge badge-training" x-text="$store.app.getArtifact(detailRun).integration_bundle.erc8004_identity?.status || '—'"></span>
+            </div>
+            <p><strong>Recommended path:</strong> <span x-text="$store.app.getArtifact(detailRun).integration_bundle.erc8004_identity?.recommended_path || '—'"></span></p>
+            <p><small x-text="$store.app.getArtifact(detailRun).integration_bundle.erc8004_identity?.agent0_adapter?.registration_strategy || 'Draft first, mint only after wallet confirmation.'"></small></p>
+            <ul>
+              <li><strong>Wallet discovery:</strong> <span x-text="$store.app.getArtifact(detailRun).integration_bundle.erc8004_identity?.agent0_adapter?.wallet_discovery || '—'"></span></li>
+              <li><strong>Wallet connect:</strong> <span x-text="$store.app.getArtifact(detailRun).integration_bundle.erc8004_identity?.agent0_adapter?.wallet_connect || '—'"></span></li>
+              <li><strong>Mint method:</strong> <span x-text="$store.app.getArtifact(detailRun).integration_bundle.erc8004_identity?.agent0_adapter?.mint_method || '—'"></span></li>
+              <li><strong>Draft token URI:</strong> <span x-text="$store.app.getArtifact(detailRun).integration_bundle.erc8004_identity?.draft?.token_uri || $store.app.getArtifact(detailRun).integration_bundle.paths?.registration_draft_path || '—'"></span></li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <div class="card-header-row">
+              <h3>MetaMask Delegation</h3>
+              <span class="badge badge-training" x-text="$store.app.getArtifact(detailRun).integration_bundle.metamask_delegation?.status || '—'"></span>
+            </div>
+            <p x-text="$store.app.getArtifact(detailRun).integration_bundle.metamask_delegation?.scope || 'Delegation scope pending.'"></p>
+            <details>
+              <summary>Blocked actions</summary>
+              <ul>
+                <template x-for="(action, i) in $store.app.getArtifact(detailRun).integration_bundle.metamask_delegation?.blocked_actions || []" :key="i">
+                  <li x-text="action"></li>
+                </template>
+              </ul>
+            </details>
+          </article>
+        </div>
+
+        <div class="grid-2">
+          <article class="card">
+            <h3>Allowed demo claims</h3>
+            <ul class="checklist dense-checklist">
+              <template x-for="(claim, i) in $store.app.getArtifact(detailRun).integration_bundle.demo_claims?.allowed || []" :key="i">
+                <li class="checklist-item">
+                  <span class="checklist-icon criteria">✓</span>
+                  <span x-text="claim"></span>
+                </li>
+              </template>
+            </ul>
+          </article>
+
+          <article class="card">
+            <h3>Blocked demo claims</h3>
+            <ul class="checklist dense-checklist">
+              <template x-for="(claim, i) in $store.app.getArtifact(detailRun).integration_bundle.demo_claims?.blocked || []" :key="i">
+                <li class="checklist-item">
+                  <span class="checklist-icon">✕</span>
+                  <span x-text="claim"></span>
+                </li>
+              </template>
+            </ul>
+          </article>
+        </div>
+      </section>
     </section>
   </template>
 

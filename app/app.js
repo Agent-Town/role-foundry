@@ -219,6 +219,73 @@ function normalizeTranscriptExcerpt(value) {
     .filter(Boolean);
 }
 
+function normalizeIntegrationChecks(value) {
+  return (Array.isArray(value) ? value : [])
+    .map(check => {
+      if (!isPlainObject(check)) {
+        return null;
+      }
+      return {
+        id: typeof check.id === 'string' ? check.id : null,
+        label: typeof check.label === 'string' ? check.label : (typeof check.name === 'string' ? check.name : 'Check'),
+        passed: Boolean(check.passed),
+        detail: typeof check.detail === 'string' ? check.detail : '',
+        evidence: Array.isArray(check.evidence) ? check.evidence : [],
+      };
+    })
+    .filter(Boolean);
+}
+
+function normalizeDemoClaims(value) {
+  const claims = normalizeRecord(value);
+  return {
+    allowed: normalizeStringList(claims.allowed),
+    blocked: normalizeStringList(claims.blocked),
+  };
+}
+
+function normalizeIntegrationBundle(value) {
+  if (!isPlainObject(value)) {
+    return null;
+  }
+
+  const verifiableReceipts = normalizeRecord(value.verifiable_receipts);
+  const locusGuardrails = normalizeRecord(value.locus_guardrails);
+  const erc8004Identity = normalizeRecord(value.erc8004_identity);
+  const metamaskDelegation = normalizeRecord(value.metamask_delegation);
+
+  return {
+    ...value,
+    status_by_integration: normalizeRecord(value.status_by_integration),
+    completion_metrics: normalizeRecord(value.completion_metrics),
+    verifiable_receipts: {
+      ...verifiableReceipts,
+      checks: normalizeIntegrationChecks(verifiableReceipts.checks),
+      public_artifact_hashes: normalizeRecord(verifiableReceipts.public_artifact_hashes),
+      scorecard_hash: normalizeRecord(verifiableReceipts.scorecard_hash),
+    },
+    locus_guardrails: {
+      ...locusGuardrails,
+      checks: normalizeIntegrationChecks(locusGuardrails.checks),
+    },
+    erc8004_identity: {
+      ...erc8004Identity,
+      blocking_requirements: normalizeStringList(erc8004Identity.blocking_requirements),
+      local_precedent: normalizeRecord(erc8004Identity.local_precedent),
+      agent0_adapter: normalizeRecord(erc8004Identity.agent0_adapter),
+      draft: normalizeRecord(erc8004Identity.draft),
+    },
+    metamask_delegation: {
+      ...metamaskDelegation,
+      blocking_requirements: normalizeStringList(metamaskDelegation.blocking_requirements),
+      blocked_actions: normalizeStringList(metamaskDelegation.blocked_actions),
+      activation_requirements: normalizeStringList(metamaskDelegation.activation_requirements),
+    },
+    demo_claims: normalizeDemoClaims(value.demo_claims),
+    paths: normalizeRecord(value.paths),
+  };
+}
+
 function normalizeReplayLines(value) {
   return (Array.isArray(value) ? value : [])
     .map((line, index) => {
@@ -587,13 +654,15 @@ function mapLiveArtifact(runId, entry, result, artifactBundle) {
   const receiptSummary = judgeReceipt.length
     ? judgeReceipt
     : buildRuntimeJudgeReceipt(runId, entry.run || entry, result, artifactBundle);
+  const integrationBundle = normalizeIntegrationBundle(entry.integration_bundle ?? artifactBundle?.integration_bundle);
 
   if (
     !objective &&
     !receiptSummary.length &&
     !changedFiles.length &&
     !policySnapshot.length &&
-    !transcriptExcerpt.length
+    !transcriptExcerpt.length &&
+    !integrationBundle
   ) {
     return null;
   }
@@ -604,6 +673,7 @@ function mapLiveArtifact(runId, entry, result, artifactBundle) {
     policy_snapshot: policySnapshot,
     changed_files: changedFiles,
     transcript_excerpt: transcriptExcerpt,
+    integration_bundle: integrationBundle,
   };
 }
 

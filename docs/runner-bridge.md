@@ -207,6 +207,13 @@ The extra files are:
 - `receipts/evidence-index.json` — evidence map linking receipts back to transcript lines, artifact JSON pointers, and private source records where needed
 - `receipts/summary.md` — human-readable export for quick judge/operator inspection
 
+On top of that, the bridge now writes a separate `integrations/` bundle for product-facing trust surfaces:
+- `integrations/trust-bundle.json` — readiness/status summary for receipts, guardrails, ERC-8004, and delegation
+- `integrations/erc8004-registration-draft.json` — local draft payload for a future wallet mint path
+- `integrations/erc8004-completion-template.json` — the receipt fields required before any onchain claim is allowed
+- `integrations/metamask-delegation-intent.json` — constrained future delegation scope, explicitly non-active until a permission receipt exists
+- `integrations/summary.md` — compact human-readable integration summary
+
 Private source artifacts may still be referenced in the evidence index, but only by path + pointer.
 The public provenance files do not quote sealed holdout prompt text.
 

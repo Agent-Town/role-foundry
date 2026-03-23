@@ -340,6 +340,88 @@ const DEMO_DATA = {
         { speaker: 'Apprentice', text: 'Shipped a proof bundle: changed files, policy snapshot, transcript excerpt, and visible score delta.' },
         { speaker: 'Teacher', text: 'Accepted. Hidden prompts remained sealed; only failure categories became curriculum.' },
       ],
+      integration_bundle: {
+        status_by_integration: {
+          verifiable_receipts: 'demo_usable',
+          locus_guardrails: 'demo_usable',
+          erc8004_identity: 'draft_ready',
+          metamask_delegation: 'contract_ready',
+        },
+        completion_metrics: {
+          integration_count: 4,
+          demo_usable_now: 2,
+          contract_only_now: 2,
+          blocked_now: 0,
+        },
+        verifiable_receipts: {
+          status: 'demo_usable',
+          public_artifact_hashes: {
+            'request.json': { sha256: 'demo-request-hash', bytes: 1312 },
+            'artifact-bundle.json': { sha256: 'demo-artifact-hash', bytes: 2864 },
+            'result.json': { sha256: 'demo-result-hash', bytes: 1640 },
+            'receipts/manifest.json': { sha256: 'demo-manifest-hash', bytes: 2174 },
+          },
+          checks: [
+            { id: 'receipt_manifest_present', label: 'Receipt manifest present', passed: true },
+            { id: 'evidence_index_present', label: 'Evidence index present', passed: true },
+            { id: 'receipt_summary_present', label: 'Human-readable receipt summary present', passed: true },
+            { id: 'scorecard_hashed', label: 'Teacher scorecard hashed', passed: true },
+          ],
+        },
+        locus_guardrails: {
+          status: 'demo_usable',
+          provider: 'Locus',
+          mode: 'local-contract',
+          checks: [
+            { id: 'sealed_holdout_redaction', label: 'Sealed holdout text stays out of public artifacts', passed: true },
+            { id: 'receipt_bundle_complete', label: 'Receipt bundle exists for independent inspection', passed: true },
+            { id: 'scorecard_claim_is_hashed', label: 'Scorecard claim is anchored to a content hash', passed: true },
+            { id: 'erc8004_claim_is_staged', label: 'ERC-8004 claim stays in draft state until a confirmed tx exists', passed: true },
+            { id: 'delegation_claim_is_staged', label: 'MetaMask delegation claim stays non-active until a permission receipt exists', passed: true },
+          ],
+        },
+        erc8004_identity: {
+          status: 'draft_ready',
+          recommended_path: 'agent0-sdk',
+          agent0_adapter: {
+            wallet_discovery: 'discoverEip6963Providers',
+            wallet_connect: 'connectEip1193',
+            mint_method: 'registerHTTP',
+            registration_strategy: 'Write a local registration draft first, then let a human-approved wallet mint with registerHTTP(tokenUri).',
+          },
+          draft: {
+            token_uri: 'integrations/erc8004-registration-draft.json',
+            registrations: [],
+          },
+        },
+        metamask_delegation: {
+          status: 'contract_ready',
+          scope: 'Only allow one approved identity-completion flow for the matching Role Foundry run.',
+          blocked_actions: [
+            'arbitrary_contract_call',
+            'arbitrary_token_transfer',
+            'scorecard_publication_without_receipt_hash',
+          ],
+        },
+        demo_claims: {
+          allowed: [
+            'Role Foundry emits hashed local receipts and a teacher scorecard judges can inspect.',
+            'Role Foundry runs a local Locus-style guardrail contract for redaction, receipt completeness, and staged external claims.',
+            'Role Foundry can draft an ERC-8004 registration and wire minting through a thin internal agent0-sdk adapter.',
+            'Role Foundry defines a constrained MetaMask delegation intent for future identity completion, but it is not active yet.',
+          ],
+          blocked: [
+            'This run already minted an ERC-8004 identity onchain.',
+            'MetaMask delegation is active or exercised on this run.',
+            'Locus hosted enforcement or partner-managed guardrail SaaS is wired in this repo.',
+          ],
+        },
+        paths: {
+          trust_bundle_path: 'integrations/trust-bundle.json',
+          registration_draft_path: 'integrations/erc8004-registration-draft.json',
+          delegation_intent_path: 'integrations/metamask-delegation-intent.json',
+        },
+      },
     },
   },
 
