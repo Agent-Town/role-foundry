@@ -135,12 +135,14 @@ Principle: each milestone must have:
 - `specs/012-private-holdout-pack.md` + `benchmarks/private-holdout-pack-template.json` + `tests/test_private_holdout_separation.py` define the tracked public contract without shipping any real teacher-only content.
 - `scripts/holdout_author.py` + `docs/private-holdout-authoring.md` make that path locally authorable and auditable without changing the public alpha-loop claims.
 - Local-only status now: fresh replacement coverage exists for all three previously blocked teacher-only families (`h1` / `h2` / `h3`), and the latest private alpha rerun loaded **6/6** manifest holdouts with a `better` comparison verdict.
+- On actual local private-holdout runs, the lane can now emit `pre-run-manifest-commitment.json` before stage execution and surface it as `pre_run_manifest_commitment` for local-only operator auditability/correlation.
 
-These slices are real. This branch now has an executable **public alpha loop** plus evidence that the local private-holdout lane can run honestly with full replacement coverage. The claim ceiling still stops at local private-holdout alpha execution; sealed/certified/tamper-proof claims remain blocked.
+These slices are real. This branch now has an executable **public alpha loop** plus evidence that the local private-holdout lane can run honestly with full replacement coverage and a local-only pre-run manifest commitment artifact before stage execution. The claim ceiling still stops at local private-holdout alpha execution; sealed/certified/tamper-proof claims remain blocked.
 
 **Public-safe sealing boundary:**
-- `specs/015-sealed-receipt-surface.md` + `tests/test_sealed_receipt_surface.py` add a top-level `sealing_receipt` block that records the current claim ceiling, blocked stronger claims, and unmet prerequisites without leaking teacher-only content.
+- `specs/015-sealed-receipt-surface.md` + `tests/test_sealed_receipt_surface.py` add a top-level `sealing_receipt` block that records the current claim ceiling, blocked stronger claims, unmet prerequisites, and (when the local manifest lane is used) a local-only `pre_run_manifest_commitment` recorded before stage execution.
 - `specs/011-live-ui-read-model.md` + `app/live-read-model.alpha-loop.sample.json` + `tests/test_live_ui_read_model.py` now let the read-only live shell render that same boundary record verbatim when it is exported, without relabeling it as a seal, certification, or tamper-proof proof.
+- The pre-run manifest commitment improves local auditability/operator correlation only. It does **not** create publication, witnessing, signing, tamper-proofing, certification, or independent audit.
 - This keeps the branch honest: local private-holdout alpha execution is real, the committed browser sample remains a public-regression fixture, and stronger sealing / certification / tamper-proof / audited language remains blocked until new controls actually land.
 
 **Phase F adapter-readiness hardening (F001-F004):**
