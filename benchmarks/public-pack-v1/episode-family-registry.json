@@ -327,6 +327,51 @@
       "notes": "Source-backed by Google Engineering Practices code review guides (CC BY 3.0). Episodes are RF-authored, not copied from Google docs."
     },
     {
+      "id": "rf.frontend-apprentice.public.alpine-state-patterns",
+      "status": "benchmark_ready",
+      "visibility": "student_visible",
+      "role": "Frontend Apprentice",
+      "role_scope": "frontend-apprentice",
+      "promotion_criteria": {
+        "source_is_public_curriculum": true,
+        "no_teacher_only_inputs": true,
+        "rubric_template_exists": true,
+        "not_repo_visible_holdout": true
+      },
+      "source_seed_scenarios": [
+        "t9"
+      ],
+      "title": "Alpine-informed UI state patterns",
+      "benchmark_goal": "Apply Alpine.js docs patterns to existing Role Foundry screens so disclosures, toggles, and active states stay flicker-free, state-driven, and judge-legible without inventing new backend scope.",
+      "loop_stage": "public_curriculum",
+      "source_backed_by": {
+        "source_id": "alpinejs-curation-lane",
+        "source_url": "https://alpinejs.dev",
+        "source_license": "MIT",
+        "intake_record": "data/source-research/software-engineer-source-intake.v1.json#intake-alpinejs-curation",
+        "rf_authored": true,
+        "notes": "Episodes are original RF-authored work grounded in Alpine.js docs/examples only. No GitHub issue/PR/review text is copied or used."
+      },
+      "allowed_mutation_surfaces": [
+        "app/scenarios.html",
+        "app/run.html",
+        "app/app.js",
+        "app/data.js"
+      ],
+      "required_artifacts": [
+        "changed-files summary",
+        "UI state receipt",
+        "policy snapshot"
+      ],
+      "public_checks": [
+        "Uses Alpine state/directives to drive visibility or active-state behavior on an existing RF screen",
+        "Hidden-by-default UI avoids pre-init blips when appropriate (for example via x-cloak or template-based rendering)",
+        "Interactive state stays legible to judges through clear labels, transitions, or active-state styling",
+        "No claim that Alpine fixes unwired runtime/data backends or other nonexistent infrastructure"
+      ],
+      "notes": "Source-backed by Alpine.js public documentation/examples (MIT). Episodes are RF-authored, not copied from Alpine docs or GitHub threads."
+    },
+    {
       "id": "rf.frontend-apprentice.blocked.teacher-only-h1",
       "status": "blocked_pending_rewrite",
       "visibility": "teacher_only",

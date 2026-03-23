@@ -21,7 +21,10 @@
       "Judges can see score improvement between runs, especially on holdouts",
       "Every strong run emits a proof bundle that makes the work auditable"
     ],
-    "teachers": ["Robin", "Neo"],
+    "teachers": [
+      "Robin",
+      "Neo"
+    ],
     "domain": "product-development"
   },
   "scenarios": [
@@ -78,6 +81,13 @@
       "id": "t8",
       "title": "Apply code-review discipline to an RF diff",
       "description": "Write structured, actionable review comments on a narrow Role Foundry change, separating blocking concerns from nits and keeping feedback proportionate to risk. Source-backed by Google Engineering Practices code review guides (CC BY 3.0).",
+      "type": "training",
+      "difficulty": "medium"
+    },
+    {
+      "id": "t9",
+      "title": "Apply Alpine.js state patterns to an RF screen",
+      "description": "Use Alpine.js public directives (x-show, x-cloak, x-transition, x-bind) to keep an existing Role Foundry screen flicker-free, state-driven, and legible. Source-backed by Alpine.js public docs/examples (MIT).",
       "type": "training",
       "difficulty": "medium"
     },

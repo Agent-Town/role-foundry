@@ -12,8 +12,8 @@
       "benchmarks/public-pack-v1/episode-family-registry.json"
     ],
     "episode_registry": "data/episode-registry/public-benchmark-pack-v1.json",
-    "public_episode_count": 16,
-    "public_family_count": 8,
+    "public_episode_count": 18,
+    "public_family_count": 9,
     "source_bucket_registry": "data/episode-registry/source-buckets.json",
     "promotion_policy_path": "data/episode-registry/promotion-policy.json"
   },
@@ -51,7 +51,8 @@
     "rf.frontend-apprentice.public.demo-honesty",
     "rf.frontend-apprentice.public.failure-to-curriculum",
     "rf.frontend-apprentice.public.playwright-regression",
-    "rf.frontend-apprentice.public.code-review-discipline"
+    "rf.frontend-apprentice.public.code-review-discipline",
+    "rf.frontend-apprentice.public.alpine-state-patterns"
   ],
   "blocked_family_ids": [
     "rf.frontend-apprentice.blocked.teacher-only-h1",
@@ -98,7 +99,7 @@
       "title": "Tighten the README intro around the dogfood loop",
       "difficulty": "medium",
       "mutation_budget": "narrow",
-      "student_prompt": "Refactor the README intro so it frames the repo as a teacher → student → evaluation loop, not a generic agent platform.",
+      "student_prompt": "Refactor the README intro so it frames the repo as a teacher \u2192 student \u2192 evaluation loop, not a generic agent platform.",
       "constraints": [
         "Keep the repo description concrete and judge-facing",
         "Avoid fake future-looking claims",
@@ -450,7 +451,7 @@
       "student_prompt": "Write or improve a regression check for the scenarios/curriculum page using Playwright best-practice locator strategies: getByRole, getByText, or getByLabel instead of brittle CSS selectors. The check should verify that public curriculum cards render and holdout cards are visually distinct.",
       "constraints": [
         "Target an existing Role Foundry screen (app/scenarios.html)",
-        "Use user-visible locators only — no data-testid or CSS-path selectors",
+        "Use user-visible locators only \u2014 no data-testid or CSS-path selectors",
         "Do not claim a full Playwright CI harness ships if it does not",
         "Leave a regression-check receipt"
       ],
@@ -465,7 +466,7 @@
         "locator strategy notes"
       ],
       "public_checks": [
-        "Locators use role, text, or label — not CSS selectors or test IDs",
+        "Locators use role, text, or label \u2014 not CSS selectors or test IDs",
         "Check targets the real curriculum page, not a hypothetical surface",
         "Check distinguishes public curriculum cards from holdout cards",
         "No overclaim about Playwright CI pipeline if one does not exist"
@@ -491,7 +492,7 @@
       "student_prompt": "Write or improve a regression check for the run detail page that follows Playwright test-isolation best practices: the check should not depend on state left by other checks, should set up its own data context, and should verify proof-bundle rendering independently.",
       "constraints": [
         "Target an existing Role Foundry screen (app/run.html)",
-        "Each check must be independent — no shared mutable state between checks",
+        "Each check must be independent \u2014 no shared mutable state between checks",
         "Keep the scope to one check or one small check file",
         "Do not invent runtime artifact backends that do not exist"
       ],
@@ -534,7 +535,7 @@
         "Target an existing Role Foundry surface (app/scenarios.html)",
         "Review comments must reference specific lines or hunks, not the file in general",
         "Do not leak teacher-only prompt text or rubric content in the review",
-        "Keep feedback proportionate — a one-line copy fix does not need an architecture lecture"
+        "Keep feedback proportionate \u2014 a one-line copy fix does not need an architecture lecture"
       ],
       "suggested_files": [
         "app/scenarios.html",
@@ -549,7 +550,7 @@
       "public_checks": [
         "Review comment references specific lines changed, not the whole file",
         "Comment distinguishes must-fix from nice-to-have",
-        "Comment is actionable — says what to change, not just what is wrong",
+        "Comment is actionable \u2014 says what to change, not just what is wrong",
         "No teacher-only content leaks into the review"
       ],
       "tags": [
@@ -591,7 +592,7 @@
         "Blocking issues and nits are clearly separated",
         "Blocking issues cite specific hunks and explain risk",
         "Nits are grouped rather than scattered",
-        "Review is proportionate — no inflation of minor issues"
+        "Review is proportionate \u2014 no inflation of minor issues"
       ],
       "tags": [
         "code-review",
@@ -603,6 +604,88 @@
         "source_id": "google-eng-practices-review",
         "source_url": "https://google.github.io/eng-practices/review/",
         "source_license": "CC BY 3.0"
+      }
+    },
+    {
+      "id": "pbpv1-e17",
+      "family_id": "rf.frontend-apprentice.public.alpine-state-patterns",
+      "title": "Prevent disclosure-panel blips with Alpine show/cloak patterns",
+      "difficulty": "medium",
+      "mutation_budget": "narrow",
+      "student_prompt": "Improve one disclosure-heavy Role Foundry slice using Alpine.js show/cloak patterns so hidden-by-default content does not flash before Alpine initializes and reveal/hide behavior stays tied to explicit Alpine state instead of ad-hoc DOM toggles.",
+      "constraints": [
+        "Target an existing Role Foundry screen (app/scenarios.html or another real RF surface)",
+        "Use Alpine-visible state + directives only \u2014 no imperative DOM query-selector choreography",
+        "If content starts hidden, prevent pre-init blips with x-cloak or template-based rendering",
+        "Leave a UI-state receipt"
+      ],
+      "suggested_files": [
+        "app/scenarios.html",
+        "app/app.js",
+        "app/data.js"
+      ],
+      "artifacts_required": [
+        "changed-files summary",
+        "UI state receipt",
+        "visibility strategy notes"
+      ],
+      "public_checks": [
+        "Disclosure behavior is driven by Alpine state, not manual DOM mutation",
+        "Hidden-by-default content does not blip onto the screen before Alpine initializes",
+        "Change stays scoped to a real teacher-source or curriculum UI surface",
+        "No copied Alpine doc prose or GitHub thread text appears"
+      ],
+      "tags": [
+        "alpine",
+        "ui-state",
+        "disclosure",
+        "source-backed"
+      ],
+      "source_backed_by": {
+        "source_id": "alpinejs-curation-lane",
+        "source_url": "https://alpinejs.dev/directives/show",
+        "source_license": "MIT"
+      }
+    },
+    {
+      "id": "pbpv1-e18",
+      "family_id": "rf.frontend-apprentice.public.alpine-state-patterns",
+      "title": "Use Alpine bindings to keep active evidence state legible",
+      "difficulty": "medium",
+      "mutation_budget": "narrow",
+      "student_prompt": "Improve one existing run-detail or score surface so the active filter, evidence tab, or disclosure state is driven by Alpine class/attribute binding instead of styling drift. The selected state should be obvious to judges and stay in sync with the underlying Alpine state.",
+      "constraints": [
+        "Target an existing Role Foundry screen (app/run.html, app/scorecard.html, or another real RF view)",
+        "Use Alpine x-bind / :class / :aria-* style binding rather than manual class toggles",
+        "Keep the slice narrow and judge-facing",
+        "Do not invent live backends or broaden product scope"
+      ],
+      "suggested_files": [
+        "app/run.html",
+        "app/app.js",
+        "app/data.js"
+      ],
+      "artifacts_required": [
+        "changed-files summary",
+        "UI state receipt",
+        "binding strategy notes"
+      ],
+      "public_checks": [
+        "Active or selected state is visibly driven by Alpine bindings",
+        "UI semantics or classes stay in sync with the underlying state",
+        "Change targets a real RF evidence or score surface",
+        "No overclaim about live runtime or artifact plumbing is introduced"
+      ],
+      "tags": [
+        "alpine",
+        "ui-state",
+        "bindings",
+        "source-backed"
+      ],
+      "source_backed_by": {
+        "source_id": "alpinejs-curation-lane",
+        "source_url": "https://alpinejs.dev/directives/bind",
+        "source_license": "MIT"
       }
     }
   ],
@@ -625,31 +708,31 @@
         "label": "Public episode count",
         "status": "pass",
         "minimum_episode_count": 10,
-        "actual_episode_count": 16
+        "actual_episode_count": 18
       },
       "B002": {
         "label": "Rubric completeness",
         "status": "pass",
-        "rubric_template_count": 8,
-        "rubric_mapped_episode_count": 16,
+        "rubric_template_count": 9,
+        "rubric_mapped_episode_count": 18,
         "expectation": "Every public episode maps to a complete public rubric template."
       },
       "B003": {
         "label": "Weight normalization",
         "status": "pass",
-        "normalized_template_count": 8,
+        "normalized_template_count": 9,
         "expectation": "Each public rubric template sums to 1.0."
       },
       "B004": {
         "label": "Public/teacher split integrity",
         "status": "pass",
-        "included_student_visible_family_count": 8,
+        "included_student_visible_family_count": 9,
         "blocked_teacher_only_family_count": 3
       },
       "B005": {
         "label": "Provenance coverage",
         "status": "pass",
-        "provenance_mapped_episode_count": 16,
+        "provenance_mapped_episode_count": 18,
         "expectation": "Every public episode cites its public source scenario and contract docs/specs."
       },
       "B006": {

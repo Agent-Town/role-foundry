@@ -11,7 +11,7 @@ The important honesty line:
 
 ## What is benchmark-ready now
 
-`benchmarks/public-pack-v1/benchmark-pack.json` contains **12 concrete student-visible episodes** across **6 public-ready families**:
+`benchmarks/public-pack-v1/benchmark-pack.json` contains **18 concrete student-visible episodes** across **9 public-ready families**:
 
 - `rf.frontend-apprentice.public.landing-story`
   - make the dogfood apprentice loop obvious
@@ -25,6 +25,12 @@ The important honesty line:
   - refuse fake live claims and keep slices narrow
 - `rf.frontend-apprentice.public.failure-to-curriculum`
   - promote sanitized lessons into public curriculum
+- `rf.frontend-apprentice.public.playwright-regression`
+  - apply Playwright best practices to RF regression checks
+- `rf.frontend-apprentice.public.code-review-discipline`
+  - write proportionate, actionable review comments on RF diffs
+- `rf.frontend-apprentice.public.alpine-state-patterns`
+  - apply Alpine docs patterns to RF disclosures, visibility hygiene, and active-state legibility
 
 These are appropriate for:
 
@@ -39,10 +45,10 @@ These are appropriate for:
 
 It adds the missing audit surface that the original manifest only implied:
 
-- **6 public rubric templates** — one per public family
+- **9 public rubric templates** — one per public family
 - **normalized weights** — every template sums to `1.0`
-- **12/12 rubric mappings** — every shipped public episode points at a complete public rubric
-- **12/12 provenance mappings** — every shipped public episode cites its public training seed scenario plus public spec/doc references
+- **18/18 rubric mappings** — every shipped public episode points at a complete public rubric
+- **18/18 provenance mappings** — every shipped public episode cites its public training seed scenario plus public spec/doc references
 - **no teacher-only fields** — the registry stays public-safe and never includes hidden prompt text or teacher-side scoring rubrics
 
 For the registry contract itself, see `docs/dataset-episode-registry.md`.
@@ -52,17 +58,17 @@ For the registry contract itself, see `docs/dataset-episode-registry.md`.
 The clean public-pack lane now carries explicit **B001–B006** status instead of leaving them implicit:
 
 - **B001 — Public episode count:** pass
-  - 12 public episodes shipped
+  - 18 public episodes shipped
   - current floor remains 10
 - **B002 — Rubric completeness:** pass
-  - 6 public rubric templates cover all 12 public episodes
+  - 9 public rubric templates cover all 18 public episodes
 - **B003 — Weight normalization:** pass
   - every public rubric template sums to `1.0`
 - **B004 — Public/teacher split integrity:** pass
-  - 6 `student_visible` families included
+  - 9 `student_visible` families included
   - 3 `teacher_only` families remain `blocked_pending_rewrite` and excluded
 - **B005 — Provenance coverage:** pass
-  - 12/12 public episodes cite training-seed + public spec/doc provenance
+  - 18/18 public episodes cite training-seed + public spec/doc provenance
 - **B006 — Promotion readiness clarity:** pass, with named limits
   - ready to promote as the repo's **public-safe benchmark pack** for public regression/training use
   - still blocked from sealed certification or fresh hidden-eval integrity claims

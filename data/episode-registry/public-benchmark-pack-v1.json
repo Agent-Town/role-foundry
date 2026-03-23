@@ -17,11 +17,11 @@
     "promotion_policy_path": "data/episode-registry/promotion-policy.json"
   },
   "coverage": {
-    "public_episode_count": 16,
-    "benchmark_ready_family_count": 8,
-    "rubric_template_count": 8,
-    "rubric_mapped_episode_count": 16,
-    "provenance_mapped_episode_count": 16
+    "public_episode_count": 18,
+    "benchmark_ready_family_count": 9,
+    "rubric_template_count": 9,
+    "rubric_mapped_episode_count": 18,
+    "provenance_mapped_episode_count": 18
   },
   "rubric_templates": [
     {
@@ -333,6 +333,51 @@
           "description": "The volume and intensity of review feedback is proportionate to the risk and scope of the change.",
           "pass_signal": "A small safe change gets a brief review; a risky change gets deeper scrutiny.",
           "fail_signal": "A trivial change receives an architecture lecture, or a risky change is rubber-stamped."
+        }
+      ]
+    },
+    {
+      "id": "pbpv1-rubric-alpine-state-patterns-v1",
+      "family_id": "rf.frontend-apprentice.public.alpine-state-patterns",
+      "version": "1.0.0",
+      "title": "Alpine state-pattern rubric",
+      "description": "Scores whether the slice applies Alpine.js docs patterns to a real Role Foundry surface so UI state stays explicit, flicker-free, and honest about scope.",
+      "score_scale": {
+        "min": 0.0,
+        "max": 1.0
+      },
+      "dimensions": [
+        {
+          "id": "state_driven_behavior",
+          "label": "State-driven behavior",
+          "weight": 0.35,
+          "description": "Visibility, selection, or disclosure behavior is driven by Alpine state rather than imperative DOM drift.",
+          "pass_signal": "The slice has one clear state source-of-truth expressed through Alpine directives or bindings.",
+          "fail_signal": "Behavior depends on manual DOM mutation, duplicated state, or styling drift that can fall out of sync."
+        },
+        {
+          "id": "visibility_hygiene",
+          "label": "Visibility hygiene",
+          "weight": 0.25,
+          "description": "Hidden-by-default or delayed-rendered UI avoids pre-init blips and keeps reveal/hide behavior legible.",
+          "pass_signal": "Hidden content stays hidden until Alpine is ready and transitions or reveal rules are easy to follow.",
+          "fail_signal": "The slice flashes uninitialized content, confuses hidden vs shown state, or relies on brittle visibility hacks."
+        },
+        {
+          "id": "judge_legibility",
+          "label": "Judge-facing legibility",
+          "weight": 0.2,
+          "description": "The active state is obvious to a judge through labels, selected styling, or clear disclosure affordances.",
+          "pass_signal": "A judge can tell what is open, selected, or active without reading code.",
+          "fail_signal": "State changes exist but remain visually ambiguous or hard to inspect."
+        },
+        {
+          "id": "honest_scope",
+          "label": "Honest scope control",
+          "weight": 0.2,
+          "description": "The slice stays on a real existing RF screen and does not imply Alpine or new UI state fixes unwired backend/runtime systems.",
+          "pass_signal": "The change is narrow, real, and honest about what is and is not implemented.",
+          "fail_signal": "The slice sprawls, invents new product scope, or overclaims runtime/back-end behavior."
         }
       ]
     }
@@ -780,6 +825,72 @@
           "intake_record": "data/source-research/software-engineer-source-intake.v1.json#intake-google-eng-practices"
         },
         "notes": "Source-backed by Google Engineering Practices code review guides (CC BY 3.0). Episode is original RF-authored work informed by Google's public guidelines; no Google prose is copied verbatim."
+      }
+    },
+    {
+      "id": "pbpv1-e17",
+      "family_id": "rf.frontend-apprentice.public.alpine-state-patterns",
+      "title": "Prevent disclosure-panel blips with Alpine show/cloak patterns",
+      "rubric_template_id": "pbpv1-rubric-alpine-state-patterns-v1",
+      "provenance": {
+        "source_seed_scenarios": [
+          "t9"
+        ],
+        "source_seed_titles": [
+          "Apply Alpine.js state patterns to an RF screen"
+        ],
+        "source_seed_types": [
+          "training"
+        ],
+        "public_spec_refs": [
+          "specs/008-public-benchmark-pack-v1.md"
+        ],
+        "public_doc_refs": [
+          "docs/public-benchmark-pack-v1.md",
+          "docs/dataset-episode-registry.md",
+          "docs/teacher-source-curriculum-workflow.md"
+        ],
+        "teacher_only_inputs_used": false,
+        "source_backed_by": {
+          "source_id": "alpinejs-curation-lane",
+          "source_url": "https://alpinejs.dev/directives/show",
+          "source_license": "MIT",
+          "intake_record": "data/source-research/software-engineer-source-intake.v1.json#intake-alpinejs-curation"
+        },
+        "notes": "Source-backed by Alpine.js public documentation/examples (MIT). Episode is original RF-authored work grounded in Alpine docs on x-show, x-cloak, x-transition, and x-bind; no Alpine GitHub issue/PR/review text is used or copied."
+      }
+    },
+    {
+      "id": "pbpv1-e18",
+      "family_id": "rf.frontend-apprentice.public.alpine-state-patterns",
+      "title": "Use Alpine bindings to keep active evidence state legible",
+      "rubric_template_id": "pbpv1-rubric-alpine-state-patterns-v1",
+      "provenance": {
+        "source_seed_scenarios": [
+          "t9"
+        ],
+        "source_seed_titles": [
+          "Apply Alpine.js state patterns to an RF screen"
+        ],
+        "source_seed_types": [
+          "training"
+        ],
+        "public_spec_refs": [
+          "specs/008-public-benchmark-pack-v1.md"
+        ],
+        "public_doc_refs": [
+          "docs/public-benchmark-pack-v1.md",
+          "docs/dataset-episode-registry.md",
+          "docs/teacher-source-curriculum-workflow.md"
+        ],
+        "teacher_only_inputs_used": false,
+        "source_backed_by": {
+          "source_id": "alpinejs-curation-lane",
+          "source_url": "https://alpinejs.dev/directives/bind",
+          "source_license": "MIT",
+          "intake_record": "data/source-research/software-engineer-source-intake.v1.json#intake-alpinejs-curation"
+        },
+        "notes": "Source-backed by Alpine.js public documentation/examples (MIT). Episode is original RF-authored work grounded in Alpine docs on x-show, x-cloak, x-transition, and x-bind; no Alpine GitHub issue/PR/review text is used or copied."
       }
     }
   ]

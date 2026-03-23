@@ -43,7 +43,7 @@ discover → curate → promote
 | Episode family registry | `benchmarks/public-pack-v1/episode-family-registry.json` | Defines families, promotion criteria, and blocked status |
 | Benchmark pack | `benchmarks/public-pack-v1/benchmark-pack.json` | The public-safe episode pack used in autoresearch loops |
 | Episode registry | `data/episode-registry/public-benchmark-pack-v1.json` | Rubric templates, provenance, and episode-to-rubric mappings |
-| Seed | `seed/role-foundry-apprentice.json` | Canonical scenario definitions (t1–t7, h1–h3) |
+| Seed | `seed/role-foundry-apprentice.json` | Canonical scenario definitions (t1–t9, h1–h3) |
 | Curriculum sources doc | `docs/software-engineer-curriculum-sources.md` | Ranked candidate analysis and ingestion guidance |
 | Task lifecycle contract | `data/curriculum/frontend-product-engineer-teacher-task-lifecycle.v1.json` | Formal workflow states and transition rules for task authoring |
 | Refresh receipt schema | `data/curriculum/frontend-product-engineer-private-holdout-refresh-receipt.schema.v1.json` | Machine-readable shape for weekly holdout refresh receipts |
@@ -140,5 +140,5 @@ The intake log, episode registry, and benchmark pack are the shared coordination
 |--------|--------|--------|
 | Playwright docs (Apache-2.0) | **Promoted** | `rf.frontend-apprentice.public.playwright-regression` (2 episodes) |
 | Google Eng Practices (CC BY 3.0) | **Promoted** | `rf.frontend-apprentice.public.code-review-discipline` (2 episodes) |
-| Alpine.js repo (MIT code) | Discovered | — (manual curation only) |
+| Alpine.js docs/examples (MIT) | **Promoted** | `rf.frontend-apprentice.public.alpine-state-patterns` (2 episodes; manual rewrite from docs/examples only) |
 | SWE-bench (MIT harness) | Blocked — teacher-only holdout direction | — (no episodes authored; seam documented) |
