@@ -356,6 +356,8 @@ class TestAuthoringDocExists(unittest.TestCase):
     def test_doc_mentions_blockers(self):
         text = AUTHORING_DOC.read_text().lower()
         self.assertIn("blockers for true sealed evaluation", text)
+        self.assertIn("allowed now", text)
+        self.assertIn("still blocked", text)
 
 
 class TestSpecHonestyStatements(unittest.TestCase):

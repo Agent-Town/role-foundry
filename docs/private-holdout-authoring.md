@@ -89,13 +89,13 @@ Then run:
 
 ```bash
 python3 -m runner_bridge.autoresearch_alpha \
-  --request benchmarks/private-holdout-pack/local-sealed-alpha-loop.request.json \
+  --request benchmarks/private-holdout-pack/local-private-holdout-alpha-loop.request.json \
   --artifacts-root runtime/autoresearch-alpha/local-private-holdout
 ```
 
 Honest claim boundary:
-- this proves a **local private-holdout** execution path
-- it does **not** prove sealed certification or tamper-proof evaluation
+- **allowed now:** fresh hidden holdouts in a gitignored local manifest, a real local private-holdout rerun, and receipts that keep teacher-only content out of tracked and student-visible artifacts
+- **still blocked:** sealed-eval claims, sealed certification, tamper-proof evaluation, and any claim that a third party independently sealed the holdouts
 
 ## What makes a good holdout episode
 
