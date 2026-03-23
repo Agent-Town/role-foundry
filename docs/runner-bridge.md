@@ -124,6 +124,19 @@ The candidate receipt at `receipts/candidate.json` also surfaces the `repo_task_
 
 **What is still not real:** this is still local replay / public-regression alpha. The `repo_task_meta` fields come from the public benchmark pack, not from a live task assignment system. The repo-task shape makes the prompt pack inspectable and less canned, but does not change the evaluation contract.
 
+### Verifier contract (Step C eval-contract)
+
+Every stage receipt now includes a `verifier_contract` block and the top-level alpha receipt includes a `verifier_gate` summary. These make the eval contract state-machine-readable:
+
+- **`verifier_contract.required_commands`** — the verifier commands the benchmark pack specifies.
+- **`verifier_contract.command_results`** — per-command execution status and exit code.
+- **`verifier_contract.gate_status`** — one of `pass`, `fail`, `not_executed`, `no_commands`, or `incomplete`.
+- **`verifier_gate.aggregate_status`** — rolled up across all stages.
+
+In the local-replay alpha path, `gate_status` is always `not_executed` and every command result has `execution_status: "not_executed"` with `exit_code: null`. This is honest: the local-replay runner does not execute verifier commands. The gate becomes meaningful when a live-execution backend (e.g. a real `CodexRunner` or `ClaudeVibeRunner`) is wired.
+
+The candidate receipt at `receipts/candidate.json` also includes a `verifier_gate` block with the same honesty contract.
+
 ## Current bridge shape
 
 ```text
