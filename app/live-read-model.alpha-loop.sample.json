@@ -135,6 +135,101 @@
         "fresh hidden holdout integrity claims"
       ]
     },
+    "sealing_receipt": {
+      "spec": "015-sealed-receipt-surface",
+      "claim_ceiling": "public-regression alpha execution with public-safe receipts",
+      "status": "public_regression_alpha",
+      "integrity_gate_mode": "public_regression",
+      "operator_checklist": {
+        "public_benchmark_pack_loaded": {
+          "present": true,
+          "reason": "Public benchmark episodes were loaded for the candidate lifecycle."
+        },
+        "integrity_gate_passed": {
+          "present": true,
+          "reason": "Integrity gate passed for a public-regression alpha loop; sealed-eval claims remain blocked pending teacher-only family rewrite."
+        },
+        "private_holdout_manifest_loaded": {
+          "present": false,
+          "reason": "No private holdout manifest was configured for this run."
+        },
+        "independent_executor_sandbox": {
+          "present": false,
+          "reason": "No independent executor sandbox isolates the student from holdout content at runtime."
+        },
+        "third_party_holdout_auditor": {
+          "present": false,
+          "reason": "No third-party auditor has reviewed or signed the holdout separation."
+        },
+        "hardware_attestation_or_enclave": {
+          "present": false,
+          "reason": "The operator controls the local machine; no hardware attestation or remote enclave is used."
+        },
+        "external_audit": {
+          "present": false,
+          "reason": "No external party has inspected the holdout manifest, run artifacts, or scoring pipeline."
+        },
+        "pre_run_manifest_commitment": {
+          "present": false,
+          "reason": "No cryptographic commitment to holdout manifest hash was published before the run."
+        }
+      },
+      "blocked_claims": [
+        {
+          "claim": "sealed evaluation",
+          "reason": "No independent executor sandbox isolates the student from holdout content at runtime.",
+          "prerequisite": "Independent executor sandbox where the student cannot read holdout files at runtime."
+        },
+        {
+          "claim": "sealed certification",
+          "reason": "No third-party auditor has reviewed or signed the holdout separation.",
+          "prerequisite": "Third-party holdout auditor signs the manifest before the run."
+        },
+        {
+          "claim": "tamper-proof execution",
+          "reason": "The operator controls the local machine; no hardware attestation or remote enclave is used.",
+          "prerequisite": "Hardware attestation or remote enclave execution with verifiable logs."
+        },
+        {
+          "claim": "independently audited",
+          "reason": "No external party has inspected the holdout manifest, run artifacts, or scoring pipeline.",
+          "prerequisite": "External audit of the scoring pipeline, holdout manifest, and run artifacts."
+        }
+      ],
+      "stronger_claim_prerequisites": [
+        {
+          "prerequisite": "Independent executor sandbox where the student cannot read holdout files at runtime",
+          "enables": "sealed evaluation",
+          "met": false
+        },
+        {
+          "prerequisite": "Third-party holdout auditor signs the manifest before the run",
+          "enables": "sealed certification",
+          "met": false
+        },
+        {
+          "prerequisite": "Hardware attestation or remote enclave execution with verifiable logs",
+          "enables": "tamper-proof execution",
+          "met": false
+        },
+        {
+          "prerequisite": "External audit of the scoring pipeline, holdout manifest, and run artifacts",
+          "enables": "independently audited",
+          "met": false
+        },
+        {
+          "prerequisite": "Cryptographic commitment to holdout manifest hash published before the run",
+          "enables": "stronger tamper-evidence claims beyond local correlation",
+          "met": false
+        }
+      ],
+      "private_manifest_fingerprint": null,
+      "linked_receipt_paths": {
+        "alpha_receipt": "autoresearch-alpha.json",
+        "alpha_request_copy": "autoresearch-alpha.request.json"
+      },
+      "honesty_note": "This is a public-safe boundary record, not a seal. It records what the run can honestly claim and what controls are missing before stronger language becomes honest."
+    },
     "stages": {
       "baseline-eval": {
         "run_id": "run-eval-001",

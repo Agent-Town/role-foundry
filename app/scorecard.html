@@ -139,6 +139,84 @@
         <p>That is valid for baseline-only or student-only exports. The shell stays live and leaves the comparison panel empty instead of inventing a verdict.</p>
       </article>
 
+      <template x-if="$store.app.sourceMode === 'live' && $store.app.alphaLoopSealingReceipt()">
+        <section>
+          <h3>Sealing receipt boundary</h3>
+          <div class="grid-2">
+            <article class="card">
+              <div class="card-header-row">
+                <h4>Claim ceiling</h4>
+                <span class="badge badge-training" x-text="$store.app.formatIdentifierLabel($store.app.alphaLoopSealingReceipt()?.status)"></span>
+              </div>
+              <p><strong x-text="$store.app.alphaLoopSealingReceipt()?.claim_ceiling || 'pending'"></strong></p>
+              <p><small x-text="$store.app.alphaLoopSealingReceipt()?.honesty_note || 'This boundary record is not a seal.'"></small></p>
+              <template x-if="$store.app.alphaLoopSealingFingerprint()">
+                <div style="margin-top: 0.85rem;">
+                  <strong>Manifest correlation only</strong>
+                  <ul>
+                    <li><strong>Scope:</strong> <code x-text="$store.app.alphaLoopSealingFingerprint()?.scope || '—'"></code></li>
+                    <li><strong>Algorithm:</strong> <code x-text="$store.app.alphaLoopSealingFingerprint()?.algorithm || '—'"></code></li>
+                    <li><strong>Digest:</strong> <code x-text="$store.app.alphaLoopSealingFingerprint()?.hex_digest || '—'"></code></li>
+                  </ul>
+                  <p><small x-text="$store.app.alphaLoopSealingFingerprint()?.honesty_note || 'Local operator correlation only.'"></small></p>
+                </div>
+              </template>
+            </article>
+            <article class="card">
+              <h4>Blocked stronger claims</h4>
+              <template x-if="$store.app.alphaLoopBlockedClaims().length > 0">
+                <ul class="checklist dense-checklist">
+                  <template x-for="claim in $store.app.alphaLoopBlockedClaims()" :key="claim.claim">
+                    <li class="checklist-item">
+                      <span class="checklist-icon">◉</span>
+                      <span>
+                        <strong x-text="claim.claim"></strong><br>
+                        <small x-text="claim.reason"></small><br>
+                        <small x-text="'Needed: ' + claim.prerequisite"></small>
+                      </span>
+                    </li>
+                  </template>
+                </ul>
+              </template>
+              <p x-show="$store.app.alphaLoopBlockedClaims().length === 0"><small>No blocked stronger claims were exported.</small></p>
+            </article>
+          </div>
+          <div class="grid-2">
+            <article class="card">
+              <h4>Checklist signals</h4>
+              <ul class="checklist dense-checklist">
+                <template x-for="entry in $store.app.alphaLoopSealingChecklistEntries()" :key="entry.key">
+                  <li class="checklist-item">
+                    <span class="checklist-icon" :class="entry.present ? 'criteria' : ''" x-text="entry.present ? '✓' : '◉'"></span>
+                    <span>
+                      <strong x-text="entry.label"></strong><br>
+                      <small x-text="(entry.present ? 'Present: ' : 'Pending: ') + entry.reason"></small>
+                    </span>
+                  </li>
+                </template>
+              </ul>
+            </article>
+            <article class="card">
+              <h4>Unmet prerequisites</h4>
+              <template x-if="$store.app.alphaLoopUnmetSealingPrerequisites().length > 0">
+                <ul class="checklist dense-checklist">
+                  <template x-for="prerequisite in $store.app.alphaLoopUnmetSealingPrerequisites()" :key="prerequisite.enables + ':' + prerequisite.prerequisite">
+                    <li class="checklist-item">
+                      <span class="checklist-icon">◉</span>
+                      <span>
+                        <strong x-text="prerequisite.enables"></strong><br>
+                        <small x-text="prerequisite.prerequisite"></small>
+                      </span>
+                    </li>
+                  </template>
+                </ul>
+              </template>
+              <p x-show="$store.app.alphaLoopUnmetSealingPrerequisites().length === 0"><small>No stronger-claim prerequisites were exported.</small></p>
+            </article>
+          </div>
+        </section>
+      </template>
+
       <template x-if="$store.app.resultsForRun(selectedRun).length > 0">
         <table>
           <thead>

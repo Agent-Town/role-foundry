@@ -68,6 +68,9 @@ class DemoContractTests(unittest.TestCase):
         self.assertIn('Transcript Excerpt', run_text)
         self.assertIn('Failure Analysis → Next Curriculum', scorecard_text)
         self.assertIn('Compare to ', scorecard_text)
+        self.assertIn('Sealing receipt boundary', scorecard_text)
+        self.assertIn('Blocked stronger claims', scorecard_text)
+        self.assertIn('Checklist signals', scorecard_text)
         self.assertIn('config.js', index_text)
 
     def test_readme_explains_demo_vs_live_mode(self):

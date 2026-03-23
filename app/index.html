@@ -105,6 +105,12 @@
     <small x-text="'Source total-score delta: ' + $store.app.formatSigned($store.app.alphaLoopComparison()?.total_score_delta, 4)"></small>
   </article>
 
+  <article class="judge-callout compact-callout" x-show="$store.app.sourceMode === 'live' && $store.app.alphaLoopSealingReceipt()">
+    <strong>Sealing boundary:</strong>
+    <span x-text="$store.app.alphaLoopSealingReceipt()?.claim_ceiling || 'pending'"></span>
+    <small x-text="$store.app.alphaLoopSealingReceipt()?.honesty_note || 'This boundary record is not a seal.'"></small>
+  </article>
+
   <div class="meta-grid">
     <article class="meta-card">
       <span class="meta-label">Public curriculum</span>

@@ -520,6 +520,112 @@ function normalizeStudentViews(studentViews) {
   );
 }
 
+function titleizeIdentifier(value) {
+  if (value === null || value === undefined || value === '') {
+    return '—';
+  }
+  return String(value)
+    .replace(/[_-]+/g, ' ')
+    .replace(/\b\w/g, letter => letter.toUpperCase());
+}
+
+function normalizeSealingReceipt(sealingReceipt) {
+  if (!isPlainObject(sealingReceipt)) {
+    return null;
+  }
+
+  return {
+    ...sealingReceipt,
+    spec: typeof sealingReceipt.spec === 'string' ? sealingReceipt.spec : null,
+    claim_ceiling:
+      typeof sealingReceipt.claim_ceiling === 'string' ? sealingReceipt.claim_ceiling : null,
+    status: typeof sealingReceipt.status === 'string' ? sealingReceipt.status : null,
+    integrity_gate_mode:
+      typeof sealingReceipt.integrity_gate_mode === 'string' ? sealingReceipt.integrity_gate_mode : null,
+    operator_checklist: Object.fromEntries(
+      Object.entries(normalizeRecord(sealingReceipt.operator_checklist))
+        .map(([key, entry]) => {
+          if (!isPlainObject(entry)) {
+            return null;
+          }
+          return [
+            key,
+            {
+              present: Boolean(entry.present),
+              reason: typeof entry.reason === 'string' ? entry.reason : '',
+            },
+          ];
+        })
+        .filter(Boolean)
+    ),
+    blocked_claims: (Array.isArray(sealingReceipt.blocked_claims) ? sealingReceipt.blocked_claims : [])
+      .map(entry => {
+        if (!isPlainObject(entry) || typeof entry.claim !== 'string') {
+          return null;
+        }
+        return {
+          ...entry,
+          claim: String(entry.claim),
+          reason: typeof entry.reason === 'string' ? entry.reason : '',
+          prerequisite: typeof entry.prerequisite === 'string' ? entry.prerequisite : '',
+        };
+      })
+      .filter(Boolean),
+    stronger_claim_prerequisites: (
+      Array.isArray(sealingReceipt.stronger_claim_prerequisites)
+        ? sealingReceipt.stronger_claim_prerequisites
+        : []
+    )
+      .map(entry => {
+        if (!isPlainObject(entry) || typeof entry.prerequisite !== 'string') {
+          return null;
+        }
+        return {
+          ...entry,
+          prerequisite: String(entry.prerequisite),
+          enables: typeof entry.enables === 'string' ? entry.enables : '',
+          met: Boolean(entry.met),
+        };
+      })
+      .filter(Boolean),
+    private_manifest_fingerprint: isPlainObject(sealingReceipt.private_manifest_fingerprint)
+      ? {
+          ...sealingReceipt.private_manifest_fingerprint,
+          algorithm:
+            typeof sealingReceipt.private_manifest_fingerprint.algorithm === 'string'
+              ? sealingReceipt.private_manifest_fingerprint.algorithm
+              : null,
+          scope:
+            typeof sealingReceipt.private_manifest_fingerprint.scope === 'string'
+              ? sealingReceipt.private_manifest_fingerprint.scope
+              : null,
+          hex_digest:
+            typeof sealingReceipt.private_manifest_fingerprint.hex_digest === 'string'
+              ? sealingReceipt.private_manifest_fingerprint.hex_digest
+              : null,
+          honesty_note:
+            typeof sealingReceipt.private_manifest_fingerprint.honesty_note === 'string'
+              ? sealingReceipt.private_manifest_fingerprint.honesty_note
+              : null,
+        }
+      : null,
+    linked_receipt_paths: isPlainObject(sealingReceipt.linked_receipt_paths)
+      ? {
+          ...sealingReceipt.linked_receipt_paths,
+          alpha_receipt:
+            typeof sealingReceipt.linked_receipt_paths.alpha_receipt === 'string'
+              ? sealingReceipt.linked_receipt_paths.alpha_receipt
+              : null,
+          alpha_request_copy:
+            typeof sealingReceipt.linked_receipt_paths.alpha_request_copy === 'string'
+              ? sealingReceipt.linked_receipt_paths.alpha_request_copy
+              : null,
+        }
+      : null,
+    honesty_note: typeof sealingReceipt.honesty_note === 'string' ? sealingReceipt.honesty_note : null,
+  };
+}
+
 function normalizeReadModel(readModel) {
   if (!isPlainObject(readModel)) {
     return null;
@@ -543,6 +649,7 @@ function normalizeReadModel(readModel) {
           ? normalizeRecord(readModel.comparison).verdict
           : null),
     integrity_gate: isPlainObject(readModel.integrity_gate) ? readModel.integrity_gate : null,
+    sealing_receipt: normalizeSealingReceipt(readModel.sealing_receipt),
     comparison: isPlainObject(readModel.comparison) ? readModel.comparison : null,
     stages: (Array.isArray(readModel.stages) ? readModel.stages : [])
       .map(stage => {
@@ -1063,6 +1170,7 @@ function mapAutoresearchAlphaPayloadToSnapshot(payload) {
     control_plane_mode: receipt.control_plane_mode || null,
     verdict: receipt.verdict || comparison.verdict || null,
     integrity_gate: isPlainObject(receipt.integrity_gate) ? receipt.integrity_gate : null,
+    sealing_receipt: normalizeSealingReceipt(receipt.sealing_receipt),
     comparison: Object.keys(comparison).length ? comparison : null,
     stages: readModelStages,
     honesty_note:
@@ -1306,6 +1414,39 @@ function createAppStore(config) {
 
     alphaLoopComparison() {
       return this.alphaLoopReadModel()?.comparison || null;
+    },
+
+    alphaLoopSealingReceipt() {
+      return this.alphaLoopReadModel()?.sealing_receipt || null;
+    },
+
+    alphaLoopSealingFingerprint() {
+      return this.alphaLoopSealingReceipt()?.private_manifest_fingerprint || null;
+    },
+
+    alphaLoopBlockedClaims() {
+      return this.alphaLoopSealingReceipt()?.blocked_claims || [];
+    },
+
+    alphaLoopSealingChecklistEntries(present = null) {
+      return Object.entries(this.alphaLoopSealingReceipt()?.operator_checklist || {})
+        .map(([key, entry]) => ({
+          key,
+          label: titleizeIdentifier(key),
+          present: Boolean(entry?.present),
+          reason: entry?.reason || '',
+        }))
+        .filter(entry => present === null ? true : entry.present === present);
+    },
+
+    alphaLoopUnmetSealingPrerequisites() {
+      return (this.alphaLoopSealingReceipt()?.stronger_claim_prerequisites || []).filter(
+        prerequisite => !prerequisite.met
+      );
+    },
+
+    formatIdentifierLabel(value) {
+      return titleizeIdentifier(value);
     },
 
     alphaLoopStage(stageOrRunId) {

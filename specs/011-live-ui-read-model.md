@@ -21,6 +21,7 @@ The browser adapter accepts three live-oriented payload shapes:
    - top-level `control_plane_summary` with inline run exports
 3. **autoresearch alpha envelope / receipt**
    - current alpha-loop receipt shape (`baseline-eval` → `candidate-student` → `candidate-teacher-eval` → `comparison`)
+   - may also include the top-level public-safe `sealing_receipt` block from spec 015
    - optionally wrapped in a consumer-side envelope that also carries `role` / `scenarios`
 
 ## Autoresearch alpha mapping
@@ -32,12 +33,16 @@ without inventing new score semantics:
 - `candidate-student` → visible run row + artifact row, but **no fake teacher scorecard**
 - `candidate-teacher-eval` → scored run + comparison target
 - `comparison` / `verdict` → iteration notes and comparison context
+- top-level `sealing_receipt` → live read-model boundary surface only when exported
 - exact comparison fields (`verdict`, `deciding_axis`, `baseline_total_score`, `candidate_total_score`, `total_score_delta`, `category_deltas`, `reasons`) stay source-faithful when present
+- exact sealing boundary fields (`claim_ceiling`, `status`, `blocked_claims`, `stronger_claim_prerequisites`, `operator_checklist`, `honesty_note`) stay source-faithful when present
 
 ### Important rules
 
 - The browser may rename fields into the existing shell contract, but it must not
   fabricate extra scoring concepts.
+- The browser may surface `sealing_receipt` only as a boundary record. It must
+  not relabel it as a seal, certification, tamper-proof proof, or pass/fail score.
 - The comparison target for `candidate-teacher-eval` is the previous **scored**
   run, not blindly the previous run row.
 - Student-safe fields (prompt pack, public curriculum themes, sealed holdout

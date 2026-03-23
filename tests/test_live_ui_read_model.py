@@ -84,6 +84,14 @@ class LiveUiReadModelTests(unittest.TestCase):
               alphaHoldoutPassCountDelta: store.alphaLoopComparison()?.category_deltas?.holdout_pass_count ?? null,
               alphaIntegrityStatus: store.alphaLoopReadModel()?.integrity_gate?.status || null,
               alphaStageKeys: (store.alphaLoopReadModel()?.stages || []).map(stage => stage.stage_key),
+              alphaSealingStatus: store.alphaLoopSealingReceipt()?.status || null,
+              alphaSealingClaimCeiling: store.alphaLoopSealingReceipt()?.claim_ceiling || null,
+              alphaSealingNote: store.alphaLoopSealingReceipt()?.honesty_note || null,
+              alphaSealingBlockedClaims: store.alphaLoopBlockedClaims().map(entry => entry.claim),
+              alphaSealingPresentChecklist: store.alphaLoopSealingChecklistEntries(true).map(entry => entry.key),
+              alphaSealingPendingChecklist: store.alphaLoopSealingChecklistEntries(false).map(entry => entry.key),
+              alphaSealingUnmetPrerequisites: store.alphaLoopUnmetSealingPrerequisites().map(entry => entry.enables),
+              alphaSealingFingerprintScope: store.alphaLoopSealingFingerprint()?.scope || null,
             }}));
             """
         )
@@ -138,6 +146,47 @@ class LiveUiReadModelTests(unittest.TestCase):
             result['alphaStageKeys'],
             ['baseline-eval', 'candidate-student', 'candidate-teacher-eval'],
         )
+        self.assertEqual(result['alphaSealingStatus'], 'public_regression_alpha')
+        self.assertEqual(
+            result['alphaSealingClaimCeiling'],
+            'public-regression alpha execution with public-safe receipts',
+        )
+        self.assertIn('not a seal', result['alphaSealingNote'])
+        self.assertEqual(
+            result['alphaSealingBlockedClaims'],
+            [
+                'sealed evaluation',
+                'sealed certification',
+                'tamper-proof execution',
+                'independently audited',
+            ],
+        )
+        self.assertEqual(
+            result['alphaSealingPresentChecklist'],
+            ['public_benchmark_pack_loaded', 'integrity_gate_passed'],
+        )
+        self.assertEqual(
+            result['alphaSealingPendingChecklist'],
+            [
+                'private_holdout_manifest_loaded',
+                'independent_executor_sandbox',
+                'third_party_holdout_auditor',
+                'hardware_attestation_or_enclave',
+                'external_audit',
+                'pre_run_manifest_commitment',
+            ],
+        )
+        self.assertEqual(
+            result['alphaSealingUnmetPrerequisites'],
+            [
+                'sealed evaluation',
+                'sealed certification',
+                'tamper-proof execution',
+                'independently audited',
+                'stronger tamper-evidence claims beyond local correlation',
+            ],
+        )
+        self.assertIsNone(result['alphaSealingFingerprintScope'])
 
     def test_raw_autoresearch_receipt_without_outer_envelope_still_adapts(self):
         payload_expression = textwrap.dedent(
@@ -165,6 +214,8 @@ class LiveUiReadModelTests(unittest.TestCase):
             ],
         )
         self.assertFalse(result['studentHasScorecard'])
+        self.assertEqual(result['alphaSealingStatus'], 'public_regression_alpha')
+        self.assertIn('sealed evaluation', result['alphaSealingBlockedClaims'])
 
     def test_student_only_live_receipt_keeps_missing_comparison_honest(self):
         payload_expression = textwrap.dedent(
@@ -210,6 +261,9 @@ class LiveUiReadModelTests(unittest.TestCase):
         self.assertEqual(result['artifactRunIds'], ['run-eval-001-student'])
         self.assertEqual(result['replayRunIds'], ['run-eval-001-student'])
         self.assertEqual(result['alphaStageKeys'], ['candidate-student'])
+        self.assertIsNone(result['alphaSealingStatus'])
+        self.assertEqual(result['alphaSealingBlockedClaims'], [])
+        self.assertEqual(result['alphaSealingUnmetPrerequisites'], [])
 
 
 if __name__ == '__main__':
