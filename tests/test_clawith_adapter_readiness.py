@@ -75,10 +75,18 @@ class _HealthyHandler(BaseHTTPRequestHandler):
             if not self._authorized():
                 return self._json(401, {"detail": "Not authenticated"})
             return self._json(200, {"username": "alice", "role": "platform_admin"})
+        if self.path == "/api/enterprise/llm-providers":
+            if not self._authorized():
+                return self._json(401, {"detail": "Not authenticated"})
+            return self._json(200, [{"provider": "openai"}])
         if self.path == "/api/enterprise/llm-models":
             if not self._authorized():
                 return self._json(401, {"detail": "Not authenticated"})
             return self._json(200, [])  # empty model pool
+        if self.path == "/api/admin/companies":
+            if not self._authorized():
+                return self._json(401, {"detail": "Not authenticated"})
+            return self._json(200, [{"id": "c1", "name": "Default"}])
         return self._json(404, {"detail": "Not found"})
 
     def do_POST(self):
@@ -105,6 +113,38 @@ class _NonAdminHandler(_HealthyHandler):
             if not self._authorized():
                 return self._json(401, {"detail": "Not authenticated"})
             return self._json(200, {"username": "bob", "role": "member"})
+        return super().do_GET()
+
+
+class _VersionFailHandler(_HealthyHandler):
+    """Upstream where /api/version returns 500 — auth surface should NOT be ready."""
+
+    def do_GET(self):
+        if self.path == "/api/version":
+            self._json(500, {"detail": "version unavailable"})
+            return
+        return super().do_GET()
+
+
+class _AdminCompaniesFailHandler(_FullyReadyHandler):
+    """Upstream where /api/admin/companies returns 500 despite valid admin auth."""
+
+    def do_GET(self):
+        if self.path == "/api/admin/companies":
+            if not self._authorized():
+                return self._json(401, {"detail": "Not authenticated"})
+            return self._json(500, {"detail": "internal error"})
+        return super().do_GET()
+
+
+class _LlmProvidersFailHandler(_FullyReadyHandler):
+    """Upstream where /api/enterprise/llm-providers returns 500 despite populated models."""
+
+    def do_GET(self):
+        if self.path == "/api/enterprise/llm-providers":
+            if not self._authorized():
+                return self._json(401, {"detail": "Not authenticated"})
+            return self._json(500, {"detail": "internal error"})
         return super().do_GET()
 
 
@@ -190,6 +230,53 @@ class TestF001PrereqProbeCoverage(unittest.TestCase):
             server.shutdown()
             server.server_close()
 
+    def test_auth_surface_blocked_when_version_fails(self):
+        """auth_surface_understood must be blocked if /api/version fails."""
+        server, url = _start_server(_VersionFailHandler)
+        try:
+            _, payload = _run_helper(url)
+            self.assertIsNotNone(payload)
+            self.assertEqual(payload["categories"]["auth_surface_understood"], "blocked")
+            self.assertTrue(
+                any("api/version" in b for b in payload["blockers"]),
+                f"blockers should mention version failure: {payload['blockers']}",
+            )
+        finally:
+            server.shutdown()
+            server.server_close()
+
+    def test_llm_providers_and_admin_companies_probed_with_token(self):
+        """With token, /api/enterprise/llm-providers and /api/admin/companies are probed."""
+        server, url = _start_server(_HealthyHandler)
+        try:
+            _, payload = _run_helper(url, token=_HealthyHandler.token)
+            self.assertIsNotNone(payload)
+            check_names = [c["name"] for c in payload["checks"]]
+            self.assertIn("llm_providers", check_names)
+            self.assertIn("admin_companies", check_names)
+            # Both should pass when authenticated
+            for check in payload["checks"]:
+                if check["name"] in ("llm_providers", "admin_companies"):
+                    self.assertEqual(check["kind"], "pass", f"{check['name']} should pass")
+        finally:
+            server.shutdown()
+            server.server_close()
+
+    def test_auth_gated_surfaces_skipped_without_token(self):
+        """Without token, auth_me, admin_companies, llm_providers, llm_models are all skipped."""
+        server, url = _start_server(_HealthyHandler)
+        try:
+            _, payload = _run_helper(url)
+            self.assertIsNotNone(payload)
+            skipped = [c["name"] for c in payload["checks"] if c["kind"] == "skip"]
+            self.assertIn("auth_me", skipped)
+            self.assertIn("admin_companies", skipped)
+            self.assertIn("llm_providers", skipped)
+            self.assertIn("llm_models", skipped)
+        finally:
+            server.shutdown()
+            server.server_close()
+
     def test_endpoint_mismatches_documented(self):
         server, url = _start_server(_HealthyHandler)
         try:
@@ -255,6 +342,19 @@ class TestF002FalseReadyRate(unittest.TestCase):
             server.shutdown()
             server.server_close()
 
+    def test_version_fail_prevents_ready(self):
+        """If /api/version fails, overall cannot be ready even with populated model pool."""
+        server, url = _start_server(_VersionFailHandler)
+        try:
+            _, payload = _run_helper(url, token=_VersionFailHandler.token)
+            self.assertIsNotNone(payload)
+            self.assertNotEqual(payload["overall_status"], "ready",
+                                "must not report ready when /api/version fails")
+            self.assertEqual(payload["categories"]["auth_surface_understood"], "blocked")
+        finally:
+            server.shutdown()
+            server.server_close()
+
     def test_unreachable_is_blocked(self):
         """If /api/health fails, base_url_reachable is blocked."""
         server, url = _start_server(_UnreachableHandler)
@@ -263,6 +363,40 @@ class TestF002FalseReadyRate(unittest.TestCase):
             self.assertIsNotNone(payload)
             self.assertEqual(payload["overall_status"], "blocked")
             self.assertEqual(payload["categories"]["base_url_reachable"], "blocked")
+        finally:
+            server.shutdown()
+            server.server_close()
+
+    def test_admin_companies_fail_blocks_admin_presence(self):
+        """admin_presence_known must be blocked when /api/admin/companies fails,
+        even if auth/me confirms an admin role."""
+        server, url = _start_server(_AdminCompaniesFailHandler)
+        try:
+            _, payload = _run_helper(url, token=_AdminCompaniesFailHandler.token)
+            self.assertIsNotNone(payload)
+            self.assertEqual(payload["categories"]["admin_presence_known"], "blocked")
+            self.assertNotEqual(payload["overall_status"], "ready")
+            self.assertTrue(
+                any("admin/companies" in b for b in payload["blockers"]),
+                f"blockers should mention admin/companies failure: {payload['blockers']}",
+            )
+        finally:
+            server.shutdown()
+            server.server_close()
+
+    def test_llm_providers_fail_blocks_model_pool(self):
+        """model_pool_presence_known must be blocked when /api/enterprise/llm-providers fails,
+        even if llm-models returns a populated list."""
+        server, url = _start_server(_LlmProvidersFailHandler)
+        try:
+            _, payload = _run_helper(url, token=_LlmProvidersFailHandler.token)
+            self.assertIsNotNone(payload)
+            self.assertEqual(payload["categories"]["model_pool_presence_known"], "blocked")
+            self.assertNotEqual(payload["overall_status"], "ready")
+            self.assertTrue(
+                any("llm-providers" in b for b in payload["blockers"]),
+                f"blockers should mention llm-providers failure: {payload['blockers']}",
+            )
         finally:
             server.shutdown()
             server.server_close()
@@ -278,6 +412,34 @@ class TestF002FalseReadyRate(unittest.TestCase):
             for cat in REQUIRED_CATEGORIES:
                 self.assertEqual(payload["categories"][cat], "ready",
                                  f"category {cat} should be ready")
+        finally:
+            server.shutdown()
+            server.server_close()
+
+    def test_human_output_includes_readiness_statement(self):
+        """Human output must include a Readiness Statement section."""
+        server, url = _start_server(_HealthyHandler)
+        try:
+            cmd = [sys.executable, str(HELPER), "--base-url", url]
+            result = subprocess.run(cmd, capture_output=True, text=True, cwd=ROOT)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("--- Readiness Statement ---", result.stdout)
+            # Without token, should mention unknown categories
+            self.assertIn("UNKNOWN:", result.stdout)
+        finally:
+            server.shutdown()
+            server.server_close()
+
+    def test_human_readiness_statement_shows_blocked(self):
+        """Human output readiness statement shows BLOCKED when model pool is empty."""
+        server, url = _start_server(_HealthyHandler)
+        try:
+            cmd = [sys.executable, str(HELPER), "--base-url", url, "--token", _HealthyHandler.token]
+            result = subprocess.run(cmd, capture_output=True, text=True, cwd=ROOT)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("--- Readiness Statement ---", result.stdout)
+            self.assertIn("BLOCKED NOW:", result.stdout)
+            self.assertIn("Resolve blockers", result.stdout)
         finally:
             server.shutdown()
             server.server_close()
