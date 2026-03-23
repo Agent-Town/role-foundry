@@ -1,42 +1,41 @@
 # Role Foundry
 
-Role Foundry is training its own first apprentice.
+## The framework
 
-The current demo is not a generic “AI agent” playground. It is a judge-facing dogfood vertical where **Robin + Neo** teach a **Frontend Apprentice** to implement small, visible **Role Foundry product slices** under holdout-aware review.
+Role Foundry is a **framework for training AI apprentices under honest, holdout-aware evaluation**. It is designed to train different roles over time — each role gets a public curriculum, sealed holdout evaluations, named teachers, visible score deltas, and proof bundles.
 
-That makes the core claim legible:
-- there is a named student
-- there are named teachers
-- there is a public curriculum
-- there is a teacher-only holdout lane with a public/private separation contract
-- there are visible score deltas between runs
-- there are receipts judges can inspect
+The framework handles the training loop. The role defines what the apprentice learns.
+
+## The current concrete example
+
+The current alpha demo ships one concrete role: a **Software Engineer apprentice** that implements Role Foundry product slices under hidden-eval review. Robin + Neo are the teachers. The apprentice builds the system it is being trained by.
+
+**Honest scope note:** The currently shipped curriculum slices are frontend/product-heavy because that is what the alpha app exposes. The “Software Engineer” framing reflects the intended breadth — code review, regression prevention, documentation honesty — not a claim that all those curriculum families are shipped today.
+
+**Name:** Software Engineer Apprentice
+**Job:** Ship coherent, judge-facing Role Foundry product slices
+**Teachers:** Robin + Neo
+**Constraints:** standalone repo, demo mode first, no auth, no Privy, no fake live integrations
 
 ## What judges see in this demo
 
 `docker compose up` serves a static demo with pre-baked data that shows:
 
-1. **Apprentice definition** — the Frontend Apprentice is learning to build Role Foundry itself
-2. **Public curriculum** — visible training slices like rewriting the apprentice story, clarifying curriculum vs holdouts, exposing score deltas, and adding proof bundles
-3. **Holdout integrity story** — judge-visible holdout categories in the demo plus a local-only scaffold for fresh teacher-only rewrites outside the public repo
-4. **Two judged runs** — Run 2 clearly improves over Run 1
-5. **Teacher scorecard** — per-scenario teacher notes plus aggregate score across public curriculum and holdout-facing review
-6. **Failure → curriculum loop** — failed holdout themes become the next public teaching themes without exposing hidden prompt text
-7. **Iteration history** — score deltas over time stay visible in both the UI and stored run data
-8. **Proof bundle** — receipt summary, changed files, policy snapshot, and transcript excerpt
+1. **Vision/system overview** — explains the general framework vs the current concrete role
+2. **Apprentice definition** — the Software Engineer apprentice is learning to build Role Foundry itself
+3. **Public curriculum** — visible training slices like rewriting the apprentice story, clarifying curriculum vs holdouts, exposing score deltas, and adding proof bundles
+4. **Holdout integrity story** — judge-visible holdout categories in the demo plus a local-only scaffold for fresh teacher-only rewrites outside the public repo
+5. **Two judged runs** — Run 2 clearly improves over Run 1
+6. **Teacher scorecard** — per-scenario teacher notes plus aggregate score across public curriculum and holdout-facing review
+7. **Failure → curriculum loop** — failed holdout themes become the next public teaching themes without exposing hidden prompt text
+8. **Iteration history** — score deltas over time stay visible in both the UI and stored run data
+9. **Proof bundle** — receipt summary, changed files, policy snapshot, and transcript excerpt
 
 This is the point of Role Foundry: make capability visible with honest evaluation instead of vibes.
 
-## The current vertical
-
-**Name:** Frontend Apprentice  
-**Job:** Ship coherent, judge-facing Role Foundry product slices  
-**Teachers:** Robin + Neo  
-**Constraints:** standalone repo, demo mode first, no auth, no Privy, no fake live integrations
-
 ## How the loop works
 
-1. **Teachers define the apprentice** — what a good Role Foundry slice looks like
+1. **Teachers define a role** — what good work looks like for this apprentice
 2. **Role Foundry publishes public curriculum** — scenarios the apprentice can practice on
 3. **Role Foundry keeps fresh hidden holdouts teacher-only** — the public repo carries the contract/template/tests for that lane, not the private prompts themselves
 4. **The apprentice ships a slice** — copy, UI, scorecard, or artifact surface
@@ -44,15 +43,11 @@ This is the point of Role Foundry: make capability visible with honest evaluatio
 6. **Failures become curriculum** — only the failure themes are promoted, never the hidden prompt text
 7. **Iteration history records deltas** — later runs show what improved overall and on holdout-facing review
 
-## Why this demo reads stronger now
+## Curriculum extension
 
-The old generic customer-support-style demo had the right skeleton, but it did not prove why the system matters.
+Teachers can extend the holdout lane with manually curated episodes from external sources like SWE-bench, Playwright docs, or code-review guides. These stay **teacher-only** and never enter the public repo or student-visible curriculum. See `docs/swe-bench-holdout-extension.md` for the process and constraints.
 
-The current version is stronger because it is:
-- **narrower** — one concrete apprentice instead of a generic role demo
-- **more honest** — demo mode stays demo mode; no fake Clawith/OAuth theater
-- **more judgeable** — holdout integrity, score deltas, and receipts are explicit
-- **more dogfood** — Role Foundry is being used to train a builder for Role Foundry itself
+SWE-bench usage is intentionally **small and teacher-only**: at most 5-10 manually rewritten episodes per extension round, stored in the existing gitignored private holdout path. This is not bulk integration or public curriculum.
 
 ## Demo mode vs live mode
 
@@ -192,7 +187,9 @@ Using different model families for building and judging reduces correlated self-
 - `docs/clawith-adapter-bringup.md` — seam-to-upstream mapping matrix and adapter-first bring-up prereqs
 - `docs/runner-bridge.md` — bridge path, teacher evaluation contract, comparison receipts, and explicit auth deferral
 - `docs/public-benchmark-pack-v1.md` — public-safe benchmark pack scope, blocked families, and local private-holdout path
+- `docs/software-engineer-curriculum-sources.md` — narrow public source inventory for the software-engineering apprentice
 - `docs/private-holdout-authoring.md` — local-only teacher workflow for authoring and auditing fresh holdouts
+- `docs/swe-bench-holdout-extension.md` — teacher-only process for small manually curated SWE-bench-derived holdout episodes
 - `docs/conversation-log.md` — curated build log for the submission
 - `docs/agent-town-connection.md` — Agent Town relationship
 - `docs/synthesis-hackathon-ideation.md` — ideation and ranking

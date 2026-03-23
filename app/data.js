@@ -6,10 +6,10 @@ const DEMO_DATA = {
   mode: 'demo', // 'demo' | 'live'
 
   role: {
-    name: 'Frontend Apprentice',
-    subtitle: 'Role Foundry’s first product builder apprentice',
+    name: 'Software Engineer Apprentice',
+    subtitle: "Role Foundry's first concrete role: a software engineer improving Role Foundry itself",
     description:
-      'Robin + Neo are training Role Foundry’s first apprentice to implement judge-facing product slices for Role Foundry itself. The apprentice ships small UI and product changes, keeps the demo honest, and leaves proof that judges can inspect.',
+      'Role Foundry is a framework for training different AI apprentice roles over time. The current concrete example: Robin + Neo are training a Software Engineer apprentice to implement Role Foundry product slices under hidden-eval review. The currently shipped curriculum is frontend/product-heavy because that is what the alpha app exposes.',
     teachers: ['Robin', 'Neo'],
     demo_contract: 'Standalone demo. No auth, no Privy, no fake live wiring.',
     goals: [
@@ -19,7 +19,7 @@ const DEMO_DATA = {
       'Leave artifacts behind: changed files, policy snapshot, transcript evidence, and score deltas',
     ],
     success_criteria: [
-      'The browser experience clearly says the apprentice is building Role Foundry itself',
+      'The browser experience clearly distinguishes the general framework from the current concrete role',
       'Public curriculum scenarios feel like real product-slice work, not generic AI-demo fluff',
       'Hidden holdouts test meaningful failure modes and remain sealed from the apprentice',
       'Judges can see score improvement between runs, especially on holdouts',
@@ -29,8 +29,8 @@ const DEMO_DATA = {
 
   actors: {
     student: {
-      id: 'frontend-apprentice',
-      name: 'Frontend Apprentice',
+      id: 'swe-apprentice',
+      name: 'Software Engineer Apprentice',
       agent_role: 'student',
       access: 'Public curriculum only. Hidden holdouts stay sealed.',
       can_see: [
@@ -57,7 +57,7 @@ const DEMO_DATA = {
     {
       id: 't1',
       title: 'Rewrite the landing story around the apprentice loop',
-      description: 'Replace abstract “agent platform” copy with a clear dogfood story: Robin + Neo teach the Frontend Apprentice to ship Role Foundry product slices.',
+      description: 'Replace abstract "agent platform" copy with a clear dogfood story: Robin + Neo teach the Software Engineer apprentice to ship Role Foundry product slices.',
       type: 'training',
       difficulty: 'medium',
     },
@@ -71,7 +71,7 @@ const DEMO_DATA = {
     {
       id: 't3',
       title: 'Expose visible score deltas',
-      description: 'Surface how Run 2 improved over Run 1, with special emphasis on hidden-holdout movement instead of vibes-based “better”.',
+      description: 'Surface how Run 2 improved over Run 1, with special emphasis on hidden-holdout movement instead of vibes-based "better".',
       type: 'training',
       difficulty: 'medium',
     },
@@ -156,8 +156,8 @@ const DEMO_DATA = {
         agent_role: 'teacher',
       },
       student: {
-        id: 'frontend-apprentice',
-        name: 'Frontend Apprentice',
+        id: 'swe-apprentice',
+        name: 'Software Engineer Apprentice',
         agent_role: 'student',
       },
       overall: 4,
@@ -184,15 +184,15 @@ const DEMO_DATA = {
         agent_role: 'teacher',
       },
       student: {
-        id: 'frontend-apprentice',
-        name: 'Frontend Apprentice',
+        id: 'swe-apprentice',
+        name: 'Software Engineer Apprentice',
         agent_role: 'student',
       },
       overall: 8,
       total: 9,
       pass_rate: 0.89,
       results: [
-        { scenario_id: 't1', passed: true, score: 1.0, notes: 'The Frontend Apprentice story is clear and anchored in Role Foundry dogfooding itself.' },
+        { scenario_id: 't1', passed: true, score: 1.0, notes: 'The Software Engineer apprentice story is clear and anchored in Role Foundry dogfooding itself.' },
         { scenario_id: 't2', passed: true, score: 1.0, notes: 'Public curriculum and sealed holdouts read clearly for judges.' },
         { scenario_id: 't3', passed: true, score: 0.9, notes: 'Score deltas are visible, especially for holdouts.' },
         { scenario_id: 't4', passed: true, score: 1.0, notes: 'Proof bundle now shows receipt summary, changed files, transcript excerpt, and policy snapshot.' },
@@ -209,8 +209,8 @@ const DEMO_DATA = {
     'run-001': {
       agent_role: 'student',
       actor: {
-        id: 'frontend-apprentice',
-        name: 'Frontend Apprentice',
+        id: 'swe-apprentice',
+        name: 'Software Engineer Apprentice',
         agent_role: 'student',
       },
       prompt_summary: 'Train on the visible curriculum only. Hidden holdouts stay sealed until teacher review.',
@@ -221,8 +221,8 @@ const DEMO_DATA = {
     'run-002': {
       agent_role: 'student',
       actor: {
-        id: 'frontend-apprentice',
-        name: 'Frontend Apprentice',
+        id: 'swe-apprentice',
+        name: 'Software Engineer Apprentice',
         agent_role: 'student',
       },
       prompt_summary: 'Keep demo mode honest, leave visible receipts, and turn failure categories into public curriculum without leaking the exam.',
@@ -243,7 +243,7 @@ const DEMO_DATA = {
       to_run: 'run-001',
       label: 'Baseline apprentice boot sequence',
       identity_snapshot:
-        'Early Frontend Apprentice: can rewrite copy and rearrange UI, but still defaults to generic platform language and weak proof surfaces.',
+        'Early Software Engineer Apprentice: can rewrite copy and rearrange UI, but still defaults to generic platform language and weak proof surfaces.',
       policy_changes: [],
       curriculum_notes: 'No prior failures yet — this run establishes the baseline and exposes where the judge story is still vague.',
     },
@@ -252,7 +252,7 @@ const DEMO_DATA = {
       to_run: 'run-002',
       label: 'After hidden-eval failures became curriculum',
       identity_snapshot:
-        'Frontend Apprentice focused on shipping narrow, judge-facing Role Foundry product slices with visible receipts, sealed holdouts, and honest demo-mode language.',
+        'Software Engineer Apprentice focused on shipping narrow, judge-facing Role Foundry product slices with visible receipts, sealed holdouts, and honest demo-mode language.',
       policy_changes: [
         'Always name the slice: the apprentice is implementing Role Foundry itself, not an abstract agent platform.',
         'Demo mode is first-class. Never imply Privy, OAuth, or live Clawith wiring that does not exist in this repo.',
@@ -261,7 +261,7 @@ const DEMO_DATA = {
         'Prefer one coherent slice over broad repo churn.',
       ],
       curriculum_notes:
-        'Run 1 failures were collapsed into public training themes. Robin + Neo only exposed categories like “fake live wiring temptation” and “missing receipts”; the hidden holdout prompts themselves stayed sealed.',
+        'Run 1 failures were collapsed into public training themes. Robin + Neo only exposed categories like "fake live wiring temptation" and "missing receipts"; the hidden holdout prompts themselves stayed sealed.',
       failure_themes: [
         {
           theme: 'Generic demo copy instead of a narrow apprentice vertical',
@@ -281,7 +281,7 @@ const DEMO_DATA = {
         {
           theme: 'Constraint honesty under pressure',
           source_scenarios: ['t5', 'h1'],
-          description: 'The apprentice drifted toward sounding “live” instead of staying explicit about demo-only constraints.',
+          description: 'The apprentice drifted toward sounding "live" instead of staying explicit about demo-only constraints.',
         },
       ],
     },
@@ -313,9 +313,9 @@ const DEMO_DATA = {
       ],
     },
     'run-002': {
-      objective: 'Ship the Frontend Apprentice vertical, strengthen the hidden-holdout story, and attach a proof bundle judges can inspect.',
+      objective: 'Ship the Software Engineer apprentice vertical, strengthen the hidden-holdout story, and attach a proof bundle judges can inspect.',
       judge_receipt: [
-        'Vertical name locked: Frontend Apprentice',
+        'Vertical name locked: Software Engineer Apprentice',
         'Robin + Neo positioned as first teachers',
         'Public curriculum vs sealed holdouts made explicit',
         'Receipts added: changed files, policy snapshot, transcript excerpt',
@@ -327,7 +327,7 @@ const DEMO_DATA = {
         'Every good run leaves evidence a judge can audit in the browser.',
       ],
       changed_files: [
-        { path: 'app/data.js', summary: 'Replaced generic customer-support seed data with Frontend Apprentice curriculum, holdouts, scorecards, and receipts.' },
+        { path: 'app/data.js', summary: 'Replaced generic customer-support seed data with Software Engineer apprentice curriculum, holdouts, scorecards, and receipts.' },
         { path: 'app/index.html', summary: 'Reframed the app around Robin + Neo teaching the apprentice to build Role Foundry itself.' },
         { path: 'app/scenarios.html', summary: 'Turned scenarios into public curriculum vs sealed holdout previews for judges.' },
         { path: 'app/run.html', summary: 'Added proof bundle surface with receipt summary, changed files, transcript excerpt, and policy snapshot.' },
@@ -347,7 +347,7 @@ const DEMO_DATA = {
     'run-001': [
       { t: 0, msg: '▶ Starting run-001 — generic demo baseline...' },
       { t: 500, msg: '  Teachers loaded: Robin + Neo' },
-      { t: 1000, msg: '  Loading apprentice role: Frontend Apprentice (baseline identity)' },
+      { t: 1000, msg: '  Loading apprentice role: Software Engineer Apprentice (baseline identity)' },
       { t: 1500, msg: '  Loading 6 public curriculum slices, sealing 3 holdouts' },
       { t: 2200, msg: '  [scenario t1] Rewrite the landing story — running...' },
       { t: 3200, msg: '  [scenario t1] ✗ FAIL (0.4) — still sounds like a generic agent platform' },

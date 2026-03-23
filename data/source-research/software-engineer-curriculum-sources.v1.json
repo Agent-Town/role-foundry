@@ -1,0 +1,241 @@
+{
+  "meta": {
+    "id": "software-engineer-curriculum-sources-v1",
+    "version": "1.0.0",
+    "generated_on": "2026-03-23",
+    "scope": "Public internet sources worth considering for Role Foundry's software-engineering apprentice, with emphasis on frontend/product engineering, issue->patch work, code review, regression prevention, and honesty about evidence.",
+    "honesty_note": "This is a research inventory, not an approval to bulk-ingest everything listed. Manual-curation-only and not-suitable entries are included on purpose."
+  },
+  "repo_context": {
+    "role": "software-engineering apprentice improving Role Foundry itself",
+    "current_public_episode_count": 12,
+    "current_public_family_count": 6,
+    "current_strengths": [
+      "landing story clarity",
+      "curriculum vs holdout separation",
+      "score delta legibility",
+      "proof bundle visibility",
+      "demo honesty",
+      "failure-to-curriculum promotion"
+    ],
+    "current_gaps": [
+      "true external issue->patch exemplars",
+      "stack-adjacent frontend bugfixes",
+      "explicit code-review comment discipline",
+      "executable UI regression tasks",
+      "accessibility/product-polish references grounded in public standards"
+    ],
+    "stack_observations": [
+      "Alpine.js + static HTML/JS frontend",
+      "Python runner/eval path"
+    ]
+  },
+  "sources": [
+    {
+      "rank": 1,
+      "id": "playwright-docs",
+      "name": "Playwright docs + examples",
+      "primary_url": "https://playwright.dev/docs/best-practices",
+      "supporting_urls": [
+        "https://github.com/microsoft/playwright"
+      ],
+      "signal": [
+        "UI regression patterns",
+        "user-visible selectors",
+        "test isolation",
+        "trace/debug workflows",
+        "honest browser automation"
+      ],
+      "licensing_access_status": "Public. Playwright repository is Apache-2.0.",
+      "rf_role": "training",
+      "ingestion_difficulty": "low",
+      "major_risks": [
+        "Can drift into test-writing for its own sake instead of product work",
+        "Needs to stay tied to real Role Foundry UI flows"
+      ],
+      "timing": "hackathon_now"
+    },
+    {
+      "rank": 2,
+      "id": "google-eng-practices-review",
+      "name": "Google Engineering Practices — code review guides",
+      "primary_url": "https://google.github.io/eng-practices/review/",
+      "supporting_urls": [
+        "https://google.github.io/eng-practices/review/reviewer/",
+        "https://github.com/google/eng-practices"
+      ],
+      "signal": [
+        "diff critique",
+        "test/doc expectations",
+        "small-change discipline",
+        "reviewer vs author behavior",
+        "comment quality"
+      ],
+      "licensing_access_status": "Public. Repository license is CC BY 3.0.",
+      "rf_role": "training",
+      "ingestion_difficulty": "low",
+      "major_risks": [
+        "Prose-heavy source",
+        "Should be converted into Role Foundry-local episodes and rubrics, not copied wholesale"
+      ],
+      "timing": "hackathon_now"
+    },
+    {
+      "rank": 3,
+      "id": "alpinejs-curation-lane",
+      "name": "Alpine.js repo + docs",
+      "primary_url": "https://github.com/alpinejs/alpine",
+      "supporting_urls": [
+        "https://alpinejs.dev"
+      ],
+      "signal": [
+        "stack-adjacent frontend bugfixes",
+        "small issue->patch examples",
+        "docs updates",
+        "state-management edge cases"
+      ],
+      "licensing_access_status": "Public MIT repo for code/docs, but GitHub issue/PR/review text should not be assumed to inherit that license for downstream training.",
+      "rf_role": "manual curation only",
+      "ingestion_difficulty": "medium",
+      "major_risks": [
+        "Raw GitHub thread licensing ambiguity",
+        "Can drift into framework-internal work instead of Role Foundry product tasks"
+      ],
+      "timing": "hackathon_now"
+    },
+    {
+      "rank": 4,
+      "id": "wai-aria-apg",
+      "name": "WAI-ARIA Authoring Practices Guide",
+      "primary_url": "https://github.com/w3c/aria-practices",
+      "supporting_urls": [
+        "https://www.w3.org/WAI/ARIA/apg/"
+      ],
+      "signal": [
+        "keyboard behavior",
+        "semantics and naming",
+        "disclosure/dialog/tab patterns",
+        "judge-visible product polish"
+      ],
+      "licensing_access_status": "Public. Documents are licensed under the W3C Software and Document License.",
+      "rf_role": "training",
+      "ingestion_difficulty": "low",
+      "major_risks": [
+        "Can become generic accessibility trivia unless tied to specific Role Foundry screens"
+      ],
+      "timing": "hackathon_now"
+    },
+    {
+      "rank": 5,
+      "id": "mdn-web-docs",
+      "name": "MDN Web Docs",
+      "primary_url": "https://developer.mozilla.org/en-US/",
+      "supporting_urls": [
+        "https://developer.mozilla.org/en-US/docs/MDN/Writing_guidelines/Attrib_copyright_license"
+      ],
+      "signal": [
+        "standards-grounded web-platform explanations",
+        "DOM/accessibility correctness",
+        "reference code examples"
+      ],
+      "licensing_access_status": "Public. MDN prose is CC BY-SA; newer code samples are CC0 and older samples are mixed/historical.",
+      "rf_role": "manual curation only",
+      "ingestion_difficulty": "low",
+      "major_risks": [
+        "Mixed licensing on prose/code",
+        "Reference prose is weaker than task-shaped examples for this role"
+      ],
+      "timing": "support_only"
+    },
+    {
+      "rank": 6,
+      "id": "web-platform-tests",
+      "name": "web-platform-tests (WPT)",
+      "primary_url": "https://github.com/web-platform-tests/wpt",
+      "supporting_urls": [
+        "https://web-platform-tests.org/writing-tests/"
+      ],
+      "signal": [
+        "executable browser-behavior cases",
+        "rendering/reftest patterns",
+        "regression-thinking discipline",
+        "interop mindset"
+      ],
+      "licensing_access_status": "Public. BSD-3-Clause.",
+      "rf_role": "public benchmark",
+      "ingestion_difficulty": "medium",
+      "major_risks": [
+        "Can drag the curriculum toward browser-spec minutiae",
+        "Best added after a stable Role Foundry browser-test lane exists"
+      ],
+      "timing": "later"
+    },
+    {
+      "rank": 7,
+      "id": "swe-bench",
+      "name": "SWE-bench / SWE-bench Verified",
+      "primary_url": "https://github.com/SWE-bench/SWE-bench",
+      "supporting_urls": [
+        "https://swebench.com/SWE-bench/"
+      ],
+      "signal": [
+        "real issue->patch benchmark structure",
+        "evaluation harness ideas",
+        "comparison/score reasoning"
+      ],
+      "licensing_access_status": "Public MIT harness/dataset packaging, but underlying task instances inherit mixed upstream repo realities and heavy infra assumptions.",
+      "rf_role": "public benchmark",
+      "ingestion_difficulty": "high",
+      "major_risks": [
+        "Broad and backend-heavy relative to current Role Foundry work",
+        "Expensive evaluation harness",
+        "Contamination and benchmark-overfitting risks"
+      ],
+      "timing": "later"
+    },
+    {
+      "rank": 8,
+      "id": "raw-github-discussion-corpora",
+      "name": "Raw GitHub issue / PR / review-comment corpora",
+      "primary_url": "https://docs.github.com/en/site-policy/github-terms/github-terms-of-service",
+      "supporting_urls": [],
+      "signal": [
+        "issue text",
+        "review comments",
+        "discussion at scale"
+      ],
+      "licensing_access_status": "Public access does not equal clean downstream training rights. GitHub ToS says users own the content they post; API use is separately governed.",
+      "rf_role": "not suitable",
+      "ingestion_difficulty": "high",
+      "major_risks": [
+        "Licensing ambiguity",
+        "Attribution problems",
+        "Noise/spam",
+        "benchmark leakage",
+        "bad incentive to train on arguments instead of fixes"
+      ],
+      "timing": "do_not_use_directly"
+    }
+  ],
+  "top_3_plan": [
+    {
+      "rank": 1,
+      "addition": "Playwright regression mini-pack",
+      "family_hint": "rf.software-engineer.public.playwright-regression",
+      "first_step": "Author 4-6 episodes tied to existing Role Foundry screens and require failing check -> fix -> passing rerun receipts."
+    },
+    {
+      "rank": 2,
+      "addition": "Code-review / diff-critique mini-pack",
+      "family_hint": "rf.software-engineer.public.code-review-discipline",
+      "first_step": "Author 6-8 tiny review-only episodes from Role Foundry-local diffs scored for user risk detection, test/doc asks, scope control, and uncertainty honesty."
+    },
+    {
+      "rank": 3,
+      "addition": "Alpine.js manual-curation lane",
+      "family_hint": "rf.software-engineer.public.issue-to-patch-stack-adjacent",
+      "first_step": "Pick at most 10 merged Alpine.js issues/PRs, keep only clearly licensed code/diff context, rewrite the first 3 into original Role Foundry episodes."
+    }
+  ],
+  "best_immediate_next_move": "Add the Playwright regression mini-pack first."
+}
