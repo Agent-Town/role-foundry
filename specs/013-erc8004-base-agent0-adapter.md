@@ -15,7 +15,7 @@ This adapter does not fake wallet sessions, onchain transactions, or minting rec
 ### In scope
 
 - `runner_bridge/product_integrations.py` — generates local ERC-8004 registration draft, completion template, and agent0 Base adapter contract tied to run receipts.
-- `app/agent0_base_adapter.mjs` — thin browser adapter following the agent0 mint shape: `discoverEip6963Providers` → `connectEip1193` → `SDK({ chainId, rpcUrl, walletProvider })` → `createAgent(...)` → `registerHTTP(tokenUri)`.
+- `app/agent0_base_adapter.mjs` — thin browser adapter following the agent0 mint shape: `discoverEip6963Providers` → `connectEip1193` → `SDK({ chainId, rpcUrl, walletProvider, registryOverrides })` → `createAgent(...)` → `registerHTTP(tokenUri)`.
 - Base Sepolia (chain id 84532) as the review/demo default.
 - Base Mainnet (chain id 8453) as the explicit submission target.
 - Env-driven chain config (RPC URL + explicit registry address required for live minting; subgraph optional).
@@ -69,8 +69,8 @@ The adapter makes this explicit at every layer:
 | Bridge integration | Yes | `RunBridge.run()` calls `write_product_integrations` after provenance |
 | Registration draft generation | Yes | Runs after every `write_product_integrations` call |
 | Completion template generation | Yes | Same |
-| Browser adapter module | Yes (code exists) | Requires agent0-sdk + wallet + RPC URL at runtime |
-| Live mint on Base Sepolia | No | Requires configured RPC URL + wallet approval |
+| Browser adapter module | Yes (code exists) | Requires agent0-sdk + wallet + RPC URL + registry override at runtime |
+| Live mint on Base Sepolia | No | Requires configured RPC URL + registry override + wallet approval |
 | Live mint on Base Mainnet | No | Same + explicit submission-target confirmation |
 
 ## Claim boundary

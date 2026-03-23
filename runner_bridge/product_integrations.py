@@ -415,7 +415,7 @@ def _build_agent0_base_adapter_contract(
             "Import agent0_base_adapter.mjs (Role Foundry-owned thin adapter).",
             "Call discoverProviders() to find EIP-6963 wallets.",
             "Call connectWallet(provider) to establish an EIP-1193 session.",
-            f"Call initSDK({{ chainId: {chain_env['chain_id']}, rpcUrl, walletProvider }}).",
+            f"Call initSDK({{ chainId: {chain_env['chain_id']}, rpcUrl, walletProvider, registryOverrides }}).",
             "Call createAgentFromDraft(sdk, registrationDraft) to build the agent profile.",
             "Call mintAgent(agent, tokenUri) which calls agent.registerHTTP(tokenUri).",
             "On confirmed tx, fill the completion template with chain_id, registry, agent_id, tx_hash.",
@@ -472,9 +472,9 @@ def _build_demo_claims(
     # agent0 adapter status
     adapter_status = status_by_integration.get("agent0_base_adapter", "staged")
     if adapter_status == "ready":
-        allowed.append(f"The agent0-sdk Base adapter has a configured RPC endpoint for {chain_label}.")
+        allowed.append(f"The agent0-sdk Base adapter has a configured RPC endpoint and registry override for {chain_label}.")
     else:
-        allowed.append(f"The agent0-sdk Base adapter contract is staged but the RPC endpoint for {chain_label} is not yet configured.")
+        allowed.append(f"The agent0-sdk Base adapter contract is staged but the RPC endpoint and registry override for {chain_label} are not yet configured.")
 
     return {"allowed": allowed, "blocked": blocked}
 

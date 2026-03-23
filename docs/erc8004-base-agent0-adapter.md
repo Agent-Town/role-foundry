@@ -45,7 +45,7 @@ const sdk = adapter.initSDK(agent0sdk, {
   chainId: 84532,
   rpcUrl: 'https://sepolia.base.org',
   walletProvider: wallet.data.provider,
-  registryOverrides: { '84532': '0xYourRegistryAddress' },
+  registryOverrides: { 84532: { IDENTITY: '0xYourRegistryAddress' } },
 });
 if (!sdk.ok) throw new Error(sdk.error);
 
