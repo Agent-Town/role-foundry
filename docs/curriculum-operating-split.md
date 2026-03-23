@@ -22,6 +22,13 @@ The public curriculum lane now has one canonical, versioned surface:
 - `runner_bridge/curriculum.py`
 - `tests/test_frontend_product_engineer_seed_registry.py`
 - `tests/test_curriculum_contract.py`
+- `data/curriculum/generation-lineage-registry.schema.v1.json`
+- `data/curriculum/weekly-training-cycle-receipt.schema.v1.json`
+- `data/curriculum/frontend-product-engineer-generation-lineage.v1.json`
+- `data/curriculum/frontend-product-engineer-sample-weekly-cycle.v1.json`
+- `runner_bridge/lineage.py`
+- `tests/test_phase5_lineage_cycle_contracts.py`
+- `docs/phase5-lineage-cycle-ops.md`
 
 There is intentionally no separate generic `seed/frontend-product-engineer.json`,
 `data/curriculum/evaluation-contract.json`,
@@ -169,10 +176,10 @@ The `execution_honesty` block in `result.json` makes it machine-readable whether
 | Task-packet → runtime bridge | Implemented | CLI `--packet` path loads by acceptance_test_id, materializes `run-object.json`, and runs end-to-end through the bridge. `execution_honesty` block makes backend non-execution machine-readable. |
 | Phase 3 execution | Partial | Autoresearch alpha receipts exist, and Step C verifier-contract / verifier-gate honesty landed; live verifier execution is still pending. |
 | Phase 4 evaluation | Packet-defined, runtime not yet live | Public scoring contract exists; teacher console and promotion-gate enforcement do not. |
-| Phase 5 compounding | Packet-defined, runtime not yet live | Lineage and weekly-cycle packets exist, but the operating loop is not live. |
+| Phase 5 compounding | Contract surface landed (fixture/sample) | Generation lineage registry (3 sample promoted generations), weekly cycle receipt schema and sample, cross-artifact linkage tests. All marked example_only; NOT live automation. See `docs/phase5-lineage-cycle-ops.md`. |
 | Private holdout pool | Local-only scaffold | Teacher authors locally; zero teacher-only content is tracked by git. |
 | Teacher review console | Not started | Requires Phase 4 app / export surface. |
-| Generation lineage | Not started | Requires Phase 5 registry and real promoted generations. |
+| Generation lineage | Contract surface landed (fixture/sample) | 3 sample promoted generations with parent chain, failure follow-up, and curriculum-contract linkage. Run objects marked available=false. See `data/curriculum/frontend-product-engineer-generation-lineage.v1.json`. |
 
 This is the honest split: the public curriculum contract is real now,
 while much of the teacher OS and live runtime remains future work.
