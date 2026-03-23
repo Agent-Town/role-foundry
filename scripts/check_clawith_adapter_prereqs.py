@@ -212,65 +212,106 @@ def run_checks(base_url: str, token: str, timeout: float) -> PrereqReport:
         report.blockers.append(f"base URL unreachable or /api/health failed: {health.detail}")
 
     # --- Check 2: auth surface understood ---
+    # Both registration-config AND version must respond for the auth surface
+    # to be considered understood.  Previously /api/version was probed but not
+    # used as a gate — that left a false-ready window.
     reg_config = probe_json(base_url, "/api/auth/registration-config", "registration_config", timeout=timeout)
     report.checks.append(reg_config)
 
     version = probe_json(base_url, "/api/version", "api_version", timeout=timeout)
     report.checks.append(version)
 
-    if reg_config.ok:
+    if reg_config.ok and version.ok:
         report.categories["auth_surface_understood"] = "ready"
     else:
         report.categories["auth_surface_understood"] = "blocked"
-        report.blockers.append(f"auth registration-config not reachable: {reg_config.detail}")
+        parts = []
+        if not reg_config.ok:
+            parts.append(f"registration-config failed: {reg_config.detail}")
+        if not version.ok:
+            parts.append(f"api/version failed: {version.detail}")
+        report.blockers.append(f"auth surface not fully understood: {'; '.join(parts)}")
 
     # --- Check 3: admin presence known ---
+    # Requires BOTH auth/me confirming admin role AND /api/admin/companies
+    # responding successfully.  Either failure blocks this category.
     if token:
         auth_me = probe_json(base_url, "/api/auth/me", "auth_me", token=token, timeout=timeout)
         report.checks.append(auth_me)
+
+        admin_companies = probe_json(base_url, "/api/admin/companies", "admin_companies", token=token, timeout=timeout)
+        report.checks.append(admin_companies)
+
+        admin_blockers: list[str] = []
+
         if auth_me.ok and isinstance(auth_me.body, dict):
             role = auth_me.body.get("role")
-            if role in ("platform_admin", "org_admin"):
-                report.categories["admin_presence_known"] = "ready"
-            else:
-                report.categories["admin_presence_known"] = "blocked"
-                report.blockers.append(
+            if role not in ("platform_admin", "org_admin"):
+                admin_blockers.append(
                     f"authenticated user role is {role!r}, not platform_admin or org_admin"
                 )
         elif auth_me.ok:
-            report.categories["admin_presence_known"] = "unknown"
-            report.blockers.append("auth/me returned unexpected payload shape")
+            admin_blockers.append("auth/me returned unexpected payload shape")
         else:
+            admin_blockers.append(f"auth/me probe failed: {auth_me.detail}")
+
+        if not admin_companies.ok:
+            admin_blockers.append(f"admin/companies probe failed: {admin_companies.detail}")
+
+        if admin_blockers:
             report.categories["admin_presence_known"] = "blocked"
-            report.blockers.append(f"auth/me probe failed: {auth_me.detail}")
+            report.blockers.extend(admin_blockers)
+        else:
+            report.categories["admin_presence_known"] = "ready"
     else:
-        skip = CheckResult("auth_me", "/api/auth/me", "GET", ok=False, kind="skip",
-                           detail="skipped: pass --token to verify admin presence")
-        report.checks.append(skip)
+        for skip_name, skip_path in [
+            ("auth_me", "/api/auth/me"),
+            ("admin_companies", "/api/admin/companies"),
+        ]:
+            skip = CheckResult(skip_name, skip_path, "GET", ok=False, kind="skip",
+                               detail="skipped: pass --token to verify admin presence")
+            report.checks.append(skip)
         report.categories["admin_presence_known"] = "unknown"
         report.blockers.append("admin presence unknown: no token supplied for authenticated probe")
 
     # --- Check 4: model-pool presence known ---
+    # Requires BOTH /api/enterprise/llm-providers responding successfully AND
+    # /api/enterprise/llm-models returning a populated model list.
+    # Either failure blocks this category.
     if token:
+        llm_providers = probe_json(base_url, "/api/enterprise/llm-providers", "llm_providers", token=token, timeout=timeout)
+        report.checks.append(llm_providers)
+
         llm_models = probe_json(base_url, "/api/enterprise/llm-models", "llm_models", token=token, timeout=timeout)
         report.checks.append(llm_models)
+
+        model_blockers: list[str] = []
+
+        if not llm_providers.ok:
+            model_blockers.append(f"llm-providers probe failed: {llm_providers.detail}")
+
         if llm_models.ok:
             model_count = _count_models(llm_models.body)
-            if model_count is not None and model_count > 0:
-                report.categories["model_pool_presence_known"] = "ready"
-            elif model_count == 0:
-                report.categories["model_pool_presence_known"] = "blocked"
-                report.blockers.append("model pool is empty: no LLM model entries configured")
-            else:
-                report.categories["model_pool_presence_known"] = "unknown"
-                report.blockers.append("model pool response had unexpected shape")
+            if model_count is not None and model_count == 0:
+                model_blockers.append("model pool is empty: no LLM model entries configured")
+            elif model_count is None:
+                model_blockers.append("model pool response had unexpected shape")
         else:
+            model_blockers.append(f"llm-models probe failed: {llm_models.detail}")
+
+        if model_blockers:
             report.categories["model_pool_presence_known"] = "blocked"
-            report.blockers.append(f"llm-models probe failed: {llm_models.detail}")
+            report.blockers.extend(model_blockers)
+        else:
+            report.categories["model_pool_presence_known"] = "ready"
     else:
-        skip = CheckResult("llm_models", "/api/enterprise/llm-models", "GET", ok=False, kind="skip",
-                           detail="skipped: pass --token to inspect model-pool readiness")
-        report.checks.append(skip)
+        for skip_name, skip_path in [
+            ("llm_providers", "/api/enterprise/llm-providers"),
+            ("llm_models", "/api/enterprise/llm-models"),
+        ]:
+            skip = CheckResult(skip_name, skip_path, "GET", ok=False, kind="skip",
+                               detail="skipped: pass --token to inspect this auth-gated surface")
+            report.checks.append(skip)
         report.categories["model_pool_presence_known"] = "unknown"
         report.blockers.append("model-pool presence unknown: no token supplied for authenticated probe")
 
@@ -346,6 +387,25 @@ def render_human(report: PrereqReport) -> None:
         print("Endpoint mismatches (adapter needed):")
         for m in report.endpoint_mismatches:
             print(f"  - {m}")
+
+    # --- Concise readiness statement ---
+    print()
+    print("--- Readiness Statement ---")
+    ready_cats = [c for c, s in report.categories.items() if s == "ready"]
+    blocked_cats = [c for c, s in report.categories.items() if s == "blocked"]
+    unknown_cats = [c for c, s in report.categories.items() if s == "unknown"]
+    if ready_cats:
+        print(f"  READY NOW:    {', '.join(ready_cats)}")
+    if blocked_cats:
+        print(f"  BLOCKED NOW:  {', '.join(blocked_cats)}")
+    if unknown_cats:
+        print(f"  UNKNOWN:      {', '.join(unknown_cats)}")
+    if not blocked_cats and not unknown_cats:
+        print("  All prereqs satisfied — adapter bring-up can proceed.")
+    elif blocked_cats:
+        print("  Resolve blockers before adapter bring-up.")
+    else:
+        print("  Supply --token to resolve unknown categories.")
 
 
 def main(argv: list[str] | None = None) -> int:

@@ -98,12 +98,20 @@ python3 scripts/check_clawith_adapter_prereqs.py \
 ```
 
 The checker covers six required categories:
-1. base URL reachable
-2. auth surface understood
-3. admin presence known
-4. model-pool presence known
-5. endpoint mismatch documented
+1. base URL reachable — `/api/health` returns JSON 200
+2. auth surface understood — both `/api/auth/registration-config` AND `/api/version` must respond
+3. admin presence known — `/api/auth/me` confirms an admin role (requires `--token`)
+4. model-pool presence known — `/api/enterprise/llm-models` has >0 entries (requires `--token`)
+5. endpoint mismatch documented — RF-native gaps explicitly listed
 6. status output clearly categorized as ready/blocked/unknown
+
+When a token is supplied, the checker also probes `/api/enterprise/llm-providers` and
+`/api/admin/companies`, and it treats unexpected failures there as real blockers for
+model-pool/admin readiness — these are the auth-gated surfaces called out in the seam
+mapping matrix above.
+
+The human output ends with a **Readiness Statement** that plainly says what is
+ready now, blocked now, and unknown until locally probed.
 
 It uses **GET requests only** and performs no writes.
 
