@@ -157,6 +157,49 @@
     <p>Most demos let the model practice on the same prompts it gets judged on. That is homework, not an exam. Role Foundry keeps the exam sealed, then promotes failure themes into the next public curriculum round.</p>
     <p>That is the whole point of this vertical: the Frontend Apprentice is learning to build Role Foundry itself without getting to peek at the hidden judge set.</p>
   </article>
+
+  <template x-if="$store.app.teacher_source_intake?.sources?.length">
+    <section>
+      <h2>Teacher-driven curriculum extension</h2>
+      <p><small>Teachers discover external sources, curate them, and promote them into benchmark curriculum. Any teacher can follow this workflow.</small></p>
+      <p><small><strong>Process:</strong> <span x-text="$store.app.teacher_source_intake.process"></span> — <a :href="$store.app.teacher_source_intake.process_doc" target="_blank">workflow doc</a></small></p>
+
+      <div class="grid-2">
+        <template x-for="src in $store.app.teacher_source_intake.sources.filter(s => !s.teacher_only)" :key="src.id">
+          <div class="card curriculum-card">
+            <div class="card-header-row">
+              <h4 x-text="src.name"></h4>
+              <span class="badge" :class="{
+                'badge-training': src.status === 'promoted',
+                'badge-medium': src.status === 'curated',
+                'badge-easy': src.status === 'discovered'
+              }" x-text="src.status"></span>
+            </div>
+            <p x-text="src.summary"></p>
+            <div class="card-footer-row">
+              <span class="mini-note" x-text="'License: ' + src.license"></span>
+              <span class="mini-note" x-show="src.manual_curation_only">manual curation only</span>
+              <span class="mini-note" x-show="src.promoted_family" x-text="src.episode_count + ' episodes promoted'"></span>
+            </div>
+          </div>
+        </template>
+      </div>
+
+      <template x-if="$store.app.teacher_source_intake.sources.some(s => s.teacher_only)">
+        <article class="card holdout-card" style="margin-top: 1rem;">
+          <h4>Teacher-only holdout candidates</h4>
+          <p><small>These sources are reserved for teacher-only holdout curation. They do not appear in public curriculum or student-visible data.</small></p>
+          <template x-for="src in $store.app.teacher_source_intake.sources.filter(s => s.teacher_only)" :key="src.id">
+            <div style="margin-top: 0.5rem;">
+              <strong x-text="src.name"></strong>
+              <span class="badge badge-holdout" x-text="src.status"></span>
+              <p class="redacted-copy"><small x-text="src.summary"></small></p>
+            </div>
+          </template>
+        </article>
+      </template>
+    </section>
+  </template>
 </main>
 
 </body>

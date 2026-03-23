@@ -224,6 +224,49 @@
       "notes": "Public-safe because the promotion target is the sanitized lesson, not the sealed exam text."
     },
     {
+      "id": "rf.frontend-apprentice.public.playwright-regression",
+      "status": "benchmark_ready",
+      "visibility": "student_visible",
+      "role": "Frontend Apprentice",
+      "role_scope": "frontend-apprentice",
+      "promotion_criteria": {
+        "source_is_public_curriculum": true,
+        "no_teacher_only_inputs": true,
+        "rubric_template_exists": true,
+        "not_repo_visible_holdout": true
+      },
+      "source_seed_scenarios": ["t7"],
+      "title": "Playwright-informed UI regression",
+      "benchmark_goal": "Apply Playwright best-practice patterns to existing Role Foundry screens: user-visible locators, test isolation, and honest regression-check receipts.",
+      "loop_stage": "public_curriculum",
+      "source_backed_by": {
+        "source_id": "playwright-docs",
+        "source_url": "https://playwright.dev/docs/best-practices",
+        "source_license": "Apache-2.0",
+        "intake_record": "data/source-research/software-engineer-source-intake.v1.json#intake-playwright-regression",
+        "rf_authored": true,
+        "notes": "Episodes are original RF-authored work informed by Playwright best practices. No Playwright prose is copied verbatim."
+      },
+      "allowed_mutation_surfaces": [
+        "app/scenarios.html",
+        "app/run.html",
+        "app/data.js",
+        "tests/"
+      ],
+      "required_artifacts": [
+        "changed-files summary",
+        "regression-check receipt",
+        "policy snapshot"
+      ],
+      "public_checks": [
+        "Uses user-visible locators (role, text, label) instead of brittle CSS selectors",
+        "Test isolation: each check is independent and does not depend on prior state",
+        "Regression check targets an existing Role Foundry screen, not a hypothetical surface",
+        "No claim that a full Playwright harness ships if it does not"
+      ],
+      "notes": "Source-backed by Playwright public documentation (Apache-2.0). Episodes are RF-authored, not copied from Playwright docs."
+    },
+    {
       "id": "rf.frontend-apprentice.blocked.teacher-only-h1",
       "status": "blocked_pending_rewrite",
       "visibility": "teacher_only",

@@ -1,0 +1,123 @@
+{
+  "meta": {
+    "id": "software-engineer-source-intake-v1",
+    "version": "1.0.0",
+    "generated_on": "2026-03-23",
+    "scope": "Teacher-driven source intake for the software-engineering apprentice. Each record tracks a candidate source from discovery through curation to promotion into benchmark curriculum.",
+    "honesty_note": "This intake log records real teacher decisions. Sources marked manual_curation_only require original RF-authored episodes — no bulk ingestion. Status fields reflect actual progress, not aspirations.",
+    "process": "discover -> curate -> promote. Any teacher can follow this process. See docs/teacher-source-curriculum-workflow.md for the full workflow."
+  },
+  "intake_records": [
+    {
+      "id": "intake-playwright-regression",
+      "source_id": "playwright-docs",
+      "source_name": "Playwright docs + examples",
+      "source_url": "https://playwright.dev/docs/best-practices",
+      "license": "Apache-2.0",
+      "manual_curation_only": false,
+      "status": "promoted",
+      "discovered_by": "Robin",
+      "discovered_on": "2026-03-23",
+      "curated_on": "2026-03-23",
+      "promoted_on": "2026-03-23",
+      "discovery_notes": "Playwright best-practices docs provide clear, public, well-licensed guidance on UI regression testing patterns. Directly relevant to Role Foundry's frontend apprentice because the apprentice ships browser-visible product slices.",
+      "curation_notes": "Selected two best-practice themes grounded in existing RF UI surfaces: user-visible locator discipline and test isolation. Episodes are RF-authored, not copied from Playwright docs.",
+      "promotion_notes": "Promoted as family rf.frontend-apprentice.public.playwright-regression in public-benchmark-pack-v1. Two episodes tied to existing RF screens (scenarios.html, run.html). Rubric authored fresh for RF context.",
+      "promoted_family_id": "rf.frontend-apprentice.public.playwright-regression",
+      "promoted_episode_ids": ["pbpv1-e13", "pbpv1-e14"],
+      "provenance": {
+        "source_license": "Apache-2.0",
+        "source_type": "public documentation",
+        "rf_authorship": "Episodes and rubric are original RF-authored work informed by Playwright best practices. No Playwright prose is copied verbatim.",
+        "teacher_only_inputs_used": false
+      }
+    },
+    {
+      "id": "intake-google-eng-practices",
+      "source_id": "google-eng-practices-review",
+      "source_name": "Google Engineering Practices — code review guides",
+      "source_url": "https://google.github.io/eng-practices/review/",
+      "license": "CC BY 3.0",
+      "manual_curation_only": false,
+      "status": "curated",
+      "discovered_by": "Robin",
+      "discovered_on": "2026-03-23",
+      "curated_on": "2026-03-23",
+      "promoted_on": null,
+      "discovery_notes": "Google's code review guides are public, well-licensed (CC BY 3.0), and directly relevant to the apprentice's need for diff-critique and review-comment discipline.",
+      "curation_notes": "Suitable for a future code-review-discipline family. Episodes should be RF-authored, converting Google's prose guidance into task-shaped scenarios grounded in RF diffs. Not yet promoted because no episodes are authored yet.",
+      "promotion_notes": null,
+      "promoted_family_id": null,
+      "promoted_episode_ids": [],
+      "provenance": {
+        "source_license": "CC BY 3.0",
+        "source_type": "public documentation",
+        "rf_authorship": "No episodes authored yet. When authored, they will be original RF work informed by Google's public guidelines.",
+        "teacher_only_inputs_used": false
+      }
+    },
+    {
+      "id": "intake-alpinejs-curation",
+      "source_id": "alpinejs-curation-lane",
+      "source_name": "Alpine.js repo + docs",
+      "source_url": "https://github.com/alpinejs/alpine",
+      "license": "MIT (code/docs only; GitHub issue/PR text has ambiguous downstream rights)",
+      "manual_curation_only": true,
+      "status": "discovered",
+      "discovered_by": "Robin",
+      "discovered_on": "2026-03-23",
+      "curated_on": null,
+      "promoted_on": null,
+      "discovery_notes": "Alpine.js is the apprentice's frontend framework. Stack-adjacent bugfix exemplars could be valuable, but raw GitHub issue/PR/review text should not be assumed to carry clean downstream training rights.",
+      "curation_notes": null,
+      "promotion_notes": null,
+      "promoted_family_id": null,
+      "promoted_episode_ids": [],
+      "provenance": {
+        "source_license": "MIT (code/docs); GitHub thread text licensing ambiguous",
+        "source_type": "open-source repository — manual curation only",
+        "rf_authorship": "No episodes authored yet. Any future episodes must be original RF-authored work. Do not bulk-ingest GitHub threads.",
+        "teacher_only_inputs_used": false
+      }
+    },
+    {
+      "id": "intake-swebench-teacher-holdout",
+      "source_id": "swebench-verified",
+      "source_name": "SWE-bench / SWE-bench Verified",
+      "source_url": "https://github.com/SWE-bench/SWE-bench",
+      "license": "MIT (harness/packaging); task instances inherit mixed upstream repo licenses",
+      "manual_curation_only": true,
+      "status": "blocked_teacher_only_holdout",
+      "discovered_by": "Robin",
+      "discovered_on": "2026-03-23",
+      "curated_on": null,
+      "promoted_on": null,
+      "discovery_notes": "SWE-bench provides real issue-to-patch benchmark structure and evaluation harness ideas. Useful as a reference for benchmark design and as a potential source for teacher-only holdout candidates. NOT suitable for public curriculum: wrong size and shape (broad, backend-heavy, infra-expensive), contamination-prone, and not aligned with the current frontend/product loop.",
+      "curation_notes": "Directive: use SWE-bench material ONLY as a small manually curated teacher-only holdout direction. Do NOT bulk-import. Do NOT treat as first-wave public curriculum. Any SWE-bench-derived holdout candidates must be (1) manually selected by a teacher, (2) rewritten into original RF-authored episodes, (3) stored outside the public benchmark pack, and (4) clearly labeled teacher-only / manual-curation-only with explicit provenance.",
+      "promotion_notes": null,
+      "promoted_family_id": null,
+      "promoted_episode_ids": [],
+      "teacher_only_holdout_direction": {
+        "scope": "teacher-only holdout candidates only — never public curriculum",
+        "selection_rule": "A teacher manually selects a small number (≤10) of SWE-bench task instances that test failure modes relevant to the current apprentice role. Each selected instance is rewritten as an original RF-authored holdout episode.",
+        "storage_rule": "Holdout episodes derived from SWE-bench must be stored outside the public benchmark pack, in the local private holdout manifest or a separate teacher-only pack.",
+        "student_visibility": "none — SWE-bench-derived holdout candidates must never appear in student-visible curriculum, public benchmark packs, or demo data",
+        "licensing_note": "SWE-bench harness is MIT but individual task instances reference upstream repos with varied licenses. Any RF-authored holdout must stand as original work, not a copy of upstream code or discussion.",
+        "blocked_reason": "Bulk import is blocked. This record exists to document the teacher-only holdout direction and keep the seam visible for future manual curation."
+      },
+      "provenance": {
+        "source_license": "MIT (harness); upstream task repos have mixed licenses",
+        "source_type": "benchmark dataset — manual curation only, teacher-only holdout direction",
+        "rf_authorship": "No episodes authored yet. Any future holdout episodes must be original RF-authored work, not copies of SWE-bench task descriptions or upstream patches.",
+        "teacher_only_inputs_used": true
+      }
+    }
+  ],
+  "status_definitions": {
+    "discovered": "Source identified as potentially relevant. No episodes authored yet.",
+    "curated": "Source reviewed by a teacher, suitability confirmed, episode authoring planned or in progress.",
+    "promoted": "At least one RF-authored episode family has been promoted into the benchmark pack from this source.",
+    "rejected": "Source reviewed and determined unsuitable for this role's curriculum."
+  },
+  "workflow_ref": "docs/teacher-source-curriculum-workflow.md"
+}

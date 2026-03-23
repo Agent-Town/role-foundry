@@ -15,11 +15,11 @@
     ]
   },
   "coverage": {
-    "public_episode_count": 12,
-    "benchmark_ready_family_count": 6,
-    "rubric_template_count": 6,
-    "rubric_mapped_episode_count": 12,
-    "provenance_mapped_episode_count": 12
+    "public_episode_count": 14,
+    "benchmark_ready_family_count": 7,
+    "rubric_template_count": 7,
+    "rubric_mapped_episode_count": 14,
+    "provenance_mapped_episode_count": 14
   },
   "rubric_templates": [
     {
@@ -241,6 +241,51 @@
           "description": "The slice preserves the separation between public curriculum and teacher-only evaluation.",
           "pass_signal": "Teacher-only evaluation remains separate and unquoted.",
           "fail_signal": "The slice blurs public curriculum with teacher-only grading details."
+        }
+      ]
+    },
+    {
+      "id": "pbpv1-rubric-playwright-regression-v1",
+      "family_id": "rf.frontend-apprentice.public.playwright-regression",
+      "version": "1.0.0",
+      "title": "Playwright-informed UI regression rubric",
+      "description": "Scores whether the regression check follows Playwright best practices (user-visible locators, test isolation) and targets a real Role Foundry screen.",
+      "score_scale": {
+        "min": 0.0,
+        "max": 1.0
+      },
+      "dimensions": [
+        {
+          "id": "locator_discipline",
+          "label": "User-visible locator discipline",
+          "weight": 0.35,
+          "description": "The check uses role, text, or label locators instead of brittle CSS selectors or test IDs.",
+          "pass_signal": "Locators target user-visible semantics, not DOM implementation details.",
+          "fail_signal": "Check relies on CSS selectors, XPath, or fragile data-testid attributes."
+        },
+        {
+          "id": "test_isolation",
+          "label": "Test isolation",
+          "weight": 0.3,
+          "description": "Each check is independent and does not depend on state left by prior checks.",
+          "pass_signal": "The check sets up its own data context and can run alone.",
+          "fail_signal": "The check relies on shared mutable state or a specific test execution order."
+        },
+        {
+          "id": "real_surface_targeting",
+          "label": "Real surface targeting",
+          "weight": 0.2,
+          "description": "The check targets an existing Role Foundry screen, not a hypothetical surface.",
+          "pass_signal": "The regression check runs against a committed RF page or component.",
+          "fail_signal": "The check targets a surface that does not exist in the repo."
+        },
+        {
+          "id": "honest_scope",
+          "label": "Honest scope claims",
+          "weight": 0.15,
+          "description": "The check does not claim a full Playwright CI harness or E2E infrastructure that does not exist.",
+          "pass_signal": "Scope claims match what is actually wired.",
+          "fail_signal": "The slice implies CI integration or infrastructure that is not present."
         }
       ]
     }
@@ -556,6 +601,72 @@
         ],
         "teacher_only_inputs_used": false,
         "notes": "Derived from student-visible training curriculum only; no teacher-only prompt text or hidden rubric content is used."
+      }
+    },
+    {
+      "id": "pbpv1-e13",
+      "family_id": "rf.frontend-apprentice.public.playwright-regression",
+      "title": "Use user-visible locators for a curriculum-page regression check",
+      "rubric_template_id": "pbpv1-rubric-playwright-regression-v1",
+      "provenance": {
+        "source_seed_scenarios": [
+          "t7"
+        ],
+        "source_seed_titles": [
+          "Add a Playwright-informed UI regression check to an existing screen"
+        ],
+        "source_seed_types": [
+          "training"
+        ],
+        "public_spec_refs": [
+          "specs/008-public-benchmark-pack-v1.md"
+        ],
+        "public_doc_refs": [
+          "docs/public-benchmark-pack-v1.md",
+          "docs/dataset-episode-registry.md",
+          "docs/software-engineer-curriculum-sources.md"
+        ],
+        "teacher_only_inputs_used": false,
+        "source_backed_by": {
+          "source_id": "playwright-docs",
+          "source_url": "https://playwright.dev/docs/best-practices",
+          "source_license": "Apache-2.0",
+          "intake_record": "data/source-research/software-engineer-source-intake.v1.json#intake-playwright-regression"
+        },
+        "notes": "Source-backed by Playwright public documentation (Apache-2.0). Episode is original RF-authored work informed by Playwright best practices; no Playwright prose is copied verbatim."
+      }
+    },
+    {
+      "id": "pbpv1-e14",
+      "family_id": "rf.frontend-apprentice.public.playwright-regression",
+      "title": "Isolate a run-detail regression check from shared state",
+      "rubric_template_id": "pbpv1-rubric-playwright-regression-v1",
+      "provenance": {
+        "source_seed_scenarios": [
+          "t7"
+        ],
+        "source_seed_titles": [
+          "Add a Playwright-informed UI regression check to an existing screen"
+        ],
+        "source_seed_types": [
+          "training"
+        ],
+        "public_spec_refs": [
+          "specs/008-public-benchmark-pack-v1.md"
+        ],
+        "public_doc_refs": [
+          "docs/public-benchmark-pack-v1.md",
+          "docs/dataset-episode-registry.md",
+          "docs/software-engineer-curriculum-sources.md"
+        ],
+        "teacher_only_inputs_used": false,
+        "source_backed_by": {
+          "source_id": "playwright-docs",
+          "source_url": "https://playwright.dev/docs/best-practices",
+          "source_license": "Apache-2.0",
+          "intake_record": "data/source-research/software-engineer-source-intake.v1.json#intake-playwright-regression"
+        },
+        "notes": "Source-backed by Playwright public documentation (Apache-2.0). Episode is original RF-authored work informed by Playwright best practices; no Playwright prose is copied verbatim."
       }
     }
   ]
