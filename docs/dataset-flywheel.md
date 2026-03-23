@@ -15,7 +15,7 @@ source-intake buckets.
 
 | Role | Bucket | Status | Families |
 |------|--------|--------|----------|
-| Frontend Apprentice | `public-training` | active | 8 |
+| Frontend Apprentice | `public-training` | active | 9 |
 | Frontend Apprentice | `blocked-teacher-only` | blocked_pending_rewrite | 3 |
 | Frontend Apprentice | `local-private-holdout` | local_only | 0 committed |
 | Frontend/Product Engineer | `fpe-public-training` | active | 5 |
@@ -25,9 +25,9 @@ source-intake buckets.
 
 | Bucket | Status | Promotion mode | Notes |
 |--------|--------|----------------|-------|
-| `frontend-apprentice-source-intake-promoted` | promoted | `public_benchmark_family` | Playwright-backed and Google Eng Practices-backed families are promoted |
+| `frontend-apprentice-source-intake-promoted` | promoted | `public_benchmark_family` | Playwright-backed, Google Eng Practices-backed, and Alpine docs/examples-backed families are promoted |
 | `frontend-apprentice-source-intake-curated` | curated | `public_candidate` | Currently empty; no curated-but-unpromoted public intake seams remain |
-| `frontend-apprentice-source-intake-manual-curation-only` | discovered | `manual_curation_only` | Alpine.js remains manual-rewrite-only |
+| `frontend-apprentice-source-intake-manual-curation-only` | discovered | `manual_curation_only` | Currently empty; Alpine docs/examples were manually rewritten and promoted, while raw GitHub threads remain excluded |
 | `frontend-apprentice-source-intake-blocked-teacher-only` | blocked_teacher_only_holdout | `teacher_only_manual_curation` | SWE-bench remains a teacher-only holdout direction |
 
 Every Frontend Apprentice seed scenario maps to exactly one family bucket.
@@ -66,7 +66,7 @@ benchmark-ready teacher-only status without explicit blocking.
 - Their `blocked_reason` explains that the repo already discloses their framing
 - They do not appear in any public benchmark pack
 - SWE-bench remains an explicit `blocked_teacher_only_holdout` intake seam
-- Manual-curation-only and teacher-only intake buckets carry no promoted public
+- Unpromoted manual-curation-only and teacher-only intake buckets carry no promoted public
   families, no promoted public episodes, and no public-pack refs
 
 No sealed teacher pack is claimed. No private holdout content is tracked.
@@ -94,8 +94,7 @@ None for G001–G004. The current contract passes honestly.
 - No sealed teacher pack is claimed or invented
 - Local private holdouts remain gitignored and local-only
 - h1/h2/h3 remain blocked pending genuine rewrite
-- Manual-curation-only source-intake seams still require actual RF-authored
-  episode work before they become promotable public families
+- No unpromoted manual-curation-only public-source seams remain after the Alpine docs/examples promotion; raw GitHub discussion text is still excluded from direct public-pack promotion
 - Teacher-only holdout seams remain blocked from any public promotion path
 
 ## Audit commands

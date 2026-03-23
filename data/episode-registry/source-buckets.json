@@ -20,17 +20,18 @@
         "t5",
         "t6",
         "t7",
-        "t8"
+        "t8",
+        "t9"
       ],
       "family_id_prefix": "rf.frontend-apprentice.public.",
-      "family_count": 8,
+      "family_count": 9,
       "pack_refs": [
         "benchmarks/public-pack-v1/benchmark-pack.json"
       ],
       "registry_refs": [
         "data/episode-registry/public-benchmark-pack-v1.json"
       ],
-      "notes": "All eight public families are benchmark_ready and ship in public-benchmark-pack-v1."
+      "notes": "All nine public families are benchmark_ready and ship in public-benchmark-pack-v1."
     },
     {
       "id": "blocked-teacher-only",
@@ -141,6 +142,7 @@
           "t6",
           "t7",
           "t8",
+          "t9",
           "h1",
           "h2",
           "h3"
@@ -192,7 +194,7 @@
         "intake_bucket_ids": []
       }
     },
-    "notes": "Every scenario/task across both roles maps to exactly one bucket. The Frontend Apprentice uses scenario_ids (t1-t8, h1-h3) plus four explicit source-intake buckets covering promoted, curated, manual-curation-only, and blocked teacher-only seams. The Frontend/Product Engineer uses acceptance_test_ids (A001-E004).",
+    "notes": "Every scenario/task across both roles maps to exactly one bucket. The Frontend Apprentice uses scenario_ids (t1-t9, h1-h3) plus four explicit source-intake buckets covering promoted, curated, manual-curation-only, and blocked teacher-only seams. The Frontend/Product Engineer uses acceptance_test_ids (A001-E004).",
     "total_intake_buckets": 4,
     "promoted_intake_buckets": 1,
     "curated_intake_buckets": 1,
@@ -209,17 +211,21 @@
       "manual_curation_only": false,
       "intake_record_ids": [
         "intake-playwright-regression",
-        "intake-google-eng-practices"
+        "intake-google-eng-practices",
+        "intake-alpinejs-curation"
       ],
       "promoted_family_ids": [
         "rf.frontend-apprentice.public.playwright-regression",
-        "rf.frontend-apprentice.public.code-review-discipline"
+        "rf.frontend-apprentice.public.code-review-discipline",
+        "rf.frontend-apprentice.public.alpine-state-patterns"
       ],
       "promoted_episode_ids": [
         "pbpv1-e13",
         "pbpv1-e14",
         "pbpv1-e15",
-        "pbpv1-e16"
+        "pbpv1-e16",
+        "pbpv1-e17",
+        "pbpv1-e18"
       ],
       "pack_refs": [
         "benchmarks/public-pack-v1/benchmark-pack.json"
@@ -229,7 +235,7 @@
         "benchmarks/public-pack-v1/episode-family-registry.json",
         "data/episode-registry/public-benchmark-pack-v1.json"
       ],
-      "notes": "Represents RF-authored, public-safe families already promoted from tracked source intake into the Frontend Apprentice benchmark pack. Today this includes the Playwright-backed family and the Google Eng Practices-backed family."
+      "notes": "Represents RF-authored, public-safe families already promoted from tracked source intake into the Frontend Apprentice benchmark pack. Today this includes Playwright, Google Eng Practices, and an Alpine.js docs/examples-backed family authored via manual rewrite. Raw Alpine GitHub discussion text remains excluded."
     },
     {
       "id": "frontend-apprentice-source-intake-curated",
@@ -245,7 +251,7 @@
       "registry_refs": [
         "data/source-research/software-engineer-source-intake.v1.json"
       ],
-      "notes": "No curated-but-unpromoted sources remain. Google Eng Practices was promoted to rf.frontend-apprentice.public.code-review-discipline."
+      "notes": "No curated-but-unpromoted public intake seams remain."
     },
     {
       "id": "frontend-apprentice-source-intake-manual-curation-only",
@@ -254,16 +260,14 @@
       "status": "discovered",
       "promotion_mode": "manual_curation_only",
       "manual_curation_only": true,
-      "intake_record_ids": [
-        "intake-alpinejs-curation"
-      ],
+      "intake_record_ids": [],
       "promoted_family_ids": [],
       "promoted_episode_ids": [],
       "pack_refs": [],
       "registry_refs": [
         "data/source-research/software-engineer-source-intake.v1.json"
       ],
-      "notes": "Source is discovered only. Manual teacher rewrite is required before any RF-authored family can exist. Bulk import stays blocked."
+      "notes": "Currently empty. Alpine.js moved out after a docs/examples-only manual rewrite and public-family promotion. Raw GitHub issue/PR/review text would still have to re-enter through this bucket, not the public pack directly."
     },
     {
       "id": "frontend-apprentice-source-intake-blocked-teacher-only",

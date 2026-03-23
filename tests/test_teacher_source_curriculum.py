@@ -146,6 +146,62 @@ class TeacherSourceCurriculumTests(unittest.TestCase):
         total_weight = sum(d["weight"] for d in rubric["dimensions"])
         self.assertAlmostEqual(total_weight, 1.0, places=9)
 
+    def test_alpine_promoted_from_manual_curation_only_docs_lane(self):
+        """Alpine intake should be promoted, but stay explicitly manual-curation-only."""
+        alpine = self.intake_records.get("intake-alpinejs-curation")
+        self.assertIsNotNone(alpine, "Alpine intake record must exist")
+        self.assertEqual(alpine["status"], "promoted")
+        self.assertTrue(alpine["manual_curation_only"])
+        self.assertFalse(alpine["provenance"]["teacher_only_inputs_used"])
+        self.assertEqual(
+            alpine["promoted_family_id"],
+            "rf.frontend-apprentice.public.alpine-state-patterns",
+        )
+        self.assertEqual(alpine["promoted_episode_ids"], ["pbpv1-e17", "pbpv1-e18"])
+        self.assertIn("allowed_source_material", alpine)
+        self.assertIn("excluded_source_material", alpine)
+
+    def test_alpine_family_in_pack_and_registry(self):
+        alpine_family = "rf.frontend-apprentice.public.alpine-state-patterns"
+        self.assertIn(alpine_family, self.pack["included_family_ids"])
+
+        families = {f["id"]: f for f in self.registry["families"]}
+        self.assertIn(alpine_family, families)
+        family = families[alpine_family]
+        self.assertEqual(family["status"], "benchmark_ready")
+        self.assertEqual(family["visibility"], "student_visible")
+        self.assertEqual(family["source_seed_scenarios"], ["t9"])
+        self.assertIn("source_backed_by", family)
+        self.assertEqual(family["source_backed_by"]["source_license"], "MIT")
+        self.assertTrue(family["source_backed_by"]["rf_authored"])
+
+    def test_alpine_episodes_have_provenance(self):
+        episodes = {e["id"]: e for e in self.episode_registry["episodes"]}
+        for eid in ("pbpv1-e17", "pbpv1-e18"):
+            self.assertIn(eid, episodes)
+            ep = episodes[eid]
+            self.assertEqual(
+                ep["family_id"],
+                "rf.frontend-apprentice.public.alpine-state-patterns",
+            )
+            self.assertIn("source_backed_by", ep["provenance"])
+            self.assertEqual(
+                ep["provenance"]["source_backed_by"]["source_license"],
+                "MIT",
+            )
+            self.assertFalse(ep["provenance"]["teacher_only_inputs_used"])
+
+    def test_alpine_rubric_exists(self):
+        rubrics = {r["id"]: r for r in self.episode_registry["rubric_templates"]}
+        self.assertIn("pbpv1-rubric-alpine-state-patterns-v1", rubrics)
+        rubric = rubrics["pbpv1-rubric-alpine-state-patterns-v1"]
+        self.assertEqual(
+            rubric["family_id"],
+            "rf.frontend-apprentice.public.alpine-state-patterns",
+        )
+        total_weight = sum(d["weight"] for d in rubric["dimensions"])
+        self.assertAlmostEqual(total_weight, 1.0, places=9)
+
     def test_swebench_record_is_blocked_teacher_only(self):
         swebench = self.intake_records.get("intake-swebench-teacher-holdout")
         self.assertIsNotNone(swebench, "SWE-bench intake record must exist")
@@ -195,6 +251,12 @@ class TeacherSourceCurriculumTests(unittest.TestCase):
         self.assertIn("t8", scenario_ids)
         t8 = next(s for s in self.seed["scenarios"] if s["id"] == "t8")
         self.assertEqual(t8["type"], "training")
+
+    def test_seed_has_t9_scenario(self):
+        scenario_ids = {s["id"] for s in self.seed["scenarios"]}
+        self.assertIn("t9", scenario_ids)
+        t9 = next(s for s in self.seed["scenarios"] if s["id"] == "t9")
+        self.assertEqual(t9["type"], "training")
 
     def test_episode_registry_coverage_consistent(self):
         coverage = self.episode_registry["coverage"]

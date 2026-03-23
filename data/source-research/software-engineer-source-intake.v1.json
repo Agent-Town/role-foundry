@@ -4,7 +4,7 @@
     "version": "1.0.0",
     "generated_on": "2026-03-23",
     "scope": "Teacher-driven source intake for the software-engineering apprentice. Each record tracks a candidate source from discovery through curation to promotion into benchmark curriculum.",
-    "honesty_note": "This intake log records real teacher decisions. Sources marked manual_curation_only require original RF-authored episodes — no bulk ingestion. Status fields reflect actual progress, not aspirations.",
+    "honesty_note": "This intake log records real teacher decisions. Sources marked manual_curation_only require original RF-authored episodes \u2014 no bulk ingestion. Status fields reflect actual progress, not aspirations.",
     "process": "discover -> curate -> promote. Any teacher can follow this process. See docs/teacher-source-curriculum-workflow.md for the full workflow."
   },
   "intake_records": [
@@ -24,7 +24,10 @@
       "curation_notes": "Selected two best-practice themes grounded in existing RF UI surfaces: user-visible locator discipline and test isolation. Episodes are RF-authored, not copied from Playwright docs.",
       "promotion_notes": "Promoted as family rf.frontend-apprentice.public.playwright-regression in public-benchmark-pack-v1. Two episodes tied to existing RF screens (scenarios.html, run.html). Rubric authored fresh for RF context.",
       "promoted_family_id": "rf.frontend-apprentice.public.playwright-regression",
-      "promoted_episode_ids": ["pbpv1-e13", "pbpv1-e14"],
+      "promoted_episode_ids": [
+        "pbpv1-e13",
+        "pbpv1-e14"
+      ],
       "provenance": {
         "source_license": "Apache-2.0",
         "source_type": "public documentation",
@@ -35,7 +38,7 @@
     {
       "id": "intake-google-eng-practices",
       "source_id": "google-eng-practices-review",
-      "source_name": "Google Engineering Practices — code review guides",
+      "source_name": "Google Engineering Practices \u2014 code review guides",
       "source_url": "https://google.github.io/eng-practices/review/",
       "license": "CC BY 3.0",
       "manual_curation_only": false,
@@ -46,9 +49,12 @@
       "promoted_on": "2026-03-23",
       "discovery_notes": "Google's code review guides are public, well-licensed (CC BY 3.0), and directly relevant to the apprentice's need for diff-critique and review-comment discipline.",
       "curation_notes": "Curation direction was to turn this into an RF-authored code-review-discipline family grounded in RF diffs. The eventual promotion kept that shape: original RF-authored episodes and rubric, no copied Google prose.",
-      "promotion_notes": "Promoted as family rf.frontend-apprentice.public.code-review-discipline in public-benchmark-pack-v1. Two episodes grounded in existing RF surfaces (scenarios.html, run.html). Rubric authored fresh for RF context — no Google prose copied verbatim.",
+      "promotion_notes": "Promoted as family rf.frontend-apprentice.public.code-review-discipline in public-benchmark-pack-v1. Two episodes grounded in existing RF surfaces (scenarios.html, run.html). Rubric authored fresh for RF context \u2014 no Google prose copied verbatim.",
       "promoted_family_id": "rf.frontend-apprentice.public.code-review-discipline",
-      "promoted_episode_ids": ["pbpv1-e15", "pbpv1-e16"],
+      "promoted_episode_ids": [
+        "pbpv1-e15",
+        "pbpv1-e16"
+      ],
       "provenance": {
         "source_license": "CC BY 3.0",
         "source_type": "public documentation",
@@ -63,22 +69,36 @@
       "source_url": "https://github.com/alpinejs/alpine",
       "license": "MIT (code/docs only; GitHub issue/PR text has ambiguous downstream rights)",
       "manual_curation_only": true,
-      "status": "discovered",
+      "status": "promoted",
       "discovered_by": "Robin",
       "discovered_on": "2026-03-23",
-      "curated_on": null,
-      "promoted_on": null,
+      "curated_on": "2026-03-24",
+      "promoted_on": "2026-03-24",
       "discovery_notes": "Alpine.js is the apprentice's frontend framework. Stack-adjacent bugfix exemplars could be valuable, but raw GitHub issue/PR/review text should not be assumed to carry clean downstream training rights.",
-      "curation_notes": null,
-      "promotion_notes": null,
-      "promoted_family_id": null,
-      "promoted_episode_ids": [],
+      "curation_notes": "Narrowed the Alpine lane to public docs/examples only: x-show, x-cloak, x-transition, and x-bind patterns that match Role Foundry's own Alpine surfaces. Raw GitHub issue/PR/review text remains excluded because downstream rights are ambiguous.",
+      "promotion_notes": "Promoted as family rf.frontend-apprentice.public.alpine-state-patterns in public-benchmark-pack-v1. Two episodes tie Alpine docs/examples to existing RF screens (scenarios.html, run.html). Rubric authored fresh for RF context. Promotion uses docs/examples only, not GitHub discussion text.",
+      "promoted_family_id": "rf.frontend-apprentice.public.alpine-state-patterns",
+      "promoted_episode_ids": [
+        "pbpv1-e17",
+        "pbpv1-e18"
+      ],
       "provenance": {
-        "source_license": "MIT (code/docs); GitHub thread text licensing ambiguous",
-        "source_type": "open-source repository — manual curation only",
-        "rf_authorship": "No episodes authored yet. Any future episodes must be original RF-authored work. Do not bulk-ingest GitHub threads.",
+        "source_license": "MIT",
+        "source_type": "public documentation + repo examples (manually rewritten into RF-authored episodes)",
+        "rf_authorship": "Episodes and rubric are original RF-authored work grounded in Alpine.js docs/examples only. No Alpine GitHub issue/PR/review text is copied or used.",
         "teacher_only_inputs_used": false
-      }
+      },
+      "allowed_source_material": [
+        "https://alpinejs.dev/directives/show",
+        "https://alpinejs.dev/directives/cloak",
+        "https://alpinejs.dev/directives/transition",
+        "https://alpinejs.dev/directives/bind"
+      ],
+      "excluded_source_material": [
+        "GitHub issue text",
+        "GitHub pull-request discussion text",
+        "GitHub review comments"
+      ]
     },
     {
       "id": "intake-swebench-teacher-holdout",
@@ -98,16 +118,16 @@
       "promoted_family_id": null,
       "promoted_episode_ids": [],
       "teacher_only_holdout_direction": {
-        "scope": "teacher-only holdout candidates only — never public curriculum",
-        "selection_rule": "A teacher manually selects a small number (≤10) of SWE-bench task instances that test failure modes relevant to the current apprentice role. Each selected instance is rewritten as an original RF-authored holdout episode.",
+        "scope": "teacher-only holdout candidates only \u2014 never public curriculum",
+        "selection_rule": "A teacher manually selects a small number (\u226410) of SWE-bench task instances that test failure modes relevant to the current apprentice role. Each selected instance is rewritten as an original RF-authored holdout episode.",
         "storage_rule": "Holdout episodes derived from SWE-bench must be stored outside the public benchmark pack, in the local private holdout manifest or a separate teacher-only pack.",
-        "student_visibility": "none — SWE-bench-derived holdout candidates must never appear in student-visible curriculum, public benchmark packs, or demo data",
+        "student_visibility": "none \u2014 SWE-bench-derived holdout candidates must never appear in student-visible curriculum, public benchmark packs, or demo data",
         "licensing_note": "SWE-bench harness is MIT but individual task instances reference upstream repos with varied licenses. Any RF-authored holdout must stand as original work, not a copy of upstream code or discussion.",
         "blocked_reason": "Bulk import is blocked. This record exists to document the teacher-only holdout direction and keep the seam visible for future manual curation."
       },
       "provenance": {
         "source_license": "MIT (harness); upstream task repos have mixed licenses",
-        "source_type": "benchmark dataset — manual curation only, teacher-only holdout direction",
+        "source_type": "benchmark dataset \u2014 manual curation only, teacher-only holdout direction",
         "rf_authorship": "No episodes authored yet. Any future holdout episodes must be original RF-authored work, not copies of SWE-bench task descriptions or upstream patches.",
         "teacher_only_inputs_used": true
       }
