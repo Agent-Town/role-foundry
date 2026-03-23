@@ -36,7 +36,7 @@ The **claim ceiling** for this tier is: *local private-holdout alpha execution w
 | Third-party holdout auditor signs the manifest before the run | "sealed certification" language |
 | Hardware attestation or remote enclave execution with verifiable logs | "tamper-proof" language |
 | External audit of the scoring pipeline, holdout manifest, and run artifacts | "independently audited" language |
-| Cryptographic commitment to holdout manifest hash published before the run | Stronger tamper-evidence claims beyond local correlation |
+| Independently published or third-party-witnessed cryptographic commitment to holdout manifest hash before the run | Stronger tamper-evidence claims beyond local correlation |
 
 ### What can be recorded today without leaking teacher-only content
 
@@ -48,10 +48,28 @@ The `sealing_receipt` block in the alpha receipt is designed to be **public-safe
 - `blocked_claims` — list of stronger claims that are explicitly blocked, each with a reason
 - `stronger_claim_prerequisites` — what would need to be true before each blocked claim could be unblocked
 - `private_manifest_fingerprint` — if a private holdout manifest was loaded, a SHA-256 of its canonical JSON bytes; labeled as **local operator correlation only**, not independent tamper-proofing
-- `linked_receipt_paths` — relative paths to the alpha receipt and request copy within the artifacts root
+- `pre_run_manifest_commitment` — if a private holdout manifest was loaded, a commitment artifact written **before** any stage execution begins, recording the manifest hash, timestamp, and sequence linkage (see below)
+- `linked_receipt_paths` — relative paths to the alpha receipt, request copy, and (when present) pre-run commitment within the artifacts root
 - `integrity_gate_mode` — forwarded from the existing integrity gate
 
 The fingerprint is **not** a seal. It lets the same operator correlate a receipt with a manifest later. It does not prove anything to a third party because the operator controls both sides.
+
+### Pre-run manifest commitment
+
+When the run actually enters the local private-holdout lane, the alpha loop writes a `pre-run-manifest-commitment.json` artifact **before any stage execution begins**. This records only public-safe metadata:
+
+- the canonical SHA-256 hash of the manifest plus the canonicalization string used to derive it
+- an ISO 8601 UTC timestamp
+- the run's sequence id
+- the relative artifact path for the commitment itself
+- linkage back to `autoresearch-alpha.request.json` and `autoresearch-alpha.json`
+- an explicit honesty note that this is local-only operator evidence, not external publication, third-party proof, or tamper-proofing
+
+This improves **local auditability and operator evidence only**. The operator can later verify that the manifest hash existed in a local receipt before any stage results were produced. It does **not** constitute:
+
+- external publication or broadcast
+- third-party signing or attestation
+- tamper-proofing (the operator controls both sides)
 
 ## Machine-readable surface
 
@@ -68,6 +86,6 @@ The `sealing_receipt` is a top-level field on the alpha receipt JSON emitted by 
 
 - Spec 015 is in the repo
 - `sealing_receipt` appears in alpha receipt output
-- Tests pin: claim ceiling, blocked claims, checklist states, fingerprint labeling
+- Tests pin: claim ceiling, blocked claims, checklist states, fingerprint labeling, and the local-only pre-run commitment artifact/path
 - README mentions the receipt surface and lists unmet prerequisites
 - No overclaiming language anywhere in the changeset

@@ -6,6 +6,7 @@ import json
 import shlex
 import sys
 from copy import deepcopy
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -90,6 +91,8 @@ def run_alpha_loop(
         config,
         blocked_family_ids=benchmark_pack.get("blocked_family_ids", []),
     )
+    pack_meta = benchmark_pack.get("meta") if isinstance(benchmark_pack.get("meta"), dict) else {}
+    loop_sequence_id = config.get("sequence_id") or f"{pack_meta.get('id', 'alpha')}:{artifacts_root.name}"
     integrity_gate = _evaluate_integrity_gate(
         config,
         benchmark_pack,
@@ -100,6 +103,12 @@ def run_alpha_loop(
         raise ContractError(integrity_gate["summary"])
 
     (artifacts_root / "autoresearch-alpha.request.json").write_text(json.dumps(config, indent=2))
+    pre_run_commitment = _write_pre_run_manifest_commitment(
+        integrity_gate_mode=integrity_gate.get("mode", "public_regression"),
+        private_holdout_pack=private_holdout_pack,
+        artifacts_root=artifacts_root,
+        sequence_id=loop_sequence_id,
+    )
 
     control_plane = ClawithRunClient(clawith_url, clawith_secret)
     bridge = RunBridge(
@@ -112,9 +121,6 @@ def run_alpha_loop(
     loop_verifier_commands = execution_policy.get("recommended_verifier_commands")
     if not isinstance(loop_verifier_commands, list) or not loop_verifier_commands:
         loop_verifier_commands = None
-
-    pack_meta = benchmark_pack.get("meta") if isinstance(benchmark_pack.get("meta"), dict) else {}
-    loop_sequence_id = config.get("sequence_id") or f"{pack_meta.get('id', 'alpha')}:{artifacts_root.name}"
 
     baseline_stage_config = _stage_config(config, "baseline-eval")
     baseline_request = _prepare_teacher_stage_request(
@@ -223,7 +229,15 @@ def run_alpha_loop(
         integrity_gate=integrity_gate,
         private_holdout_pack=private_holdout_pack,
         artifacts_root=artifacts_root,
+        pre_run_commitment=pre_run_commitment,
     )
+
+    outputs = {
+        "request_copy_path": "autoresearch-alpha.request.json",
+        "receipt_path": "autoresearch-alpha.json",
+    }
+    if pre_run_commitment:
+        outputs["pre_run_manifest_commitment_path"] = pre_run_commitment["artifact_path"]
 
     receipt = {
         "ok": all(
@@ -232,7 +246,7 @@ def run_alpha_loop(
         )
         and comparison.get("complete", False),
         "flow": "autoresearch-alpha",
-        "sequence_id": config.get("sequence_id") or f"{benchmark_pack.get('meta', {}).get('id', 'alpha')}:{artifacts_root.name}",
+        "sequence_id": loop_sequence_id,
         "dataset_manifest_id": benchmark_pack.get("meta", {}).get("id"),
         "dataset_version": benchmark_pack.get("meta", {}).get("version"),
         "control_plane_mode": "runner-bridge-local-replay",
@@ -247,10 +261,7 @@ def run_alpha_loop(
         "verifier_gate": verifier_gate_summary,
         "sealing_receipt": sealing_receipt,
         "artifact_coverage": artifact_coverage,
-        "outputs": {
-            "request_copy_path": "autoresearch-alpha.request.json",
-            "receipt_path": "autoresearch-alpha.json",
-        },
+        "outputs": outputs,
     }
     (artifacts_root / "autoresearch-alpha.json").write_text(json.dumps(receipt, indent=2))
     return receipt
@@ -1223,11 +1234,69 @@ def _evaluate_integrity_gate(
     }
 
 
+def _canonical_json_bytes(payload: Any) -> bytes:
+    return json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
+
+
+def _canonical_manifest_hash(manifest: dict[str, Any]) -> dict[str, str]:
+    return {
+        "algorithm": "sha256",
+        "hex_digest": hashlib.sha256(_canonical_json_bytes(manifest)).hexdigest(),
+        "canonicalization": 'json.dumps(sort_keys=True,separators=(",",":"))',
+    }
+
+
+def _write_pre_run_manifest_commitment(
+    *,
+    integrity_gate_mode: str,
+    private_holdout_pack: dict[str, Any] | None,
+    artifacts_root: Path,
+    sequence_id: str,
+) -> dict[str, Any] | None:
+    """Write a local-only pre-run manifest commitment artifact.
+
+    The artifact is written before any stage execution when the run actually
+    enters the local private-holdout lane. It improves local auditability and
+    later operator correlation, but it does not constitute publication,
+    third-party witnessing, signing, or tamper-proofing.
+    """
+    if integrity_gate_mode != "local_private_holdout":
+        return None
+    if not private_holdout_pack or not private_holdout_pack.get("manifest"):
+        return None
+
+    artifact_path = "pre-run-manifest-commitment.json"
+    manifest_hash = _canonical_manifest_hash(private_holdout_pack["manifest"])
+    commitment = {
+        "spec": "015-sealed-receipt-surface",
+        "type": "pre_run_manifest_commitment",
+        "status": "recorded_local_only",
+        "integrity_gate_mode": integrity_gate_mode,
+        "recorded_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "sequence_id": sequence_id,
+        "private_holdout_manifest_id": private_holdout_pack.get("meta", {}).get("id"),
+        "artifact_path": artifact_path,
+        "linked_receipt_paths": {
+            "alpha_receipt": "autoresearch-alpha.json",
+            "alpha_request_copy": "autoresearch-alpha.request.json",
+        },
+        "manifest_hash": manifest_hash,
+        "honesty_note": (
+            "This local-only commitment receipt was recorded before stage execution began. "
+            "It improves operator auditability and later correlation, but it was not independently "
+            "published, third-party witnessed, signed, or made tamper-proof."
+        ),
+    }
+    (artifacts_root / artifact_path).write_text(json.dumps(commitment, indent=2))
+    return commitment
+
+
 def _build_sealing_receipt(
     *,
     integrity_gate: dict[str, Any],
     private_holdout_pack: dict[str, Any] | None,
     artifacts_root: Path,
+    pre_run_commitment: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build a public-safe sealing receipt surface (Spec 015).
 
@@ -1280,8 +1349,14 @@ def _build_sealing_receipt(
             "reason": "No external party has inspected the holdout manifest, run artifacts, or scoring pipeline.",
         },
         "pre_run_manifest_commitment": {
-            "present": False,
-            "reason": "No cryptographic commitment to holdout manifest hash was published before the run.",
+            "present": pre_run_commitment is not None,
+            "reason": (
+                "A local-only pre-run manifest commitment receipt was recorded at "
+                f"{pre_run_commitment['artifact_path']} before stage execution. It improves operator auditability, "
+                "but it was not independently published, third-party witnessed, signed, or made tamper-proof."
+                if pre_run_commitment is not None
+                else "No local pre-run manifest commitment receipt was recorded for this run."
+            ),
         },
     }
 
@@ -1311,10 +1386,10 @@ def _build_sealing_receipt(
     # Private manifest fingerprint: local operator correlation only.
     private_manifest_fingerprint = None
     if private_holdout_pack and private_holdout_pack.get("manifest"):
-        canonical = json.dumps(private_holdout_pack["manifest"], sort_keys=True, separators=(",", ":"))
+        manifest_hash = _canonical_manifest_hash(private_holdout_pack["manifest"])
         private_manifest_fingerprint = {
-            "algorithm": "sha256",
-            "hex_digest": hashlib.sha256(canonical.encode()).hexdigest(),
+            "algorithm": manifest_hash["algorithm"],
+            "hex_digest": manifest_hash["hex_digest"],
             "scope": "local_operator_correlation_only",
             "honesty_note": (
                 "This fingerprint lets the same operator correlate a receipt with a "
@@ -1345,11 +1420,18 @@ def _build_sealing_receipt(
             "met": False,
         },
         {
-            "prerequisite": "Cryptographic commitment to holdout manifest hash published before the run",
+            "prerequisite": "Independently published or third-party-witnessed cryptographic commitment to holdout manifest hash before the run",
             "enables": "stronger tamper-evidence claims beyond local correlation",
             "met": False,
         },
     ]
+
+    linked_receipt_paths: dict[str, Any] = {
+        "alpha_receipt": "autoresearch-alpha.json",
+        "alpha_request_copy": "autoresearch-alpha.request.json",
+    }
+    if pre_run_commitment is not None:
+        linked_receipt_paths["pre_run_manifest_commitment"] = pre_run_commitment["artifact_path"]
 
     return {
         "spec": "015-sealed-receipt-surface",
@@ -1360,10 +1442,8 @@ def _build_sealing_receipt(
         "blocked_claims": blocked_claims,
         "stronger_claim_prerequisites": stronger_claim_prerequisites,
         "private_manifest_fingerprint": private_manifest_fingerprint,
-        "linked_receipt_paths": {
-            "alpha_receipt": "autoresearch-alpha.json",
-            "alpha_request_copy": "autoresearch-alpha.request.json",
-        },
+        "pre_run_manifest_commitment": pre_run_commitment,
+        "linked_receipt_paths": linked_receipt_paths,
         "honesty_note": (
             "This is a public-safe boundary record, not a seal. "
             "It records what the run can honestly claim and what controls "

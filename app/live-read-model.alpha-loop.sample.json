@@ -218,7 +218,7 @@
           "met": false
         },
         {
-          "prerequisite": "Cryptographic commitment to holdout manifest hash published before the run",
+          "prerequisite": "Independently published or third-party-witnessed cryptographic commitment to holdout manifest hash before the run",
           "enables": "stronger tamper-evidence claims beyond local correlation",
           "met": false
         }
