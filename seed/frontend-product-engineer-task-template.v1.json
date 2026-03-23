@@ -1,0 +1,90 @@
+{
+  "task_id": "fpe.seed.x000.replace-with-kebab-id",
+  "role_id": "role-frontend-product-engineer",
+  "acceptance_test_id": "X000",
+  "title": "Replace with task title",
+  "phase": {
+    "id": "phase-x-replace-me",
+    "label": "Replace with phase label",
+    "index": 0
+  },
+  "objective": "Replace with the concrete repo outcome the student should land.",
+  "context": {
+    "summary": "Replace with the short public-safe background for the student.",
+    "spec_refs": [
+      "specs/014-frontend-product-engineer-20-task-curriculum.md#X000"
+    ],
+    "repo_refs": [
+      "docs/example-ref.md"
+    ],
+    "why_this_task_exists": "Replace with why the task matters to the teacher -> student -> eval loop."
+  },
+  "success_criteria": [
+    "Replace with the first executable pass threshold.",
+    "Replace with the second executable pass threshold."
+  ],
+  "allowed_paths": [
+    "data/**"
+  ],
+  "blocked_paths": [
+    "submission/**",
+    "benchmarks/private-holdout-pack/**",
+    "scripts/**",
+    "Dockerfile",
+    "docker-compose.yml",
+    ".env*"
+  ],
+  "blocked_scope_notes": [
+    "partner integrations",
+    "wallet / chain work",
+    "gateway / daemon scripts",
+    "secrets, credentials, or environment reconfiguration",
+    "unrelated infra",
+    "unrelated backend/platform rewrites"
+  ],
+  "surface_extension_reason": "Replace with a reason only if the task needs runner_bridge/**, runtime/**, or benchmarks/**.",
+  "expected_checks": [
+    {
+      "id": "replace-with-check-id",
+      "command": "python3 -m unittest tests/test_frontend_product_engineer_seed_registry.py",
+      "why": "Replace with the automated check that should go red first and green after the task lands."
+    }
+  ],
+  "rubric_ref": {
+    "contract_id": "frontend-product-engineer-evaluation-contract-v1",
+    "contract_path": "data/curriculum/frontend-product-engineer-evaluation-contract.v1.json",
+    "version": "1.0.0"
+  },
+  "time_budget_minutes": 60,
+  "mutation_budget": {
+    "tracked_files_max": 6,
+    "net_lines_max": 400,
+    "overrides_default": false,
+    "override_reason": null
+  },
+  "evidence_contract": {
+    "required_artifacts": [
+      {
+        "path": "data/example-artifact.json",
+        "visibility": "public",
+        "description": "Replace with the artifact that proves the task landed."
+      }
+    ],
+    "provenance_required": true,
+    "student_visible_only": true,
+    "notes": "Keep the template public-safe: no teacher-only prompt or rubric content."
+  },
+  "provenance": {
+    "source_kind": "spec_acceptance_test",
+    "source_ref": "specs/014-frontend-product-engineer-20-task-curriculum.md#X000",
+    "source_record_id": "replace-with-source-record-id",
+    "promotion_record_id": "replace-with-promotion-record-id",
+    "teacher_only_inputs_used": false,
+    "public_safe_note": "Replace with a note about why this packet is safe to publish.",
+    "rf_authorship": "Replace with authorship note."
+  },
+  "packet_version": "1.0.0",
+  "student_visible": true,
+  "teacher_only_fields_present": false,
+  "status": "draft_template"
+}

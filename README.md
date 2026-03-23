@@ -215,6 +215,7 @@ Using different model families for building and judging reduces correlated self-
 - `docs/public-benchmark-pack-v1.md` — public-safe benchmark pack scope, blocked families, and local private-holdout path
 - `docs/software-engineer-curriculum-sources.md` — narrow public source inventory for the software-engineering apprentice
 - `docs/teacher-source-curriculum-workflow.md` — discover → curate → promote workflow for teacher-driven curriculum extension
+- `docs/frontend-product-engineer-seed-curriculum.md` — public seed-task registry, packet schema, and audit commands for the frozen Frontend/Product Engineer role
 - `docs/private-holdout-authoring.md` — local-only teacher workflow for authoring and auditing fresh holdouts
 - `docs/swe-bench-holdout-extension.md` — teacher-only process for small manually curated SWE-bench-derived holdout episodes
 - `docs/conversation-log.md` — curated build log for the submission

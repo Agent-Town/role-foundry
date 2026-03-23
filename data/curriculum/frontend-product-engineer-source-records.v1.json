@@ -1,0 +1,213 @@
+{
+  "meta": {
+    "id": "frontend-product-engineer-source-records-v1",
+    "version": "1.0.0",
+    "generated_on": "2026-03-23",
+    "source_of_truth": "specs/014-frontend-product-engineer-20-task-curriculum.md",
+    "scope": "Stable public source records for the Frontend/Product Engineer seed curriculum. Each source record is derived from one acceptance test in Spec 014.",
+    "teacher_only_fields_present": false
+  },
+  "source_records": [
+    {
+      "id": "fpe-source-a001",
+      "acceptance_test_id": "A001",
+      "title": "Freeze the first apprentice role",
+      "source_kind": "spec_acceptance_test",
+      "source_ref": "specs/014-frontend-product-engineer-20-task-curriculum.md#A001",
+      "status": "promotable_public_seed_source",
+      "teacher_only_inputs_used": false,
+      "public_safe_note": "A001 is grounded in public spec text only and can safely seed student-visible task authoring."
+    },
+    {
+      "id": "fpe-source-a002",
+      "acceptance_test_id": "A002",
+      "title": "Freeze the evaluation contract",
+      "source_kind": "spec_acceptance_test",
+      "source_ref": "specs/014-frontend-product-engineer-20-task-curriculum.md#A002",
+      "status": "promotable_public_seed_source",
+      "teacher_only_inputs_used": false,
+      "public_safe_note": "A002 is grounded in public spec text only and can safely seed student-visible task authoring."
+    },
+    {
+      "id": "fpe-source-a003",
+      "acceptance_test_id": "A003",
+      "title": "Freeze the mutation surface",
+      "source_kind": "spec_acceptance_test",
+      "source_ref": "specs/014-frontend-product-engineer-20-task-curriculum.md#A003",
+      "status": "promotable_public_seed_source",
+      "teacher_only_inputs_used": false,
+      "public_safe_note": "A003 is grounded in public spec text only and can safely seed student-visible task authoring."
+    },
+    {
+      "id": "fpe-source-a004",
+      "acceptance_test_id": "A004",
+      "title": "Freeze the canonical task packet",
+      "source_kind": "spec_acceptance_test",
+      "source_ref": "specs/014-frontend-product-engineer-20-task-curriculum.md#A004",
+      "status": "promotable_public_seed_source",
+      "teacher_only_inputs_used": false,
+      "public_safe_note": "A004 is grounded in public spec text only and can safely seed student-visible task authoring."
+    },
+    {
+      "id": "fpe-source-b001",
+      "acceptance_test_id": "B001",
+      "title": "Build task authoring from a template",
+      "source_kind": "spec_acceptance_test",
+      "source_ref": "specs/014-frontend-product-engineer-20-task-curriculum.md#B001",
+      "status": "promotable_public_seed_source",
+      "teacher_only_inputs_used": false,
+      "public_safe_note": "B001 is grounded in public spec text only and can safely seed student-visible task authoring."
+    },
+    {
+      "id": "fpe-source-b002",
+      "acceptance_test_id": "B002",
+      "title": "Build source-intake -> curriculum promotion workflow",
+      "source_kind": "spec_acceptance_test",
+      "source_ref": "specs/014-frontend-product-engineer-20-task-curriculum.md#B002",
+      "status": "promotable_public_seed_source",
+      "teacher_only_inputs_used": false,
+      "public_safe_note": "B002 is grounded in public spec text only and can safely seed student-visible task authoring."
+    },
+    {
+      "id": "fpe-source-b003",
+      "acceptance_test_id": "B003",
+      "title": "Author the first 20-task seed set",
+      "source_kind": "spec_acceptance_test",
+      "source_ref": "specs/014-frontend-product-engineer-20-task-curriculum.md#B003",
+      "status": "promotable_public_seed_source",
+      "teacher_only_inputs_used": false,
+      "public_safe_note": "B003 is grounded in public spec text only and can safely seed student-visible task authoring."
+    },
+    {
+      "id": "fpe-source-b004",
+      "acceptance_test_id": "B004",
+      "title": "Add weekly holdout refresh",
+      "source_kind": "spec_acceptance_test",
+      "source_ref": "specs/014-frontend-product-engineer-20-task-curriculum.md#B004",
+      "status": "promotable_public_seed_source",
+      "teacher_only_inputs_used": false,
+      "public_safe_note": "B004 is grounded in public spec text only and can safely seed student-visible task authoring."
+    },
+    {
+      "id": "fpe-source-c001",
+      "acceptance_test_id": "C001",
+      "title": "Standardize isolated execution",
+      "source_kind": "spec_acceptance_test",
+      "source_ref": "specs/014-frontend-product-engineer-20-task-curriculum.md#C001",
+      "status": "promotable_public_seed_source",
+      "teacher_only_inputs_used": false,
+      "public_safe_note": "C001 is grounded in public spec text only and can safely seed student-visible task authoring."
+    },
+    {
+      "id": "fpe-source-c002",
+      "acceptance_test_id": "C002",
+      "title": "Wire baseline run as a first-class object",
+      "source_kind": "spec_acceptance_test",
+      "source_ref": "specs/014-frontend-product-engineer-20-task-curriculum.md#C002",
+      "status": "promotable_public_seed_source",
+      "teacher_only_inputs_used": false,
+      "public_safe_note": "C002 is grounded in public spec text only and can safely seed student-visible task authoring."
+    },
+    {
+      "id": "fpe-source-c003",
+      "acceptance_test_id": "C003",
+      "title": "Wire candidate run with real code/test execution",
+      "source_kind": "spec_acceptance_test",
+      "source_ref": "specs/014-frontend-product-engineer-20-task-curriculum.md#C003",
+      "status": "promotable_public_seed_source",
+      "teacher_only_inputs_used": false,
+      "public_safe_note": "C003 is grounded in public spec text only and can safely seed student-visible task authoring."
+    },
+    {
+      "id": "fpe-source-c004",
+      "acceptance_test_id": "C004",
+      "title": "Capture full receipts automatically",
+      "source_kind": "spec_acceptance_test",
+      "source_ref": "specs/014-frontend-product-engineer-20-task-curriculum.md#C004",
+      "status": "promotable_public_seed_source",
+      "teacher_only_inputs_used": false,
+      "public_safe_note": "C004 is grounded in public spec text only and can safely seed student-visible task authoring."
+    },
+    {
+      "id": "fpe-source-d001",
+      "acceptance_test_id": "D001",
+      "title": "Build the teacher review console",
+      "source_kind": "spec_acceptance_test",
+      "source_ref": "specs/014-frontend-product-engineer-20-task-curriculum.md#D001",
+      "status": "promotable_public_seed_source",
+      "teacher_only_inputs_used": false,
+      "public_safe_note": "D001 is grounded in public spec text only and can safely seed student-visible task authoring."
+    },
+    {
+      "id": "fpe-source-d002",
+      "acceptance_test_id": "D002",
+      "title": "Require private-holdout scoring for promotion",
+      "source_kind": "spec_acceptance_test",
+      "source_ref": "specs/014-frontend-product-engineer-20-task-curriculum.md#D002",
+      "status": "promotable_public_seed_source",
+      "teacher_only_inputs_used": false,
+      "public_safe_note": "D002 is grounded in public spec text only and can safely seed student-visible task authoring."
+    },
+    {
+      "id": "fpe-source-d003",
+      "acceptance_test_id": "D003",
+      "title": "Add repeated-run stability checks",
+      "source_kind": "spec_acceptance_test",
+      "source_ref": "specs/014-frontend-product-engineer-20-task-curriculum.md#D003",
+      "status": "promotable_public_seed_source",
+      "teacher_only_inputs_used": false,
+      "public_safe_note": "D003 is grounded in public spec text only and can safely seed student-visible task authoring."
+    },
+    {
+      "id": "fpe-source-d004",
+      "acceptance_test_id": "D004",
+      "title": "Add regression gates",
+      "source_kind": "spec_acceptance_test",
+      "source_ref": "specs/014-frontend-product-engineer-20-task-curriculum.md#D004",
+      "status": "promotable_public_seed_source",
+      "teacher_only_inputs_used": false,
+      "public_safe_note": "D004 is grounded in public spec text only and can safely seed student-visible task authoring."
+    },
+    {
+      "id": "fpe-source-e001",
+      "acceptance_test_id": "E001",
+      "title": "Turn failures into next-step curriculum",
+      "source_kind": "spec_acceptance_test",
+      "source_ref": "specs/014-frontend-product-engineer-20-task-curriculum.md#E001",
+      "status": "promotable_public_seed_source",
+      "teacher_only_inputs_used": false,
+      "public_safe_note": "E001 is grounded in public spec text only and can safely seed student-visible task authoring."
+    },
+    {
+      "id": "fpe-source-e002",
+      "acceptance_test_id": "E002",
+      "title": "Track generation lineage",
+      "source_kind": "spec_acceptance_test",
+      "source_ref": "specs/014-frontend-product-engineer-20-task-curriculum.md#E002",
+      "status": "promotable_public_seed_source",
+      "teacher_only_inputs_used": false,
+      "public_safe_note": "E002 is grounded in public spec text only and can safely seed student-visible task authoring."
+    },
+    {
+      "id": "fpe-source-e003",
+      "acceptance_test_id": "E003",
+      "title": "Run a real weekly training cycle",
+      "source_kind": "spec_acceptance_test",
+      "source_ref": "specs/014-frontend-product-engineer-20-task-curriculum.md#E003",
+      "status": "promotable_public_seed_source",
+      "teacher_only_inputs_used": false,
+      "public_safe_note": "E003 is grounded in public spec text only and can safely seed student-visible task authoring."
+    },
+    {
+      "id": "fpe-source-e004",
+      "acceptance_test_id": "E004",
+      "title": "Only then expand to a second role",
+      "source_kind": "spec_acceptance_test",
+      "source_ref": "specs/014-frontend-product-engineer-20-task-curriculum.md#E004",
+      "status": "promotable_public_seed_source",
+      "teacher_only_inputs_used": false,
+      "public_safe_note": "E004 is grounded in public spec text only and can safely seed student-visible task authoring."
+    }
+  ],
+  "workflow_ref": "docs/teacher-source-curriculum-workflow.md"
+}
