@@ -86,6 +86,44 @@ That is intentionally narrow.
 
 **Still blocked:** sealed-eval claims, sealed certification, partner-ready evaluation, tamper-proofing, or any claim that an independent system sealed the holdouts.
 
+## Repo-task-shaped student prompt pack
+
+The candidate-student stage now builds a **repo-task-shaped prompt pack** from the selected public benchmark episodes. Each visible scenario carries a `repo_task_meta` block with the fields the episode author actually provided:
+
+- `family_id` — which episode family this belongs to
+- `mutation_budget` — how wide the student may edit (`narrow`, `medium`, `broad`)
+- `constraints` — policy guardrails authored by the teacher
+- `suggested_files` — targeted file paths for the task
+- `artifacts_required` — what the student must leave behind
+- `public_checks` — verifier-friendly assertions
+- `tags` — episode classification
+
+The student view also includes a top-level `repo_task_pack` summary:
+
+```json
+{
+  "repo_task_pack": {
+    "role_scope": "frontend-apprentice",
+    "dataset_id": "public-benchmark-pack-v1",
+    "dataset_version": "1.0.0",
+    "episode_count": 3,
+    "family_ids": ["rf.frontend-apprentice.public.score-deltas", "..."],
+    "honesty_note": "Repo-task metadata is derived from the public benchmark pack. ...",
+    "recommended_verifier_commands": [
+      "python3 -m unittest tests/test_public_benchmark_pack_v1.py",
+      "python3 -m unittest tests/test_milestone3_contract.py tests/test_milestone5_teacher_eval_loop.py",
+      "python3 -m unittest tests/test_private_holdout_separation.py"
+    ]
+  }
+}
+```
+
+When the benchmark pack's `execution_policy` includes `recommended_verifier_commands`, those commands are carried through into `repo_task_pack` so the student (or an automated runner) can run the same verification suite the benchmark author intended.
+
+The candidate receipt at `receipts/candidate.json` also surfaces the `repo_task_pack` summary — including `recommended_verifier_commands` when present — so a reviewer can inspect what concrete repo task family the student was asked to do and which verifier commands apply.
+
+**What is still not real:** this is still local replay / public-regression alpha. The `repo_task_meta` fields come from the public benchmark pack, not from a live task assignment system. The repo-task shape makes the prompt pack inspectable and less canned, but does not change the evaluation contract.
+
 ## Current bridge shape
 
 ```text

@@ -25,18 +25,19 @@ def build_student_prompt_pack(payload: dict[str, Any]) -> dict[str, Any]:
         if not isinstance(scenario, dict):
             continue
         title = scenario.get("title") or scenario.get("id") or "unknown"
-        visible_scenarios.append(
-            {
-                "id": scenario.get("id"),
-                "title": title,
-                "type": scenario.get("type", "training"),
-                "difficulty": scenario.get("difficulty"),
-                "student_prompt": scenario.get("student_prompt")
-                or scenario.get("prompt")
-                or scenario.get("description")
-                or "",
-            }
-        )
+        entry = {
+            "id": scenario.get("id"),
+            "title": title,
+            "type": scenario.get("type", "training"),
+            "difficulty": scenario.get("difficulty"),
+            "student_prompt": scenario.get("student_prompt")
+            or scenario.get("prompt")
+            or scenario.get("description")
+            or "",
+        }
+        if isinstance(scenario.get("repo_task_meta"), dict):
+            entry["repo_task_meta"] = scenario["repo_task_meta"]
+        visible_scenarios.append(entry)
 
     raw_themes = []
     for theme in prompt_pack.get("public_curriculum_themes", []):
@@ -57,7 +58,7 @@ def build_student_prompt_pack(payload: dict[str, Any]) -> dict[str, Any]:
                 }
             )
 
-    return {
+    result = {
         "agent_role": "student",
         "actor": _public_actor(prompt_pack.get("actor"), default_role="student"),
         "sealed_holdout_count": int(prompt_pack.get("sealed_holdout_count", 0) or 0),
@@ -66,6 +67,13 @@ def build_student_prompt_pack(payload: dict[str, Any]) -> dict[str, Any]:
         "prompt_summary": prompt_pack.get("prompt_summary")
         or "Train on the public benchmark pack only. Teacher-only evaluation stays separate.",
     }
+    if isinstance(prompt_pack.get("repo_task_pack"), dict):
+        repo_task_pack = dict(prompt_pack["repo_task_pack"])
+        rvc = repo_task_pack.get("recommended_verifier_commands")
+        if isinstance(rvc, list) and rvc:
+            repo_task_pack["recommended_verifier_commands"] = list(rvc)
+        result["repo_task_pack"] = repo_task_pack
+    return result
 
 
 def redact_request_for_artifacts(payload: dict[str, Any]) -> dict[str, Any]:

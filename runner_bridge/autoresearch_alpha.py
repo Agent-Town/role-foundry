@@ -246,6 +246,35 @@ def _prepare_candidate_student_request(
         raise ContractError("candidate-student prompt pack did not resolve any benchmark episodes")
 
     baseline_themes = _extract_public_themes(baseline_stage)
+    visible_scenarios = []
+    for episode in episodes:
+        scenario = {
+            "id": episode.get("id"),
+            "title": episode.get("title") or episode.get("id"),
+            "type": "training",
+            "difficulty": episode.get("difficulty"),
+            "student_prompt": episode.get("student_prompt") or "",
+        }
+        repo_task_meta = _extract_repo_task_meta(episode)
+        if repo_task_meta:
+            scenario["repo_task_meta"] = repo_task_meta
+        visible_scenarios.append(scenario)
+
+    pack_meta = benchmark_pack.get("meta") or {}
+    execution_policy = benchmark_pack.get("execution_policy") or {}
+    repo_task_pack: dict[str, Any] = {
+        "role_scope": pack_meta.get("role_scope") or pack_meta.get("role") or "unknown",
+        "dataset_id": pack_meta.get("id"),
+        "dataset_version": pack_meta.get("version"),
+        "episode_count": len(visible_scenarios),
+        "family_ids": sorted({episode.get("family_id") for episode in episodes if episode.get("family_id")}),
+        "honesty_note": "Repo-task metadata is derived from the public benchmark pack. "
+        "This is still local replay / public-regression alpha unless a private holdout manifest is used.",
+    }
+    recommended_verifier_commands = execution_policy.get("recommended_verifier_commands")
+    if isinstance(recommended_verifier_commands, list) and recommended_verifier_commands:
+        repo_task_pack["recommended_verifier_commands"] = list(recommended_verifier_commands)
+
     request["student_prompt_pack"] = {
         "actor": teacher_eval.get("student"),
         "sealed_holdout_count": _sealed_holdout_count(teacher_eval),
@@ -253,17 +282,9 @@ def _prepare_candidate_student_request(
         or teacher_eval.get("student_prompt_summary")
         or benchmark_pack.get("meta", {}).get("honesty_note")
         or "Train on the public benchmark pack only. Teacher-only evaluation stays separate.",
-        "visible_scenarios": [
-            {
-                "id": episode.get("id"),
-                "title": episode.get("title") or episode.get("id"),
-                "type": "training",
-                "difficulty": episode.get("difficulty"),
-                "student_prompt": episode.get("student_prompt") or "",
-            }
-            for episode in episodes
-        ],
+        "visible_scenarios": visible_scenarios,
         "public_curriculum_themes": baseline_themes,
+        "repo_task_pack": repo_task_pack,
     }
     return request
 
@@ -850,6 +871,20 @@ def _resolve_json_path(request_path: Path, config: dict[str, Any], key: str) -> 
     if not path.is_absolute():
         path = (request_path.parent / path).resolve()
     return path
+
+
+def _extract_repo_task_meta(episode: dict[str, Any]) -> dict[str, Any] | None:
+    """Pull repo-task-shaped metadata from a benchmark episode.
+
+    Only includes fields that actually exist on the episode so the shape
+    stays honest about what was authored vs. inferred.
+    """
+    meta: dict[str, Any] = {}
+    for key in ("family_id", "mutation_budget", "constraints", "suggested_files", "artifacts_required", "public_checks", "tags"):
+        value = episode.get(key)
+        if value is not None:
+            meta[key] = deepcopy(value) if isinstance(value, (list, dict)) else value
+    return meta if meta else None
 
 
 def _load_json(path: Path) -> dict[str, Any]:
