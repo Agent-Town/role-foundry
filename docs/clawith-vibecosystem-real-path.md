@@ -57,6 +57,11 @@ Implication:
 - vibecosystem agent definitions are already available from the user Claude home
 - for the imminent demo, the safest path is to **reuse the existing authenticated Claude home** rather than reinstalling or mutating machine-wide hooks right before showtime
 
+Observed CLI edge on this machine:
+- Claude Code `2.1.79` in `--print` mode was flaky when the prompt was passed as a positional argv value from Python `subprocess.run(...)`
+- the failure mode was ugly and misleading: a contextual prompt could exit `0` with empty stdout, while a simpler fallback prompt could error with `Input must be provided either through stdin or as a prompt argument`
+- the narrow fix for this lane is to pass the prompt on **stdin** instead; that produced the real roundtrip reply in the same environment
+
 ### Important isolation note
 
 A quick test with a fresh temporary `HOME` showed that simply copying `.claude.json` was **not enough** to preserve Claude login state.
@@ -120,6 +125,22 @@ python3 scripts/clawith_vibe_once.py \
   --workdir "$PWD"
 ```
 
+To queue a real web-chat message into that linked agent without clicking around in the UI, use the same authenticated websocket path the Clawith frontend uses:
+
+```bash
+/Users/robin/.nvm/versions/node/v24.14.0/bin/node scripts/clawith_ws_roundtrip.js \
+  --base-url http://localhost:3008 \
+  --token-file runtime/clawith_bearer_token.txt \
+  --agent-name vibecosystem-adapter \
+  --message "Give me a 2-bullet summary of this repo and mention one Clawith integration constraint."
+```
+
+That script:
+- creates a fresh Clawith chat session via `POST /api/agents/{id}/sessions`
+- sends the user message over `/ws/chat/{agent_id}` with the bearer token
+- waits for the OpenClaw placeholder and the final assistant reply
+- saves session + websocket receipts under `artifacts/clawith-roundtrip/<timestamp>/`
+
 ## Smallest real demo flow after first admin exists
 
 ### Option A — the real lane for this demo
@@ -170,6 +191,11 @@ Again: your Claude app / Max subscription does **not** fill this model pool auto
 - project-local receipts
 - no `runner_bridge` churn
 - uses Claude Code + vibecosystem agent selection directly
+
+`scripts/clawith_ws_roundtrip.js`
+- queues a real user-side Clawith web-chat message over the stock websocket path
+- creates an isolated session and saves transcript receipts
+- verifies the final assistant reply is visible back through Clawith session APIs
 
 This is intentionally small. It is a demo bring-up seam, not a full production worker.
 
