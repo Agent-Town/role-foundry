@@ -41,7 +41,7 @@
 <main class="container" x-data>
   <div class="page-header">
     <h1>Software Engineer Apprentice</h1>
-    <p>Role Foundry is a framework for training AI apprentices under holdout-aware evaluation. The current concrete example: Robin + Neo are training a Software Engineer apprentice to implement Role Foundry product slices under hidden-eval review.</p>
+    <p>Role Foundry is a framework for training AI apprentices under holdout-aware evaluation. The current concrete example: Robin + Neo are training a Software Engineer apprentice to implement Role Foundry product slices under holdout-aware review.</p>
   </div>
 
   <section class="hero-callout">
@@ -107,7 +107,7 @@
     <article class="meta-card">
       <span class="meta-label">Hidden holdouts</span>
       <strong class="meta-value" x-text="$store.app.holdoutScenarios().length"></strong>
-      <small>Sealed from the apprentice. Judges use them for honest scoring.</small>
+      <small>Sealed from the apprentice in the demo and local private lane. Repo-visible previews are not sealed-certification proof.</small>
     </article>
     <article class="meta-card">
       <span class="meta-label">Overall delta</span>
@@ -189,7 +189,7 @@
       <li><strong>The apprentice ships a slice</strong> — copy, UI, score surfaces, or proof artifacts.</li>
       <li><strong>The teacher scores the run</strong> and turns failure themes into the next curriculum update.</li>
     </ol>
-    <p>The result is not just a prettier demo. It is a visible teacher → student → hidden-eval → curriculum loop.</p>
+    <p>The result is not just a prettier demo. It is a visible teacher → student → holdout-aware review → curriculum loop.</p>
   </article>
 </main>
 

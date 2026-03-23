@@ -9,7 +9,7 @@ const DEMO_DATA = {
     name: 'Software Engineer Apprentice',
     subtitle: "Role Foundry's first concrete role: a software engineer improving Role Foundry itself",
     description:
-      'Role Foundry is a framework for training different AI apprentice roles over time. The current concrete example: Robin + Neo are training a Software Engineer apprentice to implement Role Foundry product slices under hidden-eval review. The currently shipped curriculum is frontend/product-heavy because that is what the alpha app exposes.',
+      'Role Foundry is a framework for training different AI apprentice roles over time. The current concrete example: Robin + Neo are training a Software Engineer apprentice to implement Role Foundry product slices under holdout-aware review. The currently shipped curriculum is frontend/product-heavy because that is what the alpha app exposes.',
     teachers: ['Robin', 'Neo'],
     demo_contract: 'Standalone demo. No auth, no Privy, no fake live wiring.',
     goals: [
@@ -21,8 +21,8 @@ const DEMO_DATA = {
     success_criteria: [
       'The browser experience clearly distinguishes the general framework from the current concrete role',
       'Public curriculum scenarios feel like real product-slice work, not generic AI-demo fluff',
-      'Hidden holdouts test meaningful failure modes and remain sealed from the apprentice',
-      'Judges can see score improvement between runs, especially on holdouts',
+      'Fresh teacher-only holdouts, when authored locally, test meaningful failure modes and stay sealed from the apprentice',
+      'Judges can see score improvement between runs, especially on holdout-aware review',
       'Every strong run emits a proof bundle that makes the work auditable',
     ],
   },
@@ -43,9 +43,9 @@ const DEMO_DATA = {
       id: 'teacher-robin-neo',
       name: 'Robin + Neo',
       agent_role: 'teacher',
-      access: 'Public curriculum, sealed holdouts, and iteration receipts.',
+      access: 'Public curriculum, judge-only holdout material, and iteration receipts.',
       can_see: [
-        'Student-visible curriculum plus sealed holdout prompts',
+        'Student-visible curriculum plus judge-only holdout prompts or local private-holdout material',
         'Scenario-level notes, aggregate scorecards, and score deltas',
         'Raw request/private artifacts kept out of the student bundle',
       ],
