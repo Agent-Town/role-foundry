@@ -259,6 +259,30 @@ def _build_candidate_receipt(
             }
         )
 
+    prompt_pack_summary = None
+    if student_view:
+        prompt_pack_summary = {
+            "prompt_summary": student_view.get("prompt_summary"),
+            "visible_scenario_count": len(student_view.get("visible_scenarios", []))
+            if isinstance(student_view.get("visible_scenarios"), list)
+            else 0,
+            "sealed_holdout_count": student_view.get("sealed_holdout_count", 0) if student_view else 0,
+        }
+        repo_task_pack = student_view.get("repo_task_pack")
+        if isinstance(repo_task_pack, dict):
+            rtp_summary: dict[str, Any] = {
+                "role_scope": repo_task_pack.get("role_scope"),
+                "dataset_id": repo_task_pack.get("dataset_id"),
+                "dataset_version": repo_task_pack.get("dataset_version"),
+                "episode_count": repo_task_pack.get("episode_count"),
+                "family_ids": repo_task_pack.get("family_ids"),
+                "honesty_note": repo_task_pack.get("honesty_note"),
+            }
+            rvc = repo_task_pack.get("recommended_verifier_commands")
+            if isinstance(rvc, list) and rvc:
+                rtp_summary["recommended_verifier_commands"] = list(rvc)
+            prompt_pack_summary["repo_task_pack"] = rtp_summary
+
     receipt = {
         "receipt_id": f"candidate:{run_id}",
         "kind": "candidate",
@@ -268,15 +292,7 @@ def _build_candidate_receipt(
         "scenario_set_id": request.get("scenario_set_id"),
         "objective": workspace.get("objective"),
         "workspace_snapshot": workspace,
-        "student_prompt_pack": {
-            "prompt_summary": student_view.get("prompt_summary"),
-            "visible_scenario_count": len(student_view.get("visible_scenarios", []))
-            if isinstance(student_view.get("visible_scenarios"), list)
-            else 0,
-            "sealed_holdout_count": student_view.get("sealed_holdout_count", 0) if student_view else 0,
-        }
-        if student_view
-        else None,
+        "student_prompt_pack": prompt_pack_summary,
         "evidence_refs": [entry["evidence_id"] for entry in evidence],
     }
     return receipt, evidence

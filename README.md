@@ -130,6 +130,7 @@ What it proves today:
 - a concrete **better/equal/worse** comparison receipt
 - artifact coverage across all three stages
 - an explicit **integrity gate** that allows public-regression claims while blocking fake sealed-eval claims
+- a **repo-task-shaped student prompt pack** with per-scenario metadata (`suggested_files`, `mutation_budget`, `constraints`, `public_checks`) derived from the public benchmark episodes, making the candidate-student stage less canned and more like real software-engineering teaching
 
 That last point matters. The public benchmark pack is usable now, but the current teacher-only families are still marked `blocked_pending_rewrite`, so the repo cannot honestly claim a fresh sealed holdout path yet. The alpha loop says that plainly instead of faking it.
 

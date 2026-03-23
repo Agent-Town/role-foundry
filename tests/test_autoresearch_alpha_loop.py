@@ -91,6 +91,40 @@ class AutoresearchAlphaLoopContractTests(unittest.TestCase):
                 ],
             )
 
+            student_view = candidate_student_bundle["student_view"]
+            self.assertIn("repo_task_pack", student_view)
+            rtp = student_view["repo_task_pack"]
+            self.assertEqual(rtp["role_scope"], "frontend-apprentice")
+            self.assertEqual(rtp["dataset_id"], "public-benchmark-pack-v1")
+            self.assertEqual(rtp["episode_count"], 3)
+            self.assertIsInstance(rtp["family_ids"], list)
+            self.assertTrue(len(rtp["family_ids"]) > 0)
+            self.assertIn("honesty_note", rtp)
+            self.assertIn("recommended_verifier_commands", rtp)
+            self.assertIsInstance(rtp["recommended_verifier_commands"], list)
+            self.assertTrue(len(rtp["recommended_verifier_commands"]) > 0)
+
+            for scenario in student_view["visible_scenarios"]:
+                self.assertIn("repo_task_meta", scenario)
+                meta = scenario["repo_task_meta"]
+                self.assertIn("family_id", meta)
+                self.assertIn("mutation_budget", meta)
+                self.assertIn("suggested_files", meta)
+                self.assertIn("public_checks", meta)
+                self.assertIsInstance(meta["suggested_files"], list)
+                self.assertIsInstance(meta["public_checks"], list)
+
+            candidate_student_receipt = json.loads(
+                (artifacts_root / "run-eval-001-student" / "receipts" / "candidate.json").read_text()
+            )
+            receipt_pack = candidate_student_receipt["student_prompt_pack"]
+            self.assertIn("repo_task_pack", receipt_pack)
+            self.assertEqual(receipt_pack["repo_task_pack"]["dataset_id"], "public-benchmark-pack-v1")
+            self.assertEqual(receipt_pack["repo_task_pack"]["episode_count"], 3)
+            self.assertIn("recommended_verifier_commands", receipt_pack["repo_task_pack"])
+            self.assertIsInstance(receipt_pack["repo_task_pack"]["recommended_verifier_commands"], list)
+            self.assertTrue(len(receipt_pack["repo_task_pack"]["recommended_verifier_commands"]) > 0)
+
             candidate_teacher_scorecard = candidate_teacher["export"]["result"]["scorecard"]
             self.assertEqual(candidate_teacher_scorecard["aggregate_score"]["passed"], 4)
             self.assertEqual(candidate_teacher_scorecard["iteration_history"][-1]["delta"]["pass_count"], 2)
@@ -374,6 +408,12 @@ class AutoresearchAlphaDocumentationTests(unittest.TestCase):
         self.assertIn("local private-holdout", runner_doc)
         self.assertIn("sealed holdout path", spec)
         self.assertIn("candidate lifecycle", spec)
+
+    def test_docs_mention_repo_task_pack(self):
+        runner_doc = RUNNER_DOC.read_text().lower()
+        self.assertIn("repo_task_pack", runner_doc)
+        self.assertIn("repo_task_meta", runner_doc)
+        self.assertIn("recommended_verifier_commands", runner_doc)
 
 
 if __name__ == "__main__":
