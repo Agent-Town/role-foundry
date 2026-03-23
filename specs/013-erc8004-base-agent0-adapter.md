@@ -42,13 +42,26 @@ This adapter does not fake wallet sessions, onchain transactions, or minting rec
 runner_bridge/product_integrations.py
   ├── write_product_integrations(run_dir, request, result, target_chain)
   │     writes to: integrations/
-  │       erc8004-registration-draft.json    ← local draft, not minted
-  │       erc8004-completion-template.json   ← awaiting_wallet_confirmation
+  │       erc8004-registration-draft.json    ← local draft with enriched provenance
+  │       erc8004-completion-template.json   ← v2, awaiting_wallet_confirmation
   │       agent0-base-adapter.json           ← adapter contract + env requirements
   │       trust-bundle.json                  ← full integration status
   │       summary.md                         ← human-readable summary
 
-app/agent0_base_adapter.mjs
+runner_bridge/mint_gateway.py
+  ├── is_live_mint_enabled()                   ← checks ROLE_FOUNDRY_LIVE_MINT env
+  ├── check_mint_prerequisites()               ← diagnostic of all required env
+  └── mint_student_identity(draft_path, ...)   ← invokes Node mint script, returns result
+
+app/mint_student_erc8004.mjs                   ← server-side mint via privateKey signer
+  ├── Loads registration draft JSON
+  ├── Initializes Agent0 SDK with privateKey
+  ├── Creates agent from draft fields
+  ├── Calls agent.registerHTTP(tokenUri)
+  ├── Waits for tx confirmation
+  └── Outputs JSON completion record to stdout
+
+app/agent0_base_adapter.mjs                    ← browser-side mint via wallet
   ├── discoverProviders(agent0sdk)
   ├── connectWallet(provider, agent0sdk)
   ├── initSDK(agent0sdk, { chainId, rpcUrl, walletProvider, ... })
@@ -88,8 +101,12 @@ The adapter makes this explicit at every layer:
 | Registration draft generation | Yes | Runs after every `write_product_integrations` call |
 | Completion template generation | Yes | Same |
 | Browser adapter module | Yes (code exists) | Requires agent0-sdk + wallet + RPC URL + registry override at runtime |
+| Server-side mint script | Yes (code exists) | Requires ROLE_FOUNDRY_LIVE_MINT=1 + SIGNER_PRIVATE_KEY + RPC + registry |
+| Python mint gateway | Yes (code exists) | Wraps Node script with safety gating |
+| Provenance fields in draft | Yes | teacher_identity, curriculum_id, scorecard_hash, score_delta, promotion_status |
 | Promotion/public-issuance decision | Human review only | Requires deciding the generation is worth public issuance |
-| Live mint on Base Sepolia | No | Requires configured RPC URL + registry override + wallet approval |
+| Live server-side mint on Base Sepolia | No | Requires all env vars configured + agent0-sdk available |
+| Live browser mint on Base Sepolia | No | Requires agent0-sdk + wallet + RPC URL + registry override |
 | Live mint on Base Mainnet | No | Same + explicit submission-target confirmation |
 
 ## Claim boundary
@@ -110,13 +127,17 @@ The adapter makes this explicit at every layer:
 
 ## Test coverage
 
-- `tests/test_erc8004_base_agent0_adapter.py` — unit tests for `product_integrations.py`:
+- `tests/test_erc8004_base_agent0_adapter.py` — unit tests for `product_integrations.py` and `mint_gateway.py`:
   - Draft generation includes Base chain info.
-  - Completion template stays in `awaiting_wallet_confirmation`.
-  - Adapter contract references correct chain and env vars.
+  - Draft carries enriched provenance: teacher_identity, curriculum_id, score_delta, promotion_status.
+  - Completion template v2 with mint_modes (server_side + browser).
+  - Adapter contract includes server_side_mint configuration.
   - Trust bundle status reflects wired-vs-pending.
   - Verifiable receipt hashing excludes mutable files (`artifact-bundle.json`, `result.json`).
   - No Locus or MetaMask Delegation references in output.
+  - Mint gateway is disabled by default (gated).
+  - Mint gateway checks prerequisites correctly.
+  - Mint gateway requires SIGNER_PRIVATE_KEY when enabled.
   - CLI integration test exercises `python3 -m runner_bridge.cli` and asserts integration files exist.
 
 ## Dependencies
@@ -127,6 +148,8 @@ The adapter makes this explicit at every layer:
 ## Follow-ups
 
 - Vendor or pin an agent0-sdk ESM bundle for local development.
+- IPFS-backed token URI hosting (currently HTTP; clean hook exists in draft's `token_uri_strategy`).
 - Wire IPFS registration (`registerIPFS`) as an alternative to `registerHTTP`.
+- Execute first real mint on Base Sepolia with configured env.
 - Add a minimal UI surface for the mint flow (blocked on SDK availability).
 - Record confirmed mint receipts into the completion template.

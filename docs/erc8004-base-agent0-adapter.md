@@ -11,11 +11,15 @@ The important sequencing is deliberate:
 3. Humans decide whether that generation is worth promoting publicly.
 4. Only then should that public/promoted generation be discussed as an ERC-8004 issuance candidate.
 
-Two layers are landed on this branch:
+Three layers are landed on this branch:
 
 1. **Python integration writer** (`runner_bridge/product_integrations.py`) — runs after each evaluation run and emits local registration drafts, completion templates, and adapter contracts tied back to the existing receipt bundle. No onchain writes.
 
-2. **Browser adapter** (`app/agent0_base_adapter.mjs`) — thin ESM module that follows the agent0 mint shape for browser-side registration. Only triggers a wallet tx when `mintAgent()` is called.
+2. **Server-side mint helper** (`app/mint_student_erc8004.mjs`) — Node.js script that mints an ERC-8004 identity using the Agent0 SDK `privateKey` signer path. Gated behind `ROLE_FOUNDRY_LIVE_MINT=1` + `SIGNER_PRIVATE_KEY`. This is the intended per-student mint path after promotion.
+
+3. **Browser adapter** (`app/agent0_base_adapter.mjs`) — thin ESM module that follows the agent0 mint shape for browser-side registration. Only triggers a wallet tx when `mintAgent()` is called.
+
+4. **Python mint gateway** (`runner_bridge/mint_gateway.py`) — Python wrapper that invokes the Node.js mint script with safety gating. Off by default.
 
 ## Target chains
 
@@ -73,6 +77,38 @@ const completion = adapter.buildCompletionRecord(mint, {
 });
 ```
 
+## Server-side mint (per-student, after promotion)
+
+```bash
+# Required env
+export ROLE_FOUNDRY_LIVE_MINT=1
+export SIGNER_PRIVATE_KEY=0x...
+export BASE_SEPOLIA_RPC_URL=https://sepolia.base.org
+export BASE_SEPOLIA_REGISTRY=0xYourRegistryAddress
+
+# Mint from a registration draft
+node app/mint_student_erc8004.mjs \
+  --draft runtime/runs/run-001/integrations/erc8004-registration-draft.json \
+  --completion-out runtime/runs/run-001/integrations/mint-completion.json
+```
+
+Or via Python:
+
+```python
+from runner_bridge.mint_gateway import mint_student_identity, check_mint_prerequisites
+
+# Check what's configured
+prereqs = check_mint_prerequisites()
+print(prereqs)  # {"ready": False, "live_mint_enabled": False, ...}
+
+# Mint (returns structured result, never throws)
+result = mint_student_identity("runtime/runs/run-001/integrations/erc8004-registration-draft.json")
+if result["ok"]:
+    print(result["data"])  # {agent_id, tx_hash, explorer_url, ...}
+else:
+    print(result["error"])  # human-readable reason
+```
+
 ## Python integration writer usage
 
 ```python
@@ -88,22 +124,42 @@ summary = write_product_integrations(
 #   "staged" (no RPC URL / registry) or "ready" (RPC URL + registry configured)
 ```
 
+## Registration draft provenance
+
+The registration draft now carries enriched provenance for each student generation:
+
+| Field | Source | Purpose |
+|---|---|---|
+| `teacher_identity` | request.teacher_identity or scorecard.teacher | Who judged the generation |
+| `curriculum_id` | request.scenario_set_id | Which curriculum/scenario set was used |
+| `scorecard_hash` | SHA-256 of scorecard JSON | Proof of evaluation outcome |
+| `score_delta` | iteration_history[-1].delta | Score change vs previous generation |
+| `promotion_status` | request.promotion_status | "unpromoted" (default) or "promoted" |
+| `receipt_manifest_path` | receipts/manifest.json | Full receipt/proof bundle reference |
+
+These fields travel with the draft into the ERC-8004 `extensions.role_foundry` block and are ready for future IPFS-backed token URI hosting.
+
 ## What is real now
 
 - Registration draft generation targeting Base, wired into `RunBridge.run()` (runs after every CLI invocation).
-- Completion template with `awaiting_wallet_confirmation` status.
+- **Server-side mint script** using Agent0 SDK `privateKey` signer — the real per-student mint path.
+- **Python mint gateway** with explicit env gating (off by default).
+- Enriched provenance fields: teacher identity, curriculum, proof bundle hash, score delta, promotion status.
+- Completion template (v2) with both server-side and browser mint mode documentation.
 - Browser adapter module with the full mint flow shape.
 - Readiness diagnostic that reports exactly what is wired vs pending.
 - Verifiable receipt hashing of stable artifacts only (request.json, transcript, receipts/*).
 - Explicit Base RPC + registry config requirement (no reliance on agent0-sdk defaults).
 - A clean story that **promoted/public generations** are the ones eligible to be issued, even though draft files can be written locally for any evaluated generation.
+- Token URI strategy is HTTP now; IPFS hook is clean and documented for next step.
 
 ## What is pending
 
-- agent0-sdk availability (npm install or vendored bundle).
+- agent0-sdk availability at runtime (npm install, vendored bundle, or local checkout via `AGENT0_SDK_PATH`).
 - Configured Base RPC URL + identity registry address in the environment.
 - A human promotion/public-issuance decision for the specific generation.
-- An actual wallet-approved mint on Base Sepolia or Mainnet.
+- `ROLE_FOUNDRY_LIVE_MINT=1` + `SIGNER_PRIVATE_KEY` for the first real server-side mint.
+- IPFS-backed token URI hosting (currently HTTP; clean hook in place).
 - IPFS registration (`registerIPFS`) as an alternative to `registerHTTP`.
 
 ## Claim boundary
@@ -115,6 +171,7 @@ Do **not** claim:
 
 Do claim:
 - "Role Foundry drafts ERC-8004 registrations targeting Base and wires the agent0-sdk mint path through a thin adapter."
-- "Each reviewed generation can carry receipts, evaluation context, score deltas, and an issuance-ready identity draft."
+- "A server-side mint script uses the Agent0 SDK privateKey signer for per-student minting after promotion."
+- "Each reviewed generation carries teacher identity, curriculum, proof bundle, score delta, and promotion status in the registration draft."
 - "Promoted/public generations are the intended portable-identity layer."
-- "The adapter makes wired-vs-pending explicit."
+- "The adapter makes wired-vs-pending explicit. Live mint is gated behind explicit env configuration."

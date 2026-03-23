@@ -396,5 +396,137 @@ class TestCLIIntegration(unittest.TestCase):
             self.assertIn("trust_bundle_path", run_result["integrations"])
 
 
+class TestRegistrationDraftProvenance(unittest.TestCase):
+    """Tests for enriched provenance fields in the registration draft."""
+
+    def test_draft_has_provenance_extensions(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = _make_run_dir(Path(tmp))
+            write_product_integrations(run_dir, dict(REQUEST_DICT), dict(RESULT_DICT))
+            draft = json.loads((run_dir / "integrations" / "erc8004-registration-draft.json").read_text())
+
+            ext = draft["extensions"]["role_foundry"]
+            self.assertEqual(ext["run_id"], "run-test-001")
+            self.assertEqual(ext["agent_role"], "student")
+            self.assertEqual(ext["curriculum_id"], "public-curriculum-v1")
+            self.assertEqual(ext["promotion_status"], "unpromoted")
+            self.assertIn("scorecard_hash", ext)
+
+    def test_draft_carries_teacher_identity(self):
+        """Teacher identity flows through when present in request."""
+        request = dict(REQUEST_DICT)
+        request["teacher_identity"] = "teacher-model-v1"
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = _make_run_dir(Path(tmp))
+            write_product_integrations(run_dir, request, dict(RESULT_DICT))
+            draft = json.loads((run_dir / "integrations" / "erc8004-registration-draft.json").read_text())
+
+            self.assertEqual(draft["extensions"]["role_foundry"]["teacher_identity"], "teacher-model-v1")
+
+    def test_draft_has_token_uri_strategy(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = _make_run_dir(Path(tmp))
+            write_product_integrations(run_dir, dict(REQUEST_DICT), dict(RESULT_DICT))
+            draft = json.loads((run_dir / "integrations" / "erc8004-registration-draft.json").read_text())
+
+            self.assertEqual(draft["token_uri_strategy"], "http")
+            self.assertIn("IPFS", draft["token_uri_note"])
+
+    def test_promoted_status_propagates(self):
+        request = dict(REQUEST_DICT)
+        request["promotion_status"] = "promoted"
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = _make_run_dir(Path(tmp))
+            write_product_integrations(run_dir, request, dict(RESULT_DICT))
+            draft = json.loads((run_dir / "integrations" / "erc8004-registration-draft.json").read_text())
+
+            self.assertEqual(draft["extensions"]["role_foundry"]["promotion_status"], "promoted")
+
+
+class TestCompletionTemplateV2(unittest.TestCase):
+    """Tests for v2 completion template with mint modes."""
+
+    def test_completion_template_v2(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = _make_run_dir(Path(tmp))
+            write_product_integrations(run_dir, dict(REQUEST_DICT), dict(RESULT_DICT))
+            template = json.loads((run_dir / "integrations" / "erc8004-completion-template.json").read_text())
+
+            self.assertEqual(template["version"], 2)
+
+    def test_completion_template_has_mint_modes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = _make_run_dir(Path(tmp))
+            write_product_integrations(run_dir, dict(REQUEST_DICT), dict(RESULT_DICT))
+            template = json.loads((run_dir / "integrations" / "erc8004-completion-template.json").read_text())
+
+            self.assertIn("mint_modes", template)
+            modes = template["mint_modes"]
+            self.assertIn("server_side", modes)
+            self.assertIn("browser", modes)
+            self.assertEqual(modes["server_side"]["signer"], "privateKey")
+            self.assertEqual(modes["server_side"]["gate_env"], "ROLE_FOUNDRY_LIVE_MINT")
+
+    def test_adapter_has_server_side_mint(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = _make_run_dir(Path(tmp))
+            write_product_integrations(run_dir, dict(REQUEST_DICT), dict(RESULT_DICT))
+            adapter = json.loads((run_dir / "integrations" / "agent0-base-adapter.json").read_text())
+
+            self.assertIn("server_side_mint", adapter)
+            self.assertEqual(adapter["server_side_mint"]["signer_mode"], "privateKey")
+            self.assertEqual(adapter["server_side_mint"]["script"], "app/mint_student_erc8004.mjs")
+
+
+class TestMintGateway(unittest.TestCase):
+    """Tests for the Python mint gateway."""
+
+    def test_mint_disabled_by_default(self):
+        from runner_bridge.mint_gateway import is_live_mint_enabled, mint_student_identity
+
+        os.environ.pop("ROLE_FOUNDRY_LIVE_MINT", None)
+        self.assertFalse(is_live_mint_enabled())
+
+        result = mint_student_identity("/nonexistent/draft.json")
+        self.assertFalse(result["ok"])
+        self.assertTrue(result.get("gated"))
+
+    def test_prerequisites_report(self):
+        from runner_bridge.mint_gateway import check_mint_prerequisites
+
+        os.environ.pop("ROLE_FOUNDRY_LIVE_MINT", None)
+        os.environ.pop("SIGNER_PRIVATE_KEY", None)
+        checks = check_mint_prerequisites()
+        self.assertFalse(checks["live_mint_enabled"])
+        self.assertFalse(checks["signer_private_key_set"])
+        self.assertFalse(checks["ready"])
+        self.assertTrue(checks["mint_script_exists"])
+
+    def test_mint_requires_signer_key(self):
+        from runner_bridge.mint_gateway import mint_student_identity
+
+        os.environ["ROLE_FOUNDRY_LIVE_MINT"] = "1"
+        os.environ.pop("SIGNER_PRIVATE_KEY", None)
+        try:
+            result = mint_student_identity("/nonexistent/draft.json")
+            self.assertFalse(result["ok"])
+            self.assertIn("SIGNER_PRIVATE_KEY", result["error"])
+        finally:
+            os.environ.pop("ROLE_FOUNDRY_LIVE_MINT", None)
+
+    def test_mint_requires_draft_exists(self):
+        from runner_bridge.mint_gateway import mint_student_identity
+
+        os.environ["ROLE_FOUNDRY_LIVE_MINT"] = "1"
+        os.environ["SIGNER_PRIVATE_KEY"] = "0xdeadbeef"
+        try:
+            result = mint_student_identity("/nonexistent/draft.json")
+            self.assertFalse(result["ok"])
+            self.assertIn("not found", result["error"])
+        finally:
+            os.environ.pop("ROLE_FOUNDRY_LIVE_MINT", None)
+            os.environ.pop("SIGNER_PRIVATE_KEY", None)
+
+
 if __name__ == "__main__":
     unittest.main()

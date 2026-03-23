@@ -160,9 +160,10 @@ def write_product_integrations(
                 "registrations": [],
             },
             "blocking_requirements": [
-                "A human-approved EIP-1193 wallet session is required for any write.",
                 f"A Base RPC URL must be set via {chain_env['rpc_url_env']}.",
                 f"An explicit identity registry address must be set via {chain_env['registry_env']}.",
+                "For server-side mint: ROLE_FOUNDRY_LIVE_MINT=1 and SIGNER_PRIVATE_KEY must be set.",
+                "For browser mint: a human-approved EIP-1193 wallet session is required.",
                 "No onchain claim is allowed until the completion record includes chain_id, registry, agent_id, and tx_hash.",
             ],
         },
@@ -305,6 +306,19 @@ def _build_erc8004_registration_draft(
     score_line = f"Teacher score {passed}/{total}." if passed is not None and total is not None else "Teacher score pending."
     objective = workspace.get("objective") or "Role Foundry apprentice run artifact"
 
+    # --- Provenance context for the student generation ---
+    teacher_eval = request.get("teacher_evaluation") if isinstance(request.get("teacher_evaluation"), dict) else {}
+    teacher_identity = teacher_eval.get("teacher") or scorecard.get("teacher") or request.get("teacher_identity")
+    curriculum_id = request.get("scenario_set_id") or teacher_eval.get("scenario_set_id")
+
+    # Score delta from iteration history if available
+    iteration_history = result.get("scorecard", {}).get("iteration_history") if isinstance(result.get("scorecard"), dict) else None
+    iteration_history = iteration_history if isinstance(iteration_history, list) else []
+    score_delta = iteration_history[-1].get("delta") if iteration_history and isinstance(iteration_history[-1], dict) else None
+
+    # Promotion status — only promoted/public generations are mint-eligible
+    promotion_status = request.get("promotion_status", "unpromoted")
+
     return {
         "type": "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
         "name": f"Role Foundry Frontend Apprentice — {run_id}",
@@ -339,12 +353,18 @@ def _build_erc8004_registration_draft(
             "role_foundry": {
                 "run_id": run_id,
                 "agent_role": request.get("agent_role"),
-                "scenario_set_id": request.get("scenario_set_id"),
+                "scenario_set_id": curriculum_id,
+                "teacher_identity": teacher_identity,
+                "curriculum_id": curriculum_id,
                 "receipt_manifest_path": "receipts/manifest.json",
                 "scorecard_hash": verifiable_receipts.get("scorecard_hash"),
+                "score_delta": score_delta,
+                "promotion_status": promotion_status,
                 "status": artifact_bundle.get("status") or result.get("status"),
             }
         },
+        "token_uri_strategy": "http",
+        "token_uri_note": "HTTP token URI is current. IPFS-backed provenance/metadata is the next planned step.",
     }
 
 
@@ -356,10 +376,23 @@ def _build_erc8004_completion_template(
     chain_env: dict[str, Any],
 ) -> dict[str, Any]:
     return {
-        "version": 1,
+        "version": 2,
         "status": "awaiting_wallet_confirmation",
         "run_id": run_id,
         "recommended_path": "agent0-sdk",
+        "mint_modes": {
+            "server_side": {
+                "script": "app/mint_student_erc8004.mjs",
+                "signer": "privateKey",
+                "gate_env": "ROLE_FOUNDRY_LIVE_MINT",
+                "description": "Server-side mint via Agent0 SDK privateKey signer. Requires ROLE_FOUNDRY_LIVE_MINT=1 + SIGNER_PRIVATE_KEY.",
+            },
+            "browser": {
+                "adapter": "app/agent0_base_adapter.mjs",
+                "signer": "EIP-6963/EIP-1193 wallet",
+                "description": "Browser-side mint via wallet popup.",
+            },
+        },
         "target_chain": {
             "chain_id": chain_env["chain_id"],
             "label": chain_env["label"],
@@ -407,9 +440,21 @@ def _build_agent0_base_adapter_contract(
         "wallet_connect": "connectEip1193",
         "mint_method": "registerHTTP",
         "registration_strategy": (
-            "Write local registration draft first, then let a human-approved "
-            "wallet mint with registerHTTP(tokenUri) on Base."
+            "Write local registration draft first, then mint via either "
+            "server-side privateKey signer or browser wallet with registerHTTP(tokenUri) on Base."
         ),
+        "server_side_mint": {
+            "script": "app/mint_student_erc8004.mjs",
+            "signer_mode": "privateKey",
+            "gate_env": "ROLE_FOUNDRY_LIVE_MINT",
+            "flow": [
+                "Set ROLE_FOUNDRY_LIVE_MINT=1, SIGNER_PRIVATE_KEY, RPC URL, and registry in env.",
+                "Run: node app/mint_student_erc8004.mjs --draft <path-to-draft.json>",
+                "Script initializes Agent0 SDK with privateKey signer.",
+                "Calls agent.registerHTTP(tokenUri) and waits for confirmation.",
+                "Outputs JSON completion record to stdout.",
+            ],
+        },
         "browser_adapter_path": "app/agent0_base_adapter.mjs",
         "browser_flow": [
             "Import agent0_base_adapter.mjs (Role Foundry-owned thin adapter).",
@@ -428,11 +473,11 @@ def _build_agent0_base_adapter_contract(
         "draft_path": draft_path,
         "completion_path": completion_path,
         "blocking_requirements": [
-            "agent0-sdk must be available (npm or vendored ESM bundle).",
-            "An EIP-6963/EIP-1193 compatible wallet must be present in the browser.",
+            "agent0-sdk must be available (npm or vendored ESM bundle, or local checkout via AGENT0_SDK_PATH).",
             f"RPC URL for chain {chain_env['chain_id']} must be configured via {chain_env['rpc_url_env']}.",
             f"Identity registry address must be configured via {chain_env['registry_env']} (agent0-sdk does not reliably default for Base).",
-            "Human wallet approval is required before any onchain write.",
+            "For server-side mint: ROLE_FOUNDRY_LIVE_MINT=1 and SIGNER_PRIVATE_KEY must be set.",
+            "For browser mint: an EIP-6963/EIP-1193 wallet must be present with human approval.",
         ],
     }
 
