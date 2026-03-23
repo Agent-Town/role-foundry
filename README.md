@@ -92,7 +92,7 @@ The first honest runner-bridge slice is now in the repo. It is intentionally sma
 - `LocalReplayRunner` is the zero-secret backend that writes a transcript and artifact bundle
 - optional `teacher_evaluation` input produces a teacher scorecard, public curriculum themes, and iteration history deltas
 - the bridge stores a redacted `request.json` plus a raw `request.private.json` so sealed holdout prompts stay out of student-facing artifacts
-- the bridge also emits a receipt provenance pack (`receipts/manifest.json`, baseline/candidate/evaluation exports, `receipts/evidence-index.json`, and `receipts/summary.md`) so judges can trace a run back to its source artifacts without changing the scoring semantics
+- the bridge also emits a receipt provenance pack (`receipts/manifest.json`, baseline/candidate/evaluation exports, `receipts/evidence-index.json`, `receipts/audit-bundle.json`, and `receipts/summary.md`) so judges can trace a run back to its source artifacts without changing the scoring semantics; the audit bundle carries machine-readable artifact coverage, required-artifact validation, redaction checks, and honest section availability for local/sample paths
 - if you pass `--clawith-url`, the bridge patches run state into a Clawith-compatible control plane
 - if you omit `--clawith-url`, you can still exercise the artifact/transcript contract locally
 

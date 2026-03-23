@@ -87,22 +87,36 @@ def redact_request_for_artifacts(payload: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(evaluation, dict):
         return redacted
 
+    scenario_manifest = []
+    sealed_index = 0
+    for scenario in evaluation.get("scenarios", []):
+        if not isinstance(scenario, dict):
+            continue
+        scenario_type = scenario.get("type", "training")
+        prompt_visibility = "sealed" if scenario_type == "holdout" else "student-visible"
+        if scenario_type == "holdout":
+            sealed_index += 1
+            scenario_id = f"sealed-holdout-{sealed_index}"
+            title = f"Sealed holdout {sealed_index}"
+        else:
+            scenario_id = scenario.get("id")
+            title = scenario.get("title") or scenario.get("id")
+
+        scenario_manifest.append(
+            {
+                "id": scenario_id,
+                "title": title,
+                "type": scenario_type,
+                "difficulty": scenario.get("difficulty"),
+                "prompt_visibility": prompt_visibility,
+            }
+        )
+
     redacted[TEACHER_EVALUATION_KEY] = {
         "teacher": _public_actor(evaluation.get("teacher"), default_role="teacher"),
         "student": _public_actor(evaluation.get("student"), default_role="student"),
         "iteration": evaluation.get("iteration"),
-        "scenario_manifest": [
-            {
-                "id": scenario.get("id"),
-                "title": scenario.get("title") or scenario.get("id"),
-                "type": scenario.get("type", "training"),
-                "difficulty": scenario.get("difficulty"),
-                "prompt_visibility": "sealed"
-                if scenario.get("type") == "holdout"
-                else "student-visible",
-            }
-            for scenario in evaluation.get("scenarios", [])
-        ],
+        "scenario_manifest": scenario_manifest,
     }
     previous = evaluation.get("previous_iteration")
     if isinstance(previous, dict):

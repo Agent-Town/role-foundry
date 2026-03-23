@@ -112,10 +112,15 @@ def run_alpha_loop(
     if not isinstance(loop_verifier_commands, list) or not loop_verifier_commands:
         loop_verifier_commands = None
 
+    pack_meta = benchmark_pack.get("meta") if isinstance(benchmark_pack.get("meta"), dict) else {}
+    loop_sequence_id = config.get("sequence_id") or f"{pack_meta.get('id', 'alpha')}:{artifacts_root.name}"
+
     baseline_stage_config = _stage_config(config, "baseline-eval")
     baseline_request = _prepare_teacher_stage_request(
         stage_key="baseline-eval",
         stage_config=baseline_stage_config,
+        benchmark_pack=benchmark_pack,
+        loop_sequence_id=loop_sequence_id,
         private_holdout_pack=private_holdout_pack,
     )
     baseline_result = bridge.run(RunRequest.from_dict(baseline_request))
@@ -133,6 +138,8 @@ def run_alpha_loop(
         baseline_run_id=None,
         candidate_student_run_id=None,
         verifier_commands_override=loop_verifier_commands,
+        loop_sequence_id=loop_sequence_id,
+        benchmark_pack_meta=pack_meta,
     )
 
     candidate_teacher_stage_config = _stage_config(config, "candidate-teacher-eval")
@@ -142,6 +149,7 @@ def run_alpha_loop(
         candidate_teacher_stage_config,
         baseline_stage,
         benchmark_pack,
+        loop_sequence_id=loop_sequence_id,
     )
     candidate_student_result = bridge.run(RunRequest.from_dict(candidate_student_request))
     _patch_provenance_receipt_verifier_gates(
@@ -158,11 +166,15 @@ def run_alpha_loop(
         baseline_run_id=baseline_stage["run_id"],
         candidate_student_run_id=None,
         verifier_commands_override=loop_verifier_commands,
+        loop_sequence_id=loop_sequence_id,
+        benchmark_pack_meta=pack_meta,
     )
 
     candidate_teacher_request = _prepare_teacher_stage_request(
         stage_key="candidate-teacher-eval",
         stage_config=candidate_teacher_stage_config,
+        benchmark_pack=benchmark_pack,
+        loop_sequence_id=loop_sequence_id,
         baseline_stage=baseline_stage,
         private_holdout_pack=private_holdout_pack,
     )
@@ -181,6 +193,8 @@ def run_alpha_loop(
         baseline_run_id=baseline_stage["run_id"],
         candidate_student_run_id=candidate_student_stage["run_id"],
         verifier_commands_override=loop_verifier_commands,
+        loop_sequence_id=loop_sequence_id,
+        benchmark_pack_meta=pack_meta,
     )
 
     comparison = _build_comparison(
@@ -251,6 +265,8 @@ def _prepare_candidate_student_request(
     candidate_teacher_stage_config: dict[str, Any],
     baseline_stage: dict[str, Any],
     benchmark_pack: dict[str, Any],
+    *,
+    loop_sequence_id: str,
 ) -> dict[str, Any]:
     request = deepcopy(stage_config["request"])
     teacher_eval = ((candidate_teacher_stage_config.get("request") or {}).get("teacher_evaluation")) or {}
@@ -297,6 +313,7 @@ def _prepare_candidate_student_request(
         "dataset_id": pack_meta.get("id"),
         "dataset_version": pack_meta.get("version"),
         "episode_count": len(visible_scenarios),
+        "episode_ids": [scenario.get("id") for scenario in visible_scenarios if scenario.get("id")],
         "family_ids": sorted({episode.get("family_id") for episode in episodes if episode.get("family_id")}),
         "honesty_note": "Repo-task metadata is derived from the public benchmark pack. "
         "This is still local replay / public-regression alpha unless a private holdout manifest is used.",
@@ -316,6 +333,14 @@ def _prepare_candidate_student_request(
         "public_curriculum_themes": baseline_themes,
         "repo_task_pack": repo_task_pack,
     }
+    _apply_stage_traceability(
+        request,
+        stage_key="candidate-student",
+        loop_sequence_id=loop_sequence_id,
+        benchmark_pack=benchmark_pack,
+        visible_episodes=episodes,
+        sealed_holdout_count=_sealed_holdout_count(teacher_eval),
+    )
     return request
 
 
@@ -323,6 +348,8 @@ def _prepare_teacher_stage_request(
     *,
     stage_key: str,
     stage_config: dict[str, Any],
+    benchmark_pack: dict[str, Any],
+    loop_sequence_id: str,
     baseline_stage: dict[str, Any] | None = None,
     private_holdout_pack: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
@@ -347,7 +374,76 @@ def _prepare_teacher_stage_request(
         }
 
     request["teacher_evaluation"] = teacher_eval
+    _apply_stage_traceability(
+        request,
+        stage_key=stage_key,
+        loop_sequence_id=loop_sequence_id,
+        benchmark_pack=benchmark_pack,
+        teacher_scenarios=teacher_eval.get("scenarios") if isinstance(teacher_eval.get("scenarios"), list) else [],
+    )
     return request
+
+
+def _apply_stage_traceability(
+    request: dict[str, Any],
+    *,
+    stage_key: str,
+    loop_sequence_id: str,
+    benchmark_pack: dict[str, Any],
+    visible_episodes: list[dict[str, Any]] | None = None,
+    teacher_scenarios: list[dict[str, Any]] | None = None,
+    sealed_holdout_count: int | None = None,
+) -> None:
+    pack_meta = benchmark_pack.get("meta") if isinstance(benchmark_pack.get("meta"), dict) else {}
+    episodes: dict[str, Any] = {}
+    visible_episodes = visible_episodes if isinstance(visible_episodes, list) else []
+    teacher_scenarios = teacher_scenarios if isinstance(teacher_scenarios, list) else []
+
+    if visible_episodes:
+        episodes["visible_episode_ids"] = [
+            episode.get("id") for episode in visible_episodes if isinstance(episode, dict) and episode.get("id")
+        ]
+        family_ids = sorted(
+            {
+                episode.get("family_id")
+                for episode in visible_episodes
+                if isinstance(episode, dict) and episode.get("family_id")
+            }
+        )
+        if family_ids:
+            episodes["family_ids"] = family_ids
+
+    if teacher_scenarios:
+        training_episode_ids = [
+            scenario.get("id")
+            for scenario in teacher_scenarios
+            if isinstance(scenario, dict) and scenario.get("type") != "holdout" and scenario.get("id")
+        ]
+        if training_episode_ids:
+            episodes["training_episode_ids"] = training_episode_ids
+        holdout_total = len(
+            [scenario for scenario in teacher_scenarios if isinstance(scenario, dict) and scenario.get("type") == "holdout"]
+        )
+        if holdout_total:
+            episodes["holdout_count"] = holdout_total
+            episodes["holdout_episode_ids"] = {
+                "status": "withheld",
+                "honesty_note": "Teacher-side holdout episode ids are intentionally withheld from student-facing traceability exports.",
+            }
+
+    if sealed_holdout_count is not None:
+        episodes["sealed_holdout_count"] = int(sealed_holdout_count)
+
+    request["traceability"] = {
+        "sequence_id": loop_sequence_id,
+        "stage_key": stage_key,
+        "benchmark_pack": {
+            "id": pack_meta.get("id"),
+            "version": pack_meta.get("version"),
+            "role_scope": pack_meta.get("role_scope") or pack_meta.get("role"),
+        },
+        "episodes": episodes,
+    }
 
 
 def _hydrate_teacher_scenarios(
@@ -512,6 +608,8 @@ def _build_stage_receipt(
     baseline_run_id: str | None,
     candidate_student_run_id: str | None,
     verifier_commands_override: list[str] | None = None,
+    loop_sequence_id: str | None = None,
+    benchmark_pack_meta: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     stage_meta = dict(STAGE_ORDER)[stage_key]
     run_id = str(request.get("run_id"))
@@ -552,27 +650,41 @@ def _build_stage_receipt(
         verifier_commands_override=verifier_commands_override,
     )
 
+    request_traceability = request.get("traceability") if isinstance(request.get("traceability"), dict) else {}
+    lineage: dict[str, Any] = {
+        "sequence_id": request_traceability.get("sequence_id") or loop_sequence_id or request.get("scenario_set_id"),
+        "scenario_set_id": request.get("scenario_set_id"),
+        "root_run_id": baseline_run_id or run_id,
+        "parent_run_id": baseline_run_id if stage_key == "candidate-student" else candidate_student_run_id,
+        "iteration_index": stage_meta["iteration"],
+        "iteration_label": stage_meta["iteration_label"],
+    }
+    if stage_key == "candidate-teacher-eval" and candidate_student_run_id and baseline_run_id:
+        lineage["student_run_id"] = candidate_student_run_id
+        lineage["derived_previous_iteration_from"] = baseline_run_id
+
+    traceability = _build_stage_traceability_export(
+        request=request,
+        artifact_bundle=artifact_bundle,
+        request_traceability=request_traceability,
+        benchmark_pack_meta=benchmark_pack_meta,
+    )
+
+    # audit_bundle_path from provenance
+    audit_bundle_path = None
+    provenance = stored_result.get("provenance") if isinstance(stored_result.get("provenance"), dict) else {}
+    if provenance.get("audit_bundle_path"):
+        audit_bundle_path = provenance["audit_bundle_path"]
+
     stage = {
         "run_id": run_id,
         "status": result.get("status"),
         "total_score": export_result.get("machine_score"),
         "aggregate_score": aggregate_score,
         "verifier_contract": verifier_contract,
-        "lineage": {
-            "sequence_id": request.get("scenario_set_id"),
-            "root_run_id": baseline_run_id or run_id,
-            "parent_run_id": baseline_run_id if stage_key == "candidate-student" else candidate_student_run_id,
-            "iteration_index": stage_meta["iteration"],
-            "iteration_label": stage_meta["iteration_label"],
-            **(
-                {
-                    "student_run_id": candidate_student_run_id,
-                    "derived_previous_iteration_from": baseline_run_id,
-                }
-                if stage_key == "candidate-teacher-eval" and candidate_student_run_id and baseline_run_id
-                else {}
-            ),
-        },
+        "lineage": lineage,
+        "traceability": traceability,
+        "audit_bundle_path": audit_bundle_path,
         "export": {
             "run": export_run,
             "result": export_result,
@@ -582,6 +694,45 @@ def _build_stage_receipt(
         },
     }
     return stage
+
+
+def _build_stage_traceability_export(
+    *,
+    request: dict[str, Any],
+    artifact_bundle: dict[str, Any],
+    request_traceability: dict[str, Any],
+    benchmark_pack_meta: dict[str, Any] | None,
+) -> dict[str, Any]:
+    benchmark_pack_meta = benchmark_pack_meta if isinstance(benchmark_pack_meta, dict) else {}
+    traceability = {
+        "sequence_id": request_traceability.get("sequence_id"),
+        "stage_key": request_traceability.get("stage_key"),
+        "benchmark_pack": {
+            "id": request_traceability.get("benchmark_pack", {}).get("id")
+            if isinstance(request_traceability.get("benchmark_pack"), dict)
+            else benchmark_pack_meta.get("id"),
+            "version": request_traceability.get("benchmark_pack", {}).get("version")
+            if isinstance(request_traceability.get("benchmark_pack"), dict)
+            else benchmark_pack_meta.get("version"),
+            "role_scope": request_traceability.get("benchmark_pack", {}).get("role_scope")
+            if isinstance(request_traceability.get("benchmark_pack"), dict)
+            else benchmark_pack_meta.get("role_scope") or benchmark_pack_meta.get("role"),
+        },
+        "episodes": deepcopy(request_traceability.get("episodes"))
+        if isinstance(request_traceability.get("episodes"), dict)
+        else {},
+    }
+
+    student_view = artifact_bundle.get("student_view") if isinstance(artifact_bundle.get("student_view"), dict) else {}
+    repo_task_pack = student_view.get("repo_task_pack") if isinstance(student_view.get("repo_task_pack"), dict) else {}
+    episodes = traceability["episodes"]
+    if repo_task_pack.get("episode_ids") and not episodes.get("visible_episode_ids"):
+        episodes["visible_episode_ids"] = list(repo_task_pack.get("episode_ids"))
+    if repo_task_pack.get("family_ids") and not episodes.get("family_ids"):
+        episodes["family_ids"] = list(repo_task_pack.get("family_ids"))
+    if student_view.get("sealed_holdout_count") is not None and not episodes.get("sealed_holdout_count"):
+        episodes["sealed_holdout_count"] = int(student_view.get("sealed_holdout_count") or 0)
+    return traceability
 
 
 def _build_verifier_contract(
@@ -902,6 +1053,7 @@ def _build_artifact_coverage(
             "receipts/candidate.json": run_dir / "receipts" / "candidate.json",
             "receipts/evidence-index.json": run_dir / "receipts" / "evidence-index.json",
             "receipts/summary.md": run_dir / "receipts" / "summary.md",
+            "receipts/audit-bundle.json": run_dir / "receipts" / "audit-bundle.json",
         }
         if stage_key != "candidate-student":
             required_paths["receipts/evaluation.json"] = run_dir / "receipts" / "evaluation.json"
@@ -950,12 +1102,15 @@ def _check_provenance_pointers(
         bundle_paths.add(bundle_provenance["evidence_index_path"])
     if bundle_provenance.get("summary_path"):
         bundle_paths.add(bundle_provenance["summary_path"])
-    for key in ("receipt_manifest_path", "evidence_index_path", "summary_path"):
+    if bundle_provenance.get("audit_bundle_path"):
+        bundle_paths.add(bundle_provenance["audit_bundle_path"])
+    for key in ("receipt_manifest_path", "evidence_index_path", "summary_path", "audit_bundle_path"):
         if bundle_receipts.get(key):
             bundle_paths.add(bundle_receipts[key])
     checks["bundle_provenance_has_manifest"] = "receipts/manifest.json" in bundle_paths
     checks["bundle_provenance_has_evidence_index"] = "receipts/evidence-index.json" in bundle_paths
     checks["bundle_provenance_has_summary"] = "receipts/summary.md" in bundle_paths
+    checks["bundle_provenance_has_audit_bundle"] = "receipts/audit-bundle.json" in bundle_paths
 
     result_provenance = result.get("provenance") if isinstance(result.get("provenance"), dict) else {}
     result_paths = set()
@@ -965,9 +1120,12 @@ def _check_provenance_pointers(
         result_paths.add(result_provenance["evidence_index_path"])
     if result_provenance.get("summary_path"):
         result_paths.add(result_provenance["summary_path"])
+    if result_provenance.get("audit_bundle_path"):
+        result_paths.add(result_provenance["audit_bundle_path"])
     checks["result_provenance_has_manifest"] = "receipts/manifest.json" in result_paths
     checks["result_provenance_has_evidence_index"] = "receipts/evidence-index.json" in result_paths
     checks["result_provenance_has_summary"] = "receipts/summary.md" in result_paths
+    checks["result_provenance_has_audit_bundle"] = "receipts/audit-bundle.json" in result_paths
 
     return checks
 

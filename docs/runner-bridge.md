@@ -421,7 +421,8 @@ The extra files are:
 - `receipts/baseline.json` — prior-run aggregate receipt when `previous_iteration` exists
 - `receipts/evaluation.json` — teacher score/export receipt when `teacher_evaluation` ran
 - `receipts/evidence-index.json` — evidence map linking receipts back to transcript lines, artifact JSON pointers, and private source records where needed
-- `receipts/summary.md` — human-readable export for quick judge/operator inspection
+- `receipts/audit-bundle.json` — machine-readable artifact index plus required-artifact validation, redaction checks, and lineage / benchmark-pack / episode traceability with honest availability flags
+- `receipts/summary.md` — human-readable export for quick judge/operator inspection with explicit run metadata, benchmark input, mutation, teacher scorecard, and verdict sections
 
 Private source artifacts may still be referenced in the evidence index, but only by path + pointer.
 The public provenance files do not quote sealed holdout prompt text.
@@ -483,6 +484,7 @@ runtime/runs/<run_id>/
     baseline.json      # when previous_iteration exists
     evaluation.json    # when teacher_evaluation runs
     evidence-index.json
+    audit-bundle.json
     summary.md
 ```
 
@@ -490,7 +492,7 @@ runtime/runs/<run_id>/
 
 `request.private.json` is the raw backend input. That split is what keeps holdout prompt text out of the student-facing bundle while still letting the teacher side evaluate the run.
 
-`artifact-bundle.json` and `result.json` now also include a small `provenance` block pointing at the receipt manifest, evidence index, summary export, and any baseline / candidate / evaluation receipt files for the run.
+`artifact-bundle.json` and `result.json` now also include a small `provenance` block pointing at the receipt manifest, evidence index, audit bundle, summary export, and any baseline / candidate / evaluation receipt files for the run.
 
 ## First live run
 

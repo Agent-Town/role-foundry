@@ -254,6 +254,7 @@ def _build_verifiable_receipts(run_dir: Path, result: dict[str, Any]) -> dict[st
     receipt_manifest_path = run_dir / "receipts" / "manifest.json"
     evidence_index_path = run_dir / "receipts" / "evidence-index.json"
     summary_path = run_dir / "receipts" / "summary.md"
+    audit_bundle_path = run_dir / "receipts" / "audit-bundle.json"
 
     public_artifacts: dict[str, dict[str, Any]] = {}
     for relative in (
@@ -262,6 +263,7 @@ def _build_verifiable_receipts(run_dir: Path, result: dict[str, Any]) -> dict[st
         "receipts/manifest.json",
         "receipts/evidence-index.json",
         "receipts/summary.md",
+        "receipts/audit-bundle.json",
         "receipts/candidate.json",
         "receipts/baseline.json",
         "receipts/evaluation.json",
@@ -291,6 +293,12 @@ def _build_verifiable_receipts(run_dir: Path, result: dict[str, Any]) -> dict[st
             "label": "Human-readable receipt summary present",
             "passed": summary_path.exists(),
             "detail": _relative_path(run_dir, summary_path) if summary_path.exists() else "missing",
+        },
+        {
+            "id": "audit_bundle_present",
+            "label": "Machine-readable audit bundle present",
+            "passed": audit_bundle_path.exists(),
+            "detail": _relative_path(run_dir, audit_bundle_path) if audit_bundle_path.exists() else "missing",
         },
         {
             "id": "scorecard_hashed",
@@ -395,6 +403,7 @@ def _build_erc8004_registration_draft(
                     "receipt_manifest_path": ((result.get("provenance") or {}).get("receipt_manifest_path")) or "receipts/manifest.json",
                     "evidence_index_path": ((result.get("provenance") or {}).get("evidence_index_path")) or "receipts/evidence-index.json",
                     "summary_path": ((result.get("provenance") or {}).get("summary_path")) or "receipts/summary.md",
+                    "audit_bundle_path": ((result.get("provenance") or {}).get("audit_bundle_path")) or "receipts/audit-bundle.json",
                     "public_artifact_hashes": verifiable_receipts.get("public_artifact_hashes", {}),
                     "scorecard_hash": verifiable_receipts.get("scorecard_hash"),
                 },
@@ -452,6 +461,7 @@ def _build_erc8004_completion_template(
             "receipt_manifest_path": "receipts/manifest.json",
             "evidence_index_path": "receipts/evidence-index.json",
             "receipt_summary_path": "receipts/summary.md",
+            "audit_bundle_path": "receipts/audit-bundle.json",
         },
     }
 
