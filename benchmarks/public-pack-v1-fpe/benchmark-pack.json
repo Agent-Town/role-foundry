@@ -1,0 +1,762 @@
+{
+  "meta": {
+    "id": "fpe-public-benchmark-pack-v1",
+    "version": "1.0.0",
+    "role": "Frontend/Product Engineer",
+    "role_scope": "frontend-product-engineer",
+    "family_registry": "benchmarks/public-pack-v1-fpe/episode-family-registry.json",
+    "description": "Public-safe benchmark pack for the Frontend/Product Engineer 20-task curriculum. Every episode is student-visible and derived from Spec 014 public acceptance tests.",
+    "honesty_note": "This pack is valid for public training, iteration, regression checks, and alpha-loop consumption. It is not a sealed certification pack. No teacher-only families exist because no holdout framing has been disclosed.",
+    "generated_from": [
+      "seed/frontend-product-engineer-role.v1.json",
+      "data/curriculum/frontend-product-engineer-public-seed-registry.v1.json",
+      "data/curriculum/frontend-product-engineer-evaluation-contract.v1.json",
+      "benchmarks/public-pack-v1-fpe/episode-family-registry.json"
+    ],
+    "episode_registry": "data/episode-registry/fpe-public-benchmark-pack-v1.json",
+    "public_episode_count": 20,
+    "public_family_count": 5
+  },
+  "execution_policy": {
+    "student_visible_only": true,
+    "teacher_only_fields_present": false,
+    "intended_use": [
+      "public autoresearch loops",
+      "public regression checks",
+      "alpha-loop consumption via runner_bridge.autoresearch_alpha"
+    ],
+    "not_for": [
+      "sealed certification",
+      "teacher-only adversarial evaluation",
+      "partner-track capability claims"
+    ],
+    "recommended_verifier_commands": [
+      "python3 -m unittest tests/test_fpe_public_benchmark_pack_v1.py",
+      "python3 -m unittest tests/test_frontend_product_engineer_seed_registry.py",
+      "python3 -m unittest tests/test_curriculum_contract.py"
+    ]
+  },
+  "included_family_ids": [
+    "rf.fpe.public.phase-1",
+    "rf.fpe.public.phase-2",
+    "rf.fpe.public.phase-3",
+    "rf.fpe.public.phase-4",
+    "rf.fpe.public.phase-5"
+  ],
+  "blocked_family_ids": [],
+  "episodes": [
+    {
+      "id": "fpe.seed.a001.freeze-the-first-apprentice-role",
+      "family_id": "rf.fpe.public.phase-1",
+      "title": "Freeze the first apprentice role",
+      "acceptance_test_id": "A001",
+      "difficulty": "medium",
+      "mutation_budget": "narrow",
+      "student_prompt": "Create or tighten the canonical role manifest so the first apprentice is exactly the Frontend/Product Engineer and every public seed task points at that same role id.",
+      "constraints": [
+        "partner integrations",
+        "wallet / chain work",
+        "gateway / daemon scripts"
+      ],
+      "suggested_files": [
+        "seed/**",
+        "data/**",
+        "tests/**",
+        "docs/**"
+      ],
+      "artifacts_required": [
+        "changed-files summary",
+        "receipt note"
+      ],
+      "public_checks": [
+        "The canonical role manifest uses the exact role name Frontend/Product Engineer.",
+        "Every public seed task references the same role id.",
+        "Blocked-surface notes explicitly exclude partner integrations, wallet / chain work, and unrelated infra."
+      ],
+      "tags": [
+        "phase-1",
+        "a001"
+      ]
+    },
+    {
+      "id": "fpe.seed.a002.freeze-the-evaluation-contract",
+      "family_id": "rf.fpe.public.phase-1",
+      "title": "Freeze the evaluation contract",
+      "acceptance_test_id": "A002",
+      "difficulty": "medium",
+      "mutation_budget": "narrow",
+      "student_prompt": "Check in the five-dimension scoring contract, normalized weights, and task-pass / promotion thresholds as machine-readable constants shared by all public task packets.",
+      "constraints": [
+        "partner integrations",
+        "wallet / chain work",
+        "gateway / daemon scripts"
+      ],
+      "suggested_files": [
+        "data/**",
+        "tests/**",
+        "docs/**"
+      ],
+      "artifacts_required": [
+        "changed-files summary",
+        "receipt note"
+      ],
+      "public_checks": [
+        "The five frozen dimensions are Task outcome, Regression safety, Mutation discipline, Evidence quality, and Honesty / boundary discipline.",
+        "Dimension weights sum to 1.0 exactly.",
+        "Task pass and promotion thresholds are machine-readable constants, not prose-only guidance."
+      ],
+      "tags": [
+        "phase-1",
+        "a002"
+      ]
+    },
+    {
+      "id": "fpe.seed.a003.freeze-the-mutation-surface",
+      "family_id": "rf.fpe.public.phase-1",
+      "title": "Freeze the mutation surface",
+      "acceptance_test_id": "A003",
+      "difficulty": "medium",
+      "mutation_budget": "narrow",
+      "student_prompt": "Declare allowed paths, blocked paths, and a diff budget on every task packet so out-of-scope writes auto-fail mutation discipline.",
+      "constraints": [
+        "partner integrations",
+        "wallet / chain work",
+        "gateway / daemon scripts"
+      ],
+      "suggested_files": [
+        "data/**",
+        "seed/**",
+        "tests/**",
+        "docs/**"
+      ],
+      "artifacts_required": [
+        "changed-files summary",
+        "receipt note"
+      ],
+      "public_checks": [
+        "Every task packet declares allowed_paths and blocked_paths.",
+        "The default mutation budget is at most 6 tracked files and 400 net changed lines unless the packet explicitly overrides it.",
+        "Run-object fixtures record changed files and diff stats that can be scored against the declared budget."
+      ],
+      "tags": [
+        "phase-1",
+        "a003"
+      ]
+    },
+    {
+      "id": "fpe.seed.a004.freeze-the-canonical-task-packet",
+      "family_id": "rf.fpe.public.phase-1",
+      "title": "Freeze the canonical task packet",
+      "acceptance_test_id": "A004",
+      "difficulty": "medium",
+      "mutation_budget": "narrow",
+      "student_prompt": "Define one machine-readable task-packet schema and make the full public seed set validate against it.",
+      "constraints": [
+        "partner integrations",
+        "wallet / chain work",
+        "gateway / daemon scripts"
+      ],
+      "suggested_files": [
+        "data/**",
+        "seed/**",
+        "tests/**",
+        "docs/**"
+      ],
+      "artifacts_required": [
+        "changed-files summary",
+        "receipt note"
+      ],
+      "public_checks": [
+        "The schema includes task_id, role_id, phase, objective, context, allowed_paths, blocked_paths, expected_checks, rubric_ref, time_budget_minutes, and evidence_contract.",
+        "Every public seed task validates against the same packet schema.",
+        "Baseline and candidate run fixtures reference the task packet version."
+      ],
+      "tags": [
+        "phase-1",
+        "a004"
+      ]
+    },
+    {
+      "id": "fpe.seed.b001.build-task-authoring-from-a-template",
+      "family_id": "rf.fpe.public.phase-2",
+      "title": "Build task authoring from a template",
+      "acceptance_test_id": "B001",
+      "difficulty": "medium",
+      "mutation_budget": "narrow",
+      "student_prompt": "Ship a teacher-facing template that can draft a task packet with zero blank required fields and at least one automated check plus one evidence item.",
+      "constraints": [
+        "partner integrations",
+        "wallet / chain work",
+        "gateway / daemon scripts"
+      ],
+      "suggested_files": [
+        "seed/**",
+        "docs/**",
+        "tests/**",
+        "data/**"
+      ],
+      "artifacts_required": [
+        "changed-files summary",
+        "receipt note"
+      ],
+      "public_checks": [
+        "The authoring template has no blank required fields.",
+        "The template already includes at least one automated check and one evidence artifact.",
+        "The public docs explain how the template fits the seed registry and evaluation contract."
+      ],
+      "tags": [
+        "phase-2",
+        "b001"
+      ]
+    },
+    {
+      "id": "fpe.seed.b002.build-source-intake-curriculum-promotion-workflow",
+      "family_id": "rf.fpe.public.phase-2",
+      "title": "Build source-intake -> curriculum promotion workflow",
+      "acceptance_test_id": "B002",
+      "difficulty": "medium",
+      "mutation_budget": "narrow",
+      "student_prompt": "Record one public-safe source record and one promotion record for every promoted seed task so provenance is explicit and auditable.",
+      "constraints": [
+        "partner integrations",
+        "wallet / chain work",
+        "gateway / daemon scripts"
+      ],
+      "suggested_files": [
+        "data/**",
+        "docs/**",
+        "tests/**"
+      ],
+      "artifacts_required": [
+        "changed-files summary",
+        "receipt note"
+      ],
+      "public_checks": [
+        "Every promoted task links to exactly one stable source record and exactly one promotion record.",
+        "Every source and promotion record carries a public-safe provenance note.",
+        "Teacher-only inputs stay absent from tracked task packets and promotion records."
+      ],
+      "tags": [
+        "phase-2",
+        "b002"
+      ]
+    },
+    {
+      "id": "fpe.seed.b003.author-the-first-20-task-seed-set",
+      "family_id": "rf.fpe.public.phase-2",
+      "title": "Author the first 20-task seed set",
+      "acceptance_test_id": "B003",
+      "difficulty": "medium",
+      "mutation_budget": "narrow",
+      "student_prompt": "Instantiate the full 20-task public seed set, one machine-readable packet per Spec 014 acceptance test, with phase balance and mutation surfaces declared.",
+      "constraints": [
+        "partner integrations",
+        "wallet / chain work",
+        "gateway / daemon scripts"
+      ],
+      "suggested_files": [
+        "seed/**",
+        "data/**",
+        "tests/**",
+        "docs/**"
+      ],
+      "artifacts_required": [
+        "changed-files summary",
+        "receipt note"
+      ],
+      "public_checks": [
+        "Exactly 20 public seed tasks exist.",
+        "Each phase in Spec 014 has exactly 4 tasks in the registry.",
+        "Every task packet includes a rubric reference, at least one automated check, and a declared mutation surface."
+      ],
+      "tags": [
+        "phase-2",
+        "b003"
+      ]
+    },
+    {
+      "id": "fpe.seed.b004.add-weekly-holdout-refresh",
+      "family_id": "rf.fpe.public.phase-2",
+      "title": "Add weekly holdout refresh",
+      "acceptance_test_id": "B004",
+      "difficulty": "medium",
+      "mutation_budget": "narrow",
+      "student_prompt": "Define the public-safe contract and audit seam for weekly private-holdout refresh without tracking any teacher-only prompt or rubric content.",
+      "constraints": [
+        "partner integrations",
+        "wallet / chain work",
+        "gateway / daemon scripts"
+      ],
+      "suggested_files": [
+        "benchmarks/**",
+        "docs/**",
+        "tests/**",
+        "data/**"
+      ],
+      "artifacts_required": [
+        "changed-files summary",
+        "receipt note"
+      ],
+      "public_checks": [
+        "Weekly refresh expectations call for at least 4 fresh teacher-only holdout tasks per cycle.",
+        "Refresh metadata records a week stamp and retirement / archive behavior for older holdouts.",
+        "Tracked artifacts expose only public-safe audit seams, never teacher-only content."
+      ],
+      "tags": [
+        "phase-2",
+        "b004"
+      ]
+    },
+    {
+      "id": "fpe.seed.c001.standardize-isolated-execution",
+      "family_id": "rf.fpe.public.phase-3",
+      "title": "Standardize isolated execution",
+      "acceptance_test_id": "C001",
+      "difficulty": "medium",
+      "mutation_budget": "narrow",
+      "student_prompt": "Require every scored run to record a clean git worktree or equivalent isolated workspace, base commit, runtime/version info, and artifact root.",
+      "constraints": [
+        "partner integrations",
+        "wallet / chain work",
+        "gateway / daemon scripts"
+      ],
+      "suggested_files": [
+        "data/**",
+        "tests/**",
+        "docs/**",
+        "runtime/**"
+      ],
+      "artifacts_required": [
+        "changed-files summary",
+        "receipt note"
+      ],
+      "public_checks": [
+        "Run-object fixtures record an isolated git worktree.",
+        "Every scored run records a base commit, runtime info, and artifact root.",
+        "The dirty root checkout is not an allowed scoring source."
+      ],
+      "tags": [
+        "phase-3",
+        "c001"
+      ]
+    },
+    {
+      "id": "fpe.seed.c002.wire-baseline-run-as-a-first-class-object",
+      "family_id": "rf.fpe.public.phase-3",
+      "title": "Wire baseline run as a first-class object",
+      "acceptance_test_id": "C002",
+      "difficulty": "medium",
+      "mutation_budget": "narrow",
+      "student_prompt": "Define the baseline run object so every candidate can compare against a stable baseline on the same task packet version and evaluation contract version.",
+      "constraints": [
+        "partner integrations",
+        "wallet / chain work",
+        "gateway / daemon scripts"
+      ],
+      "suggested_files": [
+        "data/**",
+        "tests/**",
+        "docs/**",
+        "runtime/**"
+      ],
+      "artifacts_required": [
+        "changed-files summary",
+        "receipt note"
+      ],
+      "public_checks": [
+        "The baseline object stores commit, checks run, weighted score, and evidence links.",
+        "The candidate run references the same task packet version and evaluation contract version as the baseline.",
+        "The baseline is a first-class machine-readable object, not an inline note."
+      ],
+      "tags": [
+        "phase-3",
+        "c002"
+      ]
+    },
+    {
+      "id": "fpe.seed.c003.wire-candidate-run-with-real-code-test-execution",
+      "family_id": "rf.fpe.public.phase-3",
+      "title": "Wire candidate run with real code/test execution",
+      "acceptance_test_id": "C003",
+      "difficulty": "medium",
+      "mutation_budget": "narrow",
+      "student_prompt": "Require candidate runs to record at least one real repo command with exit code, stdout/stderr capture, changed files, and post-change check results.",
+      "constraints": [
+        "partner integrations",
+        "wallet / chain work",
+        "gateway / daemon scripts"
+      ],
+      "suggested_files": [
+        "data/**",
+        "tests/**",
+        "docs/**",
+        "runtime/**"
+      ],
+      "artifacts_required": [
+        "changed-files summary",
+        "receipt note"
+      ],
+      "public_checks": [
+        "Candidate runs record at least one real repo command with an exit code.",
+        "stdout and stderr capture paths are part of the run object.",
+        "Changed files and post-change checks are stored alongside the candidate receipt."
+      ],
+      "tags": [
+        "phase-3",
+        "c003"
+      ]
+    },
+    {
+      "id": "fpe.seed.c004.capture-full-receipts-automatically",
+      "family_id": "rf.fpe.public.phase-3",
+      "title": "Capture full receipts automatically",
+      "acceptance_test_id": "C004",
+      "difficulty": "medium",
+      "mutation_budget": "narrow",
+      "student_prompt": "Auto-emit the task-packet reference, transcript, changed files, checks run, scorecard, and provenance manifest for every scored run.",
+      "constraints": [
+        "partner integrations",
+        "wallet / chain work",
+        "gateway / daemon scripts"
+      ],
+      "suggested_files": [
+        "data/**",
+        "tests/**",
+        "docs/**",
+        "runtime/**"
+      ],
+      "artifacts_required": [
+        "changed-files summary",
+        "receipt note"
+      ],
+      "public_checks": [
+        "Sample run objects expose packet refs, transcript paths, changed-file receipts, checks, scorecards, and provenance manifests.",
+        "Missing receipts are treated as an Evidence quality failure.",
+        "Receipt capture is defined as part of the core run contract rather than a manual appendix."
+      ],
+      "tags": [
+        "phase-3",
+        "c004"
+      ]
+    },
+    {
+      "id": "fpe.seed.d001.build-the-teacher-review-console",
+      "family_id": "rf.fpe.public.phase-4",
+      "title": "Build the teacher review console",
+      "acceptance_test_id": "D001",
+      "difficulty": "medium",
+      "mutation_budget": "narrow",
+      "student_prompt": "Render a review surface from stored exports only: task packet, diff summary, changed files, command results, transcript excerpt, weighted score breakdown, and promotion decision.",
+      "constraints": [
+        "partner integrations",
+        "wallet / chain work",
+        "gateway / daemon scripts"
+      ],
+      "suggested_files": [
+        "app/**",
+        "data/**",
+        "tests/**",
+        "docs/**"
+      ],
+      "artifacts_required": [
+        "changed-files summary",
+        "receipt note"
+      ],
+      "public_checks": [
+        "The review surface is built from stored exports only.",
+        "Missing data renders as empty instead of invented.",
+        "The view includes the task packet, diff summary, changed files, command results, transcript excerpt, weighted score breakdown, and promotion decision."
+      ],
+      "tags": [
+        "phase-4",
+        "d001"
+      ]
+    },
+    {
+      "id": "fpe.seed.d002.require-private-holdout-scoring-for-promotion",
+      "family_id": "rf.fpe.public.phase-4",
+      "title": "Require private-holdout scoring for promotion",
+      "acceptance_test_id": "D002",
+      "difficulty": "medium",
+      "mutation_budget": "narrow",
+      "student_prompt": "Gate promotion on both public and private scores while keeping teacher-only prompts and rubrics out of tracked artifacts.",
+      "constraints": [
+        "partner integrations",
+        "wallet / chain work",
+        "gateway / daemon scripts"
+      ],
+      "suggested_files": [
+        "data/**",
+        "benchmarks/**",
+        "tests/**",
+        "docs/**"
+      ],
+      "artifacts_required": [
+        "changed-files summary",
+        "receipt note"
+      ],
+      "public_checks": [
+        "promotion_ready remains blocked unless the public threshold is at least 0.85, the private-holdout threshold is at least 0.75, and both Regression safety and Honesty / boundary discipline are at least 0.90.",
+        "Teacher-only content stays absent from tracked artifacts.",
+        "The public side only exposes the gate and separation proof, not the holdout contents."
+      ],
+      "tags": [
+        "phase-4",
+        "d002"
+      ]
+    },
+    {
+      "id": "fpe.seed.d003.add-repeated-run-stability-checks",
+      "family_id": "rf.fpe.public.phase-4",
+      "title": "Add repeated-run stability checks",
+      "acceptance_test_id": "D003",
+      "difficulty": "medium",
+      "mutation_budget": "narrow",
+      "student_prompt": "Require the same candidate on the same task packet to run 3 times and only count as stable if at least 2 of 3 passes land within a 0.10 weighted-score spread.",
+      "constraints": [
+        "partner integrations",
+        "wallet / chain work",
+        "gateway / daemon scripts"
+      ],
+      "suggested_files": [
+        "data/**",
+        "tests/**",
+        "docs/**",
+        "runtime/**"
+      ],
+      "artifacts_required": [
+        "changed-files summary",
+        "receipt note"
+      ],
+      "public_checks": [
+        "The packet explicitly requires 3 runs of the same candidate on the same task packet.",
+        "At least 2 of 3 runs must clear the task pass threshold.",
+        "Weighted-score spread is at most 0.10 and Regression safety / Honesty do not flip critically across reruns."
+      ],
+      "tags": [
+        "phase-4",
+        "d003"
+      ]
+    },
+    {
+      "id": "fpe.seed.d004.add-regression-gates",
+      "family_id": "rf.fpe.public.phase-4",
+      "title": "Add regression gates",
+      "acceptance_test_id": "D004",
+      "difficulty": "medium",
+      "mutation_budget": "narrow",
+      "student_prompt": "Run the current public regression pack before promotion and require zero critical regressions plus an overall pass rate of at least 0.90.",
+      "constraints": [
+        "partner integrations",
+        "wallet / chain work",
+        "gateway / daemon scripts"
+      ],
+      "suggested_files": [
+        "data/**",
+        "benchmarks/**",
+        "tests/**",
+        "docs/**"
+      ],
+      "artifacts_required": [
+        "changed-files summary",
+        "receipt note"
+      ],
+      "public_checks": [
+        "The regression pack is the last 10 promoted public tasks, or all prior promoted public tasks if fewer exist.",
+        "Critical regressions must be 0 before promotion.",
+        "Overall pass rate is at least 0.90 and not lower than the current promoted baseline."
+      ],
+      "tags": [
+        "phase-4",
+        "d004"
+      ]
+    },
+    {
+      "id": "fpe.seed.e001.turn-failures-into-next-step-curriculum",
+      "family_id": "rf.fpe.public.phase-5",
+      "title": "Turn failures into next-step curriculum",
+      "acceptance_test_id": "E001",
+      "difficulty": "medium",
+      "mutation_budget": "narrow",
+      "student_prompt": "Link every stable, in-scope failure from the last cycle to a new task, a task revision, or an explicit ignore/defer decision before the next cycle closes.",
+      "constraints": [
+        "partner integrations",
+        "wallet / chain work",
+        "gateway / daemon scripts"
+      ],
+      "suggested_files": [
+        "data/**",
+        "docs/**",
+        "tests/**",
+        "runtime/**"
+      ],
+      "artifacts_required": [
+        "changed-files summary",
+        "receipt note"
+      ],
+      "public_checks": [
+        "Every stable in-scope failure links to a new task, a modified existing task, or an explicit ignore/defer decision.",
+        "The linkage is recorded before the next weekly cycle closes.",
+        "Curriculum updates stay public-safe and do not quote teacher-only holdout text."
+      ],
+      "tags": [
+        "phase-5",
+        "e001"
+      ]
+    },
+    {
+      "id": "fpe.seed.e002.track-generation-lineage",
+      "family_id": "rf.fpe.public.phase-5",
+      "title": "Track generation lineage",
+      "acceptance_test_id": "E002",
+      "difficulty": "medium",
+      "mutation_budget": "narrow",
+      "student_prompt": "Record parent generation, task-packet version, evaluation-contract version, regression-pack version, and promotion reason for every promoted generation.",
+      "constraints": [
+        "partner integrations",
+        "wallet / chain work",
+        "gateway / daemon scripts"
+      ],
+      "suggested_files": [
+        "data/**",
+        "docs/**",
+        "tests/**",
+        "runtime/**"
+      ],
+      "artifacts_required": [
+        "changed-files summary",
+        "receipt note"
+      ],
+      "public_checks": [
+        "Every promoted generation records a parent generation.",
+        "Task-packet version, evaluation-contract version, regression-pack version, and promotion reason are all present.",
+        "Lineage is machine-readable rather than trapped inside prose."
+      ],
+      "tags": [
+        "phase-5",
+        "e002"
+      ]
+    },
+    {
+      "id": "fpe.seed.e003.run-a-real-weekly-training-cycle",
+      "family_id": "rf.fpe.public.phase-5",
+      "title": "Run a real weekly training cycle",
+      "acceptance_test_id": "E003",
+      "difficulty": "medium",
+      "mutation_budget": "narrow",
+      "student_prompt": "Produce one dated weekly cycle that links task selection, baseline run, candidate run, teacher review, regression gate, and curriculum update end to end.",
+      "constraints": [
+        "partner integrations",
+        "wallet / chain work",
+        "gateway / daemon scripts"
+      ],
+      "suggested_files": [
+        "data/**",
+        "docs/**",
+        "tests/**",
+        "runtime/**"
+      ],
+      "artifacts_required": [
+        "changed-files summary",
+        "receipt note"
+      ],
+      "public_checks": [
+        "At least one dated weekly cycle includes task selection, baseline, candidate, teacher review, regression gate, and curriculum update.",
+        "The cycle summary links receipts end to end.",
+        "The cycle remains inside the frozen Frontend/Product Engineer role boundary."
+      ],
+      "tags": [
+        "phase-5",
+        "e003"
+      ]
+    },
+    {
+      "id": "fpe.seed.e004.only-then-expand-to-a-second-role",
+      "family_id": "rf.fpe.public.phase-5",
+      "title": "Only then expand to a second role",
+      "acceptance_test_id": "E004",
+      "difficulty": "medium",
+      "mutation_budget": "narrow",
+      "student_prompt": "Keep second-role activation blocked until the first Frontend/Product Engineer role has the seed set live, private gating live, stability and regression gates live, and 3 promoted generations with lineage.",
+      "constraints": [
+        "partner integrations",
+        "wallet / chain work",
+        "gateway / daemon scripts"
+      ],
+      "suggested_files": [
+        "data/**",
+        "seed/**",
+        "tests/**",
+        "docs/**"
+      ],
+      "artifacts_required": [
+        "changed-files summary",
+        "receipt note"
+      ],
+      "public_checks": [
+        "No second role becomes active until the 20-task seed set is live.",
+        "Private-holdout promotion gating plus stability and regression gates are live first.",
+        "The first role has at least 3 promoted generations with complete lineage after a real weekly cycle."
+      ],
+      "tags": [
+        "phase-5",
+        "e004"
+      ]
+    }
+  ],
+  "promotion_readiness": {
+    "phase": "B",
+    "status": "pass",
+    "summary": "FPE Public Benchmark Pack v1 is ready to promote as the repo's public-safe benchmark pack for the Frontend/Product Engineer curriculum. It is not a sealed certification pack.",
+    "ready_for": [
+      "public autoresearch loops",
+      "public regression checks",
+      "alpha-loop consumption"
+    ],
+    "blocked_for": [
+      "sealed certification",
+      "teacher-only adversarial evaluation"
+    ],
+    "metrics": {
+      "B001": {
+        "label": "Public episode count",
+        "status": "pass",
+        "minimum_episode_count": 8,
+        "actual_episode_count": 20
+      },
+      "B002": {
+        "label": "Rubric completeness",
+        "status": "pass",
+        "rubric_template_count": 5,
+        "rubric_mapped_episode_count": 20,
+        "expectation": "Every public episode maps to a complete public rubric template via its family."
+      },
+      "B003": {
+        "label": "Weight normalization",
+        "status": "pass",
+        "normalized_template_count": 5,
+        "expectation": "Each rubric template uses the frozen evaluation contract dimensions (sum = 1.0)."
+      },
+      "B004": {
+        "label": "Public/teacher split integrity",
+        "status": "pass",
+        "included_student_visible_family_count": 5,
+        "blocked_teacher_only_family_count": 0
+      },
+      "B005": {
+        "label": "Provenance coverage",
+        "status": "pass",
+        "provenance_mapped_episode_count": 20,
+        "expectation": "Every public episode records provenance back to Spec 014 and the public seed registry."
+      },
+      "B006": {
+        "label": "Promotion readiness clarity",
+        "status": "pass",
+        "scope": "Ready for public pack promotion with named limits only.",
+        "blocked_claims": [
+          "sealed certification"
+        ]
+      }
+    }
+  }
+}
