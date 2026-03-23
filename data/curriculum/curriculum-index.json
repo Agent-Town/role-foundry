@@ -1,0 +1,44 @@
+{
+  "meta": {
+    "id": "curriculum-index-v1",
+    "version": "1.0.0",
+    "spec": "specs/014-frontend-product-engineer-20-task-curriculum.md",
+    "role_id": "frontend-product-engineer",
+    "description": "Registry of all 20 curriculum tasks with honest implementation status. Only Phase 1 (A001-A004) tasks have real packet files. All others are planned roadmap entries.",
+    "created": "2026-03-23"
+  },
+  "tasks": [
+    { "task_id": "A001", "phase": 1, "title": "Freeze the first apprentice role", "status": "implemented", "packet_ref": "data/curriculum/tasks/A001.json" },
+    { "task_id": "A002", "phase": 1, "title": "Freeze the evaluation contract", "status": "implemented", "packet_ref": "data/curriculum/tasks/A002.json" },
+    { "task_id": "A003", "phase": 1, "title": "Freeze the mutation surface", "status": "implemented", "packet_ref": "data/curriculum/tasks/A003.json" },
+    { "task_id": "A004", "phase": 1, "title": "Freeze the canonical task packet", "status": "implemented", "packet_ref": "data/curriculum/tasks/A004.json" },
+    { "task_id": "B001", "phase": 2, "title": "Build task authoring from a template", "status": "planned", "packet_ref": null },
+    { "task_id": "B002", "phase": 2, "title": "Build source-intake -> curriculum promotion workflow", "status": "planned", "packet_ref": null },
+    { "task_id": "B003", "phase": 2, "title": "Author the first 20-task seed set", "status": "planned", "packet_ref": null },
+    { "task_id": "B004", "phase": 2, "title": "Add weekly holdout refresh", "status": "planned", "packet_ref": null },
+    { "task_id": "C001", "phase": 3, "title": "Standardize isolated execution", "status": "planned", "packet_ref": null },
+    { "task_id": "C002", "phase": 3, "title": "Wire baseline run as a first-class object", "status": "planned", "packet_ref": null },
+    { "task_id": "C003", "phase": 3, "title": "Wire candidate run with real code/test execution", "status": "planned", "packet_ref": null },
+    { "task_id": "C004", "phase": 3, "title": "Capture full receipts automatically", "status": "planned", "packet_ref": null },
+    { "task_id": "D001", "phase": 4, "title": "Build the teacher review console", "status": "planned", "packet_ref": null },
+    { "task_id": "D002", "phase": 4, "title": "Require private-holdout scoring for promotion", "status": "planned", "packet_ref": null },
+    { "task_id": "D003", "phase": 4, "title": "Add repeated-run stability checks", "status": "planned", "packet_ref": null },
+    { "task_id": "D004", "phase": 4, "title": "Add regression gates", "status": "planned", "packet_ref": null },
+    { "task_id": "E001", "phase": 5, "title": "Turn failures into next-step curriculum", "status": "planned", "packet_ref": null },
+    { "task_id": "E002", "phase": 5, "title": "Track generation lineage", "status": "planned", "packet_ref": null },
+    { "task_id": "E003", "phase": 5, "title": "Run a real weekly training cycle", "status": "planned", "packet_ref": null },
+    { "task_id": "E004", "phase": 5, "title": "Only then expand to a second role", "status": "planned", "packet_ref": null }
+  ],
+  "summary": {
+    "total": 20,
+    "implemented": 4,
+    "planned": 16,
+    "phases": {
+      "1": { "name": "Freeze the game being played", "implemented": 4, "total": 4 },
+      "2": { "name": "Build the teacher operating system", "implemented": 0, "total": 4 },
+      "3": { "name": "Make the coding loop real", "implemented": 0, "total": 4 },
+      "4": { "name": "Make evaluation trustworthy", "implemented": 0, "total": 4 },
+      "5": { "name": "Make the system compound", "implemented": 0, "total": 4 }
+    }
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "task_id": "A001",
+  "role_id": "frontend-product-engineer",
+  "phase": 1,
+  "title": "Freeze the first apprentice role",
+  "objective": "Narrow the first apprentice to one job that can actually be scored honestly. Produce a canonical role manifest under seed/ with the exact role name 'Frontend/Product Engineer', allowed and blocked surfaces, and a validation test.",
+  "context": "The repo currently has a broader 'Software Engineer Apprentice' framing. Spec 014 freezes the first role to a Frontend/Product Engineer that works only on judge-facing product slices. The role manifest is the single source of truth.",
+  "allowed_paths": [
+    "seed/**",
+    "data/curriculum/**",
+    "tests/**"
+  ],
+  "blocked_paths": [
+    "submission/**",
+    "benchmarks/private-holdout-pack/**",
+    ".env*"
+  ],
+  "mutation_budget": {
+    "max_files": 6,
+    "max_lines": 400
+  },
+  "expected_checks": [
+    "python -m pytest tests/test_curriculum_contract.py::TestRoleManifest -v"
+  ],
+  "rubric_ref": "data/curriculum/evaluation-contract.json",
+  "time_budget_minutes": 30,
+  "evidence_contract": {
+    "required_artifacts": [
+      "seed/frontend-product-engineer.json",
+      "tests/test_curriculum_contract.py"
+    ],
+    "required_checks": [
+      "TestRoleManifest passes"
+    ]
+  },
+  "pass_threshold": "One canonical role manifest exists; the role name is exactly 'Frontend/Product Engineer'; 100% of seed tasks reference that same role id; the blocked-surface list explicitly excludes partner integrations, wallet/chain work, and unrelated infra.",
+  "failure_interpretation": "The apprentice is still doing multiple jobs at once, so scores will drift and promotion decisions will be fake-comparable."
+}

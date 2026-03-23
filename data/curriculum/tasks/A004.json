@@ -1,0 +1,45 @@
+{
+  "task_id": "A004",
+  "role_id": "frontend-product-engineer",
+  "phase": 1,
+  "title": "Freeze the canonical task packet",
+  "objective": "Make the task itself a stable object shared by authoring, execution, and evaluation. Produce a JSON schema and validate all seed packets against it.",
+  "context": "Without a canonical schema, every run becomes bespoke prompting, which kills reproducibility and makes baseline/candidate comparison noisy. The schema must require: task_id, role_id, phase, objective, context, allowed_paths, blocked_paths, expected_checks, rubric_ref, time_budget_minutes, and evidence_contract.",
+  "allowed_paths": [
+    "data/curriculum/**",
+    "runner_bridge/**",
+    "tests/**"
+  ],
+  "blocked_paths": [
+    "submission/**",
+    "benchmarks/private-holdout-pack/**",
+    ".env*"
+  ],
+  "mutation_budget": {
+    "max_files": 6,
+    "max_lines": 400
+  },
+  "expected_checks": [
+    "python -m pytest tests/test_curriculum_contract.py::TestTaskPacketSchema -v"
+  ],
+  "rubric_ref": "data/curriculum/evaluation-contract.json",
+  "time_budget_minutes": 30,
+  "evidence_contract": {
+    "required_artifacts": [
+      "data/curriculum/task-packet-schema.json",
+      "data/curriculum/tasks/A001.json",
+      "data/curriculum/tasks/A002.json",
+      "data/curriculum/tasks/A003.json",
+      "data/curriculum/tasks/A004.json",
+      "tests/test_curriculum_contract.py"
+    ],
+    "required_checks": [
+      "TestTaskPacketSchema passes",
+      "All seed packets validate against schema",
+      "At least two example packets exist",
+      "Validator rejects packet missing required field"
+    ]
+  },
+  "pass_threshold": "100% of seed tasks validate against one schema containing at least task_id, role_id, phase, objective, context, allowed_paths, blocked_paths, expected_checks, rubric_ref, time_budget_minutes, and evidence_contract; baseline and candidate runs consume the same packet unchanged.",
+  "failure_interpretation": "Every run becomes bespoke prompting, which kills reproducibility and makes baseline/candidate comparison noisy."
+}

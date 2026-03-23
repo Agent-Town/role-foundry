@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Role Foundry Task Packet",
+  "description": "Schema for a curriculum task packet consumed by authoring, execution, and evaluation. Spec: 014-frontend-product-engineer-20-task-curriculum.md",
+  "type": "object",
+  "required": [
+    "task_id",
+    "role_id",
+    "phase",
+    "objective",
+    "context",
+    "allowed_paths",
+    "blocked_paths",
+    "expected_checks",
+    "rubric_ref",
+    "time_budget_minutes",
+    "evidence_contract"
+  ],
+  "properties": {
+    "task_id": {
+      "type": "string",
+      "pattern": "^[A-E]\\d{3}$",
+      "description": "Unique task identifier following the phase-letter + 3-digit pattern."
+    },
+    "role_id": {
+      "type": "string",
+      "description": "Must match the frozen role manifest id."
+    },
+    "phase": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5,
+      "description": "Curriculum phase number (1-5)."
+    },
+    "title": {
+      "type": "string",
+      "description": "Human-readable task title from the spec."
+    },
+    "objective": {
+      "type": "string",
+      "description": "What the task is trying to achieve."
+    },
+    "context": {
+      "type": "string",
+      "description": "Background context the candidate needs to understand the task."
+    },
+    "allowed_paths": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1,
+      "description": "Glob patterns for files the candidate may modify."
+    },
+    "blocked_paths": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Glob patterns for files the candidate must not modify."
+    },
+    "mutation_budget": {
+      "type": "object",
+      "properties": {
+        "max_files": { "type": "integer", "minimum": 1 },
+        "max_lines": { "type": "integer", "minimum": 1 }
+      },
+      "description": "Override for default mutation budget. Omit to use defaults (6 files, 400 lines)."
+    },
+    "expected_checks": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1,
+      "description": "Automated checks that must pass for the task to be considered complete."
+    },
+    "rubric_ref": {
+      "type": "string",
+      "description": "Path to the evaluation contract used to score this task."
+    },
+    "time_budget_minutes": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Maximum time budget for a single run of this task."
+    },
+    "evidence_contract": {
+      "type": "object",
+      "properties": {
+        "required_artifacts": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Artifacts the run must produce."
+        },
+        "required_checks": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Checks that must be recorded in the receipt."
+        }
+      },
+      "required": ["required_artifacts"],
+      "description": "Contract for what evidence the run must leave behind."
+    },
+    "pass_threshold": {
+      "type": "string",
+      "description": "Human-readable description of what constitutes a pass."
+    },
+    "failure_interpretation": {
+      "type": "string",
+      "description": "What a failure on this task means for the curriculum."
+    }
+  },
+  "additionalProperties": true
+}

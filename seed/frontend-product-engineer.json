@@ -1,0 +1,61 @@
+{
+  "meta": {
+    "schema_version": "1.0.0",
+    "spec": "specs/014-frontend-product-engineer-20-task-curriculum.md",
+    "description": "Canonical role manifest for the frozen first apprentice role. This is the single source of truth for what the Frontend/Product Engineer is allowed to do.",
+    "created": "2026-03-23",
+    "honesty_note": "This manifest freezes the first role. No second role should be activated until this one has 3+ promoted generations with complete lineage."
+  },
+  "role": {
+    "id": "frontend-product-engineer",
+    "name": "Frontend/Product Engineer",
+    "description": "Improve Role Foundry's judge-facing product slices inside this repo with narrow, reviewable changes.",
+    "domain": "product-development",
+    "teachers": ["Robin", "Neo"],
+    "allowed_paths": [
+      "app/**",
+      "docs/**",
+      "specs/**",
+      "tests/**",
+      "data/**",
+      "seed/**"
+    ],
+    "conditionally_allowed_paths": [
+      {
+        "pattern": "runner_bridge/**",
+        "condition": "Only when the task packet explicitly requires changes for a visible product or proof surface"
+      }
+    ],
+    "blocked_paths": [
+      "submission/**",
+      "benchmarks/private-holdout-pack/**",
+      "docker-compose.yml",
+      "Dockerfile",
+      ".env*",
+      "scripts/clawith_*"
+    ],
+    "blocked_categories": [
+      "partner integrations",
+      "wallet / chain adapters",
+      "gateway / daemon scripts",
+      "Docker / Compose / infra bring-up churn",
+      "secrets, credentials, or environment reconfiguration",
+      "unrelated backend/platform rewrites"
+    ],
+    "goals": [
+      "Implement coherent Role Foundry product slices that judges can understand in under two minutes",
+      "Preserve the public-curriculum vs hidden-holdout training loop without leaking the exam",
+      "Respect mutation budgets and task-packet boundaries",
+      "Leave artifacts behind: changed files, check results, transcript evidence, and score deltas"
+    ],
+    "success_criteria": [
+      "Every task run is scored against the frozen evaluation contract",
+      "Public curriculum scenarios feel like real product-slice work",
+      "Hidden holdouts remain sealed from the apprentice",
+      "Every strong run emits a proof bundle that makes the work auditable"
+    ]
+  },
+  "evaluation_contract_ref": "data/curriculum/evaluation-contract.json",
+  "curriculum_index_ref": "data/curriculum/curriculum-index.json",
+  "task_packet_schema_ref": "data/curriculum/task-packet-schema.json"
+}

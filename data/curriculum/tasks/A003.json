@@ -1,0 +1,39 @@
+{
+  "task_id": "A003",
+  "role_id": "frontend-product-engineer",
+  "phase": 1,
+  "title": "Freeze the mutation surface",
+  "objective": "Stop agents from winning by thrashing too much of the repo. Every task packet must declare allowed paths, blocked paths, and a file/line budget.",
+  "context": "The default mutation budget is <= 6 tracked files and <= 400 net changed lines unless the task packet explicitly overrides it. Scored runs auto-fail mutation discipline if they write outside allowed paths.",
+  "allowed_paths": [
+    "data/curriculum/**",
+    "tests/**"
+  ],
+  "blocked_paths": [
+    "submission/**",
+    "benchmarks/private-holdout-pack/**",
+    ".env*"
+  ],
+  "mutation_budget": {
+    "max_files": 6,
+    "max_lines": 400
+  },
+  "expected_checks": [
+    "python -m pytest tests/test_curriculum_contract.py::TestMutationSurface -v"
+  ],
+  "rubric_ref": "data/curriculum/evaluation-contract.json",
+  "time_budget_minutes": 20,
+  "evidence_contract": {
+    "required_artifacts": [
+      "data/curriculum/tasks/A003.json",
+      "tests/test_curriculum_contract.py"
+    ],
+    "required_checks": [
+      "TestMutationSurface passes",
+      "All packets declare allowed_paths and blocked_paths",
+      "Default budget constants match spec"
+    ]
+  },
+  "pass_threshold": "Every task packet declares allowed paths, blocked paths, and a file/line budget; the default budget is <= 6 tracked files and <= 400 net changed lines unless the task packet explicitly overrides it.",
+  "failure_interpretation": "A 'good' result may just be hidden scope creep, so task scores stop meaning anything."
+}

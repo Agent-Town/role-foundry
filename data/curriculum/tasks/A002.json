@@ -1,0 +1,41 @@
+{
+  "task_id": "A002",
+  "role_id": "frontend-product-engineer",
+  "phase": 1,
+  "title": "Freeze the evaluation contract",
+  "objective": "Make scores comparable across tasks, weeks, and generations by freezing the five evaluation dimensions and their weights as machine-readable constants.",
+  "context": "Without a frozen scoring contract, improvement claims become apples-to-oranges. This task produces the evaluation-contract.json with the five dimensions (task_outcome 0.30, regression_safety 0.25, mutation_discipline 0.15, evidence_quality 0.15, honesty_boundary_discipline 0.15), thresholds, and a contract test that rejects missing or renormalized dimensions.",
+  "allowed_paths": [
+    "data/curriculum/**",
+    "runner_bridge/**",
+    "tests/**"
+  ],
+  "blocked_paths": [
+    "submission/**",
+    "benchmarks/private-holdout-pack/**",
+    ".env*"
+  ],
+  "mutation_budget": {
+    "max_files": 6,
+    "max_lines": 400
+  },
+  "expected_checks": [
+    "python -m pytest tests/test_curriculum_contract.py::TestEvaluationContract -v"
+  ],
+  "rubric_ref": "data/curriculum/evaluation-contract.json",
+  "time_budget_minutes": 30,
+  "evidence_contract": {
+    "required_artifacts": [
+      "data/curriculum/evaluation-contract.json",
+      "tests/test_curriculum_contract.py"
+    ],
+    "required_checks": [
+      "TestEvaluationContract passes",
+      "Weights sum to 1.0",
+      "Validator rejects missing dimensions",
+      "Validator rejects renormalized weights"
+    ]
+  },
+  "pass_threshold": "Every public task packet and every private-holdout packet uses the five frozen dimensions; weights sum to 1.0; task pass and promotion thresholds are checked in as machine-readable constants.",
+  "failure_interpretation": "Improvement claims become apples-to-oranges because the judging contract keeps moving."
+}
