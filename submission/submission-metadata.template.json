@@ -5,7 +5,7 @@
     "repo_url": "https://github.com/Agent-Town/role-foundry",
     "submission_base_branch": "origin/submission/active-base-20260323-0711",
     "submission_base_commit": "0dcdc40",
-    "packaging_review_branch": "review/submission-readiness-roundtrip-proof-20260323-1005",
+    "packaging_review_branch": "review/submission-candidate-finished-lanes-20260323-1129",
     "final_review_commit": "FILL_BEFORE_PUBLISH"
   },
   "summary": {

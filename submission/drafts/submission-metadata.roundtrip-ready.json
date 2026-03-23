@@ -1,5 +1,5 @@
 {
-  "status": "draft-fill-on-roundtrip-fold",
+  "status": "draft-final-review-pending",
   "project": {
     "name": "Role Foundry",
     "repo_url": "https://github.com/Agent-Town/role-foundry",
@@ -12,7 +12,7 @@
     "scope_note": "The shipped public curriculum remains frontend/product-heavy even though the role framing is broader software engineering.",
     "public_alpha_loop_status": "proven",
     "local_private_holdout_boundary_status": "proven",
-    "external_roundtrip_status": "fill_after_roundtrip_fold",
+    "external_roundtrip_status": "ready",
     "native_clawith_parity_status": "not_claimed",
     "sealed_certification_status": "not_claimed"
   },
@@ -45,12 +45,12 @@
       ]
     },
     "external_roundtrip": {
-      "status": "fill_after_roundtrip_fold",
-      "branch": "FILL_ROUNDTRIP_BRANCH",
-      "commit": "FILL_ROUNDTRIP_COMMIT",
-      "artifact_path": "FILL_ROUNDTRIP_ARTIFACT_PATH",
-      "entrypoint": "FILL_ROUNDTRIP_ENTRYPOINT",
-      "note": "Expected proof target is an external Clawith -> OpenClaw -> Claude/vibecosystem roundtrip path."
+      "status": "ready",
+      "branch": "origin/review/clawith-vibe-roundtrip-demo-20260323-1000",
+      "commit": "4dab2a9866b86df4525d9698a7c844ab538ac61c",
+      "artifact_path": "submission/clawith-vibecosystem-roundtrip-proof.manifest.json",
+      "entrypoint": "scripts/clawith_ws_roundtrip.js + scripts/clawith_vibe_once.py",
+      "note": "Tracked proof index plus local-only receipt roots show one external Clawith -> OpenClaw -> Claude/vibecosystem roundtrip path without upgrading the claim to native parity."
     }
   },
   "claim_boundary": {
@@ -59,7 +59,7 @@
       "Software Engineer apprentice as the first concrete shipped role",
       "Executable public alpha loop proof",
       "Local private-holdout honesty boundary",
-      "External Clawith -> OpenClaw -> Claude/vibecosystem roundtrip proof once the exact artifact is filled"
+      "External Clawith -> OpenClaw -> Claude/vibecosystem roundtrip proof indexed by the tracked manifest"
     ],
     "not_claimed": [
       "Native Clawith parity",

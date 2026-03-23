@@ -1,12 +1,12 @@
 # Judge Demo Script — honest current story
 
-Status: draft
+Status: draft-final-review-pending
 Use this as the live walkthrough script for judges.
-Fill the roundtrip-proof placeholders after the active proof-fold lane lands.
+Roundtrip proof references are filled from `origin/review/clawith-vibe-roundtrip-demo-20260323-1000` and `submission/clawith-vibecosystem-roundtrip-proof.manifest.json`.
 
 ## One-sentence opener
 
-Role Foundry is a role-training, evaluation, and promotion system for AI apprentices; the first concrete role is a Software Engineer apprentice, and the current proof is an honest public alpha loop plus a local private-holdout boundary — with a separate external Clawith -> OpenClaw -> Claude/vibecosystem roundtrip proof slot to fill when that lane lands.
+Role Foundry is a role-training, evaluation, and promotion system for AI apprentices; the first concrete role is a Software Engineer apprentice, and the current proof is an honest public alpha loop plus a local private-holdout boundary, plus one tracked external Clawith -> OpenClaw -> Claude/vibecosystem roundtrip proof.
 
 ## 5-7 minute walkthrough
 
@@ -75,22 +75,25 @@ Land these points:
 - this is enough for a **local private-holdout** alpha run
 - this is **not** sealed certification and **not** third-party-sealed evaluation
 
-### 5. Show the external roundtrip proof slot
+### 5. Show the external roundtrip proof
 
 Say:
 
-> Separate from the public alpha loop, we also want proof that an external control-plane path really works: Clawith -> OpenClaw -> Claude/vibecosystem. That proof is intentionally kept separate from native-parity claims.
+> Separate from the public alpha loop, we also have one tracked proof that an external control-plane path really works: Clawith -> OpenClaw -> Claude/vibecosystem. That proof is intentionally kept separate from native-parity claims.
 
-Fill after the proof-fold lane lands:
-- proof branch: `FILL_ROUNDTRIP_BRANCH`
-- proof commit: `FILL_ROUNDTRIP_COMMIT`
-- capture/receipt path: `FILL_ROUNDTRIP_ARTIFACT_PATH`
-- script/entry path: `FILL_ROUNDTRIP_ENTRYPOINT`
-- screenshot/log excerpt: `FILL_ROUNDTRIP_SCREENSHOT_OR_LOG`
+Cite:
+- proof branch: `origin/review/clawith-vibe-roundtrip-demo-20260323-1000`
+- proof commit: `4dab2a9866b86df4525d9698a7c844ab538ac61c`
+- tracked proof index: `submission/clawith-vibecosystem-roundtrip-proof.manifest.json`
+- local receipt roots: `artifacts/clawith-roundtrip/rescue-proof/20260323T025241Z` and `artifacts/clawith-gateway/rescue-proof/20260323T025254Z`
+- proof entrypoints: `scripts/clawith_ws_roundtrip.js` and `scripts/clawith_vibe_once.py`
+- screenshot/log excerpt path: `artifacts/clawith-roundtrip/rescue-proof/20260323T025241Z/final_reply.txt`
+- required reply markers: `REAL_GATEWAY_ROUNDTRIP_OK_20260323_0958Z` and `CLAWITH_CONTROL_PLANE_VIBECOSYSTEM_EXECUTOR`
 
 Land these points:
 - this proves an **external roundtrip path** exists
 - Clawith is acting as control plane; OpenClaw is the harness path; Claude/vibecosystem is the execution backend
+- raw receipt dirs stay local; the tracked manifest indexes them without committing them
 - this is **not** a claim that stock/native Clawith already has full Role Foundry parity
 - this is **not** a claim that Clawith-native model-pool bring-up is complete
 
@@ -102,10 +105,11 @@ Say:
 
 ## 60-second fallback version
 
-> Role Foundry is a role-training, eval, and promotion system for AI apprentices. The first shipped role is a Software Engineer apprentice improving Role Foundry itself. Today we can honestly prove an executable public alpha loop with better/equal/worse receipts, plus a local private-holdout boundary that keeps teacher-only prompts out of tracked and student-visible artifacts. We also have a separate external Clawith -> OpenClaw -> Claude/vibecosystem roundtrip proof slot to fill when that live proof lands. What we do not claim is native Clawith parity, sealed certification, tamper-proof eval, or third-party-sealed holdouts.
+> Role Foundry is a role-training, eval, and promotion system for AI apprentices. The first shipped role is a Software Engineer apprentice improving Role Foundry itself. Today we can honestly prove an executable public alpha loop with better/equal/worse receipts, plus a local private-holdout boundary that keeps teacher-only prompts out of tracked and student-visible artifacts, plus one tracked external Clawith -> OpenClaw -> Claude/vibecosystem roundtrip proof indexed by a repo-visible manifest. What we do not claim is native Clawith parity, sealed certification, tamper-proof eval, or third-party-sealed holdouts.
 
-## Required fill points before a final live demo
+## Required checks before a final live demo
 
-- [ ] Replace every `FILL_ROUNDTRIP_*` placeholder with exact branch / commit / artifact references.
-- [ ] Confirm the roundtrip artifact is a real capture, not a planned path.
+- [ ] Confirm the local receipt roots cited in the manifest still exist and still match the tracked ids.
+- [ ] Confirm the final reply markers still match the proof manifest.
 - [ ] Keep the non-claims verbatim unless the underlying proof materially changes.
+- [ ] Replace any remaining `FILL_FINAL_REVIEW_*` placeholders in final publish artifacts.

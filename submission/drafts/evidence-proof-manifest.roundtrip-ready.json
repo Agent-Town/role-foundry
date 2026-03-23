@@ -1,5 +1,5 @@
 {
-  "status": "draft-fill-on-roundtrip-fold",
+  "status": "draft-final-review-pending",
   "final_review_branch": "FILL_FINAL_REVIEW_BRANCH",
   "final_review_commit": "FILL_FINAL_REVIEW_COMMIT",
   "artifacts": [
@@ -58,18 +58,23 @@
         "submission/checklists/proof-fold-merge-fill.md"
       ],
       "visibility": "public",
-      "notes": "Additive packaging materials prepared while the active proof-fold lane is still in progress."
+      "notes": "Additive packaging materials with roundtrip references filled; only final-review placeholders remain."
     },
     {
       "id": "external-roundtrip-proof",
       "kind": "live-proof",
-      "status": "fill_after_roundtrip_fold",
-      "branch": "FILL_ROUNDTRIP_BRANCH",
-      "commit": "FILL_ROUNDTRIP_COMMIT",
-      "artifact_path": "FILL_ROUNDTRIP_ARTIFACT_PATH",
-      "entrypoint": "FILL_ROUNDTRIP_ENTRYPOINT",
+      "status": "ready",
+      "branch": "origin/review/clawith-vibe-roundtrip-demo-20260323-1000",
+      "commit": "4dab2a9866b86df4525d9698a7c844ab538ac61c",
+      "artifact_path": "submission/clawith-vibecosystem-roundtrip-proof.manifest.json",
+      "entrypoint": "scripts/clawith_ws_roundtrip.js + scripts/clawith_vibe_once.py",
+      "local_receipt_roots": [
+        "artifacts/clawith-roundtrip/rescue-proof/20260323T025241Z",
+        "artifacts/clawith-gateway/rescue-proof/20260323T025254Z"
+      ],
+      "log_excerpt_path": "artifacts/clawith-roundtrip/rescue-proof/20260323T025241Z/final_reply.txt",
       "visibility": "proof-artifact",
-      "notes": "Expected to show an external Clawith -> OpenClaw -> Claude/vibecosystem roundtrip path. This is not native parity proof."
+      "notes": "Tracked manifest points at local receipt roots for one external Clawith -> OpenClaw -> Claude/vibecosystem roundtrip path. This is not native parity proof."
     },
     {
       "id": "native-clawith-parity",

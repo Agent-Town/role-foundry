@@ -29,15 +29,14 @@ Do **not** fabricate transcripts, approvals, or run results that do not exist.
 ### 1. Submission framing
 - Project: Role Foundry
 - Submission base: `origin/submission/active-base-20260323-0711`
-- Packaging branch: `review/submission-readiness-roundtrip-proof-20260323-1005`
+- Packaging branch: `review/submission-candidate-finished-lanes-20260323-1129`
 - One-sentence claim:
   - TODO
 
 ### 2. Repo-visible work shipped on this packaging pass
-- [ ] Vision/system overview UI promoted
-- [ ] Teacher-source curriculum flow promoted
-- [ ] Hidden private-holdout claim-boundary clarification promoted
-- [ ] Submission packaging scaffolds added
+- [ ] Base readiness pass already carried vision/system overview UI, teacher-source curriculum flow, and hidden private-holdout clarification
+- [ ] Claim-scrub demo surfaces tightened without widening proof claims
+- [ ] Submission packaging scaffolds and roundtrip-ready packet drafts added
 - [ ] External gateway roundtrip proof docs/scripts/receipt manifest folded in
 
 ### 3. Evidence referenced
@@ -52,17 +51,18 @@ Do **not** fabricate transcripts, approvals, or run results that do not exist.
 - [ ] `submission/clawith-vibecosystem-roundtrip-proof.manifest.json`
 
 ### 4. Checks run
-- [ ] `python3 -m pytest -q tests/test_vision_and_swe_bench_separation.py tests/test_teacher_source_curriculum.py tests/test_public_benchmark_pack_v1.py tests/test_autoresearch_alpha_loop.py tests/test_private_holdout_separation.py tests/test_demo_contract.py tests/test_milestone3_contract.py`
+- [ ] `/opt/homebrew/bin/pytest -q tests/test_vision_and_swe_bench_separation.py tests/test_teacher_source_curriculum.py tests/test_public_benchmark_pack_v1.py tests/test_autoresearch_alpha_loop.py tests/test_private_holdout_separation.py tests/test_demo_contract.py tests/test_milestone3_contract.py`
 - [ ] `python3 -m py_compile scripts/clawith_link_openclaw.py scripts/clawith_vibe_once.py`
-- [ ] `node --check scripts/clawith_ws_roundtrip.js`
+- [ ] `/Users/robin/.nvm/versions/node/v24.14.0/bin/node --check scripts/clawith_ws_roundtrip.js`
 - [ ] `git diff --check`
 
 ### 5. Explicitly skipped on this pass
-- [ ] `role-foundry-clawith-native-agent-bringup` — active lane
+- [ ] `role-foundry-holdout-story-alignment` — held for the later top-off merge
 - [ ] `origin/lane/product-core-four-integrations` — broad partner-integration / runner-bridge scope, intentionally excluded from this narrow pass
 
 ### 6. Pending / blocked
 - [ ] Native Clawith model-pool smoke evidence — `pending_active_lane`
+- [ ] Holdout-story alignment / final publish copy polish — `pending_topoff_merge`
 - [ ] Sealed-eval / sealed-certification claims — blocked
 - [ ] Any claim beyond the single external gateway + Claude/vibecosystem executor proof — blocked
 
