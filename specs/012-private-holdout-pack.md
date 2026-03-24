@@ -6,7 +6,7 @@ Define the contract for teacher-only holdout evaluation material that must never
 
 ## Background
 
-Public benchmark pack v1 (spec 008) ships 6 public families and 12 episodes. Three holdout-derived families are `blocked_pending_rewrite` because their framing is already repo-visible. To unblock honest sealed evaluation, fresh teacher-only material must be authored with new wording and kept out of all tracked public repo artifacts.
+Public benchmark pack v1 now ships **7 public families and 14 episodes**. Three holdout-derived families remain legacy-status `blocked_pending_rewrite` and readiness-state `rewrite_before_holdout_promotion` because their framing is already repo-visible. To unblock honest sealed evaluation, fresh teacher-only material must be authored with new wording and kept out of all tracked public repo artifacts.
 
 ## What this spec claims
 

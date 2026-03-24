@@ -2,16 +2,16 @@
 
 This repo now has a first **public-safe benchmark pack** for the Frontend Apprentice.
 
-The important honesty line:
+The honesty line is simple:
 
 - **benchmark-ready now:** public curriculum families only
-- **blocked / pending rewrite:** any teacher-only or holdout-derived family whose framing is already visible in this public repo
+- **blocked / rewrite-needed:** any teacher-only or holdout-derived family whose framing is already visible in this public repo
 - **not claimed:** sealed certification, partner-track work, or fresh hidden-eval integrity from the current public holdout families
 - **plainly:** this pack is **not a sealed certification** pack
 
 ## What is benchmark-ready now
 
-`benchmarks/public-pack-v1/benchmark-pack.json` contains **12 concrete student-visible episodes** across **6 public-ready families**:
+`benchmarks/public-pack-v1/benchmark-pack.json` currently contains **14 concrete student-visible episodes** across **7 public-ready families**:
 
 - `rf.frontend-apprentice.public.landing-story`
   - make the dogfood apprentice loop obvious
@@ -25,6 +25,8 @@ The important honesty line:
   - refuse fake live claims and keep slices narrow
 - `rf.frontend-apprentice.public.failure-to-curriculum`
   - promote sanitized lessons into public curriculum
+- `rf.frontend-apprentice.public.playwright-regression`
+  - add source-backed public UI regression tasks without inventing a fake Playwright harness
 
 These are appropriate for:
 
@@ -37,35 +39,39 @@ These are appropriate for:
 
 `data/episode-registry/public-benchmark-pack-v1.json` is the companion registry for the pack.
 
-It adds the missing audit surface that the original manifest only implied:
+It carries the audit surface the student-facing manifest alone cannot:
 
-- **6 public rubric templates** — one per public family
+- **7 public rubric templates** — one per public family
 - **normalized weights** — every template sums to `1.0`
-- **12/12 rubric mappings** — every shipped public episode points at a complete public rubric
-- **12/12 provenance mappings** — every shipped public episode cites its public training seed scenario plus public spec/doc references
+- **14/14 rubric mappings** — every shipped public episode points at a complete public rubric
+- **14/14 provenance mappings** — every shipped public episode cites its public training seed scenario plus public spec/doc references
+- **100% family readiness coverage** — every candidate family has an explicit readiness state
 - **no teacher-only fields** — the registry stays public-safe and never includes hidden prompt text or teacher-side scoring rubrics
 
 For the registry contract itself, see `docs/dataset-episode-registry.md`.
 
 ## Phase B acceptance snapshot
 
-The clean public-pack lane now carries explicit **B001–B006** status instead of leaving them implicit:
+The pack now leaves explicit **B001–B006** evidence behind instead of asking a reader to infer it:
 
 - **B001 — Public episode count:** pass
-  - 12 public episodes shipped
-  - current floor remains 10
+  - 14 public episodes shipped across 7 families
+  - floor remains `>= 8` episodes across `>= 3` families in the forward spec, and spec 008 still exceeds its own `>= 10` episode bar
 - **B002 — Rubric completeness:** pass
-  - 6 public rubric templates cover all 12 public episodes
+  - 7 public rubric templates cover all 14 public episodes
 - **B003 — Weight normalization:** pass
   - every public rubric template sums to `1.0`
 - **B004 — Public/teacher split integrity:** pass
-  - 6 `student_visible` families included
-  - 3 `teacher_only` families remain `blocked_pending_rewrite` and excluded
+  - 7 `student_visible` families included
+  - 3 `teacher_only` families remain excluded
+  - leak audit outcome: `pass` with `0` teacher-only field hits and `0` teacher-only token hits in tracked public pack artifacts
 - **B005 — Provenance coverage:** pass
-  - 12/12 public episodes cite training-seed + public spec/doc provenance
+  - 14/14 public episodes cite training-seed + public spec/doc provenance
+  - actual public provenance coverage: `100%`
 - **B006 — Promotion readiness clarity:** pass, with named limits
-  - ready to promote as the repo's **public-safe benchmark pack** for public regression/training use
+  - ready to promote as the repo’s **public-safe benchmark pack** for public regression/training use
   - still blocked from sealed certification or fresh hidden-eval integrity claims
+  - every family declares an explicit readiness state from the allowed set: `draft`, `benchmark_ready`, `rewrite_before_holdout_promotion`, `blocked`
 
 ## What is blocked
 
@@ -76,24 +82,24 @@ They are blocked because the current repo already exposes their framing. That me
 - sealed eval families
 - public-safe benchmark families
 
-Each blocked family is marked `blocked_pending_rewrite` and includes rewrite requirements.
+For compatibility, the legacy family `status` remains `blocked_pending_rewrite`, while the explicit readiness state for promotion planning is `rewrite_before_holdout_promotion`.
 
 ## Why this split matters
 
 The existing repo proves the **contract** for student-visible vs teacher-only separation.
 
-It does **not** yet give us a clean public sealed-eval pack, because the current holdout families are already repo-visible. So the right move is:
+It does **not** give us a clean public sealed-eval pack, because the current holdout families are already repo-visible. So the honest move is:
 
 1. ship a real public benchmark pack now
 2. keep teacher-only / holdout-derived families out of that pack
-3. add public rubrics + provenance so the pack is audit-friendly instead of hand-wavy
+3. attach public rubrics, provenance, leak-audit evidence, and readiness states so the pack is audit-friendly instead of hand-wavy
 4. rewrite fresh teacher-only families later outside the public student pack
 
 That keeps the benchmark story honest.
 
 ## Local private holdout path
 
-Fresh teacher-only holdouts now have a **local-only scaffold**:
+Fresh teacher-only holdouts still have a **local-only scaffold**:
 
 - public schema template: `benchmarks/private-holdout-pack-template.json`
 - private local manifest path: `benchmarks/private-holdout-pack/holdout-manifest.json`
@@ -120,10 +126,10 @@ Use the pack like this:
 Run:
 
 ```bash
-python3 -m unittest tests/test_public_benchmark_pack_v1.py
-python3 -m unittest tests/test_private_holdout_separation.py
-python3 scripts/holdout_author.py audit
-python3 -m unittest tests/test_milestone3_contract.py tests/test_milestone5_teacher_eval_loop.py tests/test_autoresearch_alpha_loop.py
+python3 -m unittest tests/test_public_benchmark_pack_v1.py -v
+python3 -m unittest tests/test_dataset_flywheel_phase_g.py -v
+python3 -m unittest tests/test_private_holdout_separation.py -v
+python3 -m unittest tests/test_milestone3_contract.py tests/test_milestone5_teacher_eval_loop.py -v
 ```
 
 ## Files
@@ -131,11 +137,12 @@ python3 -m unittest tests/test_milestone3_contract.py tests/test_milestone5_teac
 - `benchmarks/public-pack-v1/episode-family-registry.json`
 - `benchmarks/public-pack-v1/benchmark-pack.json`
 - `data/episode-registry/public-benchmark-pack-v1.json`
+- `data/episode-registry/source-buckets.json`
 - `docs/dataset-episode-registry.md`
+- `docs/dataset-flywheel.md`
 - `benchmarks/private-holdout-pack-template.json`
 - `specs/008-public-benchmark-pack-v1.md`
 - `specs/012-private-holdout-pack.md`
 - `tests/test_public_benchmark_pack_v1.py`
+- `tests/test_dataset_flywheel_phase_g.py`
 - `tests/test_private_holdout_separation.py`
-- `scripts/holdout_author.py`
-- `docs/private-holdout-authoring.md`
