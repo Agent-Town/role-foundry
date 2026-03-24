@@ -85,6 +85,15 @@ class AuditBundlePacketRuntimeTests(unittest.TestCase):
 
         self.assertEqual(redaction["status"], "pass")
         surfaces = {entry["surface"]: entry for entry in redaction["checks"]}
+        for surface in (
+            "receipts/manifest.json",
+            "receipts/summary.md",
+            "receipts/audit-bundle.json",
+            "integrations/trust-bundle.json",
+            "integrations/erc8004-registration-draft.json",
+            "integrations/summary.md",
+        ):
+            self.assertEqual(surfaces[surface]["status"], "clean")
         self.assertEqual(surfaces["read-model-export"]["status"], "not_emitted")
         self.assertTrue(all(entry["status"] != "leak_detected" for entry in redaction["checks"]))
 
@@ -132,6 +141,15 @@ class TeacherEvalRedactionAuditTests(unittest.TestCase):
 
             surfaces = {entry["surface"]: entry for entry in redaction["checks"]}
             self.assertEqual(surfaces["request.json"]["status"], "clean")
+            for surface in (
+                "receipts/manifest.json",
+                "receipts/summary.md",
+                "receipts/audit-bundle.json",
+                "integrations/trust-bundle.json",
+                "integrations/erc8004-registration-draft.json",
+                "integrations/summary.md",
+            ):
+                self.assertEqual(surfaces[surface]["status"], "clean")
             self.assertEqual(surfaces["read-model-export"]["status"], "not_emitted")
 
             summary = (run_dir / "receipts" / "summary.md").read_text()
@@ -164,10 +182,21 @@ class AutoresearchAlphaTraceabilityTests(unittest.TestCase):
             receipt = self._run_alpha_public(artifacts_root)
             sequence_id = receipt["sequence_id"]
 
-            for stage_key in ("baseline-eval", "candidate-student", "candidate-teacher-eval"):
+            baseline_run_id = receipt["stages"]["baseline-eval"]["run_id"]
+            candidate_student_run_id = receipt["stages"]["candidate-student"]["run_id"]
+
+            for stage_key, expected_iteration, expected_label, expected_root, expected_parent in (
+                ("baseline-eval", 1, "baseline", baseline_run_id, None),
+                ("candidate-student", 2, "candidate-student", baseline_run_id, baseline_run_id),
+                ("candidate-teacher-eval", 3, "candidate", baseline_run_id, candidate_student_run_id),
+            ):
                 stage = receipt["stages"][stage_key]
                 self.assertEqual(stage["lineage"]["sequence_id"], sequence_id)
                 self.assertIn("scenario_set_id", stage["lineage"])
+                self.assertEqual(stage["traceability"]["root_run_id"], expected_root)
+                self.assertEqual(stage["traceability"]["parent_run_id"], expected_parent)
+                self.assertEqual(stage["traceability"]["iteration_index"], expected_iteration)
+                self.assertEqual(stage["traceability"]["iteration_label"], expected_label)
                 self.assertEqual(stage["traceability"]["benchmark_pack"]["id"], "public-benchmark-pack-v1")
                 self.assertTrue(stage["traceability"]["benchmark_pack"]["version"])
 
@@ -184,16 +213,36 @@ class AutoresearchAlphaTraceabilityTests(unittest.TestCase):
             artifacts_root = Path(tmpdir) / "artifacts"
             receipt = self._run_alpha_public(artifacts_root)
 
-            for stage_key, expected_status in (
-                ("baseline-eval", "available"),
-                ("candidate-student", "unavailable"),
-                ("candidate-teacher-eval", "available"),
+            baseline_run_id = receipt["stages"]["baseline-eval"]["run_id"]
+            candidate_student_run_id = receipt["stages"]["candidate-student"]["run_id"]
+
+            for stage_key, expected_status, expected_iteration, expected_label, expected_root, expected_parent in (
+                ("baseline-eval", "available", 1, "baseline", baseline_run_id, None),
+                ("candidate-student", "unavailable", 2, "candidate-student", baseline_run_id, baseline_run_id),
+                ("candidate-teacher-eval", "available", 3, "candidate", baseline_run_id, candidate_student_run_id),
             ):
                 run_id = receipt["stages"][stage_key]["run_id"]
                 audit_bundle = json.loads((artifacts_root / run_id / "receipts" / "audit-bundle.json").read_text())
                 sections = audit_bundle["human_audit"]["sections"]
+                lineage = audit_bundle["traceability"]["lineage"]
+                redaction_surfaces = {entry["surface"]: entry for entry in audit_bundle["redaction_audit"]["checks"]}
+
                 self.assertEqual(sections["teacher_scorecard"]["status"], expected_status)
-                self.assertEqual(audit_bundle["traceability"]["lineage"]["sequence_id"], receipt["sequence_id"])
+                self.assertEqual(lineage["sequence_id"], receipt["sequence_id"])
+                self.assertEqual(lineage["stage_key"], stage_key)
+                self.assertEqual(lineage["root_run_id"], expected_root)
+                self.assertEqual(lineage["parent_run_id"], expected_parent)
+                self.assertEqual(lineage["iteration_index"], expected_iteration)
+                self.assertEqual(lineage["iteration_label"], expected_label)
+                for surface in (
+                    "receipts/manifest.json",
+                    "receipts/summary.md",
+                    "receipts/audit-bundle.json",
+                    "integrations/trust-bundle.json",
+                    "integrations/erc8004-registration-draft.json",
+                    "integrations/summary.md",
+                ):
+                    self.assertEqual(redaction_surfaces[surface]["status"], "clean")
                 if expected_status == "unavailable":
                     self.assertIn("honesty_note", sections["teacher_scorecard"])
                     self.assertIn("honesty_note", sections["verdict_and_reasons"])

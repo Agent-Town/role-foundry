@@ -13,7 +13,11 @@ from .contract import ContractError, RunRequest
 from .eval_loop import redact_request_for_artifacts
 from .mutation_surface import audit_packet_mutation_surface, write_mutation_surface_audit_receipt
 from .product_integrations import write_product_integrations
-from .provenance import build_execution_backend_surface, write_receipt_provenance
+from .provenance import (
+    build_execution_backend_surface,
+    refresh_receipt_provenance_audit_bundle,
+    write_receipt_provenance,
+)
 
 ALLOWED_STATUSES = {"completed", "failed", "timeout"}
 
@@ -153,6 +157,7 @@ class RunBridge:
         integrations = write_product_integrations(run_dir, raw_request, result)
         result["integrations"] = integrations
         result_path.write_text(json.dumps(result, indent=2))
+        refresh_receipt_provenance_audit_bundle(run_dir, raw_request, result)
 
         final_payload = {
             "status": result["status"],

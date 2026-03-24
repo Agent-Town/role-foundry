@@ -463,6 +463,7 @@ The extra files are:
 - `receipts/evaluation.json` — teacher score/export receipt when `teacher_evaluation` ran
 - `receipts/evidence-index.json` — evidence map linking receipts back to transcript lines, artifact JSON pointers, and private source records where needed
 - `receipts/audit-bundle.json` — machine-readable artifact index plus required-artifact validation, redaction checks, and lineage / benchmark-pack / episode traceability with honest availability flags
+  - the audit bundle is finalized after the manifest, summary, and integration artifacts exist so `clean` vs `not_emitted` reflects the end-state receipt surface, not mid-write timing
 - `receipts/summary.md` — human-readable export for quick judge/operator inspection with explicit run metadata, benchmark input, mutation, teacher scorecard, and verdict sections
 
 Private source artifacts may still be referenced in the evidence index, but only by path + pointer.
