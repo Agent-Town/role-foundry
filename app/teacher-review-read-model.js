@@ -204,6 +204,15 @@ const TEACHER_REVIEW_READ_MODEL = (function () {
     const comparison = safeObject(receiptObject.comparison);
     const verifierContract = safeObject(stageObject.verifier_contract);
     const commandResults = safeArray(verifierContract.command_results);
+    const liveSmokeReview = safeObject(stageObject.live_smoke_review);
+    const liveSmokeTimeoutBudget = safeObject(stageObject.live_smoke_timeout_budget);
+    const executionBackend = safeObject(stageObject.execution_backend);
+    const executionHonesty = Object.assign(
+      {},
+      safeObject(executionBackend.execution_honesty),
+      safeObject(result.execution_honesty)
+    );
+    const studentStep = safeObject(executionHonesty.student_step);
     const artifactCoverage = safeObject(safeObject(receiptObject.artifact_coverage)[stageKey]);
     const coveragePaths = safeObject(artifactCoverage.paths);
     const resultProvenance = safeObject(result.provenance);
@@ -301,6 +310,38 @@ const TEACHER_REVIEW_READ_MODEL = (function () {
           safeString(coveragePaths['receipts/evaluation.json'])
           || safeString(episodeReceiptPaths.evaluation),
       },
+      live_smoke_review: Object.keys(liveSmokeReview).length ? {
+        kind: safeString(liveSmokeReview.kind),
+        summary: safeString(liveSmokeReview.summary),
+        meaningful_mutation: liveSmokeReview.meaningful_mutation === true,
+        repo_diff_present: liveSmokeReview.repo_diff_present === true,
+        verifier_failures: safeNumber(liveSmokeReview.verifier_failures),
+        verifier_timeouts: safeNumber(liveSmokeReview.verifier_timeouts),
+      } : null,
+      live_smoke_timeout_budget: Object.keys(liveSmokeTimeoutBudget).length ? {
+        request_timeout_seconds: safeNumber(liveSmokeTimeoutBudget.request_timeout_seconds),
+        student_timeout_seconds: safeNumber(liveSmokeTimeoutBudget.student_timeout_seconds),
+        verifier_timeout_seconds: safeNumber(liveSmokeTimeoutBudget.verifier_timeout_seconds),
+        verifier_command_count: safeNumber(liveSmokeTimeoutBudget.verifier_command_count),
+        budget_aligned: liveSmokeTimeoutBudget.budget_aligned === true,
+      } : null,
+      execution_backend_mode: safeString(executionBackend.mode),
+      execution_honesty_note: safeString(executionHonesty.honesty_note),
+      claim_boundary: Object.keys(safeObject(executionHonesty.claim_boundary)).length ? {
+        native_clawith_parity: safeString(safeObject(executionHonesty.claim_boundary).native_clawith_parity),
+        sealed_evaluation: safeString(safeObject(executionHonesty.claim_boundary).sealed_evaluation),
+        tamper_proofing: safeString(safeObject(executionHonesty.claim_boundary).tamper_proofing),
+        independent_executor_isolation: safeString(safeObject(executionHonesty.claim_boundary).independent_executor_isolation),
+      } : null,
+      student_step: studentStep.executed === true ? {
+        executed: true,
+        exit_code: safeNumber(studentStep.exit_code),
+        max_turns: safeNumber(studentStep.max_turns),
+        repo_diff_present: studentStep.repo_diff_present === true,
+        repo_diff_changed_lines: safeNumber(studentStep.repo_diff_changed_lines),
+        meaningful_mutation: studentStep.meaningful_mutation === true,
+        completed_cleanly: studentStep.completed_cleanly === true,
+      } : null,
     };
   }
 
@@ -313,6 +354,9 @@ const TEACHER_REVIEW_READ_MODEL = (function () {
     const studentView = safeObject(artifactBundle.student_view);
     const repoTaskPack = safeObject(studentView.repo_task_pack);
     const benchmarkPack = safeObject(safeObject(candidateStage.traceability).benchmark_pack);
+    const requestStage = safeObject(safeObject(request.stages)['candidate-student']);
+    const requestStageBody = safeObject(requestStage.request);
+    const requestStageExtras = safeObject(requestStageBody.extras);
     const episodeIds = safeArray(repoTaskPack.episode_ids).map(function (id) {
       return safeString(id);
     }).filter(Boolean);
@@ -352,14 +396,23 @@ const TEACHER_REVIEW_READ_MODEL = (function () {
       role_scope: safeString(repoTaskPack.role_scope) || safeString(benchmarkPack.role_scope),
       dataset_id: safeString(repoTaskPack.dataset_id) || safeString(receipt.dataset_manifest_id),
       dataset_version: safeString(repoTaskPack.dataset_version) || safeString(receipt.dataset_version),
-      episode_count: safeNumber(repoTaskPack.episode_count) || (episodeIds.length ? episodeIds.length : null),
-      episode_ids: episodeIds,
+      episode_count:
+        safeNumber(repoTaskPack.episode_count)
+        || mapTextList(requestStage.prompt_pack_episode_ids).length
+        || (episodeIds.length ? episodeIds.length : null),
+      episode_ids:
+        episodeIds.length
+        ? episodeIds
+        : mapTextList(requestStage.prompt_pack_episode_ids),
       family_ids: familyIds,
-      prompt_summary: safeString(studentView.prompt_summary),
+      prompt_summary: safeString(studentView.prompt_summary) || safeString(requestStage.prompt_summary),
       honesty_note: safeString(repoTaskPack.honesty_note),
       public_benchmark_pack_ref: safeString(request.public_benchmark_pack),
       family_registry_ref: safeString(request.family_registry),
-      recommended_verifier_commands: mapTextList(repoTaskPack.recommended_verifier_commands),
+      recommended_verifier_commands:
+        mapTextList(repoTaskPack.recommended_verifier_commands).length
+        ? mapTextList(repoTaskPack.recommended_verifier_commands)
+        : mapTextList(requestStageExtras.recommended_verifier_commands),
       visible_scenarios: visibleScenarios,
     };
   }
@@ -602,6 +655,73 @@ const TEACHER_REVIEW_READ_MODEL = (function () {
       return 'pending';
     }
     return null;
+  }
+
+  function summarizeVerifierCommands(commands, trackedCommandCount) {
+    const items = safeArray(commands).map(function (entry) {
+      return safeObject(entry);
+    });
+    function summarize(list) {
+      let executed = 0;
+      let passed = 0;
+      let failed = 0;
+      let timedOut = 0;
+      let notExecuted = 0;
+      list.forEach(function (entry) {
+        const status = safeString(entry.execution_status);
+        const exitCode = safeNumber(entry.exit_code);
+        if (status === 'executed') {
+          executed += 1;
+          if (exitCode === 0) {
+            passed += 1;
+          } else if (exitCode !== null) {
+            failed += 1;
+          }
+        } else if (status === 'timed_out' || status === 'timeout') {
+          timedOut += 1;
+        } else {
+          notExecuted += 1;
+        }
+      });
+      return {
+        total_commands: list.length || null,
+        executed_commands: executed,
+        passed_commands: passed,
+        failed_commands: failed,
+        timed_out_commands: timedOut,
+        not_executed_commands: notExecuted,
+      };
+    }
+
+    const trackedCount = safeNumber(trackedCommandCount);
+    const trackedItems = trackedCount !== null ? items.slice(0, trackedCount) : [];
+    const trackedSummary = trackedItems.length ? summarize(trackedItems) : null;
+    const stageSummary = items.length ? summarize(items) : null;
+
+    return {
+      tracked: trackedSummary ? {
+        ...trackedSummary,
+        all_passed:
+          trackedSummary.total_commands !== null
+          && trackedSummary.total_commands > 0
+          && trackedSummary.executed_commands === trackedSummary.total_commands
+          && trackedSummary.failed_commands === 0
+          && trackedSummary.timed_out_commands === 0,
+      } : null,
+      stage: stageSummary,
+    };
+  }
+
+  function buildExecutionMixSummary(receipt, baseline, candidateStudent, candidateTeacher) {
+    const controlPlaneMode = safeString(receipt.control_plane_mode);
+    const mixedExecution = controlPlaneMode.indexOf('mixed') !== -1;
+    if (mixedExecution) {
+      return 'Mixed execution: baseline and candidate-teacher remain replay-backed while candidate-student ran one live public-smoke slice.';
+    }
+    if (candidateStudent && safeString(candidateStudent.execution_backend_mode) === 'live_public_smoke') {
+      return 'Candidate-student ran via live public-smoke. Other stages do not export mixed-execution context.';
+    }
+    return safeString(controlPlaneMode);
   }
 
   function mapAlphaComparisonHistoryEntry(receiptPayload) {
@@ -870,7 +990,7 @@ const TEACHER_REVIEW_READ_MODEL = (function () {
         explicit_verdict_count: comparisonHistory.filter(function (entry) { return Boolean(entry.verdict); }).length,
         explicit_promotion_count: promotionHistory.filter(function (entry) { return Boolean(entry.decision); }).length,
         honesty_note:
-          'Stored history view combines the committed public alpha receipt with fixture lineage/cycle records. Missing executed verifier data, promotion gates, and regression enforcement stay blank or pending instead of being invented.',
+          'Stored history view combines the committed mixed-execution public alpha receipt with fixture lineage/cycle records. Exported verifier activity renders when present; promotion gates and regression enforcement still stay blank or pending unless the artifacts carry them.',
       },
     };
   }
@@ -892,11 +1012,59 @@ const TEACHER_REVIEW_READ_MODEL = (function () {
       candidate_run: candidate,
     });
 
+    const candidateStudent = Object.keys(safeObject(stages['candidate-student'])).length
+      ? mapAlphaStageToReviewRun('candidate-student', stages['candidate-student'], receipt)
+      : null;
+    const candidateStudentRequest = safeObject(safeObject(request.stages)['candidate-student']);
+    const candidateStudentRequestBody = safeObject(candidateStudentRequest.request);
+    const candidateStudentRequestExtras = safeObject(candidateStudentRequestBody.extras);
+    const candidateStudentVerifier = summarizeVerifierCommands(
+      candidateStudent ? candidateStudent.commands : [],
+      safeNumber(safeObject(candidateStudent ? candidateStudent.live_smoke_timeout_budget : null).verifier_command_count)
+      || mapTextList(candidateStudentRequestExtras.recommended_verifier_commands).length
+      || null
+    );
+
     snapshot.task_context = extractAlphaTaskContext(receipt, request);
     snapshot.teacher_evaluation = extractAlphaTeacherEvaluation(receipt, request);
     snapshot.evaluation_summary = extractAlphaEvaluationSummary(receipt, request);
     snapshot.receipt_coverage = mapAlphaArtifactCoverage(receipt);
-    snapshot.honesty_badge = 'Stored export — rendered from an actual public-regression autoresearch alpha receipt. Public task-pack context, teacher verdicts, transcript excerpts, and receipt paths are shown when present; frozen task-packet identity and dimensioned scorecards stay empty when the export does not carry them.';
+    snapshot.execution_mix = {
+      control_plane_mode: safeString(receipt.control_plane_mode),
+      mixed_execution: safeString(receipt.control_plane_mode).indexOf('mixed') !== -1,
+      baseline_execution_backend_mode: baseline ? baseline.execution_backend_mode || null : null,
+      candidate_student_execution_backend_mode: candidateStudent ? candidateStudent.execution_backend_mode || null : null,
+      candidate_teacher_execution_backend_mode: candidate ? candidate.execution_backend_mode || null : null,
+      summary: buildExecutionMixSummary(receipt, baseline, candidateStudent, candidate),
+    };
+    snapshot.candidate_student_live_smoke = candidateStudent ? {
+      live_smoke_review: candidateStudent.live_smoke_review || null,
+      live_smoke_timeout_budget: candidateStudent.live_smoke_timeout_budget || null,
+      execution_backend_mode: candidateStudent.execution_backend_mode || null,
+      execution_honesty_note: candidateStudent.execution_honesty_note || null,
+      claim_boundary: candidateStudent.claim_boundary || null,
+      student_step: candidateStudent.student_step || null,
+      run_id: candidateStudent.run_id || null,
+      tracked_slice: {
+        prompt_summary:
+          safeString(candidateStudentRequest.prompt_summary)
+          || safeString(safeObject(snapshot.task_context).prompt_summary),
+        episode_ids:
+          mapTextList(candidateStudentRequest.prompt_pack_episode_ids).length
+          ? mapTextList(candidateStudentRequest.prompt_pack_episode_ids)
+          : mapTextList(safeObject(snapshot.task_context).episode_ids),
+        objective: candidateStudent.objective || null,
+        changed_files: candidateStudent.changed_files || [],
+        recommended_verifier_commands: mapTextList(candidateStudentRequestExtras.recommended_verifier_commands),
+      },
+      verifier_summary: {
+        tracked: candidateStudentVerifier.tracked,
+        stage: candidateStudentVerifier.stage,
+        gate_status: candidateStudent.verifier_gate_status || null,
+        gate_note: candidateStudent.verifier_gate_note || null,
+      },
+    } : null;
+    snapshot.honesty_badge = 'Stored export — rendered from an actual public-regression autoresearch alpha receipt. Public task-pack context, teacher verdicts, transcript excerpts, receipt paths, and the live public-smoke mutation proof render when present; frozen task-packet identity and dimensioned scorecards stay empty when the export does not carry them.';
     snapshot.source_contract = 'autoresearch_alpha_receipt';
     snapshot.alpha_receipt = {
       sequence_id: safeString(receipt.sequence_id),

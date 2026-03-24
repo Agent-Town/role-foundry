@@ -269,6 +269,72 @@
     <p>The diff summary requires both a baseline and candidate run in the stored exports.</p>
   </article>
 
+  <!-- Live public-smoke mutation proof -->
+  <template x-if="review?.candidate_student_live_smoke?.live_smoke_review">
+    <section>
+      <div class="section-header-row">
+        <div>
+          <h2>Live Public-Smoke Mutation Proof</h2>
+          <p>The candidate-student step moved this branch from wiring-only to the first tiny meaningful live mutation on a public-safe slice.</p>
+        </div>
+        <span class="badge" :class="review.candidate_student_live_smoke.live_smoke_review.meaningful_mutation ? 'badge-pass' : 'badge-training'" x-text="review.candidate_student_live_smoke.live_smoke_review.meaningful_mutation ? 'meaningful mutation' : 'wiring only'"></span>
+      </div>
+      <div class="grid-2">
+        <article class="card">
+          <h3>Mutation outcome</h3>
+          <ul>
+            <li><strong>Outcome kind:</strong> <code x-text="review.candidate_student_live_smoke.live_smoke_review.kind || '—'"></code></li>
+            <li><strong>Meaningful mutation:</strong> <span x-text="review.candidate_student_live_smoke.live_smoke_review.meaningful_mutation ? 'yes' : 'no'"></span></li>
+            <li><strong>Repo diff present:</strong> <span x-text="review.candidate_student_live_smoke.live_smoke_review.repo_diff_present ? 'yes' : 'no'"></span></li>
+            <li><strong>Changed lines:</strong> <span x-text="review.candidate_student_live_smoke.student_step?.repo_diff_changed_lines ?? '—'"></span></li>
+            <li><strong>Max turns:</strong> <span x-text="review.candidate_student_live_smoke.student_step?.max_turns ?? '—'"></span></li>
+            <li><strong>Execution backend:</strong> <code x-text="review.candidate_student_live_smoke.execution_backend_mode || '—'"></code></li>
+          </ul>
+          <p><small x-text="review.candidate_student_live_smoke.live_smoke_review.summary || ''"></small></p>
+        </article>
+        <article class="card">
+          <h3>Tracked slice &amp; verifier summary</h3>
+          <ul>
+            <li><strong>Episode ids:</strong> <span x-text="(review.candidate_student_live_smoke.tracked_slice?.episode_ids || []).join(', ') || '—'"></span></li>
+            <li><strong>Objective:</strong> <span x-text="review.candidate_student_live_smoke.tracked_slice?.objective || '—'"></span></li>
+            <li><strong>Changed files:</strong> <span x-text="(review.candidate_student_live_smoke.tracked_slice?.changed_files || []).join(', ') || '—'"></span></li>
+            <li><strong>Tracked verifier slice:</strong> <span x-text="((review.candidate_student_live_smoke.verifier_summary?.tracked?.passed_commands ?? 0) + '/' + (review.candidate_student_live_smoke.verifier_summary?.tracked?.total_commands ?? 0) + ' passed')"></span></li>
+            <li><strong>Broader stage contract:</strong> <span x-text="((review.candidate_student_live_smoke.verifier_summary?.stage?.executed_commands ?? 0) + '/' + (review.candidate_student_live_smoke.verifier_summary?.stage?.total_commands ?? 0) + ' executed')"></span></li>
+            <li><strong>Gate status:</strong> <code x-text="review.candidate_student_live_smoke.verifier_summary?.gate_status || '—'"></code></li>
+          </ul>
+          <p><small x-text="review.candidate_student_live_smoke.verifier_summary?.gate_note || ''"></small></p>
+        </article>
+      </div>
+      <div class="grid-2">
+        <article class="card" x-show="review.candidate_student_live_smoke.live_smoke_timeout_budget">
+          <h3>Timeout budget</h3>
+          <ul>
+            <li><strong>Request timeout:</strong> <span x-text="(review.candidate_student_live_smoke.live_smoke_timeout_budget?.request_timeout_seconds ?? '—') + 's'"></span></li>
+            <li><strong>Student timeout:</strong> <span x-text="(review.candidate_student_live_smoke.live_smoke_timeout_budget?.student_timeout_seconds ?? '—') + 's'"></span></li>
+            <li><strong>Verifier timeout:</strong> <span x-text="(review.candidate_student_live_smoke.live_smoke_timeout_budget?.verifier_timeout_seconds ?? '—') + 's'"></span></li>
+            <li><strong>Verifier commands:</strong> <span x-text="review.candidate_student_live_smoke.live_smoke_timeout_budget?.verifier_command_count ?? '—'"></span></li>
+            <li><strong>Budget aligned:</strong> <span x-text="review.candidate_student_live_smoke.live_smoke_timeout_budget?.budget_aligned ? 'yes' : 'no'"></span></li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3>Honesty boundary</h3>
+          <ul>
+            <li><strong>Control plane:</strong> <code x-text="review.execution_mix?.control_plane_mode || '—'"></code></li>
+            <li><strong>Baseline:</strong> <code x-text="review.execution_mix?.baseline_execution_backend_mode || '—'"></code></li>
+            <li><strong>Candidate student:</strong> <code x-text="review.execution_mix?.candidate_student_execution_backend_mode || '—'"></code></li>
+            <li><strong>Candidate teacher:</strong> <code x-text="review.execution_mix?.candidate_teacher_execution_backend_mode || '—'"></code></li>
+            <li><strong>Independent isolation:</strong> <span x-text="review.candidate_student_live_smoke.claim_boundary?.independent_executor_isolation || 'not claimed'"></span></li>
+          </ul>
+          <p><small x-text="review.candidate_student_live_smoke.execution_honesty_note || ''"></small></p>
+        </article>
+      </div>
+      <article class="judge-callout compact-callout">
+        <strong>Mixed execution:</strong>
+        <span x-text="review.execution_mix?.summary || 'Candidate-student ran via live public-smoke while baseline and candidate-teacher remained replay-backed.'"></span>
+      </article>
+    </section>
+  </template>
+
   <!-- Changed Files -->
   <template x-if="review?.candidate?.changed_files?.length > 0">
     <section>

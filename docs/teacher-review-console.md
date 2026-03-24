@@ -41,9 +41,13 @@ without pretending those fixture records are live runtime enforcement.
 ### Honesty constraints enforced
 
 - Missing inputs produce null/empty fields, never invented data
-- The real public-regression export now shows more real context, but it **still**
-  leaves frozen task-packet identity and dimensioned scorecards blank because the
-  stored export does not carry them
+- The real public-regression export now shows more real context, including the
+  first meaningful **live public-smoke** mutation proof on one narrow public-safe
+  slice, but it **still** leaves frozen task-packet identity and dimensioned
+  scorecards blank because the stored export does not carry them
+- The shell now calls out **mixed execution** explicitly: baseline +
+  candidate-teacher remain replay-backed while candidate-student carries the
+  narrow live public-smoke proof lane
 - Stored comparison / promotion / regression history is explicitly labeled by
   source:
   - **real receipt** rows can show exported verdicts and verifier-gate outcomes
@@ -90,9 +94,10 @@ TEACHER_REVIEW_READ_MODEL.buildTeacherReviewSnapshot({
   evaluation_contract:  /* from evaluation contract */,
 })
 // Returns: { task, task_context, baseline, candidate, diff_summary, scorecard,
-//            teacher_evaluation, contract, evaluation_summary,
-//            promotion_decision, verifier_gate_status, evidence_links,
-//            receipt_coverage, honesty_badge, data_source, shell_version }
+//            teacher_evaluation, contract, evaluation_summary, execution_mix,
+//            candidate_student_live_smoke, promotion_decision,
+//            verifier_gate_status, evidence_links, receipt_coverage,
+//            honesty_badge, data_source, shell_version }
 
 TEACHER_REVIEW_READ_MODEL.buildStoredHistorySnapshot({
   alpha_receipt:       /* optional committed public alpha receipt */,
@@ -109,7 +114,7 @@ TEACHER_REVIEW_READ_MODEL.buildStoredHistorySnapshot({
 | Frozen task packet identity on the real export path | The alpha export carries a repo task pack / public benchmark slice, not a first-class frozen task packet |
 | Real 5-dimension weighted scorecard | The alpha export carries teacher scenario results, not the frozen dimension/weight contract used by fixture scorecards |
 | Real promotion decision | The current real export carries comparison/verdict context, not a promotion gate object |
-| Executed verifier gate (instead of `not_executed`) | The stored alpha path still uses `LocalReplayRunner` / zero-secret replay |
+| Fully executed verifier gate across every stage | The committed alpha receipt is now mixed execution: candidate-student shows a tracked live verifier slice, but baseline + candidate-teacher still remain replay-backed |
 | Real promotion decision on the alpha path | Promotion history is available today from fixture lineage/cycle records, but the committed alpha receipt still does not carry a runtime promotion-gate object |
 | Private-holdout scoring | D002 acceptance test |
 | Live stability checks across runs | D003 acceptance test |

@@ -436,6 +436,19 @@ class TeacherReviewReadModelTests(unittest.TestCase):
                 alpha_request_copy_path: snapshot.evidence_links?.alpha_request_copy_path || null,
                 honesty_badge: snapshot.honesty_badge,
                 alpha_verdict: snapshot.alpha_receipt?.verdict || null,
+                live_smoke_kind: snapshot.candidate_student_live_smoke?.live_smoke_review?.kind || null,
+                live_smoke_meaningful: snapshot.candidate_student_live_smoke?.live_smoke_review?.meaningful_mutation ?? null,
+                live_smoke_diff_present: snapshot.candidate_student_live_smoke?.live_smoke_review?.repo_diff_present ?? null,
+                live_smoke_execution_mode: snapshot.candidate_student_live_smoke?.execution_backend_mode || null,
+                live_smoke_student_max_turns: snapshot.candidate_student_live_smoke?.student_step?.max_turns ?? null,
+                live_smoke_student_changed_lines: snapshot.candidate_student_live_smoke?.student_step?.repo_diff_changed_lines ?? null,
+                live_smoke_budget_aligned: snapshot.candidate_student_live_smoke?.live_smoke_timeout_budget?.budget_aligned ?? null,
+                live_smoke_tracked_verifier_passed: snapshot.candidate_student_live_smoke?.verifier_summary?.tracked?.passed_commands ?? null,
+                live_smoke_tracked_verifier_total: snapshot.candidate_student_live_smoke?.verifier_summary?.tracked?.total_commands ?? null,
+                live_smoke_stage_verifier_executed: snapshot.candidate_student_live_smoke?.verifier_summary?.stage?.executed_commands ?? null,
+                live_smoke_stage_verifier_total: snapshot.candidate_student_live_smoke?.verifier_summary?.stage?.total_commands ?? null,
+                execution_mix_control_plane: snapshot.execution_mix?.control_plane_mode || null,
+                execution_mix_summary: snapshot.execution_mix?.summary || null,
             }}));
         """)
         self.assertEqual(result['data_source'], 'stored_export')
@@ -451,8 +464,8 @@ class TeacherReviewReadModelTests(unittest.TestCase):
         self.assertFalse(result['task_present'])
         self.assertEqual(result['task_context_source'], 'repo_task_pack')
         self.assertEqual(result['task_context_dataset'], 'public-benchmark-pack-v1')
-        self.assertEqual(result['task_context_episode_count'], 3)
-        self.assertEqual(result['first_visible_family'], 'rf.frontend-apprentice.public.score-deltas')
+        self.assertEqual(result['task_context_episode_count'], 1)
+        self.assertEqual(result['first_visible_family'], 'rf.frontend-apprentice.public.landing-story')
         self.assertFalse(result['scorecard_present'])
         self.assertFalse(result['contract_present'])
         self.assertTrue(result['evaluation_summary_present'])
@@ -468,6 +481,20 @@ class TeacherReviewReadModelTests(unittest.TestCase):
         self.assertEqual(result['alpha_request_copy_path'], 'autoresearch-alpha.request.json')
         self.assertIn('public-regression', result['honesty_badge'])
         self.assertEqual(result['alpha_verdict'], 'better')
+        # Live-smoke mutation proof from candidate-student stage
+        self.assertEqual(result['live_smoke_kind'], 'student_diff_captured')
+        self.assertTrue(result['live_smoke_meaningful'])
+        self.assertTrue(result['live_smoke_diff_present'])
+        self.assertEqual(result['live_smoke_execution_mode'], 'live_public_smoke')
+        self.assertEqual(result['live_smoke_student_max_turns'], 6)
+        self.assertEqual(result['live_smoke_student_changed_lines'], 28)
+        self.assertTrue(result['live_smoke_budget_aligned'])
+        self.assertEqual(result['live_smoke_tracked_verifier_passed'], 1)
+        self.assertEqual(result['live_smoke_tracked_verifier_total'], 1)
+        self.assertEqual(result['live_smoke_stage_verifier_executed'], 1)
+        self.assertEqual(result['live_smoke_stage_verifier_total'], 3)
+        self.assertEqual(result['execution_mix_control_plane'], 'runner-bridge-mixed-execution')
+        self.assertIn('Mixed execution', result['execution_mix_summary'])
 
     def test_real_export_keeps_missing_packet_and_dimension_contract_honest(self):
         result = self._run_node(f"""
@@ -530,7 +557,7 @@ class TeacherReviewReadModelTests(unittest.TestCase):
         self.assertEqual(result['regression_count'], 4)
         self.assertEqual(result['explicit_verdict_count'], 1)
         self.assertEqual(result['alpha_verdict'], 'better')
-        self.assertEqual(result['alpha_verifier_gate_status'], 'not_executed')
+        self.assertEqual(result['alpha_verifier_gate_status'], 'incomplete')
         self.assertIsNone(result['alpha_promotion_decision'])
         self.assertIsNone(result['weekly_verdict'])
         self.assertEqual(result['weekly_promotion_decision'], 'promoted')
@@ -540,7 +567,7 @@ class TeacherReviewReadModelTests(unittest.TestCase):
         self.assertFalse(result['latest_generation_run_artifact_available'])
         self.assertEqual(result['weekly_regression_status'], 'not_enforced')
         self.assertIsNone(result['weekly_regression_tasks_checked'])
-        self.assertIn('Missing executed verifier data', result['honesty_note'])
+        self.assertIn('mixed-execution public alpha receipt', result['honesty_note'])
 
     def test_empty_stored_history_snapshot_stays_blank(self):
         result = self._run_node("""
@@ -621,6 +648,18 @@ class TeacherReviewHTMLTests(unittest.TestCase):
         self.assertIn('Promotion &amp; regression history', scorecard_text)
         self.assertIn('Regression gate history', scorecard_text)
         self.assertIn('buildStoredHistorySnapshot', scorecard_text)
+
+    def test_live_mutation_proof_surfaces_are_referenced_in_html(self):
+        teacher_text = (APP / 'teacher-review.html').read_text()
+        run_text = (APP / 'run.html').read_text()
+        scorecard_text = (APP / 'scorecard.html').read_text()
+        self.assertIn('candidate_student_live_smoke', teacher_text)
+        self.assertIn('execution_mix', teacher_text)
+        self.assertIn('Live Public-Smoke Mutation Proof', teacher_text)
+        self.assertIn("alphaLoopStageLiveSmokeReview('candidate-student')", run_text)
+        self.assertIn('Live public-smoke mutation proof', run_text)
+        self.assertIn('Underlying live student mutation proof', scorecard_text)
+        self.assertIn('alphaLoopExecutionMixSummary', scorecard_text)
 
     def test_teacher_review_read_model_js_exists(self):
         self.assertTrue(READ_MODEL_JS.exists(), "app/teacher-review-read-model.js must exist")

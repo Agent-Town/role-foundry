@@ -672,6 +672,14 @@ function normalizeReadModel(readModel) {
           has_student_view: Boolean(stage.has_student_view),
           has_artifact: Boolean(stage.has_artifact),
           has_replay: Boolean(stage.has_replay),
+          live_smoke_review: isPlainObject(stage.live_smoke_review) ? stage.live_smoke_review : null,
+          live_smoke_timeout_budget: isPlainObject(stage.live_smoke_timeout_budget) ? stage.live_smoke_timeout_budget : null,
+          execution_backend_mode: typeof stage.execution_backend_mode === 'string' ? stage.execution_backend_mode : null,
+          execution_honesty_note:
+            typeof stage.execution_honesty_note === 'string' ? stage.execution_honesty_note : null,
+          student_step: isPlainObject(stage.student_step) ? stage.student_step : null,
+          verifier_summary: isPlainObject(stage.verifier_summary) ? stage.verifier_summary : null,
+          claim_boundary: isPlainObject(stage.claim_boundary) ? stage.claim_boundary : null,
         };
       })
       .filter(Boolean),
@@ -684,6 +692,57 @@ function basenameish(value) {
   }
   const text = String(value);
   return text.split('/').pop() || text;
+}
+
+function summarizeVerifierCommands(commandResults, trackedCommandCount = null) {
+  const items = (Array.isArray(commandResults) ? commandResults : []).filter(isPlainObject);
+  const summarize = list => {
+    let executed = 0;
+    let passed = 0;
+    let failed = 0;
+    let timedOut = 0;
+    let notExecuted = 0;
+    list.forEach(entry => {
+      const status = typeof entry.execution_status === 'string' ? entry.execution_status : null;
+      const exitCode = normalizeNumber(entry.exit_code);
+      if (status === 'executed') {
+        executed += 1;
+        if (exitCode === 0) {
+          passed += 1;
+        } else if (exitCode !== null) {
+          failed += 1;
+        }
+      } else if (status === 'timed_out' || status === 'timeout') {
+        timedOut += 1;
+      } else {
+        notExecuted += 1;
+      }
+    });
+    return {
+      total_commands: list.length || null,
+      executed_commands: executed,
+      passed_commands: passed,
+      failed_commands: failed,
+      timed_out_commands: timedOut,
+      not_executed_commands: notExecuted,
+    };
+  };
+
+  const stage = items.length ? summarize(items) : null;
+  const trackedCount = normalizeNumber(trackedCommandCount);
+  const trackedItems = trackedCount !== null ? items.slice(0, trackedCount) : [];
+  const tracked = trackedItems.length
+    ? {
+        ...summarize(trackedItems),
+        all_passed:
+          trackedItems.length > 0
+          && summarize(trackedItems).executed_commands === trackedItems.length
+          && summarize(trackedItems).failed_commands === 0
+          && summarize(trackedItems).timed_out_commands === 0,
+      }
+    : null;
+
+  return { stage, tracked };
 }
 
 function buildRuntimeJudgeReceipt(runId, runSummary, result, artifactBundle) {
@@ -727,6 +786,52 @@ function buildRuntimeJudgeReceipt(runId, runSummary, result, artifactBundle) {
     lines.push(`Machine score receipt: ${machineScore}`);
   }
 
+  const executionHonesty = normalizeRecord(result?.execution_honesty || artifactBundle?.execution_honesty);
+  const reviewOutcome = normalizeRecord(
+    runSummary?.live_smoke_review
+    || executionHonesty.review_outcome
+    || artifactBundle?.live_smoke?.review_outcome
+  );
+  const timeoutBudget = normalizeRecord(
+    runSummary?.live_smoke_timeout_budget
+    || executionHonesty.timeout_budget
+    || artifactBundle?.live_smoke?.timeout_budget
+  );
+  const studentStep = normalizeRecord(runSummary?.student_step || executionHonesty.student_step);
+  const verifierSummary = normalizeRecord(runSummary?.verifier_summary);
+
+  if (typeof runSummary?.execution_backend_mode === 'string') {
+    lines.push(`Execution backend: ${runSummary.execution_backend_mode}`);
+  }
+  if (typeof reviewOutcome.kind === 'string') {
+    lines.push(`Live smoke outcome: ${reviewOutcome.kind}`);
+  }
+  if (reviewOutcome.meaningful_mutation === true) {
+    lines.push('Meaningful mutation: yes');
+  } else if (reviewOutcome.meaningful_mutation === false) {
+    lines.push('Meaningful mutation: no');
+  }
+  if (studentStep.repo_diff_present === true) {
+    lines.push(
+      `Repo diff: yes${normalizeNumber(studentStep.repo_diff_changed_lines) !== null ? ` (${normalizeNumber(studentStep.repo_diff_changed_lines)} changed lines)` : ''}`
+    );
+  } else if (studentStep.repo_diff_present === false || reviewOutcome.repo_diff_present === false) {
+    lines.push('Repo diff: no');
+  }
+  if (normalizeNumber(studentStep.max_turns) !== null) {
+    lines.push(`Max turns: ${normalizeNumber(studentStep.max_turns)}`);
+  }
+  if (normalizeNumber(timeoutBudget.request_timeout_seconds) !== null) {
+    lines.push(
+      `Timeout budget: request ${normalizeNumber(timeoutBudget.request_timeout_seconds)}s / student ${normalizeNumber(timeoutBudget.student_timeout_seconds) ?? '—'}s / verifier ${normalizeNumber(timeoutBudget.verifier_timeout_seconds) ?? '—'}s`
+    );
+  }
+  if (isPlainObject(verifierSummary.tracked)) {
+    lines.push(
+      `Tracked verifier slice: ${verifierSummary.tracked.passed_commands}/${verifierSummary.tracked.total_commands} passed (${verifierSummary.stage?.executed_commands ?? 0}/${verifierSummary.stage?.total_commands ?? 0} stage commands executed)`
+    );
+  }
+
   const error = result?.error || artifactBundle?.error;
   if (error) {
     lines.push(`Error: ${error}`);
@@ -767,7 +872,7 @@ function mapLiveArtifact(runId, entry, result, artifactBundle) {
   const judgeReceipt = normalizeStringList(entry.judge_receipt);
   const receiptSummary = judgeReceipt.length
     ? judgeReceipt
-    : buildRuntimeJudgeReceipt(runId, entry.run || entry, result, artifactBundle);
+    : buildRuntimeJudgeReceipt(runId, { ...normalizeRecord(entry.run), ...entry }, result, artifactBundle);
 
   if (
     !objective &&
@@ -1079,6 +1184,12 @@ function mapAutoresearchAlphaPayloadToSnapshot(payload) {
             comparison.baseline_run_id || normalizeRecord(stages['baseline-eval']).run_id || ''
           ) || null
         : null;
+    const executionHonesty = normalizeRecord(normalizeRecord(stageExport.result).execution_honesty);
+    const studentStep = normalizeRecord(executionHonesty.student_step);
+    const verifierSummary = summarizeVerifierCommands(
+      normalizeRecord(stage.verifier_contract).command_results,
+      normalizeNumber(normalizeRecord(stage.live_smoke_timeout_budget).verifier_command_count)
+    );
 
     const mapped = mapLiveRunEntry({
       ...stageExport,
@@ -1117,6 +1228,16 @@ function mapAutoresearchAlphaPayloadToSnapshot(payload) {
         stageExport.teacher_scorecard || stageExport.teacher_output || fallbackScorecard,
       transcript_excerpt: stageExport.transcript_excerpt,
       run_replay: stageExport.run_replay,
+      live_smoke_review: stage.live_smoke_review,
+      live_smoke_timeout_budget: stage.live_smoke_timeout_budget,
+      execution_backend_mode: normalizeRecord(stage.execution_backend).mode || null,
+      student_step: studentStep,
+      verifier_summary: summarizeVerifierCommands(
+        normalizeRecord(stage.verifier_contract).command_results,
+        normalizeNumber(normalizeRecord(stage.live_smoke_timeout_budget).verifier_command_count)
+      ),
+      claim_boundary: executionHonesty.claim_boundary,
+      execution_honesty_note: executionHonesty.honesty_note,
     });
 
     if (!mapped) {
@@ -1158,6 +1279,16 @@ function mapAutoresearchAlphaPayloadToSnapshot(payload) {
       has_student_view: Boolean(mapped.studentView),
       has_artifact: Boolean(mapped.artifact),
       has_replay: Boolean(mapped.replay.length),
+      live_smoke_review: isPlainObject(stage.live_smoke_review) ? stage.live_smoke_review : null,
+      live_smoke_timeout_budget: isPlainObject(stage.live_smoke_timeout_budget) ? stage.live_smoke_timeout_budget : null,
+      execution_backend_mode: normalizeRecord(stage.execution_backend).mode || null,
+      execution_honesty_note:
+        typeof executionHonesty.honesty_note === 'string' ? executionHonesty.honesty_note : null,
+      student_step: isPlainObject(studentStep) ? studentStep : null,
+      verifier_summary: verifierSummary,
+      claim_boundary: isPlainObject(executionHonesty.claim_boundary)
+        ? executionHonesty.claim_boundary
+        : null,
     });
   });
 
@@ -1456,6 +1587,45 @@ function createAppStore(config) {
       return this.alphaLoopReadModel()?.stages?.find(
         stage => stage.stage_key === stageOrRunId || stage.run_id === stageOrRunId
       ) || null;
+    },
+
+    alphaLoopStageLiveSmokeReview(stageOrRunId) {
+      return this.alphaLoopStage(stageOrRunId)?.live_smoke_review || null;
+    },
+
+    alphaLoopStageLiveSmokeBudget(stageOrRunId) {
+      return this.alphaLoopStage(stageOrRunId)?.live_smoke_timeout_budget || null;
+    },
+
+    alphaLoopStageExecutionMode(stageOrRunId) {
+      return this.alphaLoopStage(stageOrRunId)?.execution_backend_mode || null;
+    },
+
+    alphaLoopStageStudentStep(stageOrRunId) {
+      return this.alphaLoopStage(stageOrRunId)?.student_step || null;
+    },
+
+    alphaLoopStageVerifierSummary(stageOrRunId) {
+      return this.alphaLoopStage(stageOrRunId)?.verifier_summary || null;
+    },
+
+    alphaLoopStageClaimBoundary(stageOrRunId) {
+      return this.alphaLoopStage(stageOrRunId)?.claim_boundary || null;
+    },
+
+    alphaLoopStageHonestyNote(stageOrRunId) {
+      return this.alphaLoopStage(stageOrRunId)?.execution_honesty_note || null;
+    },
+
+    alphaLoopExecutionMixSummary() {
+      const readModel = this.alphaLoopReadModel();
+      if (!readModel) {
+        return null;
+      }
+      if (readModel.control_plane_mode === 'runner-bridge-mixed-execution') {
+        return 'Mixed execution: candidate-student ran via live public-smoke, while baseline and candidate-teacher remained replay-backed.';
+      }
+      return readModel.control_plane_mode || null;
     },
 
     hasAlphaLoopComparison(runId = null) {

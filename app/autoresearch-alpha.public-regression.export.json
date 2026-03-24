@@ -4,7 +4,7 @@
   "sequence_id": "frontend-apprentice-public-alpha-v1:autoresearch-alpha",
   "dataset_manifest_id": "public-benchmark-pack-v1",
   "dataset_version": "1.0.0",
-  "control_plane_mode": "runner-bridge-local-replay",
+  "control_plane_mode": "runner-bridge-mixed-execution",
   "integrity_gate": {
     "status": "pass",
     "mode": "public_regression",
@@ -747,49 +747,76 @@
     "candidate-student": {
       "run_id": "run-eval-001-student",
       "status": "completed",
-      "total_score": 0.8,
+      "total_score": 0.0,
       "aggregate_score": null,
       "execution_backend": {
-        "backend_id": "local_replay",
-        "runner_name": "LocalReplayRunner",
+        "backend_id": "claude_vibecosystem",
+        "runner_name": "claude_vibecosystem",
         "selection_source": "artifact_bundle.execution_backend_contract",
-        "mode": "zero_secret_replay",
+        "mode": "live_public_smoke",
         "execution_backend_contract": {
-          "backend_id": "local_replay",
-          "entrypoint": "python3 -m runner_bridge.backends.local_replay",
-          "module": "runner_bridge.backends.local_replay",
-          "mode": "zero_secret_replay",
+          "backend_id": "claude_vibecosystem",
+          "surface_version": "0.2.0-beta",
+          "entrypoint": "python3 -m runner_bridge.backends.claude_vibecosystem",
+          "module": "runner_bridge.backends.claude_vibecosystem",
+          "mode": "external_executor_beta",
+          "beta_status": "live_public_smoke_available",
+          "live_public_smoke": {
+            "available": true,
+            "cli_flag": "--live-public-smoke",
+            "description": "Opt-in mode that creates an isolated git worktree, captures honest runtime artifacts, and executes real verifier commands. When a student_prompt_pack is present, it also invokes a real Claude Code student step before running the verifiers."
+          },
+          "executor": {
+            "runtime": "Claude Code",
+            "agent_selection": "vibecosystem",
+            "default_agent": "backend-dev",
+            "prompt_transport": "stdin",
+            "workdir_mode": "dedicated_workdir_expected"
+          },
+          "control_plane": {
+            "path": "external_gateway_only",
+            "proof_reference": "docs/clawith-vibecosystem-real-path.md"
+          },
           "claim_boundary": {
-            "executes_commands": "false",
             "native_clawith_parity": "not_claimed",
+            "sealed_evaluation": "not_claimed",
+            "tamper_proofing": "not_claimed",
             "independent_executor_isolation": "not_claimed"
           }
         },
         "execution_honesty": {
-          "backend": "LocalReplayRunner",
-          "mode": "zero_secret_replay",
-          "executes_commands": false,
-          "executes_checks": false,
+          "backend": "claude_vibecosystem",
+          "mode": "live_public_smoke",
+          "beta_status": "live_public_smoke_alpha",
+          "executes_commands": true,
+          "executes_checks": true,
           "mutation_enforcement": "not_enforced",
           "path_constraint_enforcement": "not_enforced",
           "claim_boundary": {
-            "executes_commands": "false",
             "native_clawith_parity": "not_claimed",
+            "sealed_evaluation": "not_claimed",
+            "tamper_proofing": "not_claimed",
             "independent_executor_isolation": "not_claimed"
           },
-          "honesty_note": "LocalReplayRunner is a zero-secret replay backend. It validates the request contract and produces receipts, but does not execute task commands, enforce mutation budgets, or enforce path constraints. These remain not executed / not enforced until a live execution backend is wired.",
-          "check_result_count": 0,
+          "honesty_note": "This live public-smoke run created an isolated git worktree, invoked a real Claude Code student step via the local CLI, executed real verifier commands, and captured all exit codes and output honestly. Student step produced a repo diff and verifier commands completed. It does not claim sealed evaluation, tamper-proofing, independent executor isolation, or native Clawith parity.",
+          "check_result_count": 1,
           "not_executed_check_count": 0
         },
         "intended_executor_path": {
-          "entrypoint": "python3 -m runner_bridge.backends.local_replay",
-          "module": "runner_bridge.backends.local_replay"
+          "entrypoint": "python3 -m runner_bridge.backends.claude_vibecosystem",
+          "module": "runner_bridge.backends.claude_vibecosystem",
+          "runtime": "Claude Code",
+          "agent_selection": "vibecosystem",
+          "default_agent": "backend-dev",
+          "prompt_transport": "stdin",
+          "workdir_mode": "dedicated_workdir_expected",
+          "control_plane_path": "external_gateway_only"
         },
         "honesty_note": "This block records backend provenance and the current execution honesty boundary only. It does not by itself prove live execution, independent executor isolation, sealed evaluation, certification, tamper-proofing, or native Clawith parity."
       },
       "verifier_contract": {
         "stage_key": "candidate-student",
-        "runner": "LocalReplayRunner",
+        "runner": "claude_vibecosystem",
         "required_commands": [
           "python3 -m unittest tests/test_public_benchmark_pack_v1.py",
           "python3 -m unittest tests/test_milestone3_contract.py tests/test_milestone5_teacher_eval_loop.py",
@@ -798,28 +825,28 @@
         "command_results": [
           {
             "command": "python3 -m unittest tests/test_public_benchmark_pack_v1.py",
-            "execution_status": "not_executed",
-            "exit_code": null,
-            "honesty_note": "Local-replay alpha path does not execute verifier commands."
+            "execution_status": "executed",
+            "exit_code": 0,
+            "honesty_note": "Verifier command was executed by the live backend."
           },
           {
             "command": "python3 -m unittest tests/test_milestone3_contract.py tests/test_milestone5_teacher_eval_loop.py",
             "execution_status": "not_executed",
             "exit_code": null,
-            "honesty_note": "Local-replay alpha path does not execute verifier commands."
+            "honesty_note": "The runner did not execute this verifier command."
           },
           {
             "command": "python3 -m unittest tests/test_private_holdout_separation.py",
             "execution_status": "not_executed",
             "exit_code": null,
-            "honesty_note": "Local-replay alpha path does not execute verifier commands."
+            "honesty_note": "The runner did not execute this verifier command."
           }
         ],
-        "gate_status": "not_executed",
-        "honesty_note": "The local-replay runner produces deterministic receipts without executing verifier commands. Gate status will become meaningful when a live-execution backend is wired."
+        "gate_status": "incomplete",
+        "honesty_note": "Not all verifier commands have execution results."
       },
       "lineage": {
-        "sequence_id": "frontend-apprentice-public-alpha-v1:autoresearch-alpha",
+        "sequence_id": "frontend-apprentice-public-alpha-v1:autoresearch-alpha-live-smoke",
         "scenario_set_id": "public-benchmark-pack-v1",
         "root_run_id": "run-eval-001",
         "parent_run_id": "run-eval-001",
@@ -827,7 +854,7 @@
         "iteration_label": "candidate-student"
       },
       "traceability": {
-        "sequence_id": "frontend-apprentice-public-alpha-v1:autoresearch-alpha",
+        "sequence_id": "frontend-apprentice-public-alpha-v1:autoresearch-alpha-live-smoke",
         "stage_key": "candidate-student",
         "benchmark_pack": {
           "id": "public-benchmark-pack-v1",
@@ -836,14 +863,10 @@
         },
         "episodes": {
           "visible_episode_ids": [
-            "pbpv1-e05",
-            "pbpv1-e07",
-            "pbpv1-e11"
+            "pbpv1-e02"
           ],
           "family_ids": [
-            "rf.frontend-apprentice.public.failure-to-curriculum",
-            "rf.frontend-apprentice.public.proof-bundle",
-            "rf.frontend-apprentice.public.score-deltas"
+            "rf.frontend-apprentice.public.landing-story"
           ],
           "sealed_holdout_count": 2
         }
@@ -852,13 +875,13 @@
       "export": {
         "run": {
           "id": "run-eval-001-student",
-          "label": "Candidate student \u2014 public benchmark pack only",
+          "label": "Candidate student \u2014 one narrow public episode (pbpv1-e02) via live public-smoke",
           "status": "completed",
-          "started_at": "2026-03-24T00:47:39Z",
-          "finished_at": "2026-03-24T00:47:39Z",
-          "duration_sec": 0,
+          "started_at": "2026-03-24T06:17:27Z",
+          "finished_at": "2026-03-24T06:18:23Z",
+          "duration_sec": 56,
           "cost_usd": 0.58,
-          "runner": "LocalReplayRunner",
+          "runner": "claude_vibecosystem",
           "iteration": 2,
           "stage_label": "candidate-student",
           "comparison_run_id": null
@@ -867,72 +890,168 @@
           "status": "completed",
           "transcript_path": "run-eval-001-student/transcript.ndjson",
           "artifact_bundle_path": "run-eval-001-student/artifact-bundle.json",
-          "machine_score": 0.8,
+          "machine_score": 0.0,
           "scorecard": {
-            "runner": "LocalReplayRunner",
+            "runner": "claude_vibecosystem",
             "checks": [
               {
-                "name": "artifact_bundle_present",
+                "name": "student_step",
                 "passed": true
               },
               {
-                "name": "transcript_has_completion_event",
+                "name": "python3 -m unittest tests/test_public_benchmark_pack_v1.py",
                 "passed": true
               }
             ]
           },
           "execution_honesty": {
-            "backend": "LocalReplayRunner",
-            "mode": "zero_secret_replay",
-            "claim_boundary": {
-              "executes_commands": "false",
-              "native_clawith_parity": "not_claimed",
-              "independent_executor_isolation": "not_claimed"
+            "backend": "claude_vibecosystem",
+            "mode": "live_public_smoke",
+            "beta_status": "live_public_smoke_alpha",
+            "executes_commands": true,
+            "executes_checks": true,
+            "student_step": {
+              "executed": true,
+              "execution_status": "executed",
+              "exit_code": 0,
+              "stdout_lines": 6,
+              "stderr_lines": 0,
+              "timeout_seconds": 265,
+              "max_turns": 6,
+              "stdout_path": "student-stdout.log",
+              "stderr_path": null,
+              "completed_cleanly": true,
+              "repo_diff_present": true,
+              "repo_diff_changed_lines": 28,
+              "repo_diff_path": "student.diff",
+              "meaningful_mutation": true,
+              "transcript_artifact": "student-stdout.log"
             },
-            "executes_commands": false,
-            "executes_checks": false,
-            "check_results": [],
+            "check_results": [
+              {
+                "command": "python3 -m unittest tests/test_public_benchmark_pack_v1.py",
+                "execution_status": "executed",
+                "exit_code": 0,
+                "stdout_lines": 0,
+                "stderr_lines": 5,
+                "timeout_seconds": 30,
+                "stdout_path": null,
+                "stderr_path": "verifier-0-stderr.log"
+              }
+            ],
+            "timeout_budget": {
+              "request_timeout_seconds": 300,
+              "student_timeout_seconds": 265,
+              "verifier_timeout_seconds": 30,
+              "verifier_total_timeout_seconds": 30,
+              "verifier_command_count": 1,
+              "cleanup_timeout_seconds": 5,
+              "budget_aligned": true
+            },
+            "review_outcome": {
+              "kind": "student_diff_captured",
+              "summary": "Student step produced a repo diff and verifier commands completed.",
+              "meaningful_mutation": true,
+              "repo_diff_present": true,
+              "verifier_failures": 0,
+              "verifier_timeouts": 0
+            },
+            "worktree_commit": "76b560d9f7703dff2aa7c95bdf58f70d814eb026",
+            "worktree_isolation": true,
             "mutation_enforcement": "not_enforced",
             "path_constraint_enforcement": "not_enforced",
-            "honesty_note": "LocalReplayRunner is a zero-secret replay backend. It validates the request contract and produces receipts, but does not execute task commands, enforce mutation budgets, or enforce path constraints. These remain not executed / not enforced until a live execution backend is wired."
+            "external_executor": {
+              "adapter_mode": "live_public_smoke",
+              "live_execution": "student_and_verifier",
+              "runtime": "Claude Code",
+              "agent_selection": "vibecosystem",
+              "claude_agent": "backend-dev",
+              "prompt_transport": "stdin",
+              "workdir": ".",
+              "workdir_mode": "dedicated_workdir_expected",
+              "control_plane_path": "external_gateway_only",
+              "timeout_budget": {
+                "request_timeout_seconds": 300,
+                "student_timeout_seconds": 265,
+                "verifier_timeout_seconds": 30,
+                "verifier_total_timeout_seconds": 30,
+                "verifier_command_count": 1,
+                "cleanup_timeout_seconds": 5,
+                "budget_aligned": true
+              }
+            },
+            "claim_boundary": {
+              "native_clawith_parity": "not_claimed",
+              "sealed_evaluation": "not_claimed",
+              "tamper_proofing": "not_claimed",
+              "independent_executor_isolation": "not_claimed"
+            },
+            "honesty_note": "This live public-smoke run created an isolated git worktree, invoked a real Claude Code student step via the local CLI, executed real verifier commands, and captured all exit codes and output honestly. Student step produced a repo diff and verifier commands completed. It does not claim sealed evaluation, tamper-proofing, independent executor isolation, or native Clawith parity."
           },
-          "started_at": "2026-03-24T00:47:39Z",
-          "finished_at": "2026-03-24T00:47:39Z",
+          "started_at": "2026-03-24T06:17:27Z",
+          "finished_at": "2026-03-24T06:18:23Z",
           "execution_backend": {
-            "backend_id": "local_replay",
-            "runner_name": "LocalReplayRunner",
+            "backend_id": "claude_vibecosystem",
+            "runner_name": "claude_vibecosystem",
             "selection_source": "result.execution_honesty.backend",
-            "mode": "zero_secret_replay",
+            "mode": "live_public_smoke",
             "execution_backend_contract": {
-              "backend_id": "local_replay",
-              "entrypoint": "python3 -m runner_bridge.backends.local_replay",
-              "module": "runner_bridge.backends.local_replay",
-              "mode": "zero_secret_replay",
+              "backend_id": "claude_vibecosystem",
+              "surface_version": "0.2.0-beta",
+              "entrypoint": "python3 -m runner_bridge.backends.claude_vibecosystem",
+              "module": "runner_bridge.backends.claude_vibecosystem",
+              "mode": "external_executor_beta",
+              "beta_status": "live_public_smoke_available",
+              "live_public_smoke": {
+                "available": true,
+                "cli_flag": "--live-public-smoke",
+                "description": "Opt-in mode that creates an isolated git worktree, captures honest runtime artifacts, and executes real verifier commands. When a student_prompt_pack is present, it also invokes a real Claude Code student step before running the verifiers."
+              },
+              "executor": {
+                "runtime": "Claude Code",
+                "agent_selection": "vibecosystem",
+                "default_agent": "backend-dev",
+                "prompt_transport": "stdin",
+                "workdir_mode": "dedicated_workdir_expected"
+              },
+              "control_plane": {
+                "path": "external_gateway_only",
+                "proof_reference": "docs/clawith-vibecosystem-real-path.md"
+              },
               "claim_boundary": {
-                "executes_commands": "false",
                 "native_clawith_parity": "not_claimed",
+                "sealed_evaluation": "not_claimed",
+                "tamper_proofing": "not_claimed",
                 "independent_executor_isolation": "not_claimed"
               }
             },
             "execution_honesty": {
-              "backend": "LocalReplayRunner",
-              "mode": "zero_secret_replay",
-              "executes_commands": false,
-              "executes_checks": false,
+              "backend": "claude_vibecosystem",
+              "mode": "live_public_smoke",
+              "beta_status": "live_public_smoke_alpha",
+              "executes_commands": true,
+              "executes_checks": true,
               "mutation_enforcement": "not_enforced",
               "path_constraint_enforcement": "not_enforced",
               "claim_boundary": {
-                "executes_commands": "false",
                 "native_clawith_parity": "not_claimed",
+                "sealed_evaluation": "not_claimed",
+                "tamper_proofing": "not_claimed",
                 "independent_executor_isolation": "not_claimed"
               },
-              "honesty_note": "LocalReplayRunner is a zero-secret replay backend. It validates the request contract and produces receipts, but does not execute task commands, enforce mutation budgets, or enforce path constraints. These remain not executed / not enforced until a live execution backend is wired.",
-              "check_result_count": 0,
+              "honesty_note": "This live public-smoke run created an isolated git worktree, invoked a real Claude Code student step via the local CLI, executed real verifier commands, and captured all exit codes and output honestly. Student step produced a repo diff and verifier commands completed. It does not claim sealed evaluation, tamper-proofing, independent executor isolation, or native Clawith parity.",
+              "check_result_count": 1,
               "not_executed_check_count": 0
             },
             "intended_executor_path": {
-              "entrypoint": "python3 -m runner_bridge.backends.local_replay",
-              "module": "runner_bridge.backends.local_replay"
+              "entrypoint": "python3 -m runner_bridge.backends.claude_vibecosystem",
+              "module": "runner_bridge.backends.claude_vibecosystem",
+              "runtime": "Claude Code",
+              "agent_selection": "vibecosystem",
+              "default_agent": "backend-dev",
+              "prompt_transport": "stdin",
+              "workdir_mode": "dedicated_workdir_expected",
+              "control_plane_path": "external_gateway_only"
             },
             "honesty_note": "This block records backend provenance and the current execution honesty boundary only. It does not by itself prove live execution, independent executor isolation, sealed evaluation, certification, tamper-proofing, or native Clawith parity."
           },
@@ -945,7 +1064,7 @@
             "episode_receipt_paths": {
               "candidate": "receipts/candidate.json"
             },
-            "evidence_entry_count": 7
+            "evidence_entry_count": 3
           },
           "integrations": {
             "trust_bundle_path": "integrations/trust-bundle.json",
@@ -986,17 +1105,100 @@
           "scenario_set_id": "public-benchmark-pack-v1",
           "status": "completed",
           "workspace_snapshot": {
-            "objective": "Run the student against a public-safe prompt pack plus sanitized failure themes only.",
+            "objective": "Run the live public-smoke lane on one tiny public episode (pbpv1-e02: tighten the README intro). The generated student prompt carries the episode constraints, suggested files, and public checks so Claude can produce a narrow, meaningful repo diff.",
             "changed_files": [
-              "runner_bridge/autoresearch_alpha.py",
-              "runner_bridge/backends/local_replay.py",
-              "tests/test_autoresearch_alpha_loop.py"
+              "README.md"
             ],
             "policy_snapshot": [
-              "Use public benchmark episodes only for the student prompt pack.",
-              "Carry forward sanitized failure themes, not hidden holdout text.",
-              "Prefer one coherent slice over broad repo churn."
+              "Use one public benchmark episode only.",
+              "Expect a narrow README-only mutation, not broad repo churn.",
+              "Keep demo-mode honesty explicit.",
+              "Reserve enough stage budget for the live public-smoke student step plus verifier commands."
             ]
+          },
+          "execution_backend_contract": {
+            "backend_id": "claude_vibecosystem",
+            "surface_version": "0.2.0-beta",
+            "entrypoint": "python3 -m runner_bridge.backends.claude_vibecosystem",
+            "module": "runner_bridge.backends.claude_vibecosystem",
+            "mode": "external_executor_beta",
+            "beta_status": "live_public_smoke_available",
+            "live_public_smoke": {
+              "available": true,
+              "cli_flag": "--live-public-smoke",
+              "description": "Opt-in mode that creates an isolated git worktree, captures honest runtime artifacts, and executes real verifier commands. When a student_prompt_pack is present, it also invokes a real Claude Code student step before running the verifiers."
+            },
+            "executor": {
+              "runtime": "Claude Code",
+              "agent_selection": "vibecosystem",
+              "default_agent": "backend-dev",
+              "prompt_transport": "stdin",
+              "workdir_mode": "dedicated_workdir_expected"
+            },
+            "control_plane": {
+              "path": "external_gateway_only",
+              "proof_reference": "docs/clawith-vibecosystem-real-path.md"
+            },
+            "claim_boundary": {
+              "native_clawith_parity": "not_claimed",
+              "sealed_evaluation": "not_claimed",
+              "tamper_proofing": "not_claimed",
+              "independent_executor_isolation": "not_claimed"
+            }
+          },
+          "external_executor_beta": {
+            "adapter_mode": "live_public_smoke",
+            "live_execution": "student_and_verifier",
+            "runtime": "Claude Code",
+            "agent_selection": "vibecosystem",
+            "claude_agent": "backend-dev",
+            "prompt_transport": "stdin",
+            "workdir": ".",
+            "workdir_mode": "dedicated_workdir_expected",
+            "control_plane_path": "external_gateway_only",
+            "timeout_budget": {
+              "request_timeout_seconds": 300,
+              "student_timeout_seconds": 265,
+              "verifier_timeout_seconds": 30,
+              "verifier_total_timeout_seconds": 30,
+              "verifier_command_count": 1,
+              "cleanup_timeout_seconds": 5,
+              "budget_aligned": true
+            }
+          },
+          "live_smoke": {
+            "worktree_commit": "76b560d9f7703dff2aa7c95bdf58f70d814eb026",
+            "verifier_commands_executed": 1,
+            "verifier_commands_passed": 1,
+            "verifiers_all_passed": true,
+            "student_step_executed": true,
+            "student_step_completed_cleanly": true,
+            "student_step_passed": true,
+            "all_passed": true,
+            "timeout_budget": {
+              "request_timeout_seconds": 300,
+              "student_timeout_seconds": 265,
+              "verifier_timeout_seconds": 30,
+              "verifier_total_timeout_seconds": 30,
+              "verifier_command_count": 1,
+              "cleanup_timeout_seconds": 5,
+              "budget_aligned": true
+            },
+            "review_outcome": {
+              "kind": "student_diff_captured",
+              "summary": "Student step produced a repo diff and verifier commands completed.",
+              "meaningful_mutation": true,
+              "repo_diff_present": true,
+              "verifier_failures": 0,
+              "verifier_timeouts": 0
+            },
+            "student_diff": {
+              "repo_diff_present": true,
+              "changed_lines": 28,
+              "artifact_path": "student.diff"
+            },
+            "student_execution_status": "executed",
+            "student_exit_code": 0
           },
           "receipts": {
             "transcript_path": "transcript.ndjson",
@@ -1011,189 +1213,23 @@
             "erc8004_registration_draft_path": "integrations/erc8004-registration-draft.json",
             "agent0_python_mint_path": "integrations/agent0-python-mint.json"
           },
-          "student_view": {
-            "agent_role": "student",
-            "actor": {
-              "id": "student-frontend-apprentice",
-              "name": "Frontend Apprentice",
-              "agent_role": "student"
-            },
-            "sealed_holdout_count": 2,
-            "visible_scenarios": [
-              {
-                "id": "pbpv1-e05",
-                "title": "Show why Run 2 is better with concrete deltas",
-                "type": "training",
-                "difficulty": "medium",
-                "student_prompt": "Add or refine a surface that compares two runs with explicit score movement instead of vague improvement language.",
-                "repo_task_meta": {
-                  "family_id": "rf.frontend-apprentice.public.score-deltas",
-                  "mutation_budget": "narrow",
-                  "constraints": [
-                    "Use concrete counts, rates, or receipts",
-                    "Keep demo-vs-live honesty intact",
-                    "Do not invent unimplemented telemetry"
-                  ],
-                  "suggested_files": [
-                    "app/scorecard.html",
-                    "app/data.js",
-                    "app/run.html"
-                  ],
-                  "artifacts_required": [
-                    "score summary",
-                    "changed-files summary"
-                  ],
-                  "public_checks": [
-                    "At least two runs are compared",
-                    "Improvement is visible as a delta",
-                    "No fake instrumentation is implied"
-                  ],
-                  "tags": [
-                    "scorecard",
-                    "iteration",
-                    "metrics"
-                  ]
-                }
-              },
-              {
-                "id": "pbpv1-e07",
-                "title": "Make the proof bundle legible at a glance",
-                "type": "training",
-                "difficulty": "medium",
-                "student_prompt": "Improve one surface so a judge can quickly inspect the receipt summary, changed files, transcript evidence, and policy snapshot for a strong run.",
-                "repo_task_meta": {
-                  "family_id": "rf.frontend-apprentice.public.proof-bundle",
-                  "mutation_budget": "narrow",
-                  "constraints": [
-                    "Keep the surface judge-friendly",
-                    "Do not claim live artifact backends that do not exist",
-                    "Leave a receipt note"
-                  ],
-                  "suggested_files": [
-                    "app/run.html",
-                    "app/data.js"
-                  ],
-                  "artifacts_required": [
-                    "receipt summary",
-                    "changed-files summary",
-                    "transcript excerpt",
-                    "policy snapshot"
-                  ],
-                  "public_checks": [
-                    "Proof bundle contains changed files, transcript evidence, and policy snapshot",
-                    "Receipts are easy to scan",
-                    "No fake storage or API wiring is claimed"
-                  ],
-                  "tags": [
-                    "artifacts",
-                    "run-detail",
-                    "receipts"
-                  ]
-                }
-              },
-              {
-                "id": "pbpv1-e11",
-                "title": "Promote one failed theme into public curriculum safely",
-                "type": "training",
-                "difficulty": "hard",
-                "student_prompt": "Take one failure theme and turn it into a public curriculum lesson without quoting or reconstructing teacher-only prompt text.",
-                "repo_task_meta": {
-                  "family_id": "rf.frontend-apprentice.public.failure-to-curriculum",
-                  "mutation_budget": "narrow",
-                  "constraints": [
-                    "Use sanitized lesson wording only",
-                    "Do not reveal grading internals",
-                    "Leave a policy snapshot"
-                  ],
-                  "suggested_files": [
-                    "app/scenarios.html",
-                    "app/data.js",
-                    "docs/runner-bridge.md"
-                  ],
-                  "artifacts_required": [
-                    "public curriculum theme summary",
-                    "changed-files summary",
-                    "policy snapshot"
-                  ],
-                  "public_checks": [
-                    "The new lesson reads as a public theme",
-                    "Teacher-only wording is not quoted or reconstructed",
-                    "The result is useful for the next public training loop"
-                  ],
-                  "tags": [
-                    "flywheel",
-                    "curriculum",
-                    "sanitization"
-                  ]
-                }
-              }
-            ],
-            "public_curriculum_themes": [
-              {
-                "theme": "Constraint honesty under pressure",
-                "description": "Teach the apprentice to stay explicit about demo-only limits and refuse fake live claims.",
-                "source_scenarios": [
-                  "h1"
-                ]
-              },
-              {
-                "theme": "Explain evaluation integrity without leaking the exam",
-                "description": "Teach the apprentice to describe the teacher loop and scoring logic without quoting the hidden holdout text.",
-                "source_scenarios": [
-                  "h2"
-                ]
-              }
-            ],
-            "prompt_summary": "Train on the public benchmark pack and promoted public failure themes only. Sealed holdout prompts stay hidden.",
-            "repo_task_pack": {
-              "role_scope": "frontend-apprentice",
-              "dataset_id": "public-benchmark-pack-v1",
-              "dataset_version": "1.0.0",
-              "episode_count": 3,
-              "episode_ids": [
-                "pbpv1-e05",
-                "pbpv1-e07",
-                "pbpv1-e11"
-              ],
-              "family_ids": [
-                "rf.frontend-apprentice.public.failure-to-curriculum",
-                "rf.frontend-apprentice.public.proof-bundle",
-                "rf.frontend-apprentice.public.score-deltas"
-              ],
-              "honesty_note": "Repo-task metadata is derived from the public benchmark pack. This is still local replay / public-regression alpha unless a private holdout manifest is used.",
-              "recommended_verifier_commands": [
-                "python3 -m unittest tests/test_public_benchmark_pack_v1.py",
-                "python3 -m unittest tests/test_milestone3_contract.py tests/test_milestone5_teacher_eval_loop.py",
-                "python3 -m unittest tests/test_private_holdout_separation.py"
-              ]
-            }
-          },
-          "execution_backend": "local_replay",
-          "execution_backend_contract": {
-            "backend_id": "local_replay",
-            "entrypoint": "python3 -m runner_bridge.backends.local_replay",
-            "module": "runner_bridge.backends.local_replay",
-            "mode": "zero_secret_replay",
-            "claim_boundary": {
-              "executes_commands": "false",
-              "native_clawith_parity": "not_claimed",
-              "independent_executor_isolation": "not_claimed"
-            }
-          },
+          "execution_backend": "claude_vibecosystem",
           "execution_honesty": {
-            "backend": "LocalReplayRunner",
-            "mode": "zero_secret_replay",
-            "executes_commands": false,
-            "executes_checks": false,
+            "backend": "claude_vibecosystem",
+            "mode": "live_public_smoke",
+            "beta_status": "live_public_smoke_alpha",
+            "executes_commands": true,
+            "executes_checks": true,
             "mutation_enforcement": "not_enforced",
             "path_constraint_enforcement": "not_enforced",
             "claim_boundary": {
-              "executes_commands": "false",
               "native_clawith_parity": "not_claimed",
+              "sealed_evaluation": "not_claimed",
+              "tamper_proofing": "not_claimed",
               "independent_executor_isolation": "not_claimed"
             },
-            "honesty_note": "LocalReplayRunner is a zero-secret replay backend. It validates the request contract and produces receipts, but does not execute task commands, enforce mutation budgets, or enforce path constraints. These remain not executed / not enforced until a live execution backend is wired.",
-            "check_result_count": 0,
+            "honesty_note": "This live public-smoke run created an isolated git worktree, invoked a real Claude Code student step via the local CLI, executed real verifier commands, and captured all exit codes and output honestly. Student step produced a repo diff and verifier commands completed. It does not claim sealed evaluation, tamper-proofing, independent executor isolation, or native Clawith parity.",
+            "check_result_count": 1,
             "not_executed_check_count": 0
           },
           "provenance": {
@@ -1205,7 +1241,7 @@
             "episode_receipt_paths": {
               "candidate": "receipts/candidate.json"
             },
-            "evidence_entry_count": 7
+            "evidence_entry_count": 3
           },
           "integration_bundle": {
             "status_by_integration": {
@@ -1238,28 +1274,110 @@
               "registration_draft_path": "integrations/erc8004-registration-draft.json",
               "python_mint_path": "integrations/agent0-python-mint.json"
             }
+          },
+          "student_view": {
+            "agent_role": "student",
+            "actor": {
+              "id": "student-frontend-apprentice",
+              "name": "Frontend Apprentice",
+              "agent_role": "student"
+            },
+            "sealed_holdout_count": 2,
+            "visible_scenarios": [
+              {
+                "id": "pbpv1-e02",
+                "title": "Tighten the README intro around the dogfood loop",
+                "type": "training",
+                "difficulty": "medium",
+                "student_prompt": "Refactor the README intro so it frames the repo as a teacher \u2192 student \u2192 evaluation loop, not a generic agent platform.",
+                "repo_task_meta": {
+                  "family_id": "rf.frontend-apprentice.public.landing-story",
+                  "mutation_budget": "narrow",
+                  "constraints": [
+                    "Keep the repo description concrete and judge-facing",
+                    "Avoid fake future-looking claims",
+                    "Preserve quickstart clarity"
+                  ],
+                  "suggested_files": [
+                    "README.md",
+                    "docs/conversation-log.md"
+                  ],
+                  "artifacts_required": [
+                    "changed-files summary",
+                    "receipt note"
+                  ],
+                  "public_checks": [
+                    "README explains the named apprentice loop",
+                    "README does not read like a generic marketplace or infra pitch",
+                    "Demo-mode honesty remains explicit"
+                  ],
+                  "tags": [
+                    "docs",
+                    "copy",
+                    "README"
+                  ]
+                }
+              }
+            ],
+            "public_curriculum_themes": [
+              {
+                "theme": "Constraint honesty under pressure",
+                "description": "Teach the apprentice to stay explicit about demo-only limits and refuse fake live claims.",
+                "source_scenarios": [
+                  "h1"
+                ]
+              },
+              {
+                "theme": "Explain evaluation integrity without leaking the exam",
+                "description": "Teach the apprentice to describe the teacher loop and scoring logic without quoting the hidden holdout text.",
+                "source_scenarios": [
+                  "h2"
+                ]
+              }
+            ],
+            "prompt_summary": "Make exactly one small, meaningful README improvement that frames Role Foundry as a teacher \u2192 student \u2192 evaluation loop. Keep the diff narrow and honest.",
+            "repo_task_pack": {
+              "role_scope": "frontend-apprentice",
+              "dataset_id": "public-benchmark-pack-v1",
+              "dataset_version": "1.0.0",
+              "episode_count": 1,
+              "episode_ids": [
+                "pbpv1-e02"
+              ],
+              "family_ids": [
+                "rf.frontend-apprentice.public.landing-story"
+              ],
+              "honesty_note": "This stored export captures the first meaningful live public-smoke mutation on one public-safe slice only. It does not widen the claim beyond that tracked episode.",
+              "recommended_verifier_commands": [
+                "python3 -m unittest tests/test_public_benchmark_pack_v1.py"
+              ]
+            }
           }
         },
         "transcript_excerpt": [
           {
-            "ts": "2026-03-24T00:47:39Z",
+            "ts": "2026-03-24T06:17:28Z",
             "event": "runner.started",
-            "message": "Starting run-eval-001-student for student on public-benchmark-pack-v1"
+            "message": "Live public-smoke for run-eval-001-student with 1 verifier command(s) and a real student step."
           },
           {
-            "ts": "2026-03-24T00:47:39Z",
-            "event": "runner.objective",
-            "message": "Run the student against a public-safe prompt pack plus sanitized failure themes only."
+            "ts": "2026-03-24T06:17:28Z",
+            "event": "budget.allocated",
+            "request_timeout_seconds": 300,
+            "student_timeout_seconds": 265,
+            "verifier_timeout_seconds": 30,
+            "verifier_total_timeout_seconds": 30,
+            "verifier_command_count": 1,
+            "cleanup_timeout_seconds": 5,
+            "budget_aligned": true
           },
           {
-            "ts": "2026-03-24T00:47:39Z",
-            "event": "student.prompt.loaded",
-            "message": "Student prompt pack loaded with 3 visible scenarios and 2 sealed holdouts."
+            "ts": "2026-03-24T06:18:23Z",
+            "event": "worktree.removed"
           },
           {
-            "ts": "2026-03-24T00:47:39Z",
-            "event": "runner.completed",
-            "message": "LocalReplayRunner produced transcript and artifact receipts."
+            "ts": "2026-03-24T06:18:23Z",
+            "event": "runner.completed"
           }
         ],
         "receipt_completeness": {
@@ -1280,7 +1398,102 @@
             "result_provenance_has_summary": true,
             "result_provenance_has_audit_bundle": true
           }
+        },
+        "student_view": {
+          "agent_role": "student",
+          "actor": {
+            "id": "student-frontend-apprentice",
+            "name": "Frontend Apprentice",
+            "agent_role": "student"
+          },
+          "sealed_holdout_count": 2,
+          "visible_scenarios": [
+            {
+              "id": "pbpv1-e02",
+              "title": "Tighten the README intro around the dogfood loop",
+              "type": "training",
+              "difficulty": "medium",
+              "student_prompt": "Refactor the README intro so it frames the repo as a teacher \u2192 student \u2192 evaluation loop, not a generic agent platform.",
+              "repo_task_meta": {
+                "family_id": "rf.frontend-apprentice.public.landing-story",
+                "mutation_budget": "narrow",
+                "constraints": [
+                  "Keep the repo description concrete and judge-facing",
+                  "Avoid fake future-looking claims",
+                  "Preserve quickstart clarity"
+                ],
+                "suggested_files": [
+                  "README.md",
+                  "docs/conversation-log.md"
+                ],
+                "artifacts_required": [
+                  "changed-files summary",
+                  "receipt note"
+                ],
+                "public_checks": [
+                  "README explains the named apprentice loop",
+                  "README does not read like a generic marketplace or infra pitch",
+                  "Demo-mode honesty remains explicit"
+                ],
+                "tags": [
+                  "docs",
+                  "copy",
+                  "README"
+                ]
+              }
+            }
+          ],
+          "public_curriculum_themes": [
+            {
+              "theme": "Constraint honesty under pressure",
+              "description": "Teach the apprentice to stay explicit about demo-only limits and refuse fake live claims.",
+              "source_scenarios": [
+                "h1"
+              ]
+            },
+            {
+              "theme": "Explain evaluation integrity without leaking the exam",
+              "description": "Teach the apprentice to describe the teacher loop and scoring logic without quoting the hidden holdout text.",
+              "source_scenarios": [
+                "h2"
+              ]
+            }
+          ],
+          "prompt_summary": "Make exactly one small, meaningful README improvement that frames Role Foundry as a teacher \u2192 student \u2192 evaluation loop. Keep the diff narrow and honest.",
+          "repo_task_pack": {
+            "role_scope": "frontend-apprentice",
+            "dataset_id": "public-benchmark-pack-v1",
+            "dataset_version": "1.0.0",
+            "episode_count": 1,
+            "episode_ids": [
+              "pbpv1-e02"
+            ],
+            "family_ids": [
+              "rf.frontend-apprentice.public.landing-story"
+            ],
+            "honesty_note": "This stored export captures the first meaningful live public-smoke mutation on one public-safe slice only. It does not widen the claim beyond that tracked episode.",
+            "recommended_verifier_commands": [
+              "python3 -m unittest tests/test_public_benchmark_pack_v1.py"
+            ]
+          }
         }
+      },
+      "live_smoke_review": {
+        "kind": "student_diff_captured",
+        "summary": "Student step produced a repo diff and verifier commands completed.",
+        "meaningful_mutation": true,
+        "repo_diff_present": true,
+        "verifier_failures": 0,
+        "verifier_timeouts": 0
+      },
+      "live_smoke_timeout_budget": {
+        "request_timeout_seconds": 300,
+        "student_timeout_seconds": 265,
+        "verifier_timeout_seconds": 30,
+        "verifier_total_timeout_seconds": 30,
+        "verifier_command_count": 1,
+        "cleanup_timeout_seconds": 5,
+        "budget_aligned": true
       }
     },
     "candidate-teacher-eval": {
@@ -2030,15 +2243,15 @@
   },
   "verdict": "better",
   "verifier_gate": {
-    "aggregate_status": "not_executed",
+    "aggregate_status": "incomplete",
     "stage_statuses": {
       "baseline-eval": "not_executed",
-      "candidate-student": "not_executed",
+      "candidate-student": "incomplete",
       "candidate-teacher-eval": "not_executed"
     },
     "total_commands": 9,
-    "executed_commands": 0,
-    "honesty_note": "All stages used the local-replay runner. No verifier commands were actually executed. This alpha loop proves receipt structure and evaluation-contract wiring, not real code execution."
+    "executed_commands": 1,
+    "honesty_note": "Not all stages have complete verifier execution results."
   },
   "sealing_receipt": {
     "spec": "015-sealed-receipt-surface",

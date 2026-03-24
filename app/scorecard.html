@@ -438,6 +438,41 @@
     </table>
   </section>
 
+  <template x-if="$store.app.sourceMode === 'live' && $store.app.alphaLoopStageLiveSmokeReview('candidate-student')">
+    <section>
+      <div class="section-header-row">
+        <div>
+          <h3>Underlying live student mutation proof</h3>
+          <p>This score delta still sits on a mixed-execution loop.</p>
+        </div>
+        <span class="badge" :class="$store.app.alphaLoopStageLiveSmokeReview('candidate-student')?.meaningful_mutation ? 'badge-pass' : 'badge-training'" x-text="$store.app.alphaLoopStageLiveSmokeReview('candidate-student')?.meaningful_mutation ? 'meaningful mutation' : 'wiring only'"></span>
+      </div>
+      <div class="grid-2">
+        <article class="card">
+          <ul>
+            <li><strong>Outcome kind:</strong> <code x-text="$store.app.alphaLoopStageLiveSmokeReview('candidate-student')?.kind || '—'"></code></li>
+            <li><strong>Repo diff:</strong> <span x-text="$store.app.alphaLoopStageLiveSmokeReview('candidate-student')?.repo_diff_present ? 'captured' : 'not captured'"></span></li>
+            <li><strong>Changed lines:</strong> <span x-text="$store.app.alphaLoopStageStudentStep('candidate-student')?.repo_diff_changed_lines ?? '—'"></span></li>
+            <li><strong>Max turns:</strong> <span x-text="$store.app.alphaLoopStageStudentStep('candidate-student')?.max_turns ?? '—'"></span></li>
+          </ul>
+        </article>
+        <article class="card">
+          <ul>
+            <li><strong>Tracked verifier slice:</strong> <span x-text="(($store.app.alphaLoopStageVerifierSummary('candidate-student')?.tracked?.passed_commands ?? 0) + '/' + ($store.app.alphaLoopStageVerifierSummary('candidate-student')?.tracked?.total_commands ?? 0) + ' passed')"></span></li>
+            <li><strong>Stage verifier contract:</strong> <span x-text="(($store.app.alphaLoopStageVerifierSummary('candidate-student')?.stage?.executed_commands ?? 0) + '/' + ($store.app.alphaLoopStageVerifierSummary('candidate-student')?.stage?.total_commands ?? 0) + ' executed')"></span></li>
+            <li><strong>Timeout budget:</strong> <span x-text="'student ' + ($store.app.alphaLoopStageLiveSmokeBudget('candidate-student')?.student_timeout_seconds ?? '—') + 's / verifier ' + ($store.app.alphaLoopStageLiveSmokeBudget('candidate-student')?.verifier_timeout_seconds ?? '—') + 's'"></span></li>
+            <li><strong>Execution backend:</strong> <code x-text="$store.app.alphaLoopStageExecutionMode('candidate-student') || '—'"></code></li>
+          </ul>
+        </article>
+      </div>
+      <article class="judge-callout compact-callout">
+        <strong>Execution honesty:</strong>
+        <span x-text="$store.app.alphaLoopExecutionMixSummary() || 'Mixed execution: candidate-student live, baseline + candidate-teacher replay-backed.'"></span>
+      </article>
+      <p><small x-text="$store.app.alphaLoopStageHonestyNote('candidate-student') || ''"></small></p>
+    </section>
+  </template>
+
   <article>
     <h3>How to read this scorecard</h3>
     <ul>

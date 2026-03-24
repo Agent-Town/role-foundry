@@ -93,6 +93,13 @@ class LiveUiReadModelTests(unittest.TestCase):
               alphaSealingPendingChecklist: store.alphaLoopSealingChecklistEntries(false).map(entry => entry.key),
               alphaSealingUnmetPrerequisites: store.alphaLoopUnmetSealingPrerequisites().map(entry => entry.enables),
               alphaSealingFingerprintScope: store.alphaLoopSealingFingerprint()?.scope || null,
+              studentLiveSmokeKind: store.alphaLoopStageLiveSmokeReview('candidate-student')?.kind || null,
+              studentLiveSmokeMeaningful: store.alphaLoopStageLiveSmokeReview('candidate-student')?.meaningful_mutation ?? null,
+              studentLiveSmokeDiffPresent: store.alphaLoopStageLiveSmokeReview('candidate-student')?.repo_diff_present ?? null,
+              studentLiveSmokeBudgetAligned: store.alphaLoopStageLiveSmokeBudget('candidate-student')?.budget_aligned ?? null,
+              studentExecutionMode: store.alphaLoopStageExecutionMode('candidate-student'),
+              baselineExecutionMode: store.alphaLoopStageExecutionMode('baseline-eval'),
+              controlPlaneMode: store.alphaLoopReadModel()?.control_plane_mode || null,
             }}));
             """
         )
@@ -205,6 +212,14 @@ class LiveUiReadModelTests(unittest.TestCase):
         self.assertEqual(result['overallDelta'], 2)
         self.assertEqual(result['holdoutDelta'], 1)
         self.assertFalse(result['studentHasScorecard'])
+        # Live-smoke mutation proof fields from the real export
+        self.assertEqual(result['studentLiveSmokeKind'], 'student_diff_captured')
+        self.assertTrue(result['studentLiveSmokeMeaningful'])
+        self.assertTrue(result['studentLiveSmokeDiffPresent'])
+        self.assertTrue(result['studentLiveSmokeBudgetAligned'])
+        self.assertEqual(result['studentExecutionMode'], 'live_public_smoke')
+        self.assertEqual(result['baselineExecutionMode'], 'zero_secret_replay')
+        self.assertEqual(result['controlPlaneMode'], 'runner-bridge-mixed-execution')
 
     def test_raw_autoresearch_receipt_without_outer_envelope_still_adapts(self):
         payload_expression = textwrap.dedent(
