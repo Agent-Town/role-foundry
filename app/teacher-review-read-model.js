@@ -65,6 +65,8 @@ const TEACHER_REVIEW_READ_MODEL = (function () {
       baseline_run_id: safeString(run.baseline_run_id),
       evaluation_contract_id: safeString(run.evaluation_contract_id),
       evaluation_contract_version: safeString(run.evaluation_contract_version),
+      verifier_gate_status: safeString(run.verifier_gate_status),
+      verifier_gate_note: safeString(run.verifier_gate_note),
       workspace: {
         kind: safeString(workspace.kind),
         isolated: Boolean(workspace.isolated),
@@ -78,6 +80,8 @@ const TEACHER_REVIEW_READ_MODEL = (function () {
           exit_code: safeNumber(c.exit_code),
           stdout_capture: safeString(c.stdout_capture),
           stderr_capture: safeString(c.stderr_capture),
+          execution_status: safeString(c.execution_status),
+          honesty_note: safeString(c.honesty_note),
         };
       }),
       changed_files: safeArray(run.changed_files).map(function (f) {
@@ -93,6 +97,7 @@ const TEACHER_REVIEW_READ_MODEL = (function () {
           id: safeString(ch.id),
           status: safeString(ch.status),
           stage: safeString(ch.stage),
+          honesty_note: safeString(ch.honesty_note),
         };
       }),
       weighted_score: {
@@ -108,6 +113,137 @@ const TEACHER_REVIEW_READ_MODEL = (function () {
         provenance_manifest_path: safeString(receipts.provenance_manifest_path),
       },
     };
+  }
+
+  function deriveVerifierGateStatus(candidate) {
+    if (!candidate) {
+      return 'not_available';
+    }
+    if (candidate.verifier_gate_status) {
+      return candidate.verifier_gate_status;
+    }
+
+    const checks = safeArray(candidate.checks_run);
+    if (!checks.length) {
+      return 'no_checks';
+    }
+    if (checks.every(function (c) { return c.status === 'passing'; })) {
+      return 'passing';
+    }
+    if (checks.every(function (c) { return c.status === 'not_executed'; })) {
+      return 'not_executed';
+    }
+    return 'failing';
+  }
+
+  function looksLikeAutoresearchAlphaReceipt(payload) {
+    const input = safeObject(payload);
+    const receipt = safeObject(input.autoresearch_alpha || input);
+    const stages = safeObject(receipt.stages);
+    return safeString(receipt.flow) === 'autoresearch-alpha' && Object.keys(stages).length > 0;
+  }
+
+  function mapAlphaStageToReviewRun(stageKey, stage, receipt) {
+    const stageObject = safeObject(stage);
+    const receiptObject = safeObject(receipt);
+    const stageExport = safeObject(stageObject.export);
+    const run = safeObject(stageExport.run);
+    const result = safeObject(stageExport.result);
+    const artifactBundle = safeObject(stageExport.artifact_bundle);
+    const workspaceSnapshot = safeObject(artifactBundle.workspace_snapshot);
+    const traceability = safeObject(stageObject.traceability);
+    const benchmarkPack = safeObject(traceability.benchmark_pack);
+    const comparison = safeObject(receiptObject.comparison);
+    const verifierContract = safeObject(stageObject.verifier_contract);
+    const commandResults = safeArray(verifierContract.command_results);
+    const changedFiles = safeArray(workspaceSnapshot.changed_files).map(function (file) {
+      return typeof file === 'string' ? file : safeString(file);
+    }).filter(Boolean);
+
+    return {
+      run_id: safeString(stageObject.run_id) || safeString(run.id),
+      kind: stageKey === 'baseline-eval' ? 'baseline' : (stageKey === 'candidate-teacher-eval' ? 'candidate' : safeString(stageKey)),
+      example_only: false,
+      task_id: safeString(benchmarkPack.id),
+      baseline_run_id: stageKey === 'candidate-teacher-eval' ? safeString(comparison.baseline_run_id) : null,
+      evaluation_contract_id: null,
+      evaluation_contract_version: null,
+      verifier_gate_status: safeString(verifierContract.gate_status),
+      verifier_gate_note: safeString(verifierContract.honesty_note),
+      workspace: {
+        kind: null,
+        isolated: false,
+        base_commit: null,
+      },
+      artifact_root: null,
+      commands: commandResults.map(function (entry) {
+        const item = safeObject(entry);
+        return {
+          command: safeString(item.command),
+          exit_code: safeNumber(item.exit_code),
+          stdout_capture: null,
+          stderr_capture: null,
+          execution_status: safeString(item.execution_status),
+          honesty_note: safeString(item.honesty_note),
+        };
+      }),
+      changed_files: changedFiles,
+      diff_stats: {
+        tracked_files: changedFiles.length || null,
+        net_lines: null,
+      },
+      checks_run: commandResults.map(function (entry, index) {
+        const item = safeObject(entry);
+        return {
+          id: safeString(item.command, 'verifier-command-' + String(index + 1)),
+          status: safeString(item.execution_status),
+          stage: safeString(verifierContract.stage_key, stageKey),
+          honesty_note: safeString(item.honesty_note),
+        };
+      }),
+      weighted_score: {
+        value: safeNumber(result.machine_score !== null && result.machine_score !== undefined ? result.machine_score : stageObject.total_score),
+        contract_id: null,
+      },
+      receipts: {
+        task_packet_ref: null,
+        transcript_path: safeString(result.transcript_path),
+        changed_files_path: null,
+        checks_path: null,
+        scorecard_path: safeString(safeObject(artifactBundle.receipts).result_path),
+        provenance_manifest_path:
+          safeString(safeObject(result.provenance).receipt_manifest_path)
+          || safeString(safeObject(artifactBundle.receipts).receipt_manifest_path),
+      },
+    };
+  }
+
+  function buildTeacherReviewSnapshotFromAutoresearchAlpha(payload) {
+    const input = safeObject(payload);
+    const receipt = safeObject(input.autoresearch_alpha || input);
+    const stages = safeObject(receipt.stages);
+    const baseline = Object.keys(safeObject(stages['baseline-eval'])).length
+      ? mapAlphaStageToReviewRun('baseline-eval', stages['baseline-eval'], receipt)
+      : null;
+    const candidate = Object.keys(safeObject(stages['candidate-teacher-eval'])).length
+      ? mapAlphaStageToReviewRun('candidate-teacher-eval', stages['candidate-teacher-eval'], receipt)
+      : null;
+
+    const snapshot = buildTeacherReviewSnapshot({
+      baseline_run: baseline,
+      candidate_run: candidate,
+    });
+
+    snapshot.honesty_badge = 'Stored export — rendered from an actual public-regression autoresearch alpha receipt. LocalReplayRunner / zero-secret replay boundaries still apply, and missing task-packet or dimension-scorecard fields stay empty instead of invented.';
+    snapshot.source_contract = 'autoresearch_alpha_receipt';
+    snapshot.alpha_receipt = {
+      sequence_id: safeString(receipt.sequence_id),
+      dataset_manifest_id: safeString(receipt.dataset_manifest_id),
+      verdict: safeString(receipt.verdict),
+      integrity_mode: safeString(safeObject(receipt.integrity_gate).mode),
+      claim_ceiling: safeString(safeObject(receipt.sealing_receipt).claim_ceiling),
+    };
+    return snapshot;
   }
 
   // ---------------------------------------------------------------------------
@@ -231,12 +367,8 @@ const TEACHER_REVIEW_READ_MODEL = (function () {
       };
     }
 
-    // Verifier gate status (placeholder until live runtime)
-    var verifierGateStatus = 'not_available';
-    if (candidate) {
-      var allPassing = candidate.checks_run.length > 0 && candidate.checks_run.every(function (c) { return c.status === 'passing'; });
-      verifierGateStatus = allPassing ? 'passing' : (candidate.checks_run.length > 0 ? 'failing' : 'no_checks');
-    }
+    // Verifier gate status
+    var verifierGateStatus = deriveVerifierGateStatus(candidate);
 
     // Honesty badge
     var isFixtureData = Boolean(
@@ -287,6 +419,8 @@ const TEACHER_REVIEW_READ_MODEL = (function () {
 
   return Object.freeze({
     buildTeacherReviewSnapshot: buildTeacherReviewSnapshot,
+    buildTeacherReviewSnapshotFromAutoresearchAlpha: buildTeacherReviewSnapshotFromAutoresearchAlpha,
+    looksLikeAutoresearchAlphaReceipt: looksLikeAutoresearchAlphaReceipt,
     extractTaskIdentity: extractTaskIdentity,
     extractRunSummary: extractRunSummary,
     extractScorecardBreakdown: extractScorecardBreakdown,

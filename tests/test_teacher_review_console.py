@@ -1,8 +1,8 @@
 """Tests for the teacher review console read-model (D001 shell).
 
 Validates that the teacher-review-read-model.js adapter correctly consumes
-stored sample run objects, scorecards, task packets, and evaluation contracts
-to produce an honest review snapshot.
+stored exports — both the original sample fixtures and the committed real
+public-regression alpha receipt — to produce an honest review snapshot.
 
 Contract under test:
 - buildTeacherReviewSnapshot() produces all D001-required fields
@@ -25,6 +25,7 @@ SAMPLE_RUNS = DATA_DIR / 'frontend-product-engineer-sample-run-objects.v1.json'
 SAMPLE_SCORECARD = DATA_DIR / 'frontend-product-engineer-sample-scorecard.v1.json'
 EVAL_CONTRACT = DATA_DIR / 'frontend-product-engineer-evaluation-contract.v1.json'
 SEED_REGISTRY = DATA_DIR / 'frontend-product-engineer-public-seed-registry.v1.json'
+ALPHA_PUBLIC_EXPORT = APP / 'autoresearch-alpha.public-regression.export.json'
 NODE = Path('/Users/robin/.nvm/versions/node/v24.14.0/bin/node')
 
 
@@ -105,7 +106,7 @@ class TeacherReviewReadModelTests(unittest.TestCase):
         self.assertTrue(result['has_contract'])
         self.assertTrue(result['has_evidence_links'])
         self.assertIn(result['promotion_decision'], ['promoted', 'task_pass_no_promotion', 'not_passing', 'pending'])
-        self.assertIn(result['verifier_gate_status'], ['passing', 'failing', 'no_checks', 'not_available'])
+        self.assertIn(result['verifier_gate_status'], ['passing', 'failing', 'not_executed', 'no_checks', 'not_available'])
         self.assertIsNotNone(result['honesty_badge'])
         self.assertEqual(result['data_source'], 'sample_fixture')
         self.assertEqual(result['shell_version'], '0.1.0')
@@ -396,6 +397,40 @@ class TeacherReviewReadModelTests(unittest.TestCase):
         self.assertTrue(result['isolated'])
         self.assertIsNotNone(result['base_commit'])
 
+    def test_autoresearch_alpha_export_maps_to_stored_export_snapshot(self):
+        result = self._run_node(f"""
+            const receipt = JSON.parse(fs.readFileSync({json.dumps(str(ALPHA_PUBLIC_EXPORT))}, 'utf8'));
+            const snapshot = readModel.buildTeacherReviewSnapshotFromAutoresearchAlpha(receipt);
+            console.log(JSON.stringify({{
+                data_source: snapshot.data_source,
+                source_contract: snapshot.source_contract,
+                baseline_run_id: snapshot.baseline?.run_id || null,
+                candidate_run_id: snapshot.candidate?.run_id || null,
+                score_delta: snapshot.diff_summary?.score_delta ?? null,
+                verifier_gate_status: snapshot.verifier_gate_status,
+                candidate_command_count: snapshot.candidate?.commands?.length || 0,
+                first_command_status: snapshot.candidate?.commands?.[0]?.execution_status || null,
+                candidate_changed_files: snapshot.candidate?.changed_files?.length || 0,
+                scorecard_present: snapshot.scorecard !== null,
+                contract_present: snapshot.contract !== null,
+                honesty_badge: snapshot.honesty_badge,
+                alpha_verdict: snapshot.alpha_receipt?.verdict || null,
+            }}));
+        """)
+        self.assertEqual(result['data_source'], 'stored_export')
+        self.assertEqual(result['source_contract'], 'autoresearch_alpha_receipt')
+        self.assertEqual(result['baseline_run_id'], 'run-eval-001')
+        self.assertEqual(result['candidate_run_id'], 'run-eval-002')
+        self.assertAlmostEqual(result['score_delta'], 0.4, places=4)
+        self.assertEqual(result['verifier_gate_status'], 'not_executed')
+        self.assertGreater(result['candidate_command_count'], 0)
+        self.assertEqual(result['first_command_status'], 'not_executed')
+        self.assertGreater(result['candidate_changed_files'], 0)
+        self.assertFalse(result['scorecard_present'])
+        self.assertFalse(result['contract_present'])
+        self.assertIn('public-regression', result['honesty_badge'])
+        self.assertEqual(result['alpha_verdict'], 'better')
+
 
 class TeacherReviewHTMLTests(unittest.TestCase):
     """Validates the teacher-review.html page exists and references the
@@ -410,6 +445,8 @@ class TeacherReviewHTMLTests(unittest.TestCase):
         content = html_path.read_text()
         self.assertIn('teacher-review-read-model.js', content)
         self.assertIn('TEACHER_REVIEW_READ_MODEL', content)
+        self.assertIn('buildTeacherReviewSnapshotFromAutoresearchAlpha', content)
+        self.assertIn('autoresearch-alpha.public-regression.export.json', content)
 
     def test_teacher_review_html_references_d001_fields(self):
         """The HTML must reference all D001 required review fields."""

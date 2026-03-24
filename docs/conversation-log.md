@@ -133,7 +133,9 @@ See `docs/synthesis-hackathon-stack-architecture.md` for details.
 - a public-safe benchmark pack v1 was frozen from student-visible families only; holdout-derived families remain blocked pending rewrite
 - the browser can consume configured read-only live/read-model exports, including an alpha-loop-shaped fixture
 
-**Important honesty line:** the committed alpha-loop export is a **consumer-side sample/fixture**. It is not a claim that the first fully real baseline → candidate → teacher-eval loop has already run end to end on this branch.
+**Important honesty line (historical at this checkpoint):** the committed alpha-loop export was a **consumer-side sample/fixture**. It was not yet a claim that the first fully real baseline → candidate → teacher-eval loop had already run end to end on that earlier branch state.
+
+**Later update (2026-03-24):** the repo now also carries a real generated public-regression export at `app/autoresearch-alpha.public-regression.export.json`, while the older sample envelope remains available at `app/live-read-model.alpha-loop.sample.json`.
 
 **Evidence:**
 - `tests/test_milestone5_teacher_eval_loop.py` passes

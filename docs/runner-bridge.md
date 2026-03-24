@@ -70,6 +70,12 @@ Why the integrity gate matters:
 
 That blocker is explicit instead of buried.
 
+A first real stored public-regression export from this lane is now committed under:
+- `app/autoresearch-alpha.public-regression.export.json`
+- `app/autoresearch-alpha.public-regression.request.json`
+
+Those are public-safe copies of an actual `runner_bridge.autoresearch_alpha` execution on this branch. They remain **LocalReplayRunner / zero-secret replay** artifacts and do not upgrade the claim boundary beyond public-regression alpha execution with public-safe receipts.
+
 ## Local private-holdout extension
 
 There is now one narrow step beyond the public rail.

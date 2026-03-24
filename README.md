@@ -70,13 +70,23 @@ open http://localhost:8080
 
 This starts the static web demo plus Postgres and Redis.
 
-To exercise the **browser live shell** against the committed alpha-loop sample:
+To exercise the **browser live shell** against the committed real public-regression alpha export:
+
+```text
+http://localhost:8080/?mode=live&liveDataUrl=autoresearch-alpha.public-regression.export.json
+```
+
+That file is the **actual generated public-regression receipt** committed under `app/` so the static browser shell can load a real stored export.
+
+The older consumer-side sample envelope is still available if you want the wrapped/sample view:
 
 ```text
 http://localhost:8080/?mode=live&liveDataUrl=live-read-model.alpha-loop.sample.json
 ```
 
-That sample is a **consumer-side envelope derived from the repo's real public alpha-loop receipt**. The browser now renders the exported `comparison.verdict`, `deciding_axis`, `baseline_total_score`, `candidate_total_score`, `total_score_delta`, and `category_deltas` directly instead of inventing new score semantics.
+That sample remains a **consumer-side envelope derived from a real public alpha-loop receipt**. The browser renders the exported `comparison.verdict`, `deciding_axis`, `baseline_total_score`, `candidate_total_score`, `total_score_delta`, and `category_deltas` directly instead of inventing new score semantics.
+
+The Teacher Review page now also prefers the committed `app/autoresearch-alpha.public-regression.export.json` receipt and only falls back to older sample fixtures if that real export is unavailable.
 
 To start the optional backend-side **live mode** (requires an external Clawith image):
 
@@ -139,6 +149,12 @@ What it proves today:
 - artifact coverage across all three stages
 - an explicit **integrity gate** that allows public-regression claims while blocking fake sealed-eval claims
 - a **repo-task-shaped student prompt pack** with per-scenario metadata (`suggested_files`, `mutation_budget`, `constraints`, `public_checks`) derived from the public benchmark episodes, making the candidate-student stage less canned and more like real software-engineering teaching
+
+The first committed public-safe stored export from that lane now lives at:
+- `app/autoresearch-alpha.public-regression.export.json` — exact generated public-regression alpha receipt
+- `app/autoresearch-alpha.public-regression.request.json` — public-safe request copy for that receipt
+
+Those files come from a real `runner_bridge.autoresearch_alpha` execution on this branch. They are still **LocalReplayRunner / zero-secret replay** artifacts, so they do **not** imply command execution, executed verifier gates, independent isolation, sealed evaluation, certification, tamper-proofing, audit, or native Clawith parity.
 
 That last point matters. The repo-visible teacher-only families are still marked `blocked_pending_rewrite` in the tracked public registry, so the repo cannot pretend those public entries are suddenly sealed. But the local private-holdout lane has now moved beyond “first rewrite pending”: fresh local-only replacement coverage exists for all three previously blocked teacher-only families (`h1` / `h2` / `h3`), and the latest local rerun loaded 6/6 holdouts from the manifest with a `better` comparison verdict. Those claims still stop at local private-holdout alpha execution, and the docs say that plainly instead of faking a stronger certification story.
 
@@ -230,7 +246,7 @@ See `docs/erc8004-base-agent0-adapter.md` for usage and `specs/013-erc8004-base-
 This repo is intentionally honest about what is not wired yet:
 - the browser **live shell is read-only** — it consumes configured exports / receipts, but it does not chase native run storage or claim upstream Clawith parity
 - only one **local/mockable runner path** is implemented today (`LocalReplayRunner`); teacher scorecards and iteration history are real contracts, but Claude/Codex-backed adapters still need wiring
-- the committed alpha-loop browser fixture is a **sample/read-model export derived from a real public alpha receipt**, not proof that native live storage/browser fan-out already exists on this branch
+- the repo now ships both a **real committed public-regression alpha receipt** (`app/autoresearch-alpha.public-regression.export.json`) and the older **sample/read-model envelope** (`app/live-read-model.alpha-loop.sample.json`); neither implies native live storage/browser fan-out already exists on this branch
 - no auth, no Privy, no fake consumer OAuth path
 - no live artifact viewer backed by run storage fan-out
 

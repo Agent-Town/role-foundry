@@ -1,28 +1,30 @@
 # Teacher Review Console — Shell v0.1.0
 
-Status: **fixture-backed shell** (D001 acceptance test surface)
+Status: **stored-export-first shell with sample fallback** (D001 acceptance test surface)
 
 ## What this shell does now
 
 The teacher review console renders a review surface from **stored exports only**.
-It consumes sample run objects, scorecards, task packets, and evaluation contracts
-from `data/curriculum/` and presents them in a structured decision surface.
+It now prefers the committed real public-regression alpha receipt at
+`app/autoresearch-alpha.public-regression.export.json` and falls back to the
+older sample run objects / scorecard / task-packet fixtures from
+`data/curriculum/` when that export is unavailable.
 
-### Fields rendered (all from stored fixtures)
+### Fields rendered (from stored exports; some sections still fall back to fixture-only richness)
 
 | Field | Source | Status |
 |-------|--------|--------|
-| Task packet identity | Public seed registry | Real fixture |
-| Baseline/candidate diff summary | Sample run objects | Real fixture |
-| Changed files | Sample run objects | Real fixture |
-| Command results (exit codes, capture refs) | Sample run objects | Real fixture |
+| Task packet identity | Public seed registry fallback only | Fixture-only on the current real alpha export |
+| Baseline/candidate diff summary | Real alpha receipt or sample run objects | Real export capable |
+| Changed files | Real alpha workspace snapshot or sample run objects | Real export capable |
+| Command results / verifier commands | Real alpha verifier contract or sample run objects | Real export capable |
 | Transcript excerpt | Receipt path reference only | Path placeholder |
-| Weighted score breakdown (5 dimensions) | Sample scorecard | Real fixture |
-| Promotion decision | Derived from scorecard gate | Computed from fixture |
-| Verifier gate status | Derived from checks_run | Computed from fixture |
-| Evidence/receipt links | Receipt paths from run objects | Path placeholders |
-| Evaluation contract reference | Frozen contract | Real fixture |
-| Honesty badge | Computed from example_only flags | Automatic |
+| Weighted score breakdown (5 dimensions) | Sample scorecard | Fixture-only on the current real alpha export |
+| Promotion decision | Derived from scorecard gate when available | Fixture-backed / pending on the current real alpha export |
+| Verifier gate status | Real alpha verifier contract or `checks_run` | Real export capable |
+| Evidence/receipt links | Receipt paths from real alpha export or sample run objects | Path placeholders |
+| Evaluation contract reference | Frozen contract | Fixture-only on the current real alpha export |
+| Honesty badge | Computed from export vs fixture shape | Automatic |
 
 ### Honesty constraints enforced
 
@@ -33,6 +35,11 @@ from `data/curriculum/` and presents them in a structured decision surface.
 ## Architecture
 
 ```
+app/autoresearch-alpha.public-regression.export.json  -->  teacher-review-read-model.js  -->  teacher-review.html
+  (real stored alpha receipt)                            (buildTeacherReviewSnapshotFromAutoresearchAlpha)
+
+fallback:
+
 data/curriculum/*.json  -->  teacher-review-read-model.js  -->  teacher-review.html
   (sample run objects)       (buildTeacherReviewSnapshot)       (Alpine.js rendering)
   (sample scorecard)
@@ -43,6 +50,10 @@ data/curriculum/*.json  -->  teacher-review-read-model.js  -->  teacher-review.h
 ### Read-model API
 
 ```javascript
+TEACHER_REVIEW_READ_MODEL.buildTeacherReviewSnapshotFromAutoresearchAlpha(
+  /* actual app/autoresearch-alpha.public-regression.export.json receipt */
+)
+
 TEACHER_REVIEW_READ_MODEL.buildTeacherReviewSnapshot({
   task_packet:          /* from seed registry */,
   baseline_run:         /* from sample run objects */,
@@ -59,9 +70,9 @@ TEACHER_REVIEW_READ_MODEL.buildTeacherReviewSnapshot({
 
 | Capability | Blocked on |
 |-----------|-----------|
-| Real transcript content | Runner bridge receipt capture |
-| Live scorecard from evaluation | Evaluation loop wiring |
-| Verifier gate from runner bridge | Verifier contract integration |
+| Real transcript content | Deeper receipt surfacing than path refs |
+| Live scorecard from evaluation | A richer teacher-review export than the raw alpha receipt |
+| Executed verifier gate (instead of `not_executed`) | A backend that really runs verifier commands |
 | Private-holdout scoring | D002 acceptance test |
 | Stability checks across runs | D003 acceptance test |
 | Regression gate history | D004 acceptance test |
@@ -90,6 +101,8 @@ TEACHER_REVIEW_READ_MODEL.buildTeacherReviewSnapshot({
 
 | File | Purpose |
 |------|---------|
+| `app/autoresearch-alpha.public-regression.export.json` | Real stored public-regression alpha receipt committed for browser consumption |
+| `app/autoresearch-alpha.public-regression.request.json` | Public-safe request copy for the committed real export |
 | `app/teacher-review-read-model.js` | Read-model adapter (IIFE, no build step) |
 | `app/teacher-review.html` | Teacher review shell page |
 | `tests/test_teacher_review_console.py` | Contract tests |

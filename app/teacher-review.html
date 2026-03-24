@@ -44,10 +44,20 @@
   review: null,
   dataSource: 'none',
   init() {
-    this.loadSampleReview();
+    this.loadReview();
   },
-  async loadSampleReview() {
+  async loadReview() {
     try {
+      const alphaReceipt = await fetch('autoresearch-alpha.public-regression.export.json')
+        .then(r => r.ok ? r.json() : null)
+        .catch(() => null);
+
+      if (alphaReceipt && TEACHER_REVIEW_READ_MODEL.looksLikeAutoresearchAlphaReceipt(alphaReceipt)) {
+        this.review = TEACHER_REVIEW_READ_MODEL.buildTeacherReviewSnapshotFromAutoresearchAlpha(alphaReceipt);
+        this.dataSource = this.review ? this.review.data_source : 'none';
+        return;
+      }
+
       const [runObjectsRes, scorecardRes, contractRes, registryRes] = await Promise.all([
         fetch('../data/curriculum/frontend-product-engineer-sample-run-objects.v1.json').then(r => r.ok ? r.json() : null).catch(() => null),
         fetch('../data/curriculum/frontend-product-engineer-sample-scorecard.v1.json').then(r => r.ok ? r.json() : null).catch(() => null),
@@ -79,7 +89,7 @@
 
   <div class="page-header">
     <h1>Teacher Review Console</h1>
-    <p>Review surface built from stored exports only. Missing fields stay empty rather than invented. This shell renders task packet identity, diff summary, changed files, command results, transcript references, weighted score breakdown, and promotion decision.</p>
+    <p>Review surface built from stored exports only. It now prefers the real committed public-regression alpha receipt and falls back to sample fixtures when that export is unavailable. Missing fields stay empty rather than invented.</p>
   </div>
 
   <!-- Honesty badge -->
@@ -91,12 +101,12 @@
 
   <article class="card empty-state" x-show="!review && dataSource === 'none'">
     <strong>Loading teacher review data...</strong>
-    <p>Attempting to load stored sample run objects, scorecard, and task packet from data/curriculum/.</p>
+    <p>Attempting to load the committed real public-regression alpha export first, then falling back to stored sample fixtures.</p>
   </article>
 
   <article class="card empty-state" x-show="!review && dataSource === 'error'">
     <strong>Could not load review data.</strong>
-    <p>The teacher review console requires stored exports in data/curriculum/. Serve this page from a local server to enable fetch access.</p>
+    <p>The teacher review console requires either the committed alpha export in this app directory or stored sample fixtures available from a local server.</p>
   </article>
 
   <!-- Task / Packet Identity -->
@@ -202,9 +212,11 @@
         <thead>
           <tr>
             <th>Command</th>
+            <th>Status</th>
             <th>Exit Code</th>
             <th>Stdout</th>
             <th>Stderr</th>
+            <th>Honesty note</th>
           </tr>
         </thead>
         <tbody>
@@ -212,10 +224,18 @@
             <tr>
               <td><code x-text="cmd.command || '—'"></code></td>
               <td>
-                <span class="badge" :class="cmd.exit_code === 0 ? 'badge-pass' : 'badge-fail'" x-text="cmd.exit_code !== null ? cmd.exit_code : '—'"></span>
+                <span
+                  class="badge"
+                  :class="cmd.execution_status === 'passing' ? 'badge-pass' : (cmd.execution_status === 'not_executed' ? 'badge-holdout' : 'badge-fail')"
+                  x-text="cmd.execution_status || '—'"
+                ></span>
+              </td>
+              <td>
+                <span class="badge" :class="cmd.exit_code === 0 ? 'badge-pass' : (cmd.exit_code === null ? 'badge-holdout' : 'badge-fail')" x-text="cmd.exit_code !== null ? cmd.exit_code : '—'"></span>
               </td>
               <td><small x-text="cmd.stdout_capture || '—'"></small></td>
               <td><small x-text="cmd.stderr_capture || '—'"></small></td>
+              <td><small x-text="cmd.honesty_note || '—'"></small></td>
             </tr>
           </template>
         </tbody>
@@ -230,7 +250,7 @@
       <article class="judge-callout compact-callout">
         <strong>Gate status:</strong>
         <span x-text="review.verifier_gate_status"></span>
-        <span class="badge" :class="review.verifier_gate_status === 'passing' ? 'badge-pass' : 'badge-fail'" x-text="review.verifier_gate_status" style="margin-left: 0.5rem;"></span>
+        <span class="badge" :class="review.verifier_gate_status === 'passing' ? 'badge-pass' : (review.verifier_gate_status === 'not_executed' ? 'badge-holdout' : 'badge-fail')" x-text="review.verifier_gate_status" style="margin-left: 0.5rem;"></span>
       </article>
       <table>
         <thead>
@@ -359,8 +379,8 @@
   <article>
     <h3>What this console does now vs what it needs</h3>
     <ul>
-      <li><strong>Now:</strong> Renders task packet identity, baseline/candidate diff summary, changed files, command results, weighted score breakdown with per-dimension detail, promotion decision, verifier gate status, and evidence links from stored sample fixtures.</li>
-      <li><strong>Next:</strong> Live runtime data (real transcript content, actual scorecard from evaluation, verifier gate wired to runner bridge receipts).</li>
+      <li><strong>Now:</strong> Renders the committed real public-regression alpha receipt as a stored export when present, with sample-fixture fallback. Baseline/candidate diff summary, changed files, verifier-command status, and evidence links come from the real export without inventing missing task-packet or dimension-scorecard fields.</li>
+      <li><strong>Next:</strong> Richer teacher-review exports that carry task-packet identity, dimensioned scorecards, and deeper receipt linking from non-fixture runtime objects.</li>
       <li><strong>Not yet:</strong> Private-holdout scoring integration, stability checks across multiple runs, regression gate history.</li>
     </ul>
     <p>This shell is the D001 acceptance test surface: an honest read-model over stored exports. It does not pretend live evaluation exists when it does not.</p>

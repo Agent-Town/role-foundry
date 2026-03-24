@@ -64,6 +64,13 @@ That is now repeated proof that the Phase G promotion surface can move real trac
 - The unpromoted manual-curation-only bucket is currently empty. Alpine.js moved out only after a docs/examples-only manual rewrite into `rf.frontend-apprentice.public.alpine-state-patterns`; raw Alpine GitHub issue/PR/review text remains excluded from the public pack and would still have to re-enter through manual teacher curation, not direct promotion.
 - No new native-live, partner-integration, wallet/chain-runtime, or broad runner-bridge readiness claims were added here beyond the narrow `claude_vibecosystem` contract/provenance seam described above.
 
+## First stored public-regression alpha export now landed
+
+- The repo now carries a real generated public-regression alpha receipt at `app/autoresearch-alpha.public-regression.export.json` plus the public-safe request copy at `app/autoresearch-alpha.public-regression.request.json`.
+- The static live shell can consume that exact stored export directly; it is no longer limited to the older consumer-side sample envelope.
+- The teacher-review shell now recognizes that real alpha receipt as a stored export, while still leaving task-packet and dimension-scorecard fields empty rather than inventing them.
+- Honesty boundary stays unchanged: this is still `LocalReplayRunner` / zero-secret replay / public-regression alpha, not executed verifier gates, independent isolation, sealed eval, certification, tamper-proofing, audit, or native Clawith parity.
+
 ## Next single most important move
 
 Treat `sealing_receipt`, the local-only `pre_run_manifest_commitment`, and any optional reference-only `pre_run_manifest_attestation` as the hard claim boundary and only raise the language above local private-holdout alpha execution when real controls land behind it — independent executor isolation, third-party manifest signing/audit with actual verification, and stronger tamper-evidence than local operator correlation.

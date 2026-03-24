@@ -9,6 +9,7 @@ APP = ROOT / 'app'
 DATA_JS = APP / 'data.js'
 APP_JS = APP / 'app.js'
 ALPHA_SAMPLE = APP / 'live-read-model.alpha-loop.sample.json'
+ALPHA_REAL_EXPORT = APP / 'autoresearch-alpha.public-regression.export.json'
 NODE = Path('/Users/robin/.nvm/versions/node/v24.14.0/bin/node')
 
 
@@ -187,6 +188,23 @@ class LiveUiReadModelTests(unittest.TestCase):
             ],
         )
         self.assertIsNone(result['alphaSealingFingerprintScope'])
+
+    def test_real_public_regression_export_adapts_into_live_shell_snapshot(self):
+        payload_expression = f"JSON.parse(fs.readFileSync({json.dumps(str(ALPHA_REAL_EXPORT))}, 'utf8'))"
+        result = self._run_node(payload_expression)
+
+        self.assertEqual(result['runIds'], ['run-eval-001', 'run-eval-001-student', 'run-eval-002'])
+        self.assertEqual(result['candidateComparisonRunId'], 'run-eval-001')
+        self.assertEqual(result['readModelSource'], 'autoresearch-alpha')
+        self.assertEqual(result['alphaComparisonVerdict'], 'better')
+        self.assertEqual(result['alphaSealingStatus'], 'public_regression_alpha')
+        self.assertEqual(
+            result['alphaSealingClaimCeiling'],
+            'public-regression alpha execution with public-safe receipts',
+        )
+        self.assertEqual(result['overallDelta'], 2)
+        self.assertEqual(result['holdoutDelta'], 1)
+        self.assertFalse(result['studentHasScorecard'])
 
     def test_raw_autoresearch_receipt_without_outer_envelope_still_adapts(self):
         payload_expression = textwrap.dedent(
