@@ -27,6 +27,8 @@ EVAL_CONTRACT = DATA_DIR / 'frontend-product-engineer-evaluation-contract.v1.jso
 SEED_REGISTRY = DATA_DIR / 'frontend-product-engineer-public-seed-registry.v1.json'
 ALPHA_PUBLIC_EXPORT = APP / 'autoresearch-alpha.public-regression.export.json'
 ALPHA_PUBLIC_REQUEST = APP / 'autoresearch-alpha.public-regression.request.json'
+WEEKLY_CYCLE = DATA_DIR / 'frontend-product-engineer-sample-weekly-cycle.v1.json'
+GENERATION_LINEAGE = DATA_DIR / 'frontend-product-engineer-generation-lineage.v1.json'
 NODE = Path('/Users/robin/.nvm/versions/node/v24.14.0/bin/node')
 
 
@@ -490,6 +492,73 @@ class TeacherReviewReadModelTests(unittest.TestCase):
         self.assertTrue(result['teacher_evaluation_present'])
         self.assertTrue(result['evaluation_summary_present'])
 
+    def test_stored_history_snapshot_combines_real_and_fixture_history_honestly(self):
+        result = self._run_node(f"""
+            const receipt = JSON.parse(fs.readFileSync({json.dumps(str(ALPHA_PUBLIC_EXPORT))}, 'utf8'));
+            const weeklyCycle = JSON.parse(fs.readFileSync({json.dumps(str(WEEKLY_CYCLE))}, 'utf8'));
+            const lineage = JSON.parse(fs.readFileSync({json.dumps(str(GENERATION_LINEAGE))}, 'utf8'));
+            const history = readModel.buildStoredHistorySnapshot({{
+                alpha_receipt: receipt,
+                weekly_cycle: weeklyCycle,
+                generation_lineage: lineage,
+            }});
+            const alphaEntry = history.comparison_history.find(entry => entry.source_kind === 'autoresearch_alpha_receipt');
+            const weeklyEntry = history.comparison_history.find(entry => entry.source_kind === 'weekly_cycle_receipt');
+            const latestPromotion = history.promotion_history[history.promotion_history.length - 1];
+            const weeklyRegression = history.regression_history.find(entry => entry.source_kind === 'weekly_cycle_receipt');
+            console.log(JSON.stringify({{
+                comparison_count: history.summary.comparison_count,
+                promotion_count: history.summary.promotion_count,
+                regression_count: history.summary.regression_count,
+                explicit_verdict_count: history.summary.explicit_verdict_count,
+                alpha_verdict: alphaEntry?.verdict || null,
+                alpha_verifier_gate_status: alphaEntry?.verifier_gate_status || null,
+                alpha_promotion_decision: alphaEntry ? alphaEntry.promotion_decision : 'missing',
+                weekly_verdict: weeklyEntry ? weeklyEntry.verdict : 'missing',
+                weekly_promotion_decision: weeklyEntry?.promotion_decision || null,
+                weekly_regression_gate_status: weeklyEntry?.regression_gate_status || null,
+                latest_generation_id: latestPromotion?.generation_id || null,
+                latest_generation_public_score: latestPromotion?.public_score ?? null,
+                latest_generation_run_artifact_available: latestPromotion?.run_artifact_available ?? null,
+                weekly_regression_status: weeklyRegression?.gate_status || null,
+                weekly_regression_tasks_checked: weeklyRegression?.tasks_checked ?? null,
+                honesty_note: history.summary.honesty_note,
+            }}));
+        """)
+        self.assertEqual(result['comparison_count'], 2)
+        self.assertEqual(result['promotion_count'], 3)
+        self.assertEqual(result['regression_count'], 4)
+        self.assertEqual(result['explicit_verdict_count'], 1)
+        self.assertEqual(result['alpha_verdict'], 'better')
+        self.assertEqual(result['alpha_verifier_gate_status'], 'not_executed')
+        self.assertIsNone(result['alpha_promotion_decision'])
+        self.assertIsNone(result['weekly_verdict'])
+        self.assertEqual(result['weekly_promotion_decision'], 'promoted')
+        self.assertEqual(result['weekly_regression_gate_status'], 'not_enforced')
+        self.assertEqual(result['latest_generation_id'], 'gen-fpe-003')
+        self.assertAlmostEqual(result['latest_generation_public_score'], 0.925, places=3)
+        self.assertFalse(result['latest_generation_run_artifact_available'])
+        self.assertEqual(result['weekly_regression_status'], 'not_enforced')
+        self.assertIsNone(result['weekly_regression_tasks_checked'])
+        self.assertIn('Missing executed verifier data', result['honesty_note'])
+
+    def test_empty_stored_history_snapshot_stays_blank(self):
+        result = self._run_node("""
+            const history = readModel.buildStoredHistorySnapshot({});
+            console.log(JSON.stringify({
+                comparison_count: history.comparison_history.length,
+                promotion_count: history.promotion_history.length,
+                regression_count: history.regression_history.length,
+                explicit_verdict_count: history.summary.explicit_verdict_count,
+                honesty_note: history.summary.honesty_note,
+            }));
+        """)
+        self.assertEqual(result['comparison_count'], 0)
+        self.assertEqual(result['promotion_count'], 0)
+        self.assertEqual(result['regression_count'], 0)
+        self.assertEqual(result['explicit_verdict_count'], 0)
+        self.assertIn('stored history view', result['honesty_note'].lower())
+
 
 class TeacherReviewHTMLTests(unittest.TestCase):
     """Validates the teacher-review.html page exists and references the
@@ -528,6 +597,30 @@ class TeacherReviewHTMLTests(unittest.TestCase):
         ]
         for ref in required_references:
             self.assertIn(ref, content, f"teacher-review.html must reference '{ref}'")
+
+    def test_teacher_review_html_references_stored_history_surfaces(self):
+        html_path = APP / 'teacher-review.html'
+        content = html_path.read_text()
+        required_references = [
+            'storedHistory',
+            'comparison_history',
+            'promotion_history',
+            'regression_history',
+            'Stored comparison history',
+            'Promotion history',
+            'Regression gate history',
+        ]
+        for ref in required_references:
+            self.assertIn(ref, content, f"teacher-review.html must reference '{ref}'")
+
+    def test_run_and_scorecard_pages_reference_history_surfaces(self):
+        run_text = (APP / 'run.html').read_text()
+        scorecard_text = (APP / 'scorecard.html').read_text()
+        self.assertIn('Stored Comparison History', run_text)
+        self.assertIn('buildStoredHistorySnapshot', run_text)
+        self.assertIn('Promotion &amp; regression history', scorecard_text)
+        self.assertIn('Regression gate history', scorecard_text)
+        self.assertIn('buildStoredHistorySnapshot', scorecard_text)
 
     def test_teacher_review_read_model_js_exists(self):
         self.assertTrue(READ_MODEL_JS.exists(), "app/teacher-review-read-model.js must exist")

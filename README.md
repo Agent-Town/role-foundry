@@ -88,6 +88,8 @@ That sample remains a **consumer-side envelope derived from a real public alpha-
 
 The Teacher Review page now also prefers the committed `app/autoresearch-alpha.public-regression.export.json` receipt plus its public-safe request copy, and only falls back to older sample fixtures if that real export is unavailable. On the real export path it now shows public task-pack context, teacher verdict/scenario results, transcript excerpts, alpha evaluation context, and deeper receipt coverage — while still leaving frozen task-packet identity and the 5-dimension scorecard blank unless the export actually carries them.
 
+It also consumes the committed Phase 5 fixture artifacts (`data/curriculum/frontend-product-engineer-sample-weekly-cycle.v1.json` and `data/curriculum/frontend-product-engineer-generation-lineage.v1.json`) to surface stored comparison history, promotion history, and regression-gate history. Those fixture rows stay clearly labeled as stored sample records; they do **not** claim live executed verifier or regression enforcement.
+
 To start the optional backend-side **live mode** (requires an external Clawith image):
 
 ```bash
@@ -246,7 +248,7 @@ See `docs/erc8004-base-agent0-adapter.md` for usage and `specs/013-erc8004-base-
 This repo is intentionally honest about what is not wired yet:
 - the browser **live shell is read-only** — it consumes configured exports / receipts, but it does not chase native run storage or claim upstream Clawith parity
 - only one **local/mockable runner path** is implemented today (`LocalReplayRunner`); teacher scorecards and iteration history are real contracts, but Claude/Codex-backed adapters still need wiring
-- the repo now ships both a **real committed public-regression alpha receipt** (`app/autoresearch-alpha.public-regression.export.json`) and the older **sample/read-model envelope** (`app/live-read-model.alpha-loop.sample.json`); neither implies native live storage/browser fan-out already exists on this branch
+- the repo now ships both a **real committed public-regression alpha receipt** (`app/autoresearch-alpha.public-regression.export.json`) and the older **sample/read-model envelope** (`app/live-read-model.alpha-loop.sample.json`); the browser can also read the committed lineage/weekly-cycle fixtures for stored history surfaces, but none of that implies native live storage/browser fan-out or live gate enforcement already exists on this branch
 - no auth, no Privy, no fake consumer OAuth path
 - no live artifact viewer backed by run storage fan-out
 

@@ -71,6 +71,9 @@ class DemoContractTests(unittest.TestCase):
         self.assertIn('Sealing receipt boundary', scorecard_text)
         self.assertIn('Blocked stronger claims', scorecard_text)
         self.assertIn('Checklist signals', scorecard_text)
+        self.assertIn('Stored Comparison History', run_text)
+        self.assertIn('Promotion &amp; regression history', scorecard_text)
+        self.assertIn('Regression gate history', scorecard_text)
         self.assertIn('config.js', index_text)
 
     def test_readme_explains_demo_vs_live_mode(self):
