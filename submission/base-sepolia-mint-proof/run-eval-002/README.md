@@ -19,7 +19,11 @@ This directory is the public-safe proof bundle for one **promoted public generat
 - `receipts/candidate.json`
 - `receipts/baseline.json`
 - `receipts/evaluation.json`
+- `receipts/manifest.json`
 - `integrations/summary.md`
+- `integrations/trust-bundle.json`
+- `integrations/erc8004-registration-draft.json`
+- `integrations/erc8004-completion-template.json`
 - `integrations/agent0-base-adapter.json`
 
 ## Claim boundary

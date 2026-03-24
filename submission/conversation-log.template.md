@@ -31,7 +31,7 @@ Do **not** fabricate transcripts, approvals, or run results that do not exist.
 - Submission base: `origin/submission/active-base-20260323-0711`
 - Packaging branch: `review/submission-candidate-finished-lanes-20260323-1129`
 - One-sentence claim:
-  - TODO
+  - Replace with the branch-specific one-sentence claim used in the canonical `submission/conversation-log.md`.
 
 ### 2. Repo-visible work shipped on this packaging pass
 - [ ] Base readiness pass already carried vision/system overview UI, teacher-source curriculum flow, and hidden private-holdout clarification

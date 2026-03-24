@@ -72,6 +72,14 @@
       "notes": "Stages ERC-8004 issuance for promoted/public generations on Base without claiming a live mint."
     },
     {
+      "id": "base-sepolia-mint-proof-run-eval-002",
+      "kind": "proof-bundle",
+      "status": "ready_staged_not_minted",
+      "path": "submission/base-sepolia-mint-proof/run-eval-002",
+      "visibility": "public",
+      "notes": "Public-safe proof bundle for one promoted public generation targeting Base Sepolia (review/demo default). It ties receipts and scorecards to ERC-8004 registration/adapter artifacts with a staged mint draft, and explicitly does not claim a confirmed onchain mint."
+    },
+    {
       "id": "final-submission-packet",
       "kind": "submission-packet",
       "status": "ready",
@@ -97,8 +105,8 @@
       "artifact_path": "submission/clawith-vibecosystem-roundtrip-proof.manifest.json",
       "portable_evidence_paths": [
         "submission/roundtrip-proof/README.md",
-        "submission/roundtrip-proof/roundtrip-proof.export.json",
-        "submission/roundtrip-proof/final-reply.txt"
+        "submission/roundtrip-proof/final-reply.txt",
+        "submission/roundtrip-proof/roundtrip-proof.export.json"
       ],
       "audit_note_path": "submission/checklists/roundtrip-receipt-audit-2026-03-23.md",
       "entrypoint": "scripts/clawith_ws_roundtrip.js + scripts/clawith_vibe_once.py",
@@ -119,7 +127,7 @@
       "status": "blocked_not_claimed",
       "path": null,
       "visibility": "blocked",
-      "notes": "Do not claim partner-track completion from this branch."
+      "notes": "The partner integration is load-bearing and visible in run-eval-002, but do not claim complete partner-track completion on this branch without confirmed path evidence."
     },
     {
       "id": "native-clawith-parity",

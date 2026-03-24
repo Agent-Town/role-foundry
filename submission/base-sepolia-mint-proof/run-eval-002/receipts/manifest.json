@@ -1,0 +1,120 @@
+{
+  "version": 1,
+  "run_id": "run-eval-002",
+  "generated_at": "2026-03-23T06:23:42Z",
+  "status": "completed",
+  "receipts": {
+    "episode_receipt_paths": {
+      "candidate": "receipts/candidate.json",
+      "baseline": "receipts/baseline.json",
+      "evaluation": "receipts/evaluation.json"
+    },
+    "evidence_index_path": "receipts/evidence-index.json",
+    "summary_path": "receipts/summary.md",
+    "manifest_path": "receipts/manifest.json"
+  },
+  "artifacts": [
+    {
+      "path": "request.json",
+      "visibility": "public",
+      "category": "request",
+      "description": "Redacted request artifact copy"
+    },
+    {
+      "path": "transcript.ndjson",
+      "visibility": "public",
+      "category": "receipt",
+      "description": "Run transcript"
+    },
+    {
+      "path": "artifact-bundle.json",
+      "visibility": "public",
+      "category": "receipt",
+      "description": "Artifact bundle"
+    },
+    {
+      "path": "result.json",
+      "visibility": "public",
+      "category": "receipt",
+      "description": "Normalized bridge result"
+    },
+    {
+      "path": "completion-template.json",
+      "visibility": "public",
+      "category": "integration-template",
+      "description": "ERC-8004 completion template draft (awaiting wallet confirmation)"
+    },
+    {
+      "path": "registration.json",
+      "visibility": "public",
+      "category": "registration-draft",
+      "description": "ERC-8004 registration draft"
+    },
+    {
+      "path": "receipts/candidate.json",
+      "visibility": "public",
+      "category": "receipt-provenance",
+      "description": "Candidate receipt export"
+    },
+    {
+      "path": "receipts/baseline.json",
+      "visibility": "public",
+      "category": "receipt-provenance",
+      "description": "Baseline receipt export"
+    },
+    {
+      "path": "receipts/evaluation.json",
+      "visibility": "public",
+      "category": "receipt-provenance",
+      "description": "Evaluation receipt export"
+    },
+    {
+      "path": "receipts/evidence-index.json",
+      "visibility": "public",
+      "category": "receipt-provenance",
+      "description": "Receipt evidence index"
+    },
+    {
+      "path": "receipts/summary.md",
+      "visibility": "public",
+      "category": "receipt-provenance",
+      "description": "Human-readable receipt summary"
+    },
+    {
+      "path": "integrations/summary.md",
+      "visibility": "public",
+      "category": "integration-summary",
+      "description": "Integration status summary"
+    },
+    {
+      "path": "integrations/trust-bundle.json",
+      "visibility": "public",
+      "category": "integration-bundle",
+      "description": "Integration trust and completion bundle"
+    },
+    {
+      "path": "integrations/agent0-base-adapter.json",
+      "visibility": "public",
+      "category": "integration-config",
+      "description": "agent0 adapter integration draft"
+    },
+    {
+      "path": "integrations/erc8004-registration-draft.json",
+      "visibility": "public",
+      "category": "integration-config",
+      "description": "ERC-8004 registration draft"
+    },
+    {
+      "path": "integrations/erc8004-completion-template.json",
+      "visibility": "public",
+      "category": "integration-template",
+      "description": "ERC-8004 completion template draft"
+    },
+    {
+      "path": "receipts/manifest.json",
+      "visibility": "public",
+      "category": "receipt-manifest",
+      "description": "This manifest file"
+    }
+  ]
+}

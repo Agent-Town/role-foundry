@@ -20,6 +20,14 @@ The recorded `final_review_commit` in the packet files is the **content-freeze c
 - `submission/roundtrip-proof/roundtrip-proof.export.json`
 - `submission/roundtrip-proof/final-reply.txt`
 - `submission/checklists/roundtrip-receipt-audit-2026-03-23.md`
+- `submission/base-sepolia-mint-proof/run-eval-002/README.md`
+- `submission/base-sepolia-mint-proof/run-eval-002/registration.json`
+- `submission/base-sepolia-mint-proof/run-eval-002/completion-template.json`
+- `submission/base-sepolia-mint-proof/run-eval-002/integrations/summary.md`
+- `submission/base-sepolia-mint-proof/run-eval-002/integrations/agent0-base-adapter.json`
+- `submission/base-sepolia-mint-proof/run-eval-002/result.json`
+- `submission/base-sepolia-mint-proof/run-eval-002/artifact-bundle.json`
+- `submission/base-sepolia-mint-proof/run-eval-002/receipts/evidence-index.json`
 
 ## Archived prep artifacts
 
@@ -30,7 +38,7 @@ The former `submission/drafts/*` files are kept only as archived handoff markers
 This packet supports four current headline claims:
 - an executable public alpha / public-regression loop
 - a local private-holdout honesty boundary
-- a staged ERC-8004 / Base issuance path for promoted public generations
+- a staged ERC-8004 / Base issuance path for promoted public generations, with a load-bearing Base Sepolia draft proof bundle (`run-eval-002`) as partner-wiring evidence
 - one external `Clawith -> OpenClaw -> Claude/vibecosystem` roundtrip proof
 
 What ties those together is the generation provenance story: each generation leaves receipts, evaluation context, score deltas, and a promotion/public-issuance decision judges can inspect.

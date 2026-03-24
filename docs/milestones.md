@@ -152,9 +152,11 @@ These slices are real. This branch now has an executable **public alpha loop**, 
 
 ## Milestone 6 — Submission Proof + Partner Wiring
 
-**Status:** queued
+**Status:** done
 
 **Goal:** package the project for Synthesis with honest receipts, docs, and load-bearing integrations.
+
+**Outcome:** shipped as canonical packet and staged Base Sepolia mint draft run-eval proof (`submission/base-sepolia-mint-proof/run-eval-002`) with honest non-claims preserved.
 
 **Spec docs:**
 - `specs/007-submission-proof.md`

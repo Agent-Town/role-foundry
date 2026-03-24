@@ -7,7 +7,7 @@
     "chain_id": 84532,
     "label": "Base Sepolia (review/demo default)"
   },
-  "draft_path": "registration.json",
+  "draft_path": "integrations/erc8004-registration-draft.json",
   "required_after_mint": [
     "namespace",
     "chain_id",
@@ -24,7 +24,5 @@
       "bytes": 2488
     },
     "receipt_manifest_path": "receipts/manifest.json"
-  },
-  "token_uri": "https://raw.githubusercontent.com/Agent-Town/role-foundry/review/base-sepolia-live-mint-proof-20260323-1325/submission/base-sepolia-mint-proof/run-eval-002/registration.json",
-  "public_bundle_root": "https://raw.githubusercontent.com/Agent-Town/role-foundry/review/base-sepolia-live-mint-proof-20260323-1325/submission/base-sepolia-mint-proof/run-eval-002"
+  }
 }

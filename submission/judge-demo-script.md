@@ -7,7 +7,7 @@ Keep this live demo narrow. The point is not to show every file. The point is to
 
 ## One-sentence opener
 
-Role Foundry trains, evaluates, and promotes role-scoped apprentices; each evaluated generation leaves receipts, evaluation context, score deltas, and a promotion decision, and promoted public generations can be staged as ERC-8004 identities on Base. Today’s honest proof is a public-regression alpha loop, a local private-holdout boundary, a staged ERC-8004/Base issuance path, and one real external `Clawith -> OpenClaw -> Claude/vibecosystem -> Clawith` roundtrip.
+Role Foundry trains, evaluates, and promotes role-scoped apprentices; each evaluated generation leaves receipts, evaluation context, score deltas, and a promotion decision, and promoted public generations can be staged as ERC-8004 identities on Base. Today’s honest proof is a public-regression alpha loop, a local private-holdout boundary, a staged ERC-8004/Base issuance path, and one real external `Clawith -> OpenClaw -> Claude/vibecosystem -> Clawith` roundtrip. The partner-wiring anchor is a load-bearing Base Sepolia draft proof bundle (`run-eval-002`), not a confirmed onchain mint.
 
 ## What to make clear in under 3 minutes
 
@@ -101,6 +101,26 @@ Land:
 - this is a **staged issuance** claim, not a live mint claim
 - the adapter makes wired-vs-pending explicit: RPC, registry, SDK, wallet approval
 
+### Optional Stop 4b — Staged Base Sepolia draft mint bundle (run-eval-002) (10-15 sec)
+
+Show:
+
+- `submission/base-sepolia-mint-proof/run-eval-002/README.md`
+- `submission/base-sepolia-mint-proof/run-eval-002/registration.json`
+- `submission/base-sepolia-mint-proof/run-eval-002/result.json`
+- `submission/base-sepolia-mint-proof/run-eval-002/artifact-bundle.json`
+- `submission/base-sepolia-mint-proof/run-eval-002/integrations/agent0-base-adapter.json`
+
+Say:
+
+> For partner-wiring evidence, review this staged bundle for `run-eval-002`. It ties the promoted generation’s receipts and adapter metadata to a Base Sepolia draft registration flow. Verify these local files and the `registration.json` payload links; there is **no confirmed onchain mint tx** in this packet.
+
+Land:
+
+- this bundle is the load-bearing partner-integration proof check for this branch
+- the evidence is draft/staged only, not live or completed
+- judges can verify it without any wallet tx assertion
+
 ### Stop 5 — One real external roundtrip proof (25-35 sec)
 
 Show:
@@ -132,7 +152,7 @@ Say:
 
 ## 45-second compressed version
 
-> Role Foundry is a role-training, eval, and promotion system for role-scoped apprentices. Each evaluated generation leaves receipts, evaluation context, score deltas, and a promotion decision. Promoted public generations can be staged for ERC-8004 identity issuance on Base. Today we can honestly show four things: an executable public-regression alpha loop with better/equal/worse scoring, a local private-holdout boundary that keeps teacher-only prompts out of tracked and student-visible artifacts, a staged ERC-8004/Base issuance path backed by repo code, and one tracked external `Clawith -> OpenClaw -> Claude/vibecosystem -> Clawith` roundtrip proof. We do not claim live Base minting, partner-track completion, native Clawith parity, or sealed/tamper-proof evaluation.
+> Role Foundry is a role-training, eval, and promotion system for role-scoped apprentices. Each evaluated generation leaves receipts, evaluation context, score deltas, and a promotion decision. Promoted public generations can be staged for ERC-8004 identity issuance on Base; this packet includes a load-bearing Base Sepolia draft proof bundle (`run-eval-002`) as partner-wiring evidence. Today we can honestly show four things: an executable public-regression alpha loop with better/equal/worse scoring, a local private-holdout boundary that keeps teacher-only prompts out of tracked and student-visible artifacts, a staged ERC-8004/Base issuance path backed by repo code, and one tracked external `Clawith -> OpenClaw -> Claude/vibecosystem -> Clawith` roundtrip proof. We do not claim live Base minting, partner-track completion, native Clawith parity, or sealed/tamper-proof evaluation.
 
 ## Q&A handling
 
@@ -157,4 +177,5 @@ Do not upgrade this branch into claims of:
 
 - [ ] Confirm `submission/conversation-log.md`, `submission/evidence-proof-manifest.json`, and `submission/submission-metadata.json` still agree on the final review branch + commit.
 - [ ] Confirm the roundtrip manifest, export bundle, and final reply markers still match.
+- [ ] Confirm the `submission/base-sepolia-mint-proof/run-eval-002` staged bundle is present and parseable, and confirm it aligns to the non-claim boundary (staged draft / no confirmed onchain tx, no live mint claim).
 - [ ] Keep the non-claims verbatim unless the underlying proof materially changes.

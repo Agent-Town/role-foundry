@@ -4,7 +4,7 @@
 - Generated at: `2026-03-23T06:23:42Z`
 - Target chain: `Base Sepolia (review/demo default)` (chain id 84532)
 - RPC wired: `False`
-- Live now: `1` / `3`
+- Live now: `0` / `3`
 - Staged now: `2`
 - Blocked now: `0`
 
@@ -29,4 +29,4 @@
 
 ## Blocked demo claims
 
-- This run already minted an ERC-8004 identity onchain.
+- This run has not yet minted an ERC-8004 identity onchain; the completion template remains in `awaiting_wallet_confirmation`.

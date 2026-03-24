@@ -1,0 +1,44 @@
+{
+  "type": "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
+  "name": "Role Foundry Frontend Apprentice \u2014 run-eval-002",
+  "description": "Tighten the judge-facing scorecard, keep holdouts sealed from the student prompt pack, and show iteration deltas honestly. Teacher score 4/5. This draft is local and not yet minted onchain.",
+  "image": "about:blank",
+  "target_chain": {
+    "chain_id": 84532,
+    "label": "Base Sepolia (review/demo default)"
+  },
+  "services": [
+    {
+      "name": "role-foundry-run",
+      "type": "web",
+      "endpoint": "run-eval-002",
+      "description": "Role Foundry run view for this apprentice iteration."
+    },
+    {
+      "name": "proof-bundle",
+      "type": "receipt-bundle",
+      "endpoint": "receipts/summary.md",
+      "description": "Human-readable receipt summary for the run."
+    },
+    {
+      "name": "teacher-scorecard",
+      "type": "scorecard",
+      "endpoint": "result.json#/scorecard",
+      "description": "Normalized teacher scorecard receipt."
+    }
+  ],
+  "registrations": [],
+  "extensions": {
+    "role_foundry": {
+      "run_id": "run-eval-002",
+      "agent_role": "student",
+      "scenario_set_id": "frontend-apprentice-v2",
+      "receipt_manifest_path": "receipts/manifest.json",
+      "scorecard_hash": {
+        "sha256": "794c227ee304f26e964501d60f6529565796c9358457a80d9a2405e9877468c0",
+        "bytes": 2488
+      },
+      "status": "completed"
+    }
+  }
+}

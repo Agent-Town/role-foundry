@@ -256,7 +256,7 @@
     },
     "completion_metrics": {
       "integration_count": 3,
-      "live_now": 1,
+      "live_now": 0,
       "staged_now": 2,
       "blocked_now": 0,
       "status_by_integration": {

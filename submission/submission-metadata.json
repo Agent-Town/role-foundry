@@ -8,13 +8,14 @@
     "final_review_commit_strategy": "content_freeze_commit_recorded_by_followup_stamp_commit"
   },
   "summary": {
-    "one_liner": "Role Foundry is a role-training, evaluation, and promotion system for AI apprentices; this branch makes the generation provenance chain explicit by showing that each evaluated generation carries receipts, evaluation context, score deltas, and a promotion/public-issuance decision, while the current evidence proves a Software Engineer apprentice public alpha loop, a local private-holdout honesty boundary, a staged ERC-8004/Base issuance path, and an external Clawith -> OpenClaw -> Claude/vibecosystem roundtrip path without claiming live minting, native parity, or sealed certification.",
+    "one_liner": "Role Foundry is a role-training, evaluation, and promotion system for AI apprentices; this branch makes the generation provenance chain explicit and anchors partner integration as load-bearing by including one promoted public run bundle for a staged Base Sepolia ERC-8004 mint draft, while the current evidence proves a Software Engineer apprentice public alpha loop, a local private-holdout honesty boundary, a staged ERC-8004/Base issuance path, and an external Clawith -> OpenClaw -> Claude/vibecosystem roundtrip path without claiming live minting, native parity, or sealed certification.",
     "current_role": "Software Engineer apprentice",
     "scope_note": "The shipped public curriculum remains frontend/product-heavy even though the role framing is broader software engineering.",
     "generation_provenance_status": "proven",
     "public_alpha_loop_status": "proven",
     "local_private_holdout_boundary_status": "proven",
     "erc8004_base_staged_identity_status": "proven_staged_not_minted",
+    "base_sepolia_mint_draft_status": "proven_staged_not_minted",
     "external_roundtrip_status": "ready",
     "native_clawith_parity_status": "not_claimed",
     "live_base_mint_status": "not_claimed",
@@ -73,6 +74,19 @@
       ],
       "note": "Promoted/public generations can be staged for ERC-8004 issuance through a thin Role Foundry-owned adapter; no live mint is claimed."
     },
+    "base_sepolia_mint_draft": {
+      "status": "ready_staged_not_minted",
+      "paths": [
+        "submission/base-sepolia-mint-proof/run-eval-002/README.md",
+        "submission/base-sepolia-mint-proof/run-eval-002/registration.json",
+        "submission/base-sepolia-mint-proof/run-eval-002/completion-template.json",
+        "submission/base-sepolia-mint-proof/run-eval-002/integrations/summary.md",
+        "submission/base-sepolia-mint-proof/run-eval-002/integrations/agent0-base-adapter.json",
+        "submission/base-sepolia-mint-proof/run-eval-002/result.json"
+      ],
+      "target_chain": "Base Sepolia (review/demo default)",
+      "note": "One promoted public generation is publicly packaged for a draft ERC-8004 mint on Base Sepolia. Evidence includes receipts and adapter wiring; chain tx has not been confirmed."
+    },
     "external_roundtrip": {
       "status": "ready",
       "branch": "origin/review/clawith-vibe-roundtrip-demo-20260323-1000",
@@ -96,6 +110,7 @@
       "Executable public alpha loop proof",
       "Local private-holdout honesty boundary",
       "Staged ERC-8004/Base issuance path for promoted/public generations",
+      "Load-bearing Base Sepolia mint proof bundle (run-eval-002) as partner-integration evidence",
       "External Clawith -> OpenClaw -> Claude/vibecosystem roundtrip proof indexed by the tracked manifest and portable bundle"
     ],
     "not_claimed": [
@@ -110,8 +125,13 @@
   },
   "remaining_optional_work": [
     {
-      "label": "Live Base mint receipt",
-      "needed_for": "Any claim that a Role Foundry generation was actually minted as an ERC-8004 identity on Base",
+      "label": "Live Base Sepolia mint receipt",
+      "needed_for": "Any claim that a Role Foundry generation was actually minted as an ERC-8004 identity on Base chain",
+      "status": "pending_not_claimed"
+    },
+    {
+      "label": "Base mainnet mint proof",
+      "needed_for": "Any claim of Base mainnet ERC-8004 live minting as partner-track completion",
       "status": "pending_not_claimed"
     },
     {
