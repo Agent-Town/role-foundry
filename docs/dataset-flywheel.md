@@ -12,9 +12,9 @@ promotion policy, holdout safety, and role-pack separation work together.
 
 | Bucket | Status | Families |
 |--------|--------|----------|
-| `public-training` | active | 6 (t1–t6) |
-| `blocked-teacher-only` | blocked_pending_rewrite | 3 (h1–h3) |
-| `local-private-holdout` | local_only | 0 committed |
+| `public-training` | active | 7 (t1–t7) |
+| `blocked-teacher-only` | blocked_pending_rewrite / readiness=`rewrite_before_holdout_promotion` | 3 (h1–h3) |
+| `local-private-holdout` | local_only / readiness=`blocked` | 0 committed |
 
 Every scenario in `seed/role-foundry-apprentice.json` maps to exactly one bucket.
 
@@ -23,19 +23,22 @@ Every scenario in `seed/role-foundry-apprentice.json` maps to exactly one bucket
 **Requirement:** Every candidate family must have explicit `promotion_criteria`.
 Families lacking criteria = 0.
 
-**Current state (passing):** All 9 families (6 benchmark_ready + 3 blocked)
+**Current state (passing):** All 10 families (7 benchmark-ready + 3 blocked)
 now carry `promotion_criteria` in
 `benchmarks/public-pack-v1/episode-family-registry.json`.
 
 - Benchmark-ready families: all base criteria satisfied (true)
 - Blocked families: at least one criterion is false, making the block machine-readable
+- Every family now also carries an explicit `readiness_state`
 
 ## G003 — Holdout promotion safety
 
 **Requirement:** Families promoted to teacher-only benchmark status while
 marked repo-visible/leaky = 0.
 
-**Current state (passing):** h1, h2, h3 remain `blocked_pending_rewrite`.
+**Current state (passing):** h1, h2, h3 remain legacy-status
+`blocked_pending_rewrite` and readiness-state
+`rewrite_before_holdout_promotion`.
 Their `blocked_reason` documents that the repo already discloses their framing.
 None are included in any benchmark pack.
 
