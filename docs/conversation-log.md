@@ -199,23 +199,24 @@ See `docs/synthesis-hackathon-stack-architecture.md` for details.
 
 ---
 
-## 2026-03-24 — Public-safe sealing receipt boundary + pre-run manifest commitment + live-shell surfacing folded into the overnight handoff
+## 2026-03-24 — Public-safe sealing receipt boundary + pre-run manifest commitment + optional attestation seam + live-shell surfacing folded into the overnight handoff
 
-**Outcome:** The freshest overnight handoff branch now carries a machine-readable receipt boundary, a local-only pre-run manifest commitment artifact for private-holdout runs, and a read-only live-shell rendering path that say exactly what the current alpha/read-model export can and cannot claim.
+**Outcome:** The freshest overnight handoff branch now carries a machine-readable receipt boundary, a local-only pre-run manifest commitment artifact for private-holdout runs, an optional reference-only pre-run manifest attestation seam, and a read-only live-shell rendering path that says exactly what the current alpha/read-model export can and cannot claim.
 
 **What changed:**
 - `specs/015-sealed-receipt-surface.md` defines a top-level `sealing_receipt` block on the alpha receipt as a public-safe boundary record, not a seal
-- `runner_bridge.autoresearch_alpha` now emits the claim ceiling, status tier, blocked stronger claims, unmet prerequisites, and a private-manifest fingerprint labeled `local_operator_correlation_only`; when the local manifest lane is used it also writes `pre-run-manifest-commitment.json` before stage execution and surfaces a public-safe `pre_run_manifest_commitment` summary in the receipt
+- `runner_bridge.autoresearch_alpha` now emits the claim ceiling, status tier, blocked stronger claims, unmet prerequisites, and a private-manifest fingerprint labeled `local_operator_correlation_only`; when the local manifest lane is used it also writes `pre-run-manifest-commitment.json` before stage execution, surfaces a public-safe `pre_run_manifest_commitment` summary in the receipt, and can preserve a caller-supplied public-safe `pre_run_manifest_attestation` into both that commitment and the top-level `sealing_receipt`
+- the same sealing boundary now reflects that seam in `operator_checklist.pre_run_manifest_attestation`, while keeping the attestation explicitly metadata/reference-only with `verification.status: not_verified_by_role_foundry`
 - `specs/011-live-ui-read-model.md`, `app/live-read-model.alpha-loop.sample.json`, and the scorecard live shell now surface the same boundary when a `sealing_receipt` is exported, while keeping the committed browser sample at public-regression alpha rather than inventing a stronger seal/certification story
-- README + handoff/status docs now say plainly that the local private-holdout alpha lane is real, that the pre-run commitment improves local auditability/operator correlation, and that stronger sealing / certification / tamper-proof language is still blocked
+- README + handoff/status docs now say plainly that the local private-holdout alpha lane is real, that the pre-run commitment plus optional attestation seam improve local auditability/operator correlation/reference threading only, and that stronger sealing / certification / tamper-proof language is still blocked
 
 **Evidence:**
-- `tests/test_sealed_receipt_surface.py` passes
-- `tests/test_autoresearch_alpha_loop.py` now pins the local private-holdout `sealing_receipt` + `pre_run_manifest_commitment` behavior
+- `tests/test_sealed_receipt_surface.py` passes and now pins conservative `pre_run_manifest_attestation` behavior
+- `tests/test_autoresearch_alpha_loop.py` now pins the local private-holdout `sealing_receipt` + `pre_run_manifest_commitment` threading, including `pre_run_manifest_attestation` propagation and the operator checklist flag
 - `tests/test_live_ui_read_model.py` now pins the read-model/browser surfacing of the sealing boundary
 - no private holdout content was added to git
 
-**Important honesty line:** the new `sealing_receipt` and local-only `pre_run_manifest_commitment` explain the next claim boundary and improve local operator auditability/correlation. They do **not** themselves create publication, witnessing, signing, tamper-proofing, certification, or independent audit.
+**Important honesty line:** the new `sealing_receipt`, local-only `pre_run_manifest_commitment`, and optional `pre_run_manifest_attestation` explain the next claim boundary and improve local operator auditability/correlation plus public-safe reference threading. The attestation seam is metadata/reference-only, remains `not_verified_by_role_foundry`, and does **not** itself create publication, verified witnessing, signature validation, tamper-proofing, certification, or independent audit.
 
 ---
 

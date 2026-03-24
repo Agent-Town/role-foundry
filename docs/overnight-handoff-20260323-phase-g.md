@@ -36,13 +36,14 @@ That is now repeated proof that the Phase G promotion surface can move real trac
 - The latest local private-holdout alpha rerun loaded **6/6** holdouts from the manifest and recorded a `better` comparison verdict.
 - None of that teacher-only material is committed here. The tracked repo still contains zero teacher-only prompts, rubrics, or episode bodies.
 
-## Sealing receipt boundary + pre-run commitment now landed
+## Sealing receipt boundary + pre-run commitment + optional attestation seam now landed
 
 - `specs/015-sealed-receipt-surface.md` and the alpha-loop receipt now add a top-level `sealing_receipt` block as a **public-safe honesty boundary, not a seal**.
 - That block records the current claim ceiling (`local private-holdout alpha execution with public-safe receipts` when the local manifest lane is used), the current status tier, blocked stronger claims, and the unmet prerequisites for any stronger sealing / tamper-evidence language.
 - Backend provenance now threads through the public-safe audit surfaces too: `artifact-bundle.json` carries `execution_backend`, `execution_backend_contract`, and `execution_honesty`; receipt-level `execution_backend` blocks now show up in candidate/evaluation receipts; each alpha stage export now carries its own `execution_backend`; and the top-level `sealing_receipt.execution_backend` summarizes backend provenance across the full alpha sequence.
 - When a local private-holdout manifest is actually loaded, the run now writes a local-only `pre-run-manifest-commitment.json` artifact **before** any stage execution begins, and the receipt surfaces it as `pre_run_manifest_commitment` with the manifest hash, timestamp, sequence linkage, and honesty note.
-- The same boundary can still include a SHA-256 fingerprint labeled **local operator correlation only**; together these surfaces improve local auditability, operator correlation, and backend claim-boundary evidence only — not publication, third-party witnessing, signing, tamper-proofing, certification, or independent audit.
+- If that local request also supplies a public-safe `pre_run_manifest_attestation`, the alpha lane now preserves that metadata/reference into `pre_run_manifest_commitment`, top-level `sealing_receipt`, and `sealing_receipt.operator_checklist.pre_run_manifest_attestation`, while keeping `verification.status: not_verified_by_role_foundry`.
+- The same boundary can still include a SHA-256 fingerprint labeled **local operator correlation only**; together the fingerprint, commitment, optional attestation seam, and backend provenance improve local auditability, operator correlation, and claim-boundary evidence only — not publication, verified witnessing, signature validation, tamper-proofing, certification, or independent audit.
 - The read-only live UI/read-model shell now renders the same boundary when a `sealing_receipt` is exported. The committed browser sample stays at **public-regression alpha**, so it still blocks stronger sealed/certified/tamper-proof claims instead of inventing them.
 
 ## `claude_vibecosystem` external-executor beta seam now landed
@@ -59,10 +60,10 @@ That is now repeated proof that the Phase G promotion surface can move real trac
 
 - This branch still does **not** justify sealed-eval, sealed-certification, tamper-proof, or independently sealed claims.
 - The repo-visible holdout family entries (`h1` / `h2` / `h3`) remain `blocked_pending_rewrite` in the tracked public registry and are still not promotable as public or sealed families.
-- Local private holdouts remain gitignored and local-only; the new pre-run commitment improves local operator auditability/correlation before stage execution, but the honest claim ceiling is still **local private-holdout alpha execution with public-safe receipts**, not sealed certification.
+- Local private holdouts remain gitignored and local-only; the new pre-run commitment plus any optional `pre_run_manifest_attestation` improve local operator auditability/correlation and public-safe reference threading before stage execution, but the honest claim ceiling is still **local private-holdout alpha execution with public-safe receipts**, not sealed certification, because the attestation seam remains metadata/reference-only and `not_verified_by_role_foundry`.
 - The unpromoted manual-curation-only bucket is currently empty. Alpine.js moved out only after a docs/examples-only manual rewrite into `rf.frontend-apprentice.public.alpine-state-patterns`; raw Alpine GitHub issue/PR/review text remains excluded from the public pack and would still have to re-enter through manual teacher curation, not direct promotion.
 - No new native-live, partner-integration, wallet/chain-runtime, or broad runner-bridge readiness claims were added here beyond the narrow `claude_vibecosystem` contract/provenance seam described above.
 
 ## Next single most important move
 
-Treat `sealing_receipt` plus the local-only `pre_run_manifest_commitment` as the hard claim boundary and only raise the language above local private-holdout alpha execution when real controls land behind it — independent executor isolation, third-party manifest signing/audit, and stronger tamper-evidence than local operator correlation.
+Treat `sealing_receipt`, the local-only `pre_run_manifest_commitment`, and any optional reference-only `pre_run_manifest_attestation` as the hard claim boundary and only raise the language above local private-holdout alpha execution when real controls land behind it — independent executor isolation, third-party manifest signing/audit with actual verification, and stronger tamper-evidence than local operator correlation.
