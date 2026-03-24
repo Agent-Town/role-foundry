@@ -50,8 +50,8 @@ If any required item is false, it is a **no-go**.
 - [x] JSON packet files validate.
 - [x] Markdown packet files are readable and placeholder-free where required.
 - [x] `git diff --check` is clean.
-- [ ] The dirty root checkout was never edited by this lane.
-- [ ] Final branch is pushed and the exact commit SHA is recorded.
+- [x] The dirty root checkout was never edited by this lane.
+- [x] Final branch is pushed and the exact commit SHA is recorded.
 
 ## Go / no-go rule
 
