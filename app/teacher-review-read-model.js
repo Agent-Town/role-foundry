@@ -14,6 +14,9 @@ const TEACHER_REVIEW_READ_MODEL = (function () {
   }
 
   function safeNumber(value) {
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
     const num = Number(value);
     return Number.isFinite(num) ? num : null;
   }
@@ -578,6 +581,300 @@ const TEACHER_REVIEW_READ_MODEL = (function () {
       });
   }
 
+  function safeBooleanOrNull(value) {
+    return value === true ? true : (value === false ? false : null);
+  }
+
+  function deriveRegressionGateStatus(regressionGate) {
+    const gate = safeObject(regressionGate);
+    const enforced = safeBooleanOrNull(gate.enforced);
+    const gatePassed = safeBooleanOrNull(gate.gate_passed);
+    if (enforced === false) {
+      return 'not_enforced';
+    }
+    if (gatePassed === true) {
+      return 'passed';
+    }
+    if (gatePassed === false) {
+      return 'failed';
+    }
+    if (enforced === true) {
+      return 'pending';
+    }
+    return null;
+  }
+
+  function mapAlphaComparisonHistoryEntry(receiptPayload) {
+    const payload = safeObject(receiptPayload);
+    const receipt = safeObject(payload.autoresearch_alpha || payload);
+    const comparison = safeObject(receipt.comparison);
+    const categoryDeltas = safeObject(comparison.category_deltas);
+    const verifierGate = safeObject(receipt.verifier_gate);
+
+    if (!Object.keys(comparison).length) {
+      return null;
+    }
+
+    return {
+      entry_id: safeString(receipt.sequence_id) || safeString(comparison.candidate_run_id) || safeString(comparison.baseline_run_id),
+      source_kind: 'autoresearch_alpha_receipt',
+      source_label: 'Public-regression alpha receipt',
+      recorded_at: null,
+      example_only: false,
+      baseline_run_id: safeString(comparison.baseline_run_id),
+      candidate_run_id: safeString(comparison.candidate_run_id),
+      baseline_total_score: safeNumber(comparison.baseline_total_score),
+      candidate_total_score: safeNumber(comparison.candidate_total_score),
+      total_score_delta: safeNumber(comparison.total_score_delta),
+      verdict: safeString(comparison.verdict) || safeString(receipt.verdict),
+      deciding_axis: safeString(comparison.deciding_axis),
+      pass_count_delta: safeNumber(categoryDeltas.pass_count),
+      pass_rate_delta: safeNumber(categoryDeltas.pass_rate),
+      holdout_pass_count_delta: safeNumber(categoryDeltas.holdout_pass_count),
+      holdout_pass_rate_delta: safeNumber(categoryDeltas.holdout_pass_rate),
+      verifier_gate_status: safeString(verifierGate.aggregate_status),
+      executed_commands: safeNumber(verifierGate.executed_commands),
+      total_commands: safeNumber(verifierGate.total_commands),
+      promotion_decision: null,
+      regression_gate_enforced: null,
+      regression_gate_status: null,
+      comparison_reasons: mapTextList(comparison.reasons),
+      teacher_review_notes: null,
+      honesty_note:
+        safeString(verifierGate.honesty_note)
+        || 'Stored alpha comparison receipt only. Promotion and regression history stay blank when the export does not carry them.',
+    };
+  }
+
+  function mapWeeklyCycleComparisonHistoryEntry(weeklyCyclePayload) {
+    const payload = safeObject(weeklyCyclePayload);
+    const meta = safeObject(payload.meta);
+    const cycle = safeObject(payload.cycle);
+    const baseline = safeObject(cycle.baseline);
+    const candidate = safeObject(cycle.candidate);
+    const teacherReview = safeObject(cycle.teacher_review);
+    const promotionDecision = safeObject(cycle.promotion_decision);
+    const regressionGate = safeObject(cycle.regression_gate);
+    const baselineScore = safeNumber(baseline.weighted_score);
+    const candidateScore = safeNumber(candidate.weighted_score);
+
+    if (!safeString(cycle.cycle_id) && !safeString(candidate.run_id) && !safeString(baseline.run_id)) {
+      return null;
+    }
+
+    return {
+      entry_id: safeString(cycle.cycle_id) || safeString(candidate.run_id) || safeString(baseline.run_id),
+      source_kind: 'weekly_cycle_receipt',
+      source_label: 'Weekly training cycle receipt',
+      recorded_at: safeString(cycle.cycle_week),
+      example_only: cycle.example_only === true || meta.example_only === true,
+      baseline_run_id: safeString(baseline.run_id),
+      candidate_run_id: safeString(candidate.run_id),
+      baseline_total_score: baselineScore,
+      candidate_total_score: candidateScore,
+      total_score_delta:
+        baselineScore !== null && candidateScore !== null
+          ? candidateScore - baselineScore
+          : null,
+      verdict: null,
+      deciding_axis: null,
+      pass_count_delta: null,
+      pass_rate_delta: null,
+      holdout_pass_count_delta: null,
+      holdout_pass_rate_delta: null,
+      verifier_gate_status: null,
+      executed_commands: null,
+      total_commands: null,
+      promotion_decision: safeString(promotionDecision.decision),
+      regression_gate_enforced: safeBooleanOrNull(regressionGate.enforced),
+      regression_gate_status: deriveRegressionGateStatus(regressionGate),
+      comparison_reasons: [],
+      teacher_review_notes: safeString(teacherReview.notes),
+      honesty_note:
+        'Fixture weekly-cycle receipt. Stored baseline/candidate scores and promotion metadata render here; verdict and executed verifier status stay blank because this receipt does not carry them.',
+    };
+  }
+
+  function mapGenerationPromotionHistoryEntry(generation) {
+    const entry = safeObject(generation);
+    const promotionDecision = safeObject(entry.promotion_decision);
+    const runObjectRef = safeObject(entry.run_object_ref);
+    const regressionGate = safeObject(entry.regression_gate);
+
+    if (!safeString(entry.generation_id) && safeNumber(entry.generation_index) === null) {
+      return null;
+    }
+
+    return {
+      entry_id: safeString(entry.generation_id) || String(safeNumber(entry.generation_index) || ''),
+      source_kind: 'generation_lineage',
+      source_label: 'Generation lineage registry',
+      recorded_at: safeString(entry.created_at),
+      example_only: entry.example_only === true,
+      generation_id: safeString(entry.generation_id),
+      generation_index: safeNumber(entry.generation_index),
+      parent_generation_id: safeString(entry.parent_generation_id),
+      decision: safeString(promotionDecision.decision),
+      reason: safeString(promotionDecision.reason),
+      teacher_reviewed: promotionDecision.teacher_reviewed === true,
+      public_score: safeNumber(promotionDecision.public_score),
+      holdout_score_available: promotionDecision.holdout_score_available === true,
+      stability_check_passed: safeBooleanOrNull(promotionDecision.stability_check_passed),
+      regression_gate_passed: safeBooleanOrNull(promotionDecision.regression_gate_passed),
+      regression_gate_enforced: safeBooleanOrNull(regressionGate.enforced),
+      run_id: safeString(runObjectRef.run_id),
+      run_artifact_available: runObjectRef.available === true,
+      honesty_note:
+        runObjectRef.available === true
+          ? 'Promotion record came from the committed lineage registry.'
+          : 'Promotion record came from the committed lineage registry; linked run artifacts are not tracked in git yet.',
+    };
+  }
+
+  function mapGenerationRegressionHistoryEntry(generation) {
+    const entry = safeObject(generation);
+    const regressionGate = safeObject(entry.regression_gate);
+
+    if (!safeString(entry.generation_id) && !Object.keys(regressionGate).length) {
+      return null;
+    }
+
+    return {
+      entry_id: safeString(entry.generation_id) || String(safeNumber(entry.generation_index) || ''),
+      source_kind: 'generation_lineage',
+      source_label: 'Generation lineage registry',
+      recorded_at: safeString(entry.created_at),
+      example_only: entry.example_only === true,
+      generation_id: safeString(entry.generation_id),
+      generation_index: safeNumber(entry.generation_index),
+      cycle_id: null,
+      run_id: null,
+      enforced: safeBooleanOrNull(regressionGate.enforced),
+      tasks_checked: safeNumber(regressionGate.tasks_checked),
+      regressions_found: safeNumber(regressionGate.regressions_found),
+      gate_passed: safeBooleanOrNull(regressionGate.gate_passed),
+      gate_status: deriveRegressionGateStatus(regressionGate),
+      honesty_note:
+        regressionGate.enforced === false
+          ? 'Regression gate is present as a contract record, but enforcement is explicitly not live on this lineage entry.'
+          : 'Regression gate record loaded from the committed lineage registry.',
+    };
+  }
+
+  function mapWeeklyCycleRegressionHistoryEntry(weeklyCyclePayload) {
+    const payload = safeObject(weeklyCyclePayload);
+    const meta = safeObject(payload.meta);
+    const cycle = safeObject(payload.cycle);
+    const regressionGate = safeObject(cycle.regression_gate);
+    const generationRef = safeObject(cycle.generation_ref);
+    const candidate = safeObject(cycle.candidate);
+
+    if (!safeString(cycle.cycle_id) && !Object.keys(regressionGate).length) {
+      return null;
+    }
+
+    return {
+      entry_id: safeString(cycle.cycle_id) || safeString(generationRef.generation_id),
+      source_kind: 'weekly_cycle_receipt',
+      source_label: 'Weekly training cycle receipt',
+      recorded_at: safeString(cycle.cycle_week),
+      example_only: cycle.example_only === true || meta.example_only === true,
+      generation_id: safeString(generationRef.generation_id),
+      generation_index: safeNumber(generationRef.generation_index),
+      cycle_id: safeString(cycle.cycle_id),
+      run_id: safeString(candidate.run_id),
+      enforced: safeBooleanOrNull(regressionGate.enforced),
+      tasks_checked: safeNumber(regressionGate.tasks_checked),
+      regressions_found: safeNumber(regressionGate.regressions_found),
+      gate_passed: safeBooleanOrNull(regressionGate.gate_passed),
+      gate_status: deriveRegressionGateStatus(regressionGate),
+      honesty_note:
+        regressionGate.enforced === false
+          ? 'Weekly cycle recorded a regression-gate slot, but enforcement stayed off. Tasks checked and regressions found remain blank instead of invented.'
+          : 'Regression gate record loaded from the committed weekly-cycle receipt.',
+    };
+  }
+
+  function buildStoredHistorySnapshot(inputs) {
+    const options = safeObject(inputs);
+    const comparisonHistory = [];
+    const promotionHistory = [];
+    const regressionHistory = [];
+
+    const alphaEntry = mapAlphaComparisonHistoryEntry(options.alpha_receipt);
+    if (alphaEntry) {
+      comparisonHistory.push(alphaEntry);
+    }
+
+    const weeklyComparisonEntry = mapWeeklyCycleComparisonHistoryEntry(options.weekly_cycle);
+    if (weeklyComparisonEntry) {
+      comparisonHistory.push(weeklyComparisonEntry);
+    }
+
+    safeArray(safeObject(options.generation_lineage).generations).forEach(function (generation) {
+      const promotionEntry = mapGenerationPromotionHistoryEntry(generation);
+      const regressionEntry = mapGenerationRegressionHistoryEntry(generation);
+      if (promotionEntry) {
+        promotionHistory.push(promotionEntry);
+      }
+      if (regressionEntry) {
+        regressionHistory.push(regressionEntry);
+      }
+    });
+
+    const weeklyRegressionEntry = mapWeeklyCycleRegressionHistoryEntry(options.weekly_cycle);
+    if (weeklyRegressionEntry) {
+      regressionHistory.push(weeklyRegressionEntry);
+    }
+
+    comparisonHistory.sort(function (a, b) {
+      const aRecorded = a.recorded_at ? Date.parse(a.recorded_at) : NaN;
+      const bRecorded = b.recorded_at ? Date.parse(b.recorded_at) : NaN;
+      if (Number.isFinite(aRecorded) && Number.isFinite(bRecorded) && aRecorded !== bRecorded) {
+        return aRecorded - bRecorded;
+      }
+      return String(a.entry_id || '').localeCompare(String(b.entry_id || ''));
+    });
+
+    promotionHistory.sort(function (a, b) {
+      const aIndex = safeNumber(a.generation_index);
+      const bIndex = safeNumber(b.generation_index);
+      if (aIndex !== null && bIndex !== null && aIndex !== bIndex) {
+        return aIndex - bIndex;
+      }
+      return String(a.entry_id || '').localeCompare(String(b.entry_id || ''));
+    });
+
+    regressionHistory.sort(function (a, b) {
+      const aIndex = safeNumber(a.generation_index);
+      const bIndex = safeNumber(b.generation_index);
+      if (aIndex !== null && bIndex !== null && aIndex !== bIndex) {
+        return aIndex - bIndex;
+      }
+      const aRecorded = a.recorded_at ? Date.parse(a.recorded_at) : NaN;
+      const bRecorded = b.recorded_at ? Date.parse(b.recorded_at) : NaN;
+      if (Number.isFinite(aRecorded) && Number.isFinite(bRecorded) && aRecorded !== bRecorded) {
+        return aRecorded - bRecorded;
+      }
+      return String(a.entry_id || '').localeCompare(String(b.entry_id || ''));
+    });
+
+    return {
+      comparison_history: comparisonHistory,
+      promotion_history: promotionHistory,
+      regression_history: regressionHistory,
+      summary: {
+        comparison_count: comparisonHistory.length,
+        promotion_count: promotionHistory.length,
+        regression_count: regressionHistory.length,
+        explicit_verdict_count: comparisonHistory.filter(function (entry) { return Boolean(entry.verdict); }).length,
+        explicit_promotion_count: promotionHistory.filter(function (entry) { return Boolean(entry.decision); }).length,
+        honesty_note:
+          'Stored history view combines the committed public alpha receipt with fixture lineage/cycle records. Missing executed verifier data, promotion gates, and regression enforcement stay blank or pending instead of being invented.',
+      },
+    };
+  }
+
   function buildTeacherReviewSnapshotFromAutoresearchAlpha(payload, requestPayload) {
     const input = safeObject(payload);
     const receipt = safeObject(input.autoresearch_alpha || input);
@@ -834,6 +1131,7 @@ const TEACHER_REVIEW_READ_MODEL = (function () {
     extractAlphaTaskContext: extractAlphaTaskContext,
     extractAlphaTeacherEvaluation: extractAlphaTeacherEvaluation,
     extractAlphaEvaluationSummary: extractAlphaEvaluationSummary,
+    buildStoredHistorySnapshot: buildStoredHistorySnapshot,
   });
 })();
 

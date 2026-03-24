@@ -150,8 +150,10 @@ Everything in this slice is **contract-level fixture/sample artifacts**:
 - Live weekly automation (cron, scheduler, etc.)
 - Real executed run objects (all are fixture/sample)
 - Actual private holdout score values
-- Teacher review console integration
+- Live teacher-review/runtime integration beyond stored read-model consumption
 - Live regression gate enforcement
 - Stability check automation
 
-These remain future runtime work, honestly documented.
+These remain future runtime work, honestly documented. The browser-side
+teacher review shell may consume these committed artifacts as stored history,
+but that read-only surface is not the same thing as live runtime integration.

@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="style.css">
   <script src="config.js"></script>
   <script src="data.js"></script>
+  <script src="teacher-review-read-model.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
   <script src="app.js"></script>
 </head>
@@ -39,7 +40,27 @@
   </ul>
 </nav>
 
-<main class="container" x-data="{ selectedRun: null, compareMode: true, init() { this.selectedRun = $store.app.latestScoredRunId() || $store.app.latestRunId(); } }">
+<main class="container" x-data="{
+  selectedRun: null,
+  compareMode: true,
+  storedHistory: null,
+  async init() {
+    this.selectedRun = $store.app.latestScoredRunId() || $store.app.latestRunId();
+    this.storedHistory = await this.loadStoredHistory();
+  },
+  async loadStoredHistory() {
+    const [alphaReceipt, weeklyCycle, generationLineage] = await Promise.all([
+      fetch('autoresearch-alpha.public-regression.export.json').then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch('../data/curriculum/frontend-product-engineer-sample-weekly-cycle.v1.json').then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch('../data/curriculum/frontend-product-engineer-generation-lineage.v1.json').then(r => r.ok ? r.json() : null).catch(() => null),
+    ]);
+    return TEACHER_REVIEW_READ_MODEL.buildStoredHistorySnapshot({
+      alpha_receipt: alphaReceipt,
+      weekly_cycle: weeklyCycle,
+      generation_lineage: generationLineage,
+    });
+  }
+}">
   <div x-effect="if (!selectedRun || !$store.app.getRun(selectedRun)) { selectedRun = $store.app.latestScoredRunId() || $store.app.latestRunId(); }"></div>
 
   <div class="page-header">
@@ -213,6 +234,81 @@
               </template>
               <p x-show="$store.app.alphaLoopUnmetSealingPrerequisites().length === 0"><small>No stronger-claim prerequisites were exported.</small></p>
             </article>
+          </div>
+        </section>
+      </template>
+
+      <template x-if="storedHistory && (storedHistory.promotion_history.length > 0 || storedHistory.regression_history.length > 0)">
+        <section>
+          <h3>Promotion &amp; regression history</h3>
+          <article class="judge-callout compact-callout">
+            <strong>History note:</strong>
+            <span x-text="storedHistory.summary.honesty_note"></span>
+          </article>
+          <div class="grid-2">
+            <template x-if="storedHistory.promotion_history.length > 0">
+              <article class="card">
+                <h4>Promotion history</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Generation</th>
+                      <th>Decision</th>
+                      <th>Public score</th>
+                      <th>Holdout</th>
+                      <th>Reason</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <template x-for="entry in storedHistory.promotion_history" :key="entry.entry_id || entry.generation_id">
+                      <tr>
+                        <td>
+                          <strong x-text="entry.generation_id || '—'"></strong>
+                          <div><small x-text="entry.generation_index !== null ? ('Generation #' + entry.generation_index) : (entry.recorded_at || '—')"></small></div>
+                        </td>
+                        <td><span class="badge" :class="entry.decision === 'promoted' ? 'badge-pass' : 'badge-training'" x-text="entry.decision || 'pending'"></span></td>
+                        <td x-text="entry.public_score !== null ? entry.public_score.toFixed(4) : '—'"></td>
+                        <td x-text="entry.holdout_score_available ? 'available' : 'not exported'"></td>
+                        <td><small x-text="entry.reason || entry.honesty_note || '—'"></small></td>
+                      </tr>
+                    </template>
+                  </tbody>
+                </table>
+              </article>
+            </template>
+            <template x-if="storedHistory.regression_history.length > 0">
+              <article class="card">
+                <h4>Regression gate history</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Source</th>
+                      <th>Scope</th>
+                      <th>Enforced</th>
+                      <th>Status</th>
+                      <th>Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <template x-for="entry in storedHistory.regression_history" :key="entry.entry_id || entry.generation_id || entry.cycle_id">
+                      <tr>
+                        <td>
+                          <strong x-text="entry.source_label"></strong>
+                          <div><small x-text="entry.recorded_at || (entry.example_only ? 'fixture' : 'stored receipt')"></small></div>
+                        </td>
+                        <td>
+                          <code x-text="entry.generation_id || entry.cycle_id || '—'"></code>
+                          <div><small x-text="entry.run_id ? ('candidate ' + entry.run_id) : 'no run ref exported'"></small></div>
+                        </td>
+                        <td x-text="entry.enforced === null ? '—' : (entry.enforced ? 'yes' : 'no')"></td>
+                        <td><span class="badge" :class="entry.gate_status === 'passed' ? 'badge-pass' : (entry.gate_status === 'failed' ? 'badge-fail' : 'badge-training')" x-text="entry.gate_status || 'pending'"></span></td>
+                        <td><small x-text="entry.regressions_found !== null ? ('regressions: ' + entry.regressions_found) : (entry.honesty_note || '—')"></small></td>
+                      </tr>
+                    </template>
+                  </tbody>
+                </table>
+              </article>
+            </template>
           </div>
         </section>
       </template>

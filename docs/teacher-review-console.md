@@ -11,6 +11,12 @@ request copy at `app/autoresearch-alpha.public-regression.request.json`, then
 falls back to the older sample run objects / scorecard / task-packet fixtures
 from `data/curriculum/` when that export is unavailable.
 
+It now also reads the committed Phase 5 fixture artifacts
+`data/curriculum/frontend-product-engineer-sample-weekly-cycle.v1.json` and
+`data/curriculum/frontend-product-engineer-generation-lineage.v1.json` to show
+**stored comparison history, promotion history, and regression-gate history**
+without pretending those fixture records are live runtime enforcement.
+
 ### Fields rendered
 
 | Field | Source | Status |
@@ -24,6 +30,9 @@ from `data/curriculum/` when that export is unavailable.
 | Teacher verdict / scenario results / public curriculum themes | Real alpha `candidate-teacher-eval.export.result.scorecard` | **Real export capable now** |
 | Alpha evaluation context (claim ceiling, deciding axis, epsilon, verifier command list, request refs) | Real alpha receipt + request copy | **Real export capable now** |
 | Evidence / receipt links and per-stage receipt coverage | Real alpha `artifact_coverage`, provenance, and outputs | **Real export capable now** |
+| Stored comparison history (baseline/candidate/verdict/verifier/promotion columns) | Real alpha `comparison` + `verifier_gate`, plus sample weekly-cycle receipt | **Mixed real + fixture history now** |
+| Stored promotion history | Sample generation-lineage registry | **Fixture-only now** |
+| Stored regression-gate history | Sample weekly-cycle receipt + generation-lineage registry | **Fixture-only now** |
 | Weighted score breakdown (5 dimensions) | Sample scorecard | **Fixture-only** on the current real alpha export |
 | Frozen evaluation contract (5 dimensions / thresholds) | Sample evaluation contract | **Fixture-only** on the current real alpha export |
 | Promotion decision | Derived from scorecard gate when available | **Fixture-backed / pending** on the current real alpha export |
@@ -35,9 +44,15 @@ from `data/curriculum/` when that export is unavailable.
 - The real public-regression export now shows more real context, but it **still**
   leaves frozen task-packet identity and dimensioned scorecards blank because the
   stored export does not carry them
+- Stored comparison / promotion / regression history is explicitly labeled by
+  source:
+  - **real receipt** rows can show exported verdicts and verifier-gate outcomes
+  - **fixture lineage / weekly-cycle** rows can show stored promotion or
+    regression records, but keep verifier execution / live enforcement blank when
+    the artifacts do not carry them
 - The shell explicitly separates:
   - **real export context** (public task pack, teacher verdict, transcript excerpts, receipt paths)
-  - **fixture-only richness** (frozen task packet, 5-dimension scorecard, frozen contract thresholds)
+  - **fixture-only richness** (frozen task packet, 5-dimension scorecard, frozen contract thresholds, lineage/promotion/regression history)
 
 ## Architecture
 
@@ -45,6 +60,10 @@ from `data/curriculum/` when that export is unavailable.
 app/autoresearch-alpha.public-regression.export.json   -->
 app/autoresearch-alpha.public-regression.request.json  -->  teacher-review-read-model.js  -->  teacher-review.html
                                                           (buildTeacherReviewSnapshotFromAutoresearchAlpha)
+
+data/curriculum/frontend-product-engineer-sample-weekly-cycle.v1.json   -->
+data/curriculum/frontend-product-engineer-generation-lineage.v1.json    -->  teacher-review-read-model.js  -->  teacher-review.html
+                                                                          (buildStoredHistorySnapshot)
 
 fallback:
 
@@ -74,6 +93,13 @@ TEACHER_REVIEW_READ_MODEL.buildTeacherReviewSnapshot({
 //            teacher_evaluation, contract, evaluation_summary,
 //            promotion_decision, verifier_gate_status, evidence_links,
 //            receipt_coverage, honesty_badge, data_source, shell_version }
+
+TEACHER_REVIEW_READ_MODEL.buildStoredHistorySnapshot({
+  alpha_receipt:       /* optional committed public alpha receipt */,
+  weekly_cycle:        /* optional sample weekly-cycle receipt */,
+  generation_lineage:  /* optional sample lineage registry */,
+})
+// Returns: { comparison_history, promotion_history, regression_history, summary }
 ```
 
 ## What still needs a richer runtime bundle
@@ -84,9 +110,10 @@ TEACHER_REVIEW_READ_MODEL.buildTeacherReviewSnapshot({
 | Real 5-dimension weighted scorecard | The alpha export carries teacher scenario results, not the frozen dimension/weight contract used by fixture scorecards |
 | Real promotion decision | The current real export carries comparison/verdict context, not a promotion gate object |
 | Executed verifier gate (instead of `not_executed`) | The stored alpha path still uses `LocalReplayRunner` / zero-secret replay |
+| Real promotion decision on the alpha path | Promotion history is available today from fixture lineage/cycle records, but the committed alpha receipt still does not carry a runtime promotion-gate object |
 | Private-holdout scoring | D002 acceptance test |
-| Stability checks across runs | D003 acceptance test |
-| Regression gate history | D004 acceptance test |
+| Live stability checks across runs | D003 acceptance test |
+| Live enforced regression-gate outcomes | D004 acceptance test; the console only shows stored fixture history today |
 
 ## Test coverage
 
@@ -105,6 +132,7 @@ TEACHER_REVIEW_READ_MODEL.buildTeacherReviewSnapshot({
 - Command results extraction
 - Workspace isolation fields
 - **Real export task-pack context, transcript excerpts, teacher verdicts, evaluation summary, and receipt coverage**
+- **Stored history snapshot combines real alpha comparison data with fixture lineage / weekly-cycle records without inventing missing execution or promotion fields**
 - **Honesty lock: the real export still leaves frozen task packet / dimensioned contract fields blank**
 - HTML page existence and read-model references
 - Nav link presence across all pages
@@ -117,6 +145,8 @@ TEACHER_REVIEW_READ_MODEL.buildTeacherReviewSnapshot({
 | `app/autoresearch-alpha.public-regression.request.json` | Public-safe request copy used to enrich real-export evaluation context |
 | `app/teacher-review-read-model.js` | Read-model adapter (IIFE, no build step) |
 | `app/teacher-review.html` | Teacher review shell page |
+| `data/curriculum/frontend-product-engineer-sample-weekly-cycle.v1.json` | Fixture cycle receipt used for stored comparison/regression history |
+| `data/curriculum/frontend-product-engineer-generation-lineage.v1.json` | Fixture lineage registry used for stored promotion/regression history |
 | `tests/test_teacher_review_console.py` | Contract tests |
 | `docs/teacher-review-console.md` | This document |
 

@@ -42,23 +42,39 @@
 
 <main class="container" x-data="{
   review: null,
+  storedHistory: null,
   dataSource: 'none',
   init() {
     this.loadReview();
   },
   async loadReview() {
     try {
-      const [alphaReceipt, alphaRequest] = await Promise.all([
+      const [alphaReceipt, alphaRequest, weeklyCycle, generationLineage] = await Promise.all([
         fetch('autoresearch-alpha.public-regression.export.json')
           .then(r => r.ok ? r.json() : null)
           .catch(() => null),
         fetch('autoresearch-alpha.public-regression.request.json')
           .then(r => r.ok ? r.json() : null)
           .catch(() => null),
+        fetch('../data/curriculum/frontend-product-engineer-sample-weekly-cycle.v1.json')
+          .then(r => r.ok ? r.json() : null)
+          .catch(() => null),
+        fetch('../data/curriculum/frontend-product-engineer-generation-lineage.v1.json')
+          .then(r => r.ok ? r.json() : null)
+          .catch(() => null),
       ]);
+
+      this.storedHistory = TEACHER_REVIEW_READ_MODEL.buildStoredHistorySnapshot({
+        alpha_receipt: alphaReceipt,
+        weekly_cycle: weeklyCycle,
+        generation_lineage: generationLineage,
+      });
 
       if (alphaReceipt && TEACHER_REVIEW_READ_MODEL.looksLikeAutoresearchAlphaReceipt(alphaReceipt)) {
         this.review = TEACHER_REVIEW_READ_MODEL.buildTeacherReviewSnapshotFromAutoresearchAlpha(alphaReceipt, alphaRequest);
+        if (this.review) {
+          this.review.stored_history = this.storedHistory;
+        }
         this.dataSource = this.review ? this.review.data_source : 'none';
         return;
       }
@@ -83,10 +99,14 @@
         scorecard: scorecardRes,
         evaluation_contract: contractRes,
       });
+      if (this.review) {
+        this.review.stored_history = this.storedHistory;
+      }
       this.dataSource = this.review ? this.review.data_source : 'none';
     } catch (e) {
       console.error('Teacher review load failed:', e);
       this.review = null;
+      this.storedHistory = null;
       this.dataSource = 'error';
     }
   }
@@ -713,13 +733,155 @@
     </section>
   </template>
 
+  <template x-if="storedHistory && (storedHistory.comparison_history.length > 0 || storedHistory.promotion_history.length > 0 || storedHistory.regression_history.length > 0)">
+    <section>
+      <h2>Stored Run / Promotion / Regression History</h2>
+      <article class="judge-callout compact-callout">
+        <strong>History source:</strong>
+        <span x-text="storedHistory.summary.honesty_note"></span>
+      </article>
+
+      <template x-if="storedHistory.comparison_history.length > 0">
+        <article class="card" style="margin-top: 1rem;">
+          <h3>Stored comparison history</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Source</th>
+                <th>Baseline</th>
+                <th>Candidate</th>
+                <th>Delta</th>
+                <th>Verdict</th>
+                <th>Verifier</th>
+                <th>Promotion</th>
+              </tr>
+            </thead>
+            <tbody>
+              <template x-for="entry in storedHistory.comparison_history" :key="entry.entry_id || entry.candidate_run_id || entry.baseline_run_id">
+                <tr>
+                  <td>
+                    <strong x-text="entry.source_label"></strong>
+                    <div><small x-text="entry.recorded_at || (entry.example_only ? 'fixture' : 'stored receipt')"></small></div>
+                  </td>
+                  <td>
+                    <code x-text="entry.baseline_run_id || '—'"></code>
+                    <div><small x-text="entry.baseline_total_score !== null ? entry.baseline_total_score.toFixed(4) : 'score pending'"></small></div>
+                  </td>
+                  <td>
+                    <code x-text="entry.candidate_run_id || '—'"></code>
+                    <div><small x-text="entry.candidate_total_score !== null ? entry.candidate_total_score.toFixed(4) : 'score pending'"></small></div>
+                  </td>
+                  <td>
+                    <strong x-text="entry.total_score_delta !== null ? ((entry.total_score_delta >= 0 ? '+' : '') + entry.total_score_delta.toFixed(4)) : '—'"></strong>
+                    <div><small x-text="entry.pass_count_delta !== null ? ('pass +' + entry.pass_count_delta + ', holdout +' + (entry.holdout_pass_count_delta ?? '—')) : (entry.teacher_review_notes || 'No categorical deltas exported.')"></small></div>
+                  </td>
+                  <td>
+                    <span class="badge" :class="entry.verdict === 'better' ? 'badge-pass' : (entry.verdict === 'worse' ? 'badge-fail' : 'badge-training')" x-text="entry.verdict || 'pending'"></span>
+                    <div><small x-text="entry.deciding_axis || 'no deciding axis exported'"></small></div>
+                  </td>
+                  <td>
+                    <span class="badge" :class="entry.verifier_gate_status === 'passing' ? 'badge-pass' : (entry.verifier_gate_status === 'failing' ? 'badge-fail' : 'badge-training')" x-text="entry.verifier_gate_status || 'pending'"></span>
+                    <div><small x-text="entry.executed_commands !== null ? ((entry.executed_commands ?? 0) + '/' + (entry.total_commands ?? 0) + ' commands executed') : 'No executed-command receipt exported.'"></small></div>
+                  </td>
+                  <td>
+                    <span class="badge" :class="entry.promotion_decision === 'promoted' ? 'badge-pass' : 'badge-training'" x-text="entry.promotion_decision || 'pending'"></span>
+                    <div><small x-text="entry.honesty_note || '—'"></small></div>
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </article>
+      </template>
+
+      <div class="grid-2" style="margin-top: 1rem;">
+        <template x-if="storedHistory.promotion_history.length > 0">
+          <article class="card">
+            <h3>Promotion history</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Generation</th>
+                  <th>Decision</th>
+                  <th>Public score</th>
+                  <th>Holdout</th>
+                  <th>Regression gate</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template x-for="entry in storedHistory.promotion_history" :key="entry.entry_id || entry.generation_id">
+                  <tr>
+                    <td>
+                      <strong x-text="entry.generation_id || '—'"></strong>
+                      <div><small x-text="entry.generation_index !== null ? ('Generation #' + entry.generation_index) : (entry.recorded_at || '—')"></small></div>
+                    </td>
+                    <td>
+                      <span class="badge" :class="entry.decision === 'promoted' ? 'badge-pass' : 'badge-training'" x-text="entry.decision || 'pending'"></span>
+                      <div><small x-text="entry.reason || 'No reason recorded.'"></small></div>
+                    </td>
+                    <td x-text="entry.public_score !== null ? entry.public_score.toFixed(4) : '—'"></td>
+                    <td>
+                      <span x-text="entry.holdout_score_available ? 'available' : 'not exported'"></span>
+                      <div><small x-text="entry.run_artifact_available ? ('run ' + (entry.run_id || 'artifact')) : 'linked run artifact unavailable' "></small></div>
+                    </td>
+                    <td>
+                      <span class="badge" :class="entry.regression_gate_passed === true ? 'badge-pass' : 'badge-training'" x-text="entry.regression_gate_passed === true ? 'passed' : (entry.regression_gate_passed === false ? 'failed' : (entry.regression_gate_enforced === false ? 'not enforced' : 'pending'))"></span>
+                      <div><small x-text="entry.honesty_note || '—'"></small></div>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </article>
+        </template>
+
+        <template x-if="storedHistory.regression_history.length > 0">
+          <article class="card">
+            <h3>Regression gate history</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Source</th>
+                  <th>Scope</th>
+                  <th>Enforced</th>
+                  <th>Checked</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template x-for="entry in storedHistory.regression_history" :key="entry.entry_id || entry.generation_id || entry.cycle_id">
+                  <tr>
+                    <td>
+                      <strong x-text="entry.source_label"></strong>
+                      <div><small x-text="entry.recorded_at || (entry.example_only ? 'fixture' : 'stored receipt')"></small></div>
+                    </td>
+                    <td>
+                      <code x-text="entry.generation_id || entry.cycle_id || '—'"></code>
+                      <div><small x-text="entry.run_id ? ('candidate ' + entry.run_id) : 'no run ref exported'"></small></div>
+                    </td>
+                    <td x-text="entry.enforced === null ? '—' : (entry.enforced ? 'yes' : 'no')"></td>
+                    <td x-text="entry.tasks_checked !== null ? entry.tasks_checked : '—'"></td>
+                    <td>
+                      <span class="badge" :class="entry.gate_status === 'passed' ? 'badge-pass' : (entry.gate_status === 'failed' ? 'badge-fail' : 'badge-training')" x-text="entry.gate_status || 'pending'"></span>
+                      <div><small x-text="entry.regressions_found !== null ? ('regressions: ' + entry.regressions_found) : (entry.honesty_note || '—')"></small></div>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </article>
+        </template>
+      </div>
+    </section>
+  </template>
+
   <article>
     <h3>What this console does now vs what it needs</h3>
     <ul>
-      <li><strong>Now:</strong> Renders the committed real public-regression alpha receipt plus request copy when present, with sample-fixture fallback. The real export path now surfaces public repo-task context, teacher verdict/scenario results, transcript excerpts, alpha evaluation context, and deeper receipt coverage without inventing a frozen task packet or dimensioned contract.</li>
-      <li><strong>Still blank on the real export:</strong> A frozen task-packet identity and the 5-dimension weighted scorecard stay empty because this stored export does not carry them.</li>
-      <li><strong>Next:</strong> Richer teacher-review exports that carry a first-class task packet and dimensioned scorecard straight from runtime objects, rather than only public benchmark-pack context.</li>
-      <li><strong>Not yet:</strong> Private-holdout scoring integration, stability checks across multiple runs, regression gate history.</li>
+      <li><strong>Now:</strong> Renders the committed real public-regression alpha receipt plus request copy when present, with sample-fixture fallback. The real export path now surfaces public repo-task context, teacher verdict/scenario results, transcript excerpts, alpha evaluation context, deeper receipt coverage, and stored comparison/promotion/regression history from committed public receipts and fixtures.</li>
+      <li><strong>Still blank on the real export:</strong> A frozen task-packet identity, the 5-dimension weighted scorecard, and any promotion decision sourced directly from the alpha runtime stay empty because this stored export does not carry them.</li>
+      <li><strong>Next:</strong> Richer teacher-review exports that carry a first-class task packet, dimensioned scorecard, and executed verifier / regression-gate outcomes straight from runtime objects.</li>
+      <li><strong>Not yet:</strong> Private-holdout scoring integration, live stability checks across multiple runs, and live enforced regression gates.</li>
     </ul>
     <p>This shell is the D001 acceptance test surface: an honest read-model over stored exports. It does not pretend live evaluation exists when it does not.</p>
   </article>
