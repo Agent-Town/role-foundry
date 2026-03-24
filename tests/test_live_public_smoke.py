@@ -5,15 +5,19 @@ These tests verify that the live smoke mode:
   2. Executes real verifier commands
   3. Captures honest exit codes and output
   4. Threads results through the verifier-gate contract in autoresearch_alpha
+  5. Invokes a real Claude Code student step when student_prompt_pack is present
+  6. Skips student step honestly when no prompt pack is present
 """
 from __future__ import annotations
 
 import json
+import shutil
 import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -94,6 +98,15 @@ class LivePublicSmokeBackendTests(unittest.TestCase):
                 stdout_log.exists() or stderr_log.exists(),
                 "At least one verifier output log should exist",
             )
+
+            # No student prompt pack → student step not executed
+            ss = eh["student_step"]
+            self.assertFalse(ss["executed"])
+            self.assertIn("no student_prompt_pack", ss["reason"])
+            self.assertFalse(bundle["live_smoke"]["student_step_executed"])
+
+            # Honesty note should NOT claim Claude Code was invoked
+            self.assertIn("student step was not invoked", eh["honesty_note"])
 
     def test_live_smoke_captures_failing_command(self):
         """A deliberately failing command should be captured honestly."""
@@ -178,6 +191,135 @@ class LivePublicSmokeBackendTests(unittest.TestCase):
             self.assertIn("did not invoke Claude Code", eh["honesty_note"])
 
 
+class StudentStepUnitTests(unittest.TestCase):
+    """Unit tests for student step helpers."""
+
+    def test_build_student_prompt_from_visible_scenarios(self):
+        from runner_bridge.backends.claude_vibecosystem import _build_student_prompt
+
+        pack = {
+            "visible_scenarios": [
+                {"id": "s1", "student_prompt": "Fix the failing test in utils.py"},
+            ],
+            "prompt_summary": "Fallback summary",
+        }
+        self.assertEqual(_build_student_prompt(pack), "Fix the failing test in utils.py")
+
+    def test_build_student_prompt_falls_back_to_summary(self):
+        from runner_bridge.backends.claude_vibecosystem import _build_student_prompt
+
+        pack = {"prompt_summary": "Inspect the project", "visible_scenarios": []}
+        self.assertEqual(_build_student_prompt(pack), "Inspect the project")
+
+    def test_build_student_prompt_default(self):
+        from runner_bridge.backends.claude_vibecosystem import _build_student_prompt
+
+        self.assertEqual(_build_student_prompt({}), "Inspect the repo and report status.")
+
+    def test_run_student_step_cli_not_found(self):
+        from runner_bridge.backends.claude_vibecosystem import _run_student_step
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_dir = Path(tmpdir) / "out"
+            output_dir.mkdir()
+            worktree = Path(tmpdir) / "wt"
+            worktree.mkdir()
+            pack = {"prompt_summary": "hello"}
+            with patch("runner_bridge.backends.claude_vibecosystem.subprocess.run", side_effect=FileNotFoundError):
+                result = _run_student_step(pack, worktree, output_dir)
+            self.assertEqual(result["execution_status"], "error")
+            self.assertIn("not found", result["stderr"])
+
+
+class StudentStepIntegrationTests(unittest.TestCase):
+    """Integration test: student step invokes real Claude CLI when prompt pack present."""
+
+    @unittest.skipUnless(shutil.which("claude"), "claude CLI not on PATH")
+    def test_live_smoke_with_student_prompt_pack(self):
+        """When student_prompt_pack is present, the real Claude CLI is invoked."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_dir = Path(tmpdir) / "output"
+            request_path = Path(tmpdir) / "request.json"
+
+            request = {
+                "run_id": "student-smoke-001",
+                "agent_role": "student",
+                "scenario_set_id": "live-smoke-student-test",
+                "workspace_snapshot": {},
+                "time_budget": {"seconds": 120},
+                "cost_budget": {"usd": 0},
+                "student_prompt_pack": {
+                    "actor": "test-student",
+                    "prompt_summary": "Inspect the repo and report what language it uses.",
+                    "visible_scenarios": [
+                        {
+                            "id": "inspect-lang",
+                            "student_prompt": "List the programming languages used in this repo. Output only the language names.",
+                        },
+                    ],
+                    "repo_task_pack": {
+                        "recommended_verifier_commands": [
+                            "python3 -c \"print('verifier-ok')\"",
+                        ],
+                    },
+                },
+                "extras": {
+                    "recommended_verifier_commands": [
+                        "python3 -c \"print('verifier-ok')\"",
+                    ],
+                },
+            }
+            request_path.write_text(json.dumps(request))
+
+            proc = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "runner_bridge.backends.claude_vibecosystem",
+                    "--request", str(request_path),
+                    "--output-dir", str(output_dir),
+                    "--live-public-smoke",
+                ],
+                capture_output=True,
+                text=True,
+                cwd=ROOT,
+                timeout=180,
+            )
+            self.assertEqual(proc.returncode, 0, f"Backend failed:\n{proc.stderr}")
+
+            result_data = json.loads((output_dir / "result.json").read_text())
+            eh = result_data["execution_honesty"]
+
+            # Student step was executed
+            ss = eh["student_step"]
+            self.assertTrue(ss["executed"])
+            self.assertEqual(ss["execution_status"], "executed")
+            self.assertIsNotNone(ss.get("exit_code"))
+
+            # Student stdout was captured
+            self.assertTrue(
+                (output_dir / "student-stdout.log").exists(),
+                "student-stdout.log should be written",
+            )
+
+            # Transcript should contain student.executed event
+            transcript = (output_dir / "transcript.ndjson").read_text()
+            self.assertIn("student.executed", transcript)
+
+            # Artifact bundle should record student step
+            bundle = json.loads((output_dir / "artifact-bundle.json").read_text())
+            self.assertTrue(bundle["live_smoke"]["student_step_executed"])
+
+            # Honesty note should mention Claude Code was invoked
+            self.assertIn("invoked a real Claude Code", eh["honesty_note"])
+
+            # Runtime surface should show student_and_verifier
+            self.assertEqual(
+                bundle["external_executor_beta"]["live_execution"],
+                "student_and_verifier",
+            )
+
+
 class VerifierContractThreadingTests(unittest.TestCase):
     """Test that real check results from a live backend thread into the verifier gate."""
 
@@ -249,6 +391,25 @@ class VerifierContractThreadingTests(unittest.TestCase):
 
         self.assertEqual(contract["gate_status"], "not_executed")
         self.assertEqual(contract["command_results"][0]["execution_status"], "not_executed")
+
+    def test_non_local_replay_without_results_produces_not_executed(self):
+        from runner_bridge.autoresearch_alpha import _build_verifier_contract
+
+        contract = _build_verifier_contract(
+            stage_key="candidate-student",
+            request={},
+            artifact_bundle={},
+            runner="claude_vibecosystem",
+            verifier_commands_override=[
+                "python3 -m unittest tests/test_curriculum_contract.py",
+            ],
+            executed_check_results=None,
+        )
+
+        self.assertEqual(contract["gate_status"], "not_executed")
+        cr = contract["command_results"][0]
+        self.assertEqual(cr["execution_status"], "not_executed")
+        self.assertIn("did not execute", cr["honesty_note"])
 
     def test_detect_runner_name_from_execution_honesty(self):
         from runner_bridge.autoresearch_alpha import _detect_runner_name

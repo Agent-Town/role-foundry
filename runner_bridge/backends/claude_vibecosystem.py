@@ -147,26 +147,36 @@ def _stub_mode(request: dict[str, Any], output_dir: Path) -> int:
 # ---------------------------------------------------------------------------
 
 def _live_public_smoke(request: dict[str, Any], output_dir: Path) -> int:
-    """Run verifier commands for real in an isolated git worktree.
+    """Run real student + verifier steps in an isolated git worktree.
 
-    This mode creates a temporary worktree at the current HEAD, runs each
-    verifier command, captures exit codes / stdout / stderr, and writes
-    honest artifacts.  It does NOT invoke Claude Code for the student step.
+    When a ``student_prompt_pack`` is present in the request (candidate-student
+    stage), this mode invokes the local Claude Code CLI with the student prompt
+    inside the worktree before running verifier commands.  If no student prompt
+    pack is present the student step is skipped honestly.
     """
     backend_contract = _load_backend_contract(request)
     runtime_surface = _build_runtime_surface(request, backend_contract)
+    student_prompt_pack = request.get("student_prompt_pack") if isinstance(request.get("student_prompt_pack"), dict) else None
+    has_student_step = student_prompt_pack is not None
     runtime_surface["adapter_mode"] = "live_public_smoke"
-    runtime_surface["live_execution"] = "verifier_commands_only"
+    runtime_surface["live_execution"] = (
+        "student_and_verifier" if has_student_step else "verifier_commands_only"
+    )
 
     verifier_commands = _collect_verifier_commands(request)
     events: list[dict[str, Any]] = []
     check_results: list[dict[str, Any]] = []
+    student_result: dict[str, Any] | None = None
     worktree_commit: str | None = None
 
     events.append({
         "ts": _utc_now(),
         "event": "runner.started",
-        "message": f"Live public-smoke for {request['run_id']} with {len(verifier_commands)} verifier command(s).",
+        "message": (
+            f"Live public-smoke for {request['run_id']} with "
+            f"{len(verifier_commands)} verifier command(s)"
+            f"{' and a real student step' if has_student_step else ' (no student step)'}."
+        ),
     })
 
     repo_root = _git_repo_root()
@@ -181,6 +191,26 @@ def _live_public_smoke(request: dict[str, Any], output_dir: Path) -> int:
             "worktree_commit": worktree_commit,
         })
 
+        # ---- Student step (only when prompt pack present) ----
+        if has_student_step:
+            student_result = _run_student_step(student_prompt_pack, worktree_path, output_dir)
+            events.append({
+                "ts": _utc_now(),
+                "event": "student.executed",
+                "execution_status": student_result["execution_status"],
+                "exit_code": student_result.get("exit_code"),
+            })
+
+            diff_after_student = _capture_worktree_diff(worktree_path)
+            if diff_after_student:
+                (output_dir / "student.diff").write_text(diff_after_student)
+                events.append({
+                    "ts": _utc_now(),
+                    "event": "student.diff.captured",
+                    "changed_lines": len(diff_after_student.splitlines()),
+                })
+
+        # ---- Verifier commands ----
         for cmd in verifier_commands:
             cr = _run_verifier_command(cmd, worktree_path)
             check_results.append(cr)
@@ -228,6 +258,17 @@ def _live_public_smoke(request: dict[str, Any], output_dir: Path) -> int:
     all_passed = bool(check_results) and passed_count == len(check_results)
 
     # ---- Artifact bundle ----
+    live_smoke_block: dict[str, Any] = {
+        "worktree_commit": worktree_commit,
+        "verifier_commands_executed": len(check_results),
+        "verifier_commands_passed": passed_count,
+        "all_passed": all_passed,
+        "student_step_executed": has_student_step and student_result is not None,
+    }
+    if student_result is not None:
+        live_smoke_block["student_execution_status"] = student_result["execution_status"]
+        live_smoke_block["student_exit_code"] = student_result.get("exit_code")
+
     artifact_bundle = {
         "run_id": request["run_id"],
         "agent_role": request["agent_role"],
@@ -236,18 +277,42 @@ def _live_public_smoke(request: dict[str, Any], output_dir: Path) -> int:
         "workspace_snapshot": request.get("workspace_snapshot", {}),
         "execution_backend_contract": backend_contract,
         "external_executor_beta": runtime_surface,
-        "live_smoke": {
-            "worktree_commit": worktree_commit,
-            "verifier_commands_executed": len(check_results),
-            "verifier_commands_passed": passed_count,
-            "all_passed": all_passed,
-        },
+        "live_smoke": live_smoke_block,
         "receipts": {
             "transcript_path": transcript_path.name,
             "result_path": "result.json",
         },
     }
     (output_dir / "artifact-bundle.json").write_text(json.dumps(artifact_bundle, indent=2))
+
+    # ---- Build honesty note ----
+    if has_student_step and student_result is not None:
+        student_honesty = (
+            "This live public-smoke run created an isolated git worktree, invoked a real Claude Code "
+            "student step via the local CLI, executed real verifier commands, and captured all exit "
+            "codes and output honestly."
+        )
+    else:
+        student_honesty = (
+            "This live public-smoke run created an isolated git worktree and executed real verifier "
+            "commands. No student prompt pack was present so the student step was not invoked."
+        )
+    honesty_note = (
+        f"{student_honesty} It does not claim sealed evaluation, tamper-proofing, "
+        "independent executor isolation, or native Clawith parity."
+    )
+
+    # ---- Student step honesty block ----
+    student_honesty_block: dict[str, Any] = {"executed": False, "reason": "no student_prompt_pack in request"}
+    if student_result is not None:
+        student_honesty_block = {
+            "executed": True,
+            "execution_status": student_result["execution_status"],
+            "exit_code": student_result.get("exit_code"),
+            "stdout_lines": len((student_result.get("stdout") or "").splitlines()),
+            "stderr_lines": len((student_result.get("stderr") or "").splitlines()),
+            "transcript_artifact": "student-stdout.log",
+        }
 
     # ---- Result ----
     result = {
@@ -268,6 +333,7 @@ def _live_public_smoke(request: dict[str, Any], output_dir: Path) -> int:
             "beta_status": "live_public_smoke_alpha",
             "executes_commands": True,
             "executes_checks": True,
+            "student_step": student_honesty_block,
             "check_results": [
                 {
                     "command": cr["command"],
@@ -284,16 +350,88 @@ def _live_public_smoke(request: dict[str, Any], output_dir: Path) -> int:
             "path_constraint_enforcement": "not_enforced",
             "external_executor": runtime_surface,
             "claim_boundary": backend_contract.get("claim_boundary", {}),
-            "honesty_note": (
-                "This live public-smoke run created an isolated git worktree, executed real verifier "
-                "commands, and captured their exit codes and output honestly. It did not invoke Claude "
-                "Code for the student step. It does not claim sealed evaluation, tamper-proofing, "
-                "independent executor isolation, or native Clawith parity."
-            ),
+            "honesty_note": honesty_note,
         },
     }
     (output_dir / "result.json").write_text(json.dumps(result, indent=2))
     return 0
+
+
+# ---------------------------------------------------------------------------
+# Student step (real Claude Code CLI invocation)
+# ---------------------------------------------------------------------------
+
+def _build_student_prompt(student_prompt_pack: dict[str, Any]) -> str:
+    """Extract a deterministic student prompt from the prompt pack.
+
+    Uses the first ``visible_scenarios[].student_prompt`` or falls back to
+    ``prompt_summary``.
+    """
+    for scenario in student_prompt_pack.get("visible_scenarios") or []:
+        if isinstance(scenario, dict) and scenario.get("student_prompt"):
+            return str(scenario["student_prompt"])
+    return str(student_prompt_pack.get("prompt_summary") or "Inspect the repo and report status.")
+
+
+def _run_student_step(
+    student_prompt_pack: dict[str, Any],
+    worktree_path: Path,
+    output_dir: Path,
+    timeout: int = 120,
+) -> dict[str, Any]:
+    """Invoke the local Claude Code CLI in non-interactive mode inside the worktree.
+
+    Returns a dict with execution_status, exit_code, stdout, stderr.
+    """
+    prompt = _build_student_prompt(student_prompt_pack)
+    cmd = [
+        "claude",
+        "-p", prompt,
+        "--output-format", "text",
+        "--max-turns", "3",
+        "--dangerously-skip-permissions",
+    ]
+    try:
+        completed = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            cwd=worktree_path,
+        )
+        stdout = (completed.stdout or "")[:50_000]
+        stderr = (completed.stderr or "")[:20_000]
+        if stdout:
+            (output_dir / "student-stdout.log").write_text(stdout)
+        if stderr:
+            (output_dir / "student-stderr.log").write_text(stderr)
+        return {
+            "execution_status": "executed",
+            "exit_code": completed.returncode,
+            "stdout": stdout,
+            "stderr": stderr,
+        }
+    except subprocess.TimeoutExpired:
+        return {
+            "execution_status": "timeout",
+            "exit_code": None,
+            "stdout": "",
+            "stderr": f"Claude CLI timed out after {timeout}s",
+        }
+    except FileNotFoundError:
+        return {
+            "execution_status": "error",
+            "exit_code": None,
+            "stdout": "",
+            "stderr": "claude CLI not found on PATH",
+        }
+    except Exception as exc:
+        return {
+            "execution_status": "error",
+            "exit_code": None,
+            "stdout": "",
+            "stderr": str(exc),
+        }
 
 
 # ---------------------------------------------------------------------------

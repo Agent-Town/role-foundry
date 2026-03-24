@@ -831,10 +831,10 @@ def _build_verifier_contract(
         else:
             command_results.append({
                 "command": command,
-                "execution_status": "unknown",
+                "execution_status": "not_executed",
                 "exit_code": None,
                 "honesty_note": (
-                    "Execution status was not captured by the runner."
+                    "The runner did not execute this verifier command."
                 ),
             })
 
@@ -846,13 +846,20 @@ def _build_verifier_contract(
         cr.get("exit_code") == 0 for cr in command_results
     )
 
-    if is_local_replay and not any(cr["execution_status"] == "executed" for cr in command_results):
+    none_executed = has_commands and not any(
+        cr["execution_status"] == "executed" for cr in command_results
+    )
+
+    if is_local_replay and none_executed:
         gate_status = "not_executed"
         gate_honesty_note = (
             "The local-replay runner produces deterministic receipts without "
             "executing verifier commands. Gate status will become meaningful "
             "when a live-execution backend is wired."
         )
+    elif none_executed:
+        gate_status = "not_executed"
+        gate_honesty_note = "The runner did not execute any verifier commands for this stage."
     elif not has_commands:
         gate_status = "no_commands"
         gate_honesty_note = "No verifier commands were specified for this stage."
