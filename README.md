@@ -154,14 +154,14 @@ python3 -m runner_bridge.autoresearch_alpha \
   --backend-command "python3 -m runner_bridge.backends.claude_vibecosystem --live-public-smoke"
 ```
 
-That command keeps baseline + candidate-teacher on `LocalReplayRunner`, gives the candidate-student stage a **300s** request budget, and the live backend now threads that stage budget into the real Claude step while reserving time for verifier commands + cleanup. If Claude still times out or leaves no repo diff, the receipt now says plainly that the smoke proved wiring more than useful mutation.
+That command keeps baseline + candidate-teacher on `LocalReplayRunner`, gives the candidate-student stage a **300s** request budget, and the live backend threads that into the real Claude step (with a derived max-turn budget, not a hardcoded 3) while reserving time for verifier commands + cleanup. The student prompt now includes the full scenario context — constraints, suggested files, and public checks — so Claude has enough signal to produce a meaningful narrow mutation instead of exhausting turns on orientation.
 
 What it proves today:
-- a real **baseline → candidate student → candidate teacher-eval** lifecycle
+- a real **baseline → candidate student → candidate teacher-eval** lifecycle narrowed to **one public episode** (pbpv1-e02: tighten the README intro)
 - a concrete **better/equal/worse** comparison receipt
 - artifact coverage across all three stages
 - an explicit **integrity gate** that allows public-regression claims while blocking fake sealed-eval claims
-- a **repo-task-shaped student prompt pack** with per-scenario metadata (`suggested_files`, `mutation_budget`, `constraints`, `public_checks`) derived from the public benchmark episodes, making the candidate-student stage less canned and more like real software-engineering teaching
+- a **rich student prompt** with constraints, suggested files, and public checks from the benchmark episode, giving the student enough context for a real file mutation
 
 The first committed public-safe stored export from that lane now lives at:
 - `app/autoresearch-alpha.public-regression.export.json` — exact generated public-regression alpha receipt

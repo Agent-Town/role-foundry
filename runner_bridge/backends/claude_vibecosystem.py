@@ -229,11 +229,17 @@ def _live_public_smoke(request: dict[str, Any], output_dir: Path) -> int:
 
         # ---- Student step (only when prompt pack present) ----
         if has_student_step:
+            student_max_turns = _derive_max_turns(
+                request,
+                student_prompt_pack,
+                timeout_budget["student_timeout_seconds"],
+            )
             student_result = _run_student_step(
                 student_prompt_pack,
                 worktree_path,
                 output_dir,
                 timeout=timeout_budget["student_timeout_seconds"],
+                max_turns=student_max_turns,
             )
             events.append({
                 "ts": _utc_now(),
@@ -241,6 +247,7 @@ def _live_public_smoke(request: dict[str, Any], output_dir: Path) -> int:
                 "execution_status": student_result["execution_status"],
                 "exit_code": student_result.get("exit_code"),
                 "timeout_seconds": timeout_budget["student_timeout_seconds"],
+                "max_turns": student_max_turns,
             })
 
             diff_after_student = _capture_worktree_diff(worktree_path)
@@ -384,6 +391,7 @@ def _live_public_smoke(request: dict[str, Any], output_dir: Path) -> int:
         "executed": False,
         "reason": "no student_prompt_pack in request",
         "timeout_seconds": timeout_budget["student_timeout_seconds"],
+        "max_turns": None,
         "repo_diff_present": False,
         "meaningful_mutation": False,
     }
@@ -395,6 +403,7 @@ def _live_public_smoke(request: dict[str, Any], output_dir: Path) -> int:
             "stdout_lines": len((student_result.get("stdout") or "").splitlines()),
             "stderr_lines": len((student_result.get("stderr") or "").splitlines()),
             "timeout_seconds": timeout_budget["student_timeout_seconds"],
+            "max_turns": student_result.get("max_turns"),
             "stdout_path": "student-stdout.log" if (student_result.get("stdout") or "") else None,
             "stderr_path": "student-stderr.log" if (student_result.get("stderr") or "") else None,
             "completed_cleanly": student_step_completed_cleanly,
@@ -466,15 +475,85 @@ def _live_public_smoke(request: dict[str, Any], output_dir: Path) -> int:
 # ---------------------------------------------------------------------------
 
 def _build_student_prompt(student_prompt_pack: dict[str, Any]) -> str:
-    """Extract a deterministic student prompt from the prompt pack.
+    """Build a deterministic student prompt from the full prompt pack.
 
-    Uses the first ``visible_scenarios[].student_prompt`` or falls back to
-    ``prompt_summary``.
+    Assembles prompt_summary, the primary scenario's student_prompt plus its
+    constraints / suggested_files / public_checks, and ends with a concrete
+    instruction to make exactly one small meaningful repo change.  Earlier
+    versions discarded everything except the bare student_prompt sentence,
+    which left Claude with too little context to produce a useful mutation.
     """
-    for scenario in student_prompt_pack.get("visible_scenarios") or []:
-        if isinstance(scenario, dict) and scenario.get("student_prompt"):
-            return str(scenario["student_prompt"])
-    return str(student_prompt_pack.get("prompt_summary") or "Inspect the repo and report status.")
+    parts: list[str] = []
+
+    summary = student_prompt_pack.get("prompt_summary")
+    if summary:
+        parts.append(f"## Context\n{summary}")
+
+    # Use the first visible scenario as the primary task.
+    scenario: dict[str, Any] | None = None
+    for s in student_prompt_pack.get("visible_scenarios") or []:
+        if isinstance(s, dict) and s.get("student_prompt"):
+            scenario = s
+            break
+
+    if scenario:
+        parts.append(f"## Task\n{scenario['student_prompt']}")
+
+        repo_meta = scenario.get("repo_task_meta") or {}
+        constraints = repo_meta.get("constraints") or scenario.get("constraints") or []
+        if constraints:
+            parts.append("## Constraints\n" + "\n".join(f"- {c}" for c in constraints))
+
+        suggested = repo_meta.get("suggested_files") or scenario.get("suggested_files") or []
+        if suggested:
+            parts.append("## Suggested files\n" + "\n".join(f"- {f}" for f in suggested))
+
+        checks = repo_meta.get("public_checks") or scenario.get("public_checks") or []
+        if checks:
+            parts.append("## Public checks (your change should satisfy these)\n" + "\n".join(f"- {c}" for c in checks))
+    elif summary:
+        pass  # summary alone is the task
+    else:
+        parts.append("## Task\nInspect the repo and report status.")
+
+    parts.append(
+        "## Instruction\n"
+        "Make exactly ONE small, meaningful change to the repo that addresses the task above. "
+        "Edit only the suggested files (or the minimal set needed). "
+        "Do not add unrelated changes, do not refactor broadly, and do not create new test files. "
+        "Leave the repo in a state where `git diff` shows a clear, narrow mutation."
+    )
+
+    return "\n\n".join(parts)
+
+
+def _derive_max_turns(
+    request: dict[str, Any],
+    student_prompt_pack: dict[str, Any],
+    timeout_seconds: int,
+) -> int:
+    """Derive a small but less brittle max-turn budget for the Claude CLI.
+
+    Priority:
+      1. ``request.extras.student_max_turns``
+      2. ``student_prompt_pack.extras.max_turns``
+      3. timeout heuristic (~1 turn per 45s, floor 4, cap 8)
+
+    The old hardcoded ``3`` was too low for a real mutation, but the smoke lane
+    should still stay narrow rather than giving Claude an open-ended turn budget.
+    """
+    request_extras = request.get("extras") if isinstance(request.get("extras"), dict) else {}
+    explicit = request_extras.get("student_max_turns")
+    if isinstance(explicit, int) and 1 <= explicit <= 50:
+        return explicit
+
+    pack_extras = student_prompt_pack.get("extras") if isinstance(student_prompt_pack.get("extras"), dict) else {}
+    explicit = pack_extras.get("max_turns")
+    if isinstance(explicit, int) and 1 <= explicit <= 50:
+        return explicit
+
+    # Heuristic: narrow live-smoke lane, not an open-ended coding session.
+    return max(4, min(8, round(timeout_seconds / 45)))
 
 
 def _run_student_step(
@@ -482,11 +561,14 @@ def _run_student_step(
     worktree_path: Path,
     output_dir: Path,
     timeout: int = 120,
+    max_turns: int | None = None,
 ) -> dict[str, Any]:
     """Invoke the local Claude Code CLI in non-interactive mode inside the worktree.
 
-    Returns a dict with execution_status, exit_code, stdout, stderr.
+    Returns a dict with execution_status, exit_code, stdout, stderr, max_turns.
     """
+    if max_turns is None:
+        max_turns = _derive_max_turns({}, student_prompt_pack, timeout)
     prompt = _build_student_prompt(student_prompt_pack)
     cmd = [
         "claude",
@@ -496,7 +578,7 @@ def _run_student_step(
         "--output-format",
         "text",
         "--max-turns",
-        "3",
+        str(max_turns),
         "--add-dir",
         str(worktree_path),
     ]
@@ -520,6 +602,7 @@ def _run_student_step(
             "exit_code": completed.returncode,
             "stdout": stdout,
             "stderr": stderr,
+            "max_turns": max_turns,
         }
     except subprocess.TimeoutExpired:
         return {
@@ -527,6 +610,7 @@ def _run_student_step(
             "exit_code": None,
             "stdout": "",
             "stderr": f"Claude CLI timed out after {timeout}s",
+            "max_turns": max_turns,
         }
     except FileNotFoundError:
         return {
@@ -534,6 +618,7 @@ def _run_student_step(
             "exit_code": None,
             "stdout": "",
             "stderr": "claude CLI not found on PATH",
+            "max_turns": max_turns,
         }
     except Exception as exc:
         return {
@@ -541,6 +626,7 @@ def _run_student_step(
             "exit_code": None,
             "stdout": "",
             "stderr": str(exc),
+            "max_turns": max_turns,
         }
 
 
@@ -760,7 +846,12 @@ def _capture_worktree_diff(worktree_path: Path) -> str:
 
 
 def _collect_verifier_commands(request: dict[str, Any]) -> list[str]:
-    """Extract verifier commands from all known request locations."""
+    """Extract verifier commands from the request with sane precedence.
+
+    ``extras.recommended_verifier_commands`` is treated as an explicit per-run
+    override. When present, it suppresses the broader prompt-pack command list so
+    the tracked live smoke can stay on one narrow verifier slice.
+    """
     commands: list[str] = []
     seen: set[str] = set()
 
@@ -774,9 +865,11 @@ def _collect_verifier_commands(request: dict[str, Any]) -> list[str]:
         if isinstance(check, dict):
             _add(str(check.get("command", "")))
 
-    # extras.recommended_verifier_commands  (injected by alpha loop)
-    for cmd in (request.get("extras") or {}).get("recommended_verifier_commands") or []:
-        _add(str(cmd))
+    extras_commands = (request.get("extras") or {}).get("recommended_verifier_commands") or []
+    if extras_commands:
+        for cmd in extras_commands:
+            _add(str(cmd))
+        return commands
 
     # student_prompt_pack.repo_task_pack.recommended_verifier_commands
     spp = request.get("student_prompt_pack") or {}

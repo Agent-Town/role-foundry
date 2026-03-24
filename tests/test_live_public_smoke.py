@@ -207,27 +207,69 @@ class StudentStepUnitTests(unittest.TestCase):
         )
 
 
-    def test_build_student_prompt_from_visible_scenarios(self):
+    def test_build_student_prompt_includes_scenario_and_constraints(self):
+        from runner_bridge.backends.claude_vibecosystem import _build_student_prompt
+
+        pack = {
+            "prompt_summary": "Tighten the README intro.",
+            "visible_scenarios": [
+                {
+                    "id": "s1",
+                    "student_prompt": "Fix the failing test in utils.py",
+                    "constraints": ["Keep it short", "No new deps"],
+                    "suggested_files": ["utils.py"],
+                    "public_checks": ["Test passes"],
+                },
+            ],
+        }
+        result = _build_student_prompt(pack)
+        self.assertIn("## Context", result)
+        self.assertIn("Tighten the README intro.", result)
+        self.assertIn("## Task", result)
+        self.assertIn("Fix the failing test in utils.py", result)
+        self.assertIn("## Constraints", result)
+        self.assertIn("- Keep it short", result)
+        self.assertIn("## Suggested files", result)
+        self.assertIn("- utils.py", result)
+        self.assertIn("## Public checks", result)
+        self.assertIn("- Test passes", result)
+        self.assertIn("## Instruction", result)
+        self.assertIn("exactly ONE small", result)
+
+    def test_build_student_prompt_uses_repo_task_meta(self):
         from runner_bridge.backends.claude_vibecosystem import _build_student_prompt
 
         pack = {
             "visible_scenarios": [
-                {"id": "s1", "student_prompt": "Fix the failing test in utils.py"},
+                {
+                    "id": "s1",
+                    "student_prompt": "Do the thing",
+                    "repo_task_meta": {
+                        "constraints": ["Meta constraint"],
+                        "suggested_files": ["meta.py"],
+                        "public_checks": ["Meta check"],
+                    },
+                },
             ],
-            "prompt_summary": "Fallback summary",
         }
-        self.assertEqual(_build_student_prompt(pack), "Fix the failing test in utils.py")
+        result = _build_student_prompt(pack)
+        self.assertIn("- Meta constraint", result)
+        self.assertIn("- meta.py", result)
+        self.assertIn("- Meta check", result)
 
     def test_build_student_prompt_falls_back_to_summary(self):
         from runner_bridge.backends.claude_vibecosystem import _build_student_prompt
 
         pack = {"prompt_summary": "Inspect the project", "visible_scenarios": []}
-        self.assertEqual(_build_student_prompt(pack), "Inspect the project")
+        result = _build_student_prompt(pack)
+        self.assertIn("Inspect the project", result)
+        self.assertIn("## Instruction", result)
 
     def test_build_student_prompt_default(self):
         from runner_bridge.backends.claude_vibecosystem import _build_student_prompt
 
-        self.assertEqual(_build_student_prompt({}), "Inspect the repo and report status.")
+        result = _build_student_prompt({})
+        self.assertIn("Inspect the repo and report status.", result)
 
     def test_run_student_step_cli_not_found(self):
         from runner_bridge.backends.claude_vibecosystem import _run_student_step
@@ -260,6 +302,56 @@ class StudentStepUnitTests(unittest.TestCase):
             + budget["verifier_total_timeout_seconds"]
             + budget["cleanup_timeout_seconds"],
             300,
+        )
+
+    def test_derive_max_turns_from_request_override(self):
+        from runner_bridge.backends.claude_vibecosystem import _derive_max_turns
+
+        request = {"extras": {"student_max_turns": 10}}
+        self.assertEqual(_derive_max_turns(request, {}, 300), 10)
+
+    def test_derive_max_turns_from_prompt_pack_extras(self):
+        from runner_bridge.backends.claude_vibecosystem import _derive_max_turns
+
+        pack = {"extras": {"max_turns": 9}}
+        self.assertEqual(_derive_max_turns({}, pack, 300), 9)
+
+    def test_derive_max_turns_from_timeout_heuristic(self):
+        from runner_bridge.backends.claude_vibecosystem import _derive_max_turns
+
+        self.assertEqual(_derive_max_turns({}, {}, 300), 7)
+        self.assertEqual(_derive_max_turns({}, {}, 60), 4)
+        self.assertEqual(_derive_max_turns({}, {}, 600), 8)
+
+    def test_derive_max_turns_ignores_invalid_extras(self):
+        from runner_bridge.backends.claude_vibecosystem import _derive_max_turns
+
+        self.assertEqual(_derive_max_turns({"extras": {"student_max_turns": 0}}, {}, 150), 4)
+        self.assertEqual(_derive_max_turns({"extras": {"student_max_turns": "bad"}}, {}, 150), 4)
+        self.assertEqual(_derive_max_turns({}, {"extras": {"max_turns": 0}}, 150), 4)
+
+    def test_collect_verifier_commands_prefers_request_extras_override(self):
+        from runner_bridge.backends.claude_vibecosystem import _collect_verifier_commands
+
+        request = {
+            "extras": {
+                "recommended_verifier_commands": [
+                    "python3 -m unittest tests/test_public_benchmark_pack_v1.py",
+                ],
+            },
+            "student_prompt_pack": {
+                "repo_task_pack": {
+                    "recommended_verifier_commands": [
+                        "python3 -m unittest tests/test_public_benchmark_pack_v1.py",
+                        "python3 -m unittest tests/test_private_holdout_separation.py",
+                    ],
+                },
+            },
+        }
+
+        self.assertEqual(
+            _collect_verifier_commands(request),
+            ["python3 -m unittest tests/test_public_benchmark_pack_v1.py"],
         )
 
     def test_live_smoke_threads_budget_and_marks_wiring_only_when_student_times_out(self):
@@ -303,6 +395,7 @@ class StudentStepUnitTests(unittest.TestCase):
                          "exit_code": None,
                          "stdout": "",
                          "stderr": "Claude CLI timed out after 265s",
+                         "max_turns": 6,
                      },
                  ) as run_student, \
                  patch(
@@ -320,6 +413,7 @@ class StudentStepUnitTests(unittest.TestCase):
 
             self.assertEqual(exit_code, 0)
             self.assertGreater(run_student.call_args.kwargs["timeout"], 120)
+            self.assertEqual(run_student.call_args.kwargs["max_turns"], 6)
             self.assertEqual(run_verifier.call_args.kwargs["timeout"], 30)
 
             result = json.loads((output_dir / "result.json").read_text())
@@ -328,6 +422,7 @@ class StudentStepUnitTests(unittest.TestCase):
             self.assertEqual(eh["review_outcome"]["kind"], "wiring_only_timeout_no_diff")
             self.assertIn("proved wiring more than useful mutation", eh["review_outcome"]["summary"])
             self.assertFalse(eh["student_step"]["meaningful_mutation"])
+            self.assertEqual(eh["student_step"]["max_turns"], 6)
             self.assertFalse(result["scorecard"]["checks"][0]["passed"])
 
             bundle = json.loads((output_dir / "artifact-bundle.json").read_text())
@@ -373,8 +468,9 @@ class StudentStepUnitTests(unittest.TestCase):
                      return_value={
                          "execution_status": "executed",
                          "exit_code": 0,
-                         "stdout": "Error: Reached max turns (3)\n",
+                         "stdout": "Error: Reached max turns (6)\n",
                          "stderr": "",
+                         "max_turns": 6,
                      },
                  ), \
                  patch(
@@ -501,6 +597,26 @@ class LiveSmokeExampleContractTests(unittest.TestCase):
 
         self.assertEqual(candidate_request["time_budget"]["seconds"], 300)
         self.assertIn("live public-smoke", candidate_request["workspace_snapshot"]["objective"].lower())
+
+    def test_tracked_live_smoke_example_has_stage_prompt_summary(self):
+        request = json.loads(LIVE_SMOKE_EXAMPLE.read_text())
+        candidate_stage = request["stages"]["candidate-student"]
+        candidate_request = candidate_stage["request"]
+
+        self.assertIn("prompt_summary", candidate_stage)
+        self.assertIn("README", candidate_stage["prompt_summary"])
+        self.assertEqual(candidate_request["workspace_snapshot"]["changed_files"], ["README.md"])
+        self.assertEqual(candidate_request["extras"]["student_max_turns"], 6)
+        self.assertEqual(
+            candidate_request["extras"]["recommended_verifier_commands"],
+            ["python3 -m unittest tests/test_public_benchmark_pack_v1.py"],
+        )
+
+    def test_tracked_live_smoke_example_narrows_to_one_episode(self):
+        request = json.loads(LIVE_SMOKE_EXAMPLE.read_text())
+        episode_ids = request["stages"]["candidate-student"]["prompt_pack_episode_ids"]
+        self.assertEqual(len(episode_ids), 1)
+        self.assertEqual(episode_ids[0], "pbpv1-e02")
 
 
 class VerifierContractThreadingTests(unittest.TestCase):

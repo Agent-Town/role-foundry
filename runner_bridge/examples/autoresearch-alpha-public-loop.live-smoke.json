@@ -108,27 +108,24 @@
       }
     },
     "candidate-student": {
-      "label": "Candidate student \u2014 public benchmark pack only (live public-smoke budget)",
+      "label": "Candidate student \u2014 one narrow public episode (pbpv1-e02) via live public-smoke",
+      "prompt_summary": "Make exactly one small, meaningful README improvement that frames Role Foundry as a teacher \u2192 student \u2192 evaluation loop. Keep the diff narrow and honest.",
       "prompt_pack_episode_ids": [
-        "pbpv1-e05",
-        "pbpv1-e07",
-        "pbpv1-e11"
+        "pbpv1-e02"
       ],
       "request": {
         "run_id": "run-eval-001-student",
         "agent_role": "student",
         "scenario_set_id": "public-benchmark-pack-v1",
         "workspace_snapshot": {
-          "objective": "Run the live public-smoke lane with enough budget for Claude plus real verifier commands in one honest mixed-execution candidate-student stage.",
+          "objective": "Run the live public-smoke lane on one tiny public episode (pbpv1-e02: tighten the README intro). The generated student prompt carries the episode constraints, suggested files, and public checks so Claude can produce a narrow, meaningful repo diff.",
           "changed_files": [
-            "runner_bridge/autoresearch_alpha.py",
-            "runner_bridge/backends/local_replay.py",
-            "tests/test_autoresearch_alpha_loop.py"
+            "README.md"
           ],
           "policy_snapshot": [
-            "Use public benchmark episodes only for the student prompt pack.",
-            "Carry forward sanitized failure themes, not hidden holdout text.",
-            "Prefer one coherent slice over broad repo churn.",
+            "Use one public benchmark episode only.",
+            "Expect a narrow README-only mutation, not broad repo churn.",
+            "Keep demo-mode honesty explicit.",
             "Reserve enough stage budget for the live public-smoke student step plus verifier commands."
           ]
         },
@@ -137,6 +134,12 @@
         },
         "cost_budget": {
           "usd": 0.58
+        },
+        "extras": {
+          "student_max_turns": 6,
+          "recommended_verifier_commands": [
+            "python3 -m unittest tests/test_public_benchmark_pack_v1.py"
+          ]
         }
       }
     },

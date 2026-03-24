@@ -215,7 +215,7 @@ python3 -m runner_bridge.autoresearch_alpha \
   --backend-command "python3 -m runner_bridge.backends.claude_vibecosystem --live-public-smoke"
 ```
 
-That request gives the candidate-student stage a longer **300s** budget. The live backend now threads that request budget into the real Claude student step, reserves time for verifier commands + cleanup, and records the resulting timeout split in `execution_honesty.timeout_budget`.
+That request gives the candidate-student stage a longer **300s** budget narrowed to one public episode (pbpv1-e02). The live backend threads that budget into the real Claude student step with a derived max-turn budget (not hardcoded), reserves time for verifier commands + cleanup, and records the resulting timeout split plus chosen max-turns in `execution_honesty.timeout_budget` and `execution_honesty.student_step.max_turns`. The student prompt now includes the full scenario context (constraints, suggested files, public checks) so Claude can produce a meaningful narrow mutation.
 
 ### run-object.json — runtime artifact export
 

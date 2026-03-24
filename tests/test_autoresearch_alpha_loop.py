@@ -642,6 +642,32 @@ class AutoresearchAlphaLoopContractTests(unittest.TestCase):
         return payload
 
 
+class AutoresearchAlphaRequestThreadingTests(unittest.TestCase):
+    def test_inject_verifier_commands_preserves_explicit_stage_override(self):
+        from runner_bridge.autoresearch_alpha import _inject_verifier_commands
+
+        request = {
+            "extras": {
+                "recommended_verifier_commands": [
+                    "python3 -m unittest tests/test_public_benchmark_pack_v1.py",
+                ],
+            },
+        }
+
+        _inject_verifier_commands(
+            request,
+            [
+                "python3 -m unittest tests/test_public_benchmark_pack_v1.py",
+                "python3 -m unittest tests/test_milestone3_contract.py tests/test_milestone5_teacher_eval_loop.py",
+            ],
+        )
+
+        self.assertEqual(
+            request["extras"]["recommended_verifier_commands"],
+            ["python3 -m unittest tests/test_public_benchmark_pack_v1.py"],
+        )
+
+
 class AutoresearchAlphaDocumentationTests(unittest.TestCase):
     def test_docs_and_readme_mention_alpha_loop_and_integrity_gate(self):
         self.assertTrue(SPEC.exists(), "missing autoresearch alpha spec")

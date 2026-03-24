@@ -1301,10 +1301,20 @@ def _inject_verifier_commands(
     request: dict[str, Any],
     verifier_commands: list[str] | None,
 ) -> None:
-    """Inject verifier commands into request extras for live backends."""
+    """Inject verifier commands into request extras for live backends.
+
+    Preserve an explicit per-stage override when the request already supplies
+    ``extras.recommended_verifier_commands``. This lets the tracked live smoke
+    stay on one tiny verifier slice instead of inheriting the broader pack-wide
+    command list.
+    """
     if not verifier_commands:
         return
-    request.setdefault("extras", {})["recommended_verifier_commands"] = list(verifier_commands)
+    extras = request.setdefault("extras", {})
+    existing = extras.get("recommended_verifier_commands")
+    if isinstance(existing, list) and existing:
+        return
+    extras["recommended_verifier_commands"] = list(verifier_commands)
 
 
 def _extract_executed_check_results(
