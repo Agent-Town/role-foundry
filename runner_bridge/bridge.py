@@ -82,7 +82,36 @@ class RunBridge:
                 indent=2,
             ))
 
+        run_record_history_path = run_dir / "run-record-history.json"
+        queued_at = _utc_now()
+        run_record_history = [
+            {
+                "status": "queued",
+                "ts": queued_at,
+                "source": "run_bridge",
+                "reason": "request artifacts materialized",
+            }
+        ]
+        _write_run_record_history(run_record_history_path, run_record_history)
+        self.control_plane.patch_run(
+            request.run_id,
+            {
+                "status": "queued",
+                "queued_at": queued_at,
+                "agent_role": request.agent_role,
+                "scenario_set_id": request.scenario_set_id,
+            },
+        )
+
         started_at = _utc_now()
+        run_record_history.append(
+            {
+                "status": "running",
+                "ts": started_at,
+                "source": "run_bridge",
+            }
+        )
+        _write_run_record_history(run_record_history_path, run_record_history)
         self.control_plane.patch_run(
             request.run_id,
             {
@@ -121,6 +150,16 @@ class RunBridge:
 
         result["started_at"] = started_at
         result["finished_at"] = _utc_now()
+        run_record_history.append(
+            {
+                "status": result["status"],
+                "ts": result["finished_at"],
+                "source": "run_bridge",
+            }
+        )
+        _write_run_record_history(run_record_history_path, run_record_history)
+        result["run_record_history"] = run_record_history
+        result["run_record_history_path"] = run_record_history_path.name
 
         packet_runtime = raw_request.get("packet_runtime") if isinstance(raw_request.get("packet_runtime"), dict) else None
         if packet_runtime:
@@ -307,6 +346,10 @@ def _patch_artifact_bundle_execution_backend(
         artifact_bundle["execution_honesty"] = execution_honesty
 
     artifact_bundle_path.write_text(json.dumps(artifact_bundle, indent=2))
+
+
+def _write_run_record_history(path: Path, history: list[dict[str, Any]]) -> None:
+    path.write_text(json.dumps(history, indent=2))
 
 
 def _utc_now() -> str:

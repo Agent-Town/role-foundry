@@ -235,6 +235,14 @@ def run_alpha_loop(
     )
 
     verifier_gate_summary = _build_verifier_gate_summary(stages)
+    verdict_stability = _build_verdict_stability(comparison)
+    phase_c_acceptance = _build_phase_c_acceptance(
+        stages=stages,
+        comparison=comparison,
+        integrity_gate=integrity_gate,
+        artifact_coverage=artifact_coverage,
+        verdict_stability=verdict_stability,
+    )
 
     sealing_receipt = _build_sealing_receipt(
         integrity_gate=integrity_gate,
@@ -266,7 +274,9 @@ def run_alpha_loop(
         "stages": stages,
         "comparison": comparison,
         "verdict": comparison.get("verdict"),
+        "verdict_stability": verdict_stability,
         "verifier_gate": verifier_gate_summary,
+        "phase_c_acceptance": phase_c_acceptance,
         "sealing_receipt": sealing_receipt,
         "artifact_coverage": artifact_coverage,
         "outputs": outputs,
@@ -669,6 +679,9 @@ def _build_stage_receipt(
     execution_backend = build_execution_backend_surface(request, stored_result, artifact_bundle)
     scorecard = stored_result.get("scorecard") if isinstance(stored_result.get("scorecard"), dict) else None
     aggregate_score = scorecard.get("aggregate_score") if isinstance(scorecard, dict) and isinstance(scorecard.get("aggregate_score"), dict) else None
+    run_record_history = _load_run_record_history(stored_result)
+    lifecycle = _build_stage_lifecycle(run_record_history)
+    budget_adherence = _build_stage_budget_adherence(request, result)
 
     export_run = {
         "id": run_id,
@@ -688,6 +701,13 @@ def _build_stage_receipt(
     for path_key in ("transcript_path", "artifact_bundle_path"):
         if export_result.get(path_key):
             export_result[path_key] = _relative_to_root(artifacts_root, Path(export_result[path_key]))
+
+    run_record_history_path = None
+    if stored_result.get("run_record_history_path"):
+        run_record_history_path = _relative_to_root(
+            artifacts_root,
+            run_dir / str(stored_result["run_record_history_path"]),
+        )
 
     receipt_completeness = _build_stage_receipt_completeness(run_dir, artifact_bundle, stored_result)
 
@@ -734,9 +754,13 @@ def _build_stage_receipt(
         "verifier_contract": verifier_contract,
         "lineage": lineage,
         "traceability": traceability,
+        "lifecycle": lifecycle,
+        "budget_adherence": budget_adherence,
         "audit_bundle_path": audit_bundle_path,
         "export": {
             "run": export_run,
+            "run_record_history": run_record_history,
+            "run_record_history_path": run_record_history_path,
             "result": export_result,
             "artifact_bundle": artifact_bundle,
             "transcript_excerpt": transcript_excerpt,
@@ -1087,6 +1111,243 @@ def _build_verifier_gate_summary(
         "total_commands": total_commands,
         "executed_commands": executed_commands,
         "honesty_note": honesty_note,
+    }
+
+
+def _build_verdict_stability(comparison: dict[str, Any]) -> dict[str, Any]:
+    verdict = comparison.get("verdict")
+    return {
+        "status": "blocked_single_sample",
+        "sample_count": 1,
+        "stable_count": 1 if verdict else 0,
+        "target_threshold": ">=2/3 repeated runs on frozen input, or explicit nondeterminism flag",
+        "verdict": verdict,
+        "meets_threshold": False,
+        "blocker": "Only one alpha-loop sample was executed. Repeated frozen-input stability runs are not wired yet.",
+        "honesty_note": (
+            "Local replay is deterministic, but this receipt only captures a single executed sample. "
+            "It does not overclaim empirical stability."
+        ),
+    }
+
+
+def _build_phase_c_acceptance(
+    *,
+    stages: dict[str, dict[str, Any]],
+    comparison: dict[str, Any],
+    integrity_gate: dict[str, Any],
+    artifact_coverage: dict[str, Any],
+    verdict_stability: dict[str, Any],
+) -> dict[str, Any]:
+    baseline = stages["baseline-eval"]
+    candidate_student = stages["candidate-student"]
+    candidate_teacher = stages["candidate-teacher-eval"]
+
+    criteria = {
+        "C001": _phase_c_lifecycle_entry(
+            code="C001",
+            label="Baseline lifecycle completeness",
+            stage_key="baseline-eval",
+            stage=baseline,
+        ),
+        "C002": _phase_c_lifecycle_entry(
+            code="C002",
+            label="Candidate lifecycle completeness",
+            stage_key="candidate-student",
+            stage=candidate_student,
+        ),
+        "C003": _phase_c_mutation_surface_entry(candidate_student),
+        "C004": _phase_c_budget_entry(stages),
+        "C005": _phase_c_teacher_eval_entry(candidate_teacher),
+        "C006": _phase_c_comparison_entry(comparison),
+        "C007": _phase_c_verdict_stability_entry(verdict_stability),
+        "C008": _phase_c_integrity_gate_entry(integrity_gate, comparison),
+        "C009": _phase_c_delta_visibility_entry(comparison),
+    }
+    green = [code for code, entry in criteria.items() if entry["status"] == "green"]
+    blocked = [code for code, entry in criteria.items() if entry["status"] != "green"]
+    return {
+        "summary": {
+            "green": green,
+            "blocked": blocked,
+            "green_count": len(green),
+            "blocked_count": len(blocked),
+            "artifact_coverage_complete": all(
+                artifact_coverage.get(stage_key, {}).get("complete")
+                for stage_key in ("baseline-eval", "candidate-student", "candidate-teacher-eval")
+            ),
+        },
+        "criteria": criteria,
+    }
+
+
+def _phase_c_lifecycle_entry(*, code: str, label: str, stage_key: str, stage: dict[str, Any]) -> dict[str, Any]:
+    lifecycle = stage.get("lifecycle") if isinstance(stage.get("lifecycle"), dict) else {}
+    states = lifecycle.get("states") if isinstance(lifecycle.get("states"), list) else []
+    status = "green" if states in (["queued", "running", "completed"], ["queued", "running", "failed"]) else "blocked"
+    blocker = None if status == "green" else f"{stage_key} lifecycle did not record queued -> running -> completed|failed exactly."
+    return {
+        "status": status,
+        "label": label,
+        "stage_key": stage_key,
+        "observed_states": states,
+        "evidence": {
+            "run_id": stage.get("run_id"),
+            "run_record_history_path": stage.get("export", {}).get("run_record_history_path"),
+        },
+        "pass_threshold": "queued -> running -> completed|failed",
+        "blocker": blocker,
+    }
+
+
+def _phase_c_mutation_surface_entry(stage: dict[str, Any]) -> dict[str, Any]:
+    result = stage.get("export", {}).get("result") if isinstance(stage.get("export"), dict) else {}
+    execution_honesty = result.get("execution_honesty") if isinstance(result.get("execution_honesty"), dict) else {}
+    audit = execution_honesty.get("mutation_surface_audit") if isinstance(execution_honesty.get("mutation_surface_audit"), dict) else None
+    if audit is None:
+        return {
+            "status": "blocked",
+            "label": "Mutation surface compliance",
+            "stage_key": "candidate-student",
+            "pass_threshold": "0 changed files outside the allowed mutation surface",
+            "blocker": "candidate-student did not carry a mutation-surface audit contract, so no diff audit was recorded.",
+            "evidence": {"run_id": stage.get("run_id")},
+        }
+
+    violations = audit.get("violations") if isinstance(audit.get("violations"), dict) else {}
+    budget_report = audit.get("budget_report") if isinstance(audit.get("budget_report"), dict) else {}
+    passed = (
+        audit.get("status") == "passed"
+        and not violations.get("blocked_paths")
+        and not violations.get("out_of_scope_paths")
+        and budget_report.get("within_budget") is True
+    )
+    blocker = None if passed else (
+        audit.get("honesty_note") or "Mutation-surface audit did not pass cleanly."
+    )
+    return {
+        "status": "green" if passed else "blocked",
+        "label": "Mutation surface compliance",
+        "stage_key": "candidate-student",
+        "pass_threshold": "0 changed files outside the allowed mutation surface",
+        "audit_status": audit.get("status"),
+        "changed_files": audit.get("changed_files"),
+        "budget_report": budget_report,
+        "violations": violations,
+        "evidence": {
+            "run_id": stage.get("run_id"),
+            "mutation_surface_audit_path": result.get("provenance", {}).get("mutation_surface_audit_path"),
+        },
+        "blocker": blocker,
+    }
+
+
+def _phase_c_budget_entry(stages: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    stage_reports = {
+        stage_key: stage.get("budget_adherence")
+        for stage_key, stage in stages.items()
+        if isinstance(stage.get("budget_adherence"), dict)
+    }
+    any_fail = any(report.get("status") == "fail" for report in stage_reports.values())
+    any_missing = len(stage_reports) != 3
+    return {
+        "status": "blocked" if any_fail or any_missing else "green",
+        "label": "Budget adherence",
+        "pass_threshold": "0 overruns, or explicit blocked/unknown recorded when cost data is unavailable",
+        "stage_reports": stage_reports,
+        "blocker": (
+            "One or more stages exceeded a declared budget or did not record budget adherence."
+            if any_fail or any_missing
+            else None
+        ),
+    }
+
+
+def _phase_c_teacher_eval_entry(stage: dict[str, Any]) -> dict[str, Any]:
+    result = stage.get("export", {}).get("result") if isinstance(stage.get("export"), dict) else {}
+    scorecard = result.get("scorecard") if isinstance(result.get("scorecard"), dict) else {}
+    aggregate = scorecard.get("aggregate_score") if isinstance(scorecard.get("aggregate_score"), dict) else {}
+    scenario_results = scorecard.get("scenario_results") if isinstance(scorecard.get("scenario_results"), list) else []
+    holdouts = [item for item in scenario_results if isinstance(item, dict) and item.get("type") == "holdout"]
+    complete = bool(holdouts) and all("score" in item and "passed" in item for item in holdouts)
+    return {
+        "status": "green" if complete else "blocked",
+        "label": "Teacher evaluation completeness",
+        "pass_threshold": "100% of holdout scenarios scored",
+        "holdout_total": aggregate.get("holdout", {}).get("total"),
+        "holdout_scored": len(holdouts),
+        "evidence": {
+            "run_id": stage.get("run_id"),
+            "scorecard_present": bool(scorecard),
+        },
+        "blocker": None if complete else "Candidate teacher-eval scorecard did not expose complete holdout scoring.",
+    }
+
+
+def _phase_c_comparison_entry(comparison: dict[str, Any]) -> dict[str, Any]:
+    complete = bool(
+        comparison.get("complete")
+        and comparison.get("verdict")
+        and isinstance(comparison.get("reasons"), list)
+        and isinstance(comparison.get("category_deltas"), dict)
+        and "total_score_delta" in comparison
+    )
+    return {
+        "status": "green" if complete else "blocked",
+        "label": "Comparison verdict completeness",
+        "pass_threshold": "verdict + reasons + score deltas all present",
+        "evidence": {
+            "verdict": comparison.get("verdict"),
+            "reason_count": len(comparison.get("reasons", [])) if isinstance(comparison.get("reasons"), list) else 0,
+            "has_category_deltas": isinstance(comparison.get("category_deltas"), dict),
+            "has_total_score_delta": "total_score_delta" in comparison,
+        },
+        "blocker": None if complete else "comparison receipt was missing required verdict fields.",
+    }
+
+
+def _phase_c_verdict_stability_entry(verdict_stability: dict[str, Any]) -> dict[str, Any]:
+    meets = verdict_stability.get("meets_threshold") is True
+    return {
+        "status": "green" if meets else "blocked",
+        "label": "Verdict stability",
+        "pass_threshold": ">=2/3 repeated runs on frozen input, or explicit nondeterminism flag",
+        "evidence": verdict_stability,
+        "blocker": None if meets else verdict_stability.get("blocker"),
+    }
+
+
+def _phase_c_integrity_gate_entry(integrity_gate: dict[str, Any], comparison: dict[str, Any]) -> dict[str, Any]:
+    passed = integrity_gate.get("status") == "pass" and comparison.get("complete") is True
+    return {
+        "status": "green" if passed else "blocked",
+        "label": "Integrity gate enforcement",
+        "pass_threshold": "0 failed integrity gates allowed to promote weighted verdicts",
+        "evidence": {
+            "integrity_gate_status": integrity_gate.get("status"),
+            "claims_blocked": integrity_gate.get("claims_blocked"),
+            "comparison_complete": comparison.get("complete"),
+        },
+        "blocker": None if passed else "integrity gate did not pass cleanly before comparison verdicting.",
+    }
+
+
+def _phase_c_delta_visibility_entry(comparison: dict[str, Any]) -> dict[str, Any]:
+    visible = bool(
+        comparison.get("verdict")
+        and "total_score_delta" in comparison
+        and isinstance(comparison.get("category_deltas"), dict)
+    )
+    return {
+        "status": "green" if visible else "blocked",
+        "label": "Meaningful delta visibility",
+        "pass_threshold": "total score, verdict, and category deltas all machine-readable",
+        "evidence": {
+            "verdict": comparison.get("verdict"),
+            "total_score_delta": comparison.get("total_score_delta"),
+            "category_deltas": comparison.get("category_deltas"),
+        },
+        "blocker": None if visible else "comparison receipt did not expose machine-readable deltas.",
     }
 
 
@@ -1773,6 +2034,98 @@ def _sealed_holdout_count(teacher_eval: dict[str, Any]) -> int:
             if isinstance(scenario, dict) and scenario.get("type") == "holdout"
         ]
     )
+
+
+def _load_run_record_history(stored_result: dict[str, Any]) -> list[dict[str, Any]]:
+    history = stored_result.get("run_record_history")
+    if not isinstance(history, list):
+        return []
+    return [entry for entry in history if isinstance(entry, dict) and entry.get("status")]
+
+
+def _build_stage_lifecycle(run_record_history: list[dict[str, Any]]) -> dict[str, Any]:
+    states = [str(entry.get("status")) for entry in run_record_history if entry.get("status")]
+    expected_terminal = states[-1] if states else None
+    complete = states in (
+        ["queued", "running", "completed"],
+        ["queued", "running", "failed"],
+    )
+    timestamps = {
+        str(entry.get("status")): entry.get("ts")
+        for entry in run_record_history
+        if entry.get("status") and entry.get("ts")
+    }
+    return {
+        "states": states,
+        "complete": complete,
+        "queued_at": timestamps.get("queued"),
+        "running_at": timestamps.get("running"),
+        "terminal_at": timestamps.get(expected_terminal) if expected_terminal else None,
+        "terminal_status": expected_terminal,
+    }
+
+
+def _build_stage_budget_adherence(request: dict[str, Any], result: dict[str, Any]) -> dict[str, Any]:
+    time_budget = request.get("time_budget") if isinstance(request.get("time_budget"), dict) else {}
+    cost_budget = request.get("cost_budget") if isinstance(request.get("cost_budget"), dict) else {}
+
+    observed_duration = _duration_seconds(result.get("started_at"), result.get("finished_at"))
+    budget_seconds = time_budget.get("seconds") if isinstance(time_budget.get("seconds"), (int, float)) else None
+    observed_cost = result.get("cost_usd_actual") if isinstance(result.get("cost_usd_actual"), (int, float)) else None
+    budget_usd = cost_budget.get("usd") if isinstance(cost_budget.get("usd"), (int, float)) else None
+
+    if budget_seconds is None or observed_duration is None:
+        time_status = "unknown"
+        time_note = "Time budget or observed duration was unavailable, so time adherence is unknown."
+    elif observed_duration <= float(budget_seconds):
+        time_status = "pass"
+        time_note = "Observed duration stayed within the declared time budget."
+    else:
+        time_status = "fail"
+        time_note = "Observed duration exceeded the declared time budget."
+
+    if budget_usd is None:
+        cost_status = "unknown"
+        cost_note = "No cost budget was declared for this stage."
+    elif observed_cost is None:
+        cost_status = "unknown"
+        cost_note = (
+            "No observed cost telemetry was available from this backend, so cost adherence remains unknown "
+            "instead of being claimed as a pass."
+        )
+    elif observed_cost <= float(budget_usd):
+        cost_status = "pass"
+        cost_note = "Observed cost stayed within the declared cost budget."
+    else:
+        cost_status = "fail"
+        cost_note = "Observed cost exceeded the declared cost budget."
+
+    if "fail" in {time_status, cost_status}:
+        overall_status = "fail"
+    elif "unknown" in {time_status, cost_status}:
+        overall_status = "unknown"
+    else:
+        overall_status = "pass"
+
+    return {
+        "status": overall_status,
+        "time": {
+            "status": time_status,
+            "budget_seconds": float(budget_seconds) if budget_seconds is not None else None,
+            "observed_duration_seconds": observed_duration,
+            "honesty_note": time_note,
+        },
+        "cost": {
+            "status": cost_status,
+            "budget_usd": float(budget_usd) if budget_usd is not None else None,
+            "observed_cost_usd": float(observed_cost) if observed_cost is not None else None,
+            "honesty_note": cost_note,
+        },
+        "honesty_note": (
+            "Budget adherence is reported from declared budgets plus observed runtime telemetry only. "
+            "Unknown fields stay unknown."
+        ),
+    }
 
 
 def _transcript_excerpt(path: Path, limit: int = 4) -> list[dict[str, Any]]:

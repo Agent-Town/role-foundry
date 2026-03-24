@@ -73,6 +73,13 @@ class AutoresearchAlphaLoopContractTests(unittest.TestCase):
             self.assertEqual(candidate_teacher["lineage"]["parent_run_id"], "run-eval-001-student")
             self.assertEqual(candidate_teacher["lineage"]["derived_previous_iteration_from"], "run-eval-001")
 
+            self.assertEqual(baseline["lifecycle"]["states"], ["queued", "running", "completed"])
+            self.assertEqual(candidate_student["lifecycle"]["states"], ["queued", "running", "completed"])
+            self.assertEqual(candidate_teacher["lifecycle"]["states"], ["queued", "running", "completed"])
+            self.assertTrue(baseline["lifecycle"]["complete"])
+            self.assertTrue(candidate_student["lifecycle"]["complete"])
+            self.assertTrue(candidate_teacher["lifecycle"]["complete"])
+
             self.assertEqual(baseline["aggregate_score"]["passed"], 2)
             self.assertEqual(candidate_teacher["aggregate_score"]["passed"], 4)
             self.assertAlmostEqual(candidate_teacher["aggregate_score"]["holdout"]["pass_rate"], 0.5)
@@ -144,6 +151,25 @@ class AutoresearchAlphaLoopContractTests(unittest.TestCase):
                 any("sealed-eval claims" in reason for reason in comparison["reasons"])
             )
 
+            self.assertEqual(candidate_student["budget_adherence"]["status"], "unknown")
+            self.assertEqual(candidate_student["budget_adherence"]["time"]["status"], "pass")
+            self.assertEqual(candidate_student["budget_adherence"]["cost"]["status"], "unknown")
+            self.assertIn("cost telemetry", candidate_student["budget_adherence"]["cost"]["honesty_note"])
+
+            verdict_stability = receipt["verdict_stability"]
+            self.assertEqual(verdict_stability["status"], "blocked_single_sample")
+            self.assertFalse(verdict_stability["meets_threshold"])
+
+            phase_c = receipt["phase_c_acceptance"]
+            self.assertEqual(phase_c["summary"]["green"], ["C001", "C002", "C004", "C005", "C006", "C008", "C009"])
+            self.assertEqual(phase_c["summary"]["blocked"], ["C003", "C007"])
+            self.assertEqual(phase_c["criteria"]["C001"]["status"], "green")
+            self.assertEqual(phase_c["criteria"]["C002"]["status"], "green")
+            self.assertEqual(phase_c["criteria"]["C003"]["status"], "blocked")
+            self.assertEqual(phase_c["criteria"]["C004"]["status"], "green")
+            self.assertEqual(phase_c["criteria"]["C007"]["status"], "blocked")
+            self.assertIn("single executed sample", phase_c["criteria"]["C007"]["evidence"]["honesty_note"])
+
             coverage = receipt["artifact_coverage"]
             self.assertTrue(coverage["baseline-eval"]["complete"])
             self.assertTrue(coverage["candidate-student"]["complete"])
@@ -189,6 +215,13 @@ class AutoresearchAlphaLoopContractTests(unittest.TestCase):
 
                 stage_export = receipt["stages"][stage_key]["export"]
                 self.assertIn("receipt_completeness", stage_export)
+                self.assertIn("run_record_history", stage_export)
+                self.assertEqual(
+                    [entry["status"] for entry in stage_export["run_record_history"]],
+                    ["queued", "running", "completed"],
+                )
+                self.assertEqual(stage_export["run_record_history_path"], f"{receipt['stages'][stage_key]['run_id']}/run-record-history.json")
+                self.assertTrue((artifacts_root / receipt['stages'][stage_key]['run_id'] / "run-record-history.json").exists())
                 rc = stage_export["receipt_completeness"]
                 self.assertTrue(
                     rc["complete"],
