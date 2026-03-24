@@ -174,7 +174,7 @@ def _live_public_smoke(request: dict[str, Any], output_dir: Path) -> int:
 
     When a ``student_prompt_pack`` is present in the request (candidate-student
     stage), this mode invokes the local Claude Code CLI with the student prompt
-    inside the worktree before running verifier commands.  If no student prompt
+    inside the worktree before running verifier commands. If no student prompt
     pack is present the student step is skipped honestly.
     """
     backend_contract = _load_backend_contract(request)
@@ -187,10 +187,18 @@ def _live_public_smoke(request: dict[str, Any], output_dir: Path) -> int:
     )
 
     verifier_commands = _collect_verifier_commands(request)
+    timeout_budget = _derive_live_smoke_timeout_budget(request, len(verifier_commands))
+    runtime_surface["timeout_budget"] = timeout_budget
+
     events: list[dict[str, Any]] = []
     check_results: list[dict[str, Any]] = []
     student_result: dict[str, Any] | None = None
     worktree_commit: str | None = None
+    student_diff_summary: dict[str, Any] = {
+        "repo_diff_present": False,
+        "changed_lines": 0,
+        "artifact_path": None,
+    }
 
     events.append({
         "ts": _utc_now(),
@@ -200,6 +208,11 @@ def _live_public_smoke(request: dict[str, Any], output_dir: Path) -> int:
             f"{len(verifier_commands)} verifier command(s)"
             f"{' and a real student step' if has_student_step else ' (no student step)'}."
         ),
+    })
+    events.append({
+        "ts": _utc_now(),
+        "event": "budget.allocated",
+        **timeout_budget,
     })
 
     repo_root = _git_repo_root()
@@ -216,26 +229,44 @@ def _live_public_smoke(request: dict[str, Any], output_dir: Path) -> int:
 
         # ---- Student step (only when prompt pack present) ----
         if has_student_step:
-            student_result = _run_student_step(student_prompt_pack, worktree_path, output_dir)
+            student_result = _run_student_step(
+                student_prompt_pack,
+                worktree_path,
+                output_dir,
+                timeout=timeout_budget["student_timeout_seconds"],
+            )
             events.append({
                 "ts": _utc_now(),
                 "event": "student.executed",
                 "execution_status": student_result["execution_status"],
                 "exit_code": student_result.get("exit_code"),
+                "timeout_seconds": timeout_budget["student_timeout_seconds"],
             })
 
             diff_after_student = _capture_worktree_diff(worktree_path)
+            student_diff_summary = _summarize_diff_text(diff_after_student)
             if diff_after_student:
                 (output_dir / "student.diff").write_text(diff_after_student)
+                student_diff_summary["artifact_path"] = "student.diff"
                 events.append({
                     "ts": _utc_now(),
                     "event": "student.diff.captured",
-                    "changed_lines": len(diff_after_student.splitlines()),
+                    "changed_lines": student_diff_summary["changed_lines"],
+                })
+            else:
+                events.append({
+                    "ts": _utc_now(),
+                    "event": "student.no_diff",
+                    "message": "Claude student step left no repo diff.",
                 })
 
         # ---- Verifier commands ----
         for cmd in verifier_commands:
-            cr = _run_verifier_command(cmd, worktree_path)
+            cr = _run_verifier_command(
+                cmd,
+                worktree_path,
+                timeout=timeout_budget["verifier_timeout_seconds"],
+            )
             check_results.append(cr)
             events.append({
                 "ts": _utc_now(),
@@ -243,6 +274,7 @@ def _live_public_smoke(request: dict[str, Any], output_dir: Path) -> int:
                 "command": cmd,
                 "exit_code": cr["exit_code"],
                 "execution_status": cr["execution_status"],
+                "timeout_seconds": timeout_budget["verifier_timeout_seconds"],
             })
 
         diff_text = _capture_worktree_diff(worktree_path)
@@ -278,15 +310,37 @@ def _live_public_smoke(request: dict[str, Any], output_dir: Path) -> int:
 
     # ---- Scorecard ----
     passed_count = sum(1 for cr in check_results if cr.get("exit_code") == 0)
-    all_passed = bool(check_results) and passed_count == len(check_results)
+    verifiers_all_passed = all(cr.get("exit_code") == 0 for cr in check_results)
+    student_step_completed_cleanly = (not has_student_step) or (
+        student_result is not None
+        and student_result.get("execution_status") == "executed"
+        and student_result.get("exit_code") == 0
+    )
+
+    review_outcome = _build_live_smoke_review_outcome(
+        has_student_step=has_student_step,
+        student_result=student_result,
+        student_diff_summary=student_diff_summary,
+        check_results=check_results,
+    )
+    student_step_passed = (not has_student_step) or (
+        student_step_completed_cleanly and bool(review_outcome.get("meaningful_mutation"))
+    )
+    all_passed = student_step_passed and verifiers_all_passed and bool(check_results or has_student_step)
 
     # ---- Artifact bundle ----
     live_smoke_block: dict[str, Any] = {
         "worktree_commit": worktree_commit,
         "verifier_commands_executed": len(check_results),
         "verifier_commands_passed": passed_count,
-        "all_passed": all_passed,
+        "verifiers_all_passed": verifiers_all_passed,
         "student_step_executed": has_student_step and student_result is not None,
+        "student_step_completed_cleanly": student_step_completed_cleanly,
+        "student_step_passed": student_step_passed,
+        "all_passed": all_passed,
+        "timeout_budget": timeout_budget,
+        "review_outcome": review_outcome,
+        "student_diff": student_diff_summary,
     }
     if student_result is not None:
         live_smoke_block["student_execution_status"] = student_result["execution_status"]
@@ -321,12 +375,18 @@ def _live_public_smoke(request: dict[str, Any], output_dir: Path) -> int:
             "commands. No student prompt pack was present so the student step was not invoked."
         )
     honesty_note = (
-        f"{student_honesty} It does not claim sealed evaluation, tamper-proofing, "
-        "independent executor isolation, or native Clawith parity."
+        f"{student_honesty} {review_outcome['summary']} It does not claim sealed evaluation, "
+        "tamper-proofing, independent executor isolation, or native Clawith parity."
     )
 
     # ---- Student step honesty block ----
-    student_honesty_block: dict[str, Any] = {"executed": False, "reason": "no student_prompt_pack in request"}
+    student_honesty_block: dict[str, Any] = {
+        "executed": False,
+        "reason": "no student_prompt_pack in request",
+        "timeout_seconds": timeout_budget["student_timeout_seconds"],
+        "repo_diff_present": False,
+        "meaningful_mutation": False,
+    }
     if student_result is not None:
         student_honesty_block = {
             "executed": True,
@@ -334,8 +394,27 @@ def _live_public_smoke(request: dict[str, Any], output_dir: Path) -> int:
             "exit_code": student_result.get("exit_code"),
             "stdout_lines": len((student_result.get("stdout") or "").splitlines()),
             "stderr_lines": len((student_result.get("stderr") or "").splitlines()),
-            "transcript_artifact": "student-stdout.log",
+            "timeout_seconds": timeout_budget["student_timeout_seconds"],
+            "stdout_path": "student-stdout.log" if (student_result.get("stdout") or "") else None,
+            "stderr_path": "student-stderr.log" if (student_result.get("stderr") or "") else None,
+            "completed_cleanly": student_step_completed_cleanly,
+            "repo_diff_present": student_diff_summary["repo_diff_present"],
+            "repo_diff_changed_lines": student_diff_summary["changed_lines"],
+            "repo_diff_path": student_diff_summary["artifact_path"],
+            "meaningful_mutation": bool(review_outcome.get("meaningful_mutation")),
+            "transcript_artifact": "student-stdout.log" if (student_result.get("stdout") or "") else None,
         }
+
+    scorecard_checks: list[dict[str, Any]] = []
+    if has_student_step:
+        scorecard_checks.append({
+            "name": "student_step",
+            "passed": student_step_passed,
+        })
+    scorecard_checks.extend(
+        {"name": cr["command"][:80], "passed": cr.get("exit_code") == 0}
+        for cr in check_results
+    )
 
     # ---- Result ----
     result = {
@@ -345,10 +424,7 @@ def _live_public_smoke(request: dict[str, Any], output_dir: Path) -> int:
         "machine_score": 0.0,
         "scorecard": {
             "runner": "claude_vibecosystem",
-            "checks": [
-                {"name": cr["command"][:80], "passed": cr.get("exit_code") == 0}
-                for cr in check_results
-            ],
+            "checks": scorecard_checks,
         },
         "execution_honesty": {
             "backend": "claude_vibecosystem",
@@ -364,9 +440,14 @@ def _live_public_smoke(request: dict[str, Any], output_dir: Path) -> int:
                     "exit_code": cr.get("exit_code"),
                     "stdout_lines": len((cr.get("stdout") or "").splitlines()),
                     "stderr_lines": len((cr.get("stderr") or "").splitlines()),
+                    "timeout_seconds": timeout_budget["verifier_timeout_seconds"],
+                    "stdout_path": f"verifier-{idx}-stdout.log" if (cr.get("stdout") or "") else None,
+                    "stderr_path": f"verifier-{idx}-stderr.log" if (cr.get("stderr") or "") else None,
                 }
-                for cr in check_results
+                for idx, cr in enumerate(check_results)
             ],
+            "timeout_budget": timeout_budget,
+            "review_outcome": review_outcome,
             "worktree_commit": worktree_commit,
             "worktree_isolation": True,
             "mutation_enforcement": "not_enforced",
@@ -461,6 +542,133 @@ def _run_student_step(
             "stdout": "",
             "stderr": str(exc),
         }
+
+
+def _request_timeout_seconds(request: dict[str, Any], default: int = 120) -> int:
+    budget = request.get("time_budget")
+    if isinstance(budget, (int, float)):
+        return max(1, int(budget))
+    if isinstance(budget, dict):
+        if isinstance(budget.get("seconds"), (int, float)):
+            return max(1, int(budget["seconds"]))
+        if isinstance(budget.get("minutes"), (int, float)):
+            return max(1, int(float(budget["minutes"]) * 60))
+    return default
+
+
+def _derive_live_smoke_timeout_budget(request: dict[str, Any], verifier_count: int) -> dict[str, Any]:
+    request_timeout_seconds = _request_timeout_seconds(request)
+    cleanup_timeout_seconds = 5
+    verifier_total_timeout_seconds = 0
+    if verifier_count > 0:
+        verifier_total_timeout_seconds = min(60, max(30, verifier_count * 10))
+
+    available_runtime_seconds = max(1, request_timeout_seconds - cleanup_timeout_seconds)
+    if verifier_total_timeout_seconds > max(0, available_runtime_seconds - 1):
+        verifier_total_timeout_seconds = max(0, available_runtime_seconds - 1)
+
+    student_timeout_seconds = max(1, available_runtime_seconds - verifier_total_timeout_seconds)
+    verifier_timeout_seconds = (
+        verifier_total_timeout_seconds // verifier_count if verifier_count > 0 else 0
+    )
+
+    return {
+        "request_timeout_seconds": request_timeout_seconds,
+        "student_timeout_seconds": student_timeout_seconds,
+        "verifier_timeout_seconds": verifier_timeout_seconds,
+        "verifier_total_timeout_seconds": verifier_total_timeout_seconds,
+        "verifier_command_count": verifier_count,
+        "cleanup_timeout_seconds": cleanup_timeout_seconds,
+        "budget_aligned": (
+            student_timeout_seconds
+            + verifier_total_timeout_seconds
+            + cleanup_timeout_seconds
+            <= request_timeout_seconds
+        ),
+    }
+
+
+def _summarize_diff_text(diff_text: str) -> dict[str, Any]:
+    if not diff_text:
+        return {
+            "repo_diff_present": False,
+            "changed_lines": 0,
+            "artifact_path": None,
+        }
+    return {
+        "repo_diff_present": True,
+        "changed_lines": len(diff_text.splitlines()),
+        "artifact_path": None,
+    }
+
+
+def _build_live_smoke_review_outcome(
+    *,
+    has_student_step: bool,
+    student_result: dict[str, Any] | None,
+    student_diff_summary: dict[str, Any],
+    check_results: list[dict[str, Any]],
+) -> dict[str, Any]:
+    verifier_failures = sum(1 for cr in check_results if cr.get("exit_code") not in (0, None))
+    verifier_timeouts = sum(1 for cr in check_results if cr.get("execution_status") == "timeout")
+    repo_diff_present = bool(student_diff_summary.get("repo_diff_present"))
+
+    if not has_student_step:
+        return {
+            "kind": "verifier_only",
+            "summary": "No student prompt pack was present; this run exercised verifier commands only.",
+            "meaningful_mutation": False,
+            "repo_diff_present": False,
+            "verifier_failures": verifier_failures,
+            "verifier_timeouts": verifier_timeouts,
+        }
+
+    if student_result is None:
+        return {
+            "kind": "student_not_invoked",
+            "summary": "The request expected a student step, but none was invoked.",
+            "meaningful_mutation": False,
+            "repo_diff_present": False,
+            "verifier_failures": verifier_failures,
+            "verifier_timeouts": verifier_timeouts,
+        }
+
+    execution_status = str(student_result.get("execution_status") or "unknown")
+    exit_code = student_result.get("exit_code")
+
+    if execution_status == "timeout" and not repo_diff_present:
+        kind = "wiring_only_timeout_no_diff"
+        summary = "Student step timed out and produced no repo diff; this run proved wiring more than useful mutation."
+        meaningful_mutation = False
+    elif execution_status == "timeout":
+        kind = "student_timeout_with_diff"
+        summary = "Student step timed out but left a repo diff; inspect student.diff before treating it as useful."
+        meaningful_mutation = True
+    elif execution_status != "executed" or exit_code not in (0,):
+        kind = "student_step_failed"
+        summary = "Student step did not finish cleanly; inspect stdout/stderr before treating this smoke as a successful mutation."
+        meaningful_mutation = repo_diff_present
+    elif not repo_diff_present:
+        kind = "wiring_only_no_diff"
+        summary = "Student step completed but produced no repo diff; this run proved wiring more than useful mutation."
+        meaningful_mutation = False
+    elif verifier_failures or verifier_timeouts:
+        kind = "student_diff_verifier_failures"
+        summary = "Student step produced a repo diff, but one or more verifier commands failed or timed out."
+        meaningful_mutation = True
+    else:
+        kind = "student_diff_captured"
+        summary = "Student step produced a repo diff and verifier commands completed."
+        meaningful_mutation = True
+
+    return {
+        "kind": kind,
+        "summary": summary,
+        "meaningful_mutation": meaningful_mutation,
+        "repo_diff_present": repo_diff_present,
+        "verifier_failures": verifier_failures,
+        "verifier_timeouts": verifier_timeouts,
+    }
 
 
 # ---------------------------------------------------------------------------

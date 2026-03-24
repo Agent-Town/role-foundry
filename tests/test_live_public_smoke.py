@@ -20,6 +20,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
+LIVE_SMOKE_EXAMPLE = ROOT / "runner_bridge" / "examples" / "autoresearch-alpha-public-loop.live-smoke.json"
 
 
 class LivePublicSmokeBackendTests(unittest.TestCase):
@@ -104,6 +105,7 @@ class LivePublicSmokeBackendTests(unittest.TestCase):
             self.assertFalse(ss["executed"])
             self.assertIn("no student_prompt_pack", ss["reason"])
             self.assertFalse(bundle["live_smoke"]["student_step_executed"])
+            self.assertEqual(eh["review_outcome"]["kind"], "verifier_only")
 
             # Honesty note should NOT claim Claude Code was invoked
             self.assertIn("student step was not invoked", eh["honesty_note"])
@@ -241,6 +243,166 @@ class StudentStepUnitTests(unittest.TestCase):
             self.assertEqual(result["execution_status"], "error")
             self.assertIn("not found", result["stderr"])
 
+    def test_derive_live_smoke_timeout_budget_threads_request_budget(self):
+        from runner_bridge.backends.claude_vibecosystem import _derive_live_smoke_timeout_budget
+
+        budget = _derive_live_smoke_timeout_budget(
+            {"time_budget": {"seconds": 300}},
+            verifier_count=3,
+        )
+
+        self.assertEqual(budget["request_timeout_seconds"], 300)
+        self.assertEqual(budget["verifier_command_count"], 3)
+        self.assertGreater(budget["student_timeout_seconds"], 120)
+        self.assertTrue(budget["budget_aligned"])
+        self.assertLessEqual(
+            budget["student_timeout_seconds"]
+            + budget["verifier_total_timeout_seconds"]
+            + budget["cleanup_timeout_seconds"],
+            300,
+        )
+
+    def test_live_smoke_threads_budget_and_marks_wiring_only_when_student_times_out(self):
+        from runner_bridge.backends.claude_vibecosystem import _live_public_smoke
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_dir = Path(tmpdir) / "out"
+            output_dir.mkdir()
+            repo_root = Path(tmpdir) / "repo"
+            repo_root.mkdir()
+
+            request = {
+                "run_id": "smoke-budget-001",
+                "agent_role": "student",
+                "scenario_set_id": "live-smoke-budget",
+                "workspace_snapshot": {},
+                "time_budget": {"seconds": 300},
+                "cost_budget": {"usd": 0},
+                "student_prompt_pack": {
+                    "prompt_summary": "Inspect the repo and make the smallest useful fix.",
+                    "visible_scenarios": [{"id": "s1", "student_prompt": "Fix one thing."}],
+                },
+                "extras": {
+                    "recommended_verifier_commands": [
+                        "python3 -c \"print('ok')\"",
+                    ],
+                },
+            }
+
+            def _fake_create_worktree(_repo_root: Path, worktree_path: Path) -> str:
+                worktree_path.mkdir(parents=True, exist_ok=True)
+                return "abc123def456abc123def456abc123def456abcd"
+
+            with patch("runner_bridge.backends.claude_vibecosystem._git_repo_root", return_value=repo_root), \
+                 patch("runner_bridge.backends.claude_vibecosystem._create_worktree", side_effect=_fake_create_worktree), \
+                 patch("runner_bridge.backends.claude_vibecosystem._remove_worktree"), \
+                 patch(
+                     "runner_bridge.backends.claude_vibecosystem._run_student_step",
+                     return_value={
+                         "execution_status": "timeout",
+                         "exit_code": None,
+                         "stdout": "",
+                         "stderr": "Claude CLI timed out after 265s",
+                     },
+                 ) as run_student, \
+                 patch(
+                     "runner_bridge.backends.claude_vibecosystem._run_verifier_command",
+                     return_value={
+                         "command": "python3 -c \"print('ok')\"",
+                         "execution_status": "executed",
+                         "exit_code": 0,
+                         "stdout": "ok\n",
+                         "stderr": "",
+                     },
+                 ) as run_verifier, \
+                 patch("runner_bridge.backends.claude_vibecosystem._capture_worktree_diff", side_effect=["", ""]):
+                exit_code = _live_public_smoke(request, output_dir)
+
+            self.assertEqual(exit_code, 0)
+            self.assertGreater(run_student.call_args.kwargs["timeout"], 120)
+            self.assertEqual(run_verifier.call_args.kwargs["timeout"], 30)
+
+            result = json.loads((output_dir / "result.json").read_text())
+            eh = result["execution_honesty"]
+            self.assertEqual(eh["timeout_budget"]["request_timeout_seconds"], 300)
+            self.assertEqual(eh["review_outcome"]["kind"], "wiring_only_timeout_no_diff")
+            self.assertIn("proved wiring more than useful mutation", eh["review_outcome"]["summary"])
+            self.assertFalse(eh["student_step"]["meaningful_mutation"])
+            self.assertFalse(result["scorecard"]["checks"][0]["passed"])
+
+            bundle = json.loads((output_dir / "artifact-bundle.json").read_text())
+            self.assertFalse(bundle["live_smoke"]["student_step_passed"])
+            self.assertFalse(bundle["live_smoke"]["all_passed"])
+
+    def test_live_smoke_treats_clean_no_diff_student_run_as_not_passed(self):
+        from runner_bridge.backends.claude_vibecosystem import _live_public_smoke
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_dir = Path(tmpdir) / "out"
+            output_dir.mkdir()
+            repo_root = Path(tmpdir) / "repo"
+            repo_root.mkdir()
+
+            request = {
+                "run_id": "smoke-nodiff-001",
+                "agent_role": "student",
+                "scenario_set_id": "live-smoke-budget",
+                "workspace_snapshot": {},
+                "time_budget": {"seconds": 300},
+                "cost_budget": {"usd": 0},
+                "student_prompt_pack": {
+                    "prompt_summary": "Inspect the repo and make the smallest useful fix.",
+                    "visible_scenarios": [{"id": "s1", "student_prompt": "Fix one thing."}],
+                },
+                "extras": {
+                    "recommended_verifier_commands": [
+                        "python3 -c \"print('ok')\"",
+                    ],
+                },
+            }
+
+            def _fake_create_worktree(_repo_root: Path, worktree_path: Path) -> str:
+                worktree_path.mkdir(parents=True, exist_ok=True)
+                return "abc123def456abc123def456abc123def456abcd"
+
+            with patch("runner_bridge.backends.claude_vibecosystem._git_repo_root", return_value=repo_root), \
+                 patch("runner_bridge.backends.claude_vibecosystem._create_worktree", side_effect=_fake_create_worktree), \
+                 patch("runner_bridge.backends.claude_vibecosystem._remove_worktree"), \
+                 patch(
+                     "runner_bridge.backends.claude_vibecosystem._run_student_step",
+                     return_value={
+                         "execution_status": "executed",
+                         "exit_code": 0,
+                         "stdout": "Error: Reached max turns (3)\n",
+                         "stderr": "",
+                     },
+                 ), \
+                 patch(
+                     "runner_bridge.backends.claude_vibecosystem._run_verifier_command",
+                     return_value={
+                         "command": "python3 -c \"print('ok')\"",
+                         "execution_status": "executed",
+                         "exit_code": 0,
+                         "stdout": "ok\n",
+                         "stderr": "",
+                     },
+                 ), \
+                 patch("runner_bridge.backends.claude_vibecosystem._capture_worktree_diff", side_effect=["", ""]):
+                exit_code = _live_public_smoke(request, output_dir)
+
+            self.assertEqual(exit_code, 0)
+            result = json.loads((output_dir / "result.json").read_text())
+            eh = result["execution_honesty"]
+            self.assertEqual(eh["review_outcome"]["kind"], "wiring_only_no_diff")
+            self.assertFalse(eh["student_step"]["meaningful_mutation"])
+            self.assertTrue(eh["student_step"]["completed_cleanly"])
+            self.assertFalse(result["scorecard"]["checks"][0]["passed"])
+
+            bundle = json.loads((output_dir / "artifact-bundle.json").read_text())
+            self.assertTrue(bundle["live_smoke"]["student_step_completed_cleanly"])
+            self.assertFalse(bundle["live_smoke"]["student_step_passed"])
+            self.assertFalse(bundle["live_smoke"]["all_passed"])
+
 
 class StudentStepIntegrationTests(unittest.TestCase):
     """Integration test: student step invokes real Claude CLI when prompt pack present."""
@@ -257,7 +419,7 @@ class StudentStepIntegrationTests(unittest.TestCase):
                 "agent_role": "student",
                 "scenario_set_id": "live-smoke-student-test",
                 "workspace_snapshot": {},
-                "time_budget": {"seconds": 120},
+                "time_budget": {"seconds": 180},
                 "cost_budget": {"usd": 0},
                 "student_prompt_pack": {
                     "actor": "test-student",
@@ -294,7 +456,7 @@ class StudentStepIntegrationTests(unittest.TestCase):
                 capture_output=True,
                 text=True,
                 cwd=ROOT,
-                timeout=180,
+                timeout=240,
             )
             self.assertEqual(proc.returncode, 0, f"Backend failed:\n{proc.stderr}")
 
@@ -320,6 +482,7 @@ class StudentStepIntegrationTests(unittest.TestCase):
             # Artifact bundle should record student step
             bundle = json.loads((output_dir / "artifact-bundle.json").read_text())
             self.assertTrue(bundle["live_smoke"]["student_step_executed"])
+            self.assertGreater(eh["timeout_budget"]["student_timeout_seconds"], 120)
 
             # Honesty note should mention Claude Code was invoked
             self.assertIn("invoked a real Claude Code", eh["honesty_note"])
@@ -329,6 +492,15 @@ class StudentStepIntegrationTests(unittest.TestCase):
                 bundle["external_executor_beta"]["live_execution"],
                 "student_and_verifier",
             )
+
+
+class LiveSmokeExampleContractTests(unittest.TestCase):
+    def test_tracked_live_smoke_example_uses_extended_candidate_budget(self):
+        request = json.loads(LIVE_SMOKE_EXAMPLE.read_text())
+        candidate_request = request["stages"]["candidate-student"]["request"]
+
+        self.assertEqual(candidate_request["time_budget"]["seconds"], 300)
+        self.assertIn("live public-smoke", candidate_request["workspace_snapshot"]["objective"].lower())
 
 
 class VerifierContractThreadingTests(unittest.TestCase):

@@ -663,6 +663,9 @@ def _build_stage_receipt(
     transcript_excerpt = _transcript_excerpt(run_dir / "transcript.ndjson")
 
     execution_backend = build_execution_backend_surface(request, stored_result, artifact_bundle)
+    execution_honesty = stored_result.get("execution_honesty") if isinstance(stored_result.get("execution_honesty"), dict) else {}
+    live_smoke_review = execution_honesty.get("review_outcome") if isinstance(execution_honesty.get("review_outcome"), dict) else None
+    live_smoke_timeout_budget = execution_honesty.get("timeout_budget") if isinstance(execution_honesty.get("timeout_budget"), dict) else None
     scorecard = stored_result.get("scorecard") if isinstance(stored_result.get("scorecard"), dict) else None
     aggregate_score = scorecard.get("aggregate_score") if isinstance(scorecard, dict) and isinstance(scorecard.get("aggregate_score"), dict) else None
 
@@ -728,6 +731,8 @@ def _build_stage_receipt(
         "total_score": export_result.get("machine_score"),
         "aggregate_score": aggregate_score,
         "execution_backend": execution_backend,
+        "live_smoke_review": live_smoke_review,
+        "live_smoke_timeout_budget": live_smoke_timeout_budget,
         "verifier_contract": verifier_contract,
         "lineage": lineage,
         "traceability": traceability,

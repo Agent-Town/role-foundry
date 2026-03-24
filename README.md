@@ -145,6 +145,17 @@ python3 -m runner_bridge.autoresearch_alpha \
   --request runner_bridge/examples/autoresearch-alpha-public-loop.json
 ```
 
+For the tracked **live public-smoke** lane, use the dedicated request instead of hand-editing the default example:
+
+```bash
+python3 -m runner_bridge.autoresearch_alpha \
+  --request runner_bridge/examples/autoresearch-alpha-public-loop.live-smoke.json \
+  --artifacts-root runtime/autoresearch-alpha/live-public-smoke \
+  --backend-command "python3 -m runner_bridge.backends.claude_vibecosystem --live-public-smoke"
+```
+
+That command keeps baseline + candidate-teacher on `LocalReplayRunner`, gives the candidate-student stage a **300s** request budget, and the live backend now threads that stage budget into the real Claude step while reserving time for verifier commands + cleanup. If Claude still times out or leaves no repo diff, the receipt now says plainly that the smoke proved wiring more than useful mutation.
+
 What it proves today:
 - a real **baseline → candidate student → candidate teacher-eval** lifecycle
 - a concrete **better/equal/worse** comparison receipt
@@ -275,7 +286,7 @@ For the hackathon MVP, Clawith integration is wired at the Docker layer and the 
 
 Using different model families for building and judging reduces correlated self-grading.
 
-A contract-first `claude_vibecosystem` external-executor beta seam is now wired through `python3 -m runner_bridge.cli --runner-backend claude_vibecosystem`. Its default path still records backend selection, executor intent, and claim boundaries conservatively. Its opt-in `--live-public-smoke` path now drives one honest mixed-mode alpha lane: baseline + candidate-teacher stay on `LocalReplayRunner`, while candidate-student runs a real Claude Code student step in an isolated git worktree and executes real verifier commands for a tiny public-safe slice. It still does not claim sealed evaluation, tamper-proofing, independent executor isolation, or native Clawith parity.
+A contract-first `claude_vibecosystem` external-executor beta seam is now wired through `python3 -m runner_bridge.cli --runner-backend claude_vibecosystem`. Its default path still records backend selection, executor intent, and claim boundaries conservatively. Its opt-in `--live-public-smoke` path now drives one honest mixed-mode alpha lane: baseline + candidate-teacher stay on `LocalReplayRunner`, while candidate-student runs a real Claude Code student step in an isolated git worktree and executes real verifier commands for a tiny public-safe slice. The tracked smoke entrypoint is `runner_bridge/examples/autoresearch-alpha-public-loop.live-smoke.json`; its longer candidate-student stage budget is now threaded into the live backend so Claude is no longer capped by a hidden fixed 120s timeout when the request allows more time. Receipts also call out timeout / no-diff outcomes explicitly so a run that only proves wiring does not read like a useful mutation. It still does not claim sealed evaluation, tamper-proofing, independent executor isolation, or native Clawith parity.
 
 ## Docs
 

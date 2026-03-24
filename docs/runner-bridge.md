@@ -206,6 +206,17 @@ The `--packet` flag and `--request` flag are alternatives. `--packet` loads from
 
 `--runner-backend claude_vibecosystem` is the contract-first external-executor beta seam. By default it still behaves as a conservative stub that records intent + claim boundary only. In its opt-in `--live-public-smoke` mode it creates an isolated git worktree, invokes a real Claude Code student step when a `student_prompt_pack` is present, executes real verifier commands, and captures stdout/stderr + transcript artifacts honestly. It still does **not** claim sealed evaluation, tamper-proofing, independent executor isolation, or native Clawith parity.
 
+For the tracked mixed-execution alpha lane, use:
+
+```bash
+python3 -m runner_bridge.autoresearch_alpha \
+  --request runner_bridge/examples/autoresearch-alpha-public-loop.live-smoke.json \
+  --artifacts-root runtime/autoresearch-alpha/live-public-smoke \
+  --backend-command "python3 -m runner_bridge.backends.claude_vibecosystem --live-public-smoke"
+```
+
+That request gives the candidate-student stage a longer **300s** budget. The live backend now threads that request budget into the real Claude student step, reserves time for verifier commands + cleanup, and records the resulting timeout split in `execution_honesty.timeout_budget`.
+
 ### run-object.json — runtime artifact export
 
 When a run is driven by a task packet (i.e. the request carries a `packet_runtime` block), the bridge materializes a `run-object.json` in the run directory. This is the concrete runtime artifact that proves the bridge consumed the versioned contract surface:
@@ -270,7 +281,7 @@ When `LocalReplayRunner` processes a packet-driven request, `result.json` includ
 
 This makes it explicit that LocalReplayRunner does not execute task commands, enforce mutation budgets, or enforce path constraints. When a real worktree diff is available, the bridge can still audit the actual changed-file surface against the packet contract. When no diff exists, the receipt says so plainly instead of implying the surface passed.
 
-When `--runner-backend claude_vibecosystem` is selected, `execution_honesty` stays explicit about which lane actually ran. The default stub path reports `executes_commands: false`, `executes_checks: false`, and keeps the same conservative claim boundary. The opt-in `--live-public-smoke` path reports a real Claude Code student step plus real verifier-command execution for one narrow public-safe slice, while still saying sealed evaluation, tamper-proofing, independent executor isolation, and native Clawith parity are **not claimed**.
+When `--runner-backend claude_vibecosystem` is selected, `execution_honesty` stays explicit about which lane actually ran. The default stub path reports `executes_commands: false`, `executes_checks: false`, and keeps the same conservative claim boundary. The opt-in `--live-public-smoke` path reports a real Claude Code student step plus real verifier-command execution for one narrow public-safe slice, while still saying sealed evaluation, tamper-proofing, independent executor isolation, and native Clawith parity are **not claimed**. It now also exposes `timeout_budget` and `review_outcome` so reviewers can see whether the request budget was threaded into Claude, whether the student timed out, and whether the run produced an actual repo diff or merely proved wiring.
 
 ### PacketRunObject contents
 
