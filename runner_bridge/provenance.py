@@ -120,7 +120,6 @@ def write_receipt_provenance(
         receipt_paths=receipt_paths,
         evidence_entries=evidence_entries,
     )
-    audit_bundle_path.write_text(json.dumps(audit_bundle, indent=2))
 
     summary_path = receipts_dir / "summary.md"
     summary_path.write_text(
@@ -183,6 +182,53 @@ def write_receipt_provenance(
 
     result["provenance"] = provenance
 
+    refresh_receipt_provenance_audit_bundle(
+        run_dir,
+        request,
+        result,
+        receipt_paths=receipt_paths,
+        evidence_entries=evidence_entries,
+    )
+    return provenance
+
+
+def refresh_receipt_provenance_audit_bundle(
+    run_dir: str | Path,
+    request: dict[str, Any],
+    result: dict[str, Any],
+    *,
+    receipt_paths: dict[str, str] | None = None,
+    evidence_entries: list[dict[str, Any]] | None = None,
+) -> None:
+    run_dir = Path(run_dir)
+    receipts_dir = run_dir / "receipts"
+    audit_bundle_path = receipts_dir / "audit-bundle.json"
+    manifest_path = receipts_dir / "manifest.json"
+    evidence_index_path = receipts_dir / "evidence-index.json"
+
+    request_private = _load_json(run_dir / "request.private.json")
+    artifact_bundle = _load_json(run_dir / "artifact-bundle.json")
+
+    if receipt_paths is None:
+        manifest = _load_json(manifest_path)
+        manifest_receipts = manifest.get("receipts") if isinstance(manifest.get("receipts"), dict) else {}
+        loaded_receipt_paths = manifest_receipts.get("episode_receipt_paths")
+        receipt_paths = dict(loaded_receipt_paths) if isinstance(loaded_receipt_paths, dict) else {}
+
+    if evidence_entries is None:
+        evidence_index = _load_json(evidence_index_path)
+        loaded_entries = evidence_index.get("entries")
+        evidence_entries = list(loaded_entries) if isinstance(loaded_entries, list) else []
+
+    audit_bundle = _build_audit_bundle(
+        run_dir=run_dir,
+        request=request,
+        request_private=request_private,
+        result=result,
+        artifact_bundle=artifact_bundle,
+        receipt_paths=receipt_paths,
+        evidence_entries=evidence_entries,
+    )
     audit_bundle["artifact_index"] = {
         "status": "finalized",
         "generated_artifacts": _build_audit_artifact_index(
@@ -193,7 +239,7 @@ def write_receipt_provenance(
         "episode_receipt_paths": dict(receipt_paths),
     }
     audit_bundle_path.write_text(json.dumps(audit_bundle, indent=2))
-    return provenance
+
 
 
 def _build_candidate_receipt(
@@ -1140,6 +1186,10 @@ def _build_traceability_block(
         "agent_role": request.get("agent_role"),
         "sequence_id": request_traceability.get("sequence_id"),
         "stage_key": request_traceability.get("stage_key"),
+        "root_run_id": request_traceability.get("root_run_id"),
+        "parent_run_id": request_traceability.get("parent_run_id"),
+        "iteration_index": request_traceability.get("iteration_index"),
+        "iteration_label": request_traceability.get("iteration_label"),
         "previous_iteration_run_id": previous_iteration.get("run_id") if isinstance(previous_iteration, dict) else None,
     }
 

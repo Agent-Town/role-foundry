@@ -176,6 +176,7 @@ def run_alpha_loop(
         benchmark_pack=benchmark_pack,
         loop_sequence_id=loop_sequence_id,
         baseline_stage=baseline_stage,
+        candidate_student_stage=candidate_student_stage,
         private_holdout_pack=private_holdout_pack,
     )
     candidate_teacher_result = bridge.run(RunRequest.from_dict(candidate_teacher_request))
@@ -340,6 +341,8 @@ def _prepare_candidate_student_request(
         benchmark_pack=benchmark_pack,
         visible_episodes=episodes,
         sealed_holdout_count=_sealed_holdout_count(teacher_eval),
+        root_run_id=baseline_stage.get("run_id"),
+        parent_run_id=baseline_stage.get("run_id"),
     )
     return request
 
@@ -351,6 +354,7 @@ def _prepare_teacher_stage_request(
     benchmark_pack: dict[str, Any],
     loop_sequence_id: str,
     baseline_stage: dict[str, Any] | None = None,
+    candidate_student_stage: dict[str, Any] | None = None,
     private_holdout_pack: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     request = deepcopy(stage_config["request"])
@@ -374,12 +378,23 @@ def _prepare_teacher_stage_request(
         }
 
     request["teacher_evaluation"] = teacher_eval
+    root_run_id = baseline_stage.get("run_id") if isinstance(baseline_stage, dict) else request.get("run_id")
+    parent_run_id = None
+    if stage_key == "candidate-teacher-eval":
+        parent_run_id = (
+            candidate_student_stage.get("run_id")
+            if isinstance(candidate_student_stage, dict)
+            else root_run_id
+        )
+
     _apply_stage_traceability(
         request,
         stage_key=stage_key,
         loop_sequence_id=loop_sequence_id,
         benchmark_pack=benchmark_pack,
         teacher_scenarios=teacher_eval.get("scenarios") if isinstance(teacher_eval.get("scenarios"), list) else [],
+        root_run_id=root_run_id,
+        parent_run_id=parent_run_id,
     )
     return request
 
@@ -393,6 +408,8 @@ def _apply_stage_traceability(
     visible_episodes: list[dict[str, Any]] | None = None,
     teacher_scenarios: list[dict[str, Any]] | None = None,
     sealed_holdout_count: int | None = None,
+    root_run_id: str | None = None,
+    parent_run_id: str | None = None,
 ) -> None:
     pack_meta = benchmark_pack.get("meta") if isinstance(benchmark_pack.get("meta"), dict) else {}
     episodes: dict[str, Any] = {}
@@ -434,9 +451,14 @@ def _apply_stage_traceability(
     if sealed_holdout_count is not None:
         episodes["sealed_holdout_count"] = int(sealed_holdout_count)
 
+    stage_meta = dict(STAGE_ORDER)[stage_key]
     request["traceability"] = {
         "sequence_id": loop_sequence_id,
         "stage_key": stage_key,
+        "root_run_id": root_run_id,
+        "parent_run_id": parent_run_id,
+        "iteration_index": stage_meta["iteration"],
+        "iteration_label": stage_meta["iteration_label"],
         "benchmark_pack": {
             "id": pack_meta.get("id"),
             "version": pack_meta.get("version"),
@@ -707,6 +729,10 @@ def _build_stage_traceability_export(
     traceability = {
         "sequence_id": request_traceability.get("sequence_id"),
         "stage_key": request_traceability.get("stage_key"),
+        "root_run_id": request_traceability.get("root_run_id"),
+        "parent_run_id": request_traceability.get("parent_run_id"),
+        "iteration_index": request_traceability.get("iteration_index"),
+        "iteration_label": request_traceability.get("iteration_label"),
         "benchmark_pack": {
             "id": request_traceability.get("benchmark_pack", {}).get("id")
             if isinstance(request_traceability.get("benchmark_pack"), dict)
