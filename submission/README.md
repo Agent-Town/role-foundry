@@ -1,6 +1,6 @@
 # Submission packet
 
-Canonical final packet for review branch `review/submission-erc-provenance-20260323-1240`.
+Canonical final packet for review branch `review/base-sepolia-live-mint-proof-20260323-1325`.
 
 The recorded `final_review_commit` in the packet files is the **content-freeze commit** for the finalized packet. The branch head may be one tiny stamp commit later so the packet can record a stable non-self-referential SHA.
 

@@ -3,8 +3,8 @@
   "project": {
     "name": "Role Foundry",
     "repo_url": "https://github.com/Agent-Town/role-foundry",
-    "final_review_branch": "review/submission-erc-provenance-20260323-1240",
-    "final_review_commit": "324f29f81f3a9e81b52b6b89f5daa6fc29a6ac12",
+    "final_review_branch": "review/base-sepolia-live-mint-proof-20260323-1325",
+    "final_review_commit": "2029fcd8ea8734667a58b77941dadee5c9907592",
     "final_review_commit_strategy": "content_freeze_commit_recorded_by_followup_stamp_commit"
   },
   "summary": {

@@ -1,13 +1,13 @@
 # conversationLog
 
 Status: final-review-ready
-Canonical final packet artifact for review branch `review/submission-erc-provenance-20260323-1240`.
+Canonical final packet artifact for review branch `review/base-sepolia-live-mint-proof-20260323-1325`.
 
 ## 1. Submission framing
 
 - Project: Role Foundry
-- Final review branch: `review/submission-erc-provenance-20260323-1240`
-- Final review commit: `324f29f81f3a9e81b52b6b89f5daa6fc29a6ac12`
+- Final review branch: `review/base-sepolia-live-mint-proof-20260323-1325`
+- Final review commit: `2029fcd8ea8734667a58b77941dadee5c9907592`
 - One-sentence claim:
   - Role Foundry is a role-training, evaluation, and promotion system for AI apprentices; this branch makes the generation provenance chain explicit and now includes a **load-bearing Base Sepolia mint draft evidence bundle (run-eval-002)**. The current evidence proves a Software Engineer apprentice public alpha loop, a local private-holdout honesty boundary, a staged ERC-8004/Base issuance path, and an external Clawith -> OpenClaw -> Claude/vibecosystem roundtrip path without claiming live Base minting, native parity, or sealed certification.
 
