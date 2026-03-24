@@ -82,7 +82,36 @@ class RunBridge:
                 indent=2,
             ))
 
+        run_record_history_path = run_dir / "run-record-history.json"
+        queued_at = _utc_now()
+        run_record_history = [
+            {
+                "status": "queued",
+                "ts": queued_at,
+                "source": "run_bridge",
+                "reason": "request artifacts materialized",
+            }
+        ]
+        _write_run_record_history(run_record_history_path, run_record_history)
+        self.control_plane.patch_run(
+            request.run_id,
+            {
+                "status": "queued",
+                "queued_at": queued_at,
+                "agent_role": request.agent_role,
+                "scenario_set_id": request.scenario_set_id,
+            },
+        )
+
         started_at = _utc_now()
+        run_record_history.append(
+            {
+                "status": "running",
+                "ts": started_at,
+                "source": "run_bridge",
+            }
+        )
+        _write_run_record_history(run_record_history_path, run_record_history)
         self.control_plane.patch_run(
             request.run_id,
             {
@@ -121,6 +150,16 @@ class RunBridge:
 
         result["started_at"] = started_at
         result["finished_at"] = _utc_now()
+        run_record_history.append(
+            {
+                "status": result["status"],
+                "ts": result["finished_at"],
+                "source": "run_bridge",
+            }
+        )
+        _write_run_record_history(run_record_history_path, run_record_history)
+        result["run_record_history"] = run_record_history
+        result["run_record_history_path"] = run_record_history_path.name
 
         packet_runtime = raw_request.get("packet_runtime") if isinstance(raw_request.get("packet_runtime"), dict) else None
         if packet_runtime:
@@ -137,6 +176,14 @@ class RunBridge:
                 run_dir / "artifact-bundle.json",
                 mutation_surface_audit,
                 mutation_surface_audit_path,
+            )
+
+        execution_backend = build_execution_backend_surface(raw_request, result)
+        if execution_backend:
+            result["execution_backend"] = execution_backend
+            _patch_artifact_bundle_execution_backend(
+                run_dir / "artifact-bundle.json",
+                execution_backend,
             )
 
         result_path = run_dir / "result.json"
@@ -276,6 +323,35 @@ def _patch_artifact_bundle_mutation_surface_audit(
     artifact_bundle_path.write_text(json.dumps(artifact_bundle, indent=2))
 
 
+def _patch_artifact_bundle_execution_backend(
+    artifact_bundle_path: Path,
+    execution_backend: dict[str, Any],
+) -> None:
+    if not artifact_bundle_path.exists():
+        return
+    artifact_bundle = json.loads(artifact_bundle_path.read_text())
+    if not isinstance(artifact_bundle, dict):
+        return
+
+    backend_id = execution_backend.get("backend_id")
+    if backend_id:
+        artifact_bundle["execution_backend"] = backend_id
+
+    backend_contract = execution_backend.get("execution_backend_contract")
+    if isinstance(backend_contract, dict) and backend_contract:
+        artifact_bundle["execution_backend_contract"] = backend_contract
+
+    execution_honesty = execution_backend.get("execution_honesty")
+    if isinstance(execution_honesty, dict) and execution_honesty:
+        artifact_bundle["execution_honesty"] = execution_honesty
+
+    artifact_bundle_path.write_text(json.dumps(artifact_bundle, indent=2))
+
+
+def _write_run_record_history(path: Path, history: list[dict[str, Any]]) -> None:
+    path.write_text(json.dumps(history, indent=2))
+
+
 def _utc_now() -> str:
     return datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
@@ -300,7 +376,7 @@ def _build_run_object_export(
     every field a reviewer or downstream tool needs to verify the run
     was set up correctly without re-reading the registry or contract files.
     """
-    return {
+    export = {
         "run_object_version": packet_runtime.get("run_object_version", "1.0.0"),
         "run_id": request.run_id,
         "packet_id": packet_runtime.get("packet_id", ""),
@@ -325,3 +401,7 @@ def _build_run_object_export(
             "receipts_dir": str(run_dir / "receipts"),
         },
     }
+    execution_backend_contract = packet_runtime.get("execution_backend_contract")
+    if isinstance(execution_backend_contract, dict) and execution_backend_contract:
+        export["execution_backend_contract"] = execution_backend_contract
+    return export
