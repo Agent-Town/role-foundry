@@ -247,7 +247,7 @@ See `docs/erc8004-base-agent0-adapter.md` for usage and `specs/013-erc8004-base-
 
 This repo is intentionally honest about what is not wired yet:
 - the browser **live shell is read-only** — it consumes configured exports / receipts, but it does not chase native run storage or claim upstream Clawith parity
-- only one **local/mockable runner path** is implemented today (`LocalReplayRunner`); teacher scorecards and iteration history are real contracts, but Claude/Codex-backed adapters still need wiring
+- the broad default path is still **LocalReplayRunner / zero-secret replay**; however, `claude_vibecosystem --live-public-smoke` now provides one narrow real candidate-student lane that runs Claude Code in an isolated git worktree and executes real verifier commands for a public-safe slice. Teacher scorecards and iteration history are real contracts, but broader Claude/Codex-backed adapters still need wiring.
 - the repo now ships both a **real committed public-regression alpha receipt** (`app/autoresearch-alpha.public-regression.export.json`) and the older **sample/read-model envelope** (`app/live-read-model.alpha-loop.sample.json`); the browser can also read the committed lineage/weekly-cycle fixtures for stored history surfaces, but none of that implies native live storage/browser fan-out or live gate enforcement already exists on this branch
 - no auth, no Privy, no fake consumer OAuth path
 - no live artifact viewer backed by run storage fan-out
@@ -275,7 +275,7 @@ For the hackathon MVP, Clawith integration is wired at the Docker layer and the 
 
 Using different model families for building and judging reduces correlated self-grading.
 
-A contract-first `claude_vibecosystem` external-executor beta seam is now wired through `python3 -m runner_bridge.cli --runner-backend claude_vibecosystem`. It records backend selection, executor intent, and claim boundaries into `run-object.json`, `artifact-bundle.json`, receipt provenance, and alpha-loop `sealing_receipt.execution_backend` summaries when those surfaces are exported, but it does not claim sealed evaluation, live isolation, or native Clawith parity.
+A contract-first `claude_vibecosystem` external-executor beta seam is now wired through `python3 -m runner_bridge.cli --runner-backend claude_vibecosystem`. Its default path still records backend selection, executor intent, and claim boundaries conservatively. Its opt-in `--live-public-smoke` path now drives one honest mixed-mode alpha lane: baseline + candidate-teacher stay on `LocalReplayRunner`, while candidate-student runs a real Claude Code student step in an isolated git worktree and executes real verifier commands for a tiny public-safe slice. It still does not claim sealed evaluation, tamper-proofing, independent executor isolation, or native Clawith parity.
 
 ## Docs
 

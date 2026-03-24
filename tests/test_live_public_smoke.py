@@ -194,6 +194,17 @@ class LivePublicSmokeBackendTests(unittest.TestCase):
 class StudentStepUnitTests(unittest.TestCase):
     """Unit tests for student step helpers."""
 
+    def test_teacher_eval_without_student_pack_delegates_to_local_replay(self):
+        from runner_bridge.backends.claude_vibecosystem import _should_delegate_to_local_replay
+
+        self.assertTrue(_should_delegate_to_local_replay({"teacher_evaluation": {"scenarios": []}}))
+        self.assertFalse(
+            _should_delegate_to_local_replay(
+                {"teacher_evaluation": {"scenarios": []}, "student_prompt_pack": {"visible_scenarios": []}}
+            )
+        )
+
+
     def test_build_student_prompt_from_visible_scenarios(self):
         from runner_bridge.backends.claude_vibecosystem import _build_student_prompt
 
@@ -430,6 +441,22 @@ class VerifierContractThreadingTests(unittest.TestCase):
         from runner_bridge.autoresearch_alpha import _detect_runner_name
 
         self.assertEqual(_detect_runner_name({}), "LocalReplayRunner")
+
+    def test_derive_control_plane_mode_live_public_smoke(self):
+        from runner_bridge.autoresearch_alpha import _derive_control_plane_mode
+
+        self.assertEqual(
+            _derive_control_plane_mode({"aggregate_status": "consistent", "mode": "live_public_smoke"}),
+            "runner-bridge-live-public-smoke",
+        )
+
+    def test_derive_control_plane_mode_mixed(self):
+        from runner_bridge.autoresearch_alpha import _derive_control_plane_mode
+
+        self.assertEqual(
+            _derive_control_plane_mode({"aggregate_status": "mixed"}),
+            "runner-bridge-mixed-execution",
+        )
 
 
 if __name__ == "__main__":

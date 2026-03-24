@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import subprocess
+import sys
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -27,11 +28,14 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
-    request = json.loads(Path(args.request).read_text())
+    request_path = Path(args.request)
+    request = json.loads(request_path.read_text())
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     if args.live_public_smoke:
+        if _should_delegate_to_local_replay(request):
+            return _delegate_to_local_replay(request_path, output_dir)
         return _live_public_smoke(request, output_dir)
     return _stub_mode(request, output_dir)
 
@@ -145,6 +149,25 @@ def _stub_mode(request: dict[str, Any], output_dir: Path) -> int:
 # ---------------------------------------------------------------------------
 # Live public-smoke mode
 # ---------------------------------------------------------------------------
+
+def _should_delegate_to_local_replay(request: dict[str, Any]) -> bool:
+    has_teacher_evaluation = isinstance(request.get("teacher_evaluation"), dict)
+    has_student_prompt_pack = isinstance(request.get("student_prompt_pack"), dict)
+    return has_teacher_evaluation and not has_student_prompt_pack
+
+
+def _delegate_to_local_replay(request_path: Path, output_dir: Path) -> int:
+    completed = subprocess.run(
+        [sys.executable, "-m", "runner_bridge.backends.local_replay", "--request", str(request_path), "--output-dir", str(output_dir)],
+        capture_output=True,
+        text=True,
+    )
+    if completed.returncode != 0:
+        raise RuntimeError(
+            "local_replay delegation failed: " + ((completed.stderr or completed.stdout or "unknown error").strip())
+        )
+    return 0
+
 
 def _live_public_smoke(request: dict[str, Any], output_dir: Path) -> int:
     """Run real student + verifier steps in an isolated git worktree.
@@ -386,14 +409,20 @@ def _run_student_step(
     prompt = _build_student_prompt(student_prompt_pack)
     cmd = [
         "claude",
-        "-p", prompt,
-        "--output-format", "text",
-        "--max-turns", "3",
-        "--dangerously-skip-permissions",
+        "--print",
+        "--permission-mode",
+        "bypassPermissions",
+        "--output-format",
+        "text",
+        "--max-turns",
+        "3",
+        "--add-dir",
+        str(worktree_path),
     ]
     try:
         completed = subprocess.run(
             cmd,
+            input=prompt,
             capture_output=True,
             text=True,
             timeout=timeout,
@@ -448,6 +477,10 @@ def _git_repo_root() -> Path:
 
 def _create_worktree(repo_root: Path, worktree_path: Path) -> str:
     """Create a detached worktree at HEAD.  Returns the commit hash."""
+    subprocess.run(
+        ["git", "worktree", "prune"],
+        capture_output=True, text=True, cwd=repo_root,
+    )
     commit = subprocess.run(
         ["git", "rev-parse", "HEAD"],
         capture_output=True, text=True, check=True, cwd=repo_root,
@@ -465,6 +498,10 @@ def _remove_worktree(repo_root: Path, worktree_path: Path) -> None:
             ["git", "worktree", "remove", "--force", str(worktree_path)],
             capture_output=True, text=True, cwd=repo_root,
         )
+    subprocess.run(
+        ["git", "worktree", "prune"],
+        capture_output=True, text=True, cwd=repo_root,
+    )
 
 
 def _run_verifier_command(

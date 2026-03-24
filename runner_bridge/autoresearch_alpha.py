@@ -259,6 +259,7 @@ def run_alpha_loop(
         pre_run_commitment=pre_run_commitment,
         stages=stages,
     )
+    execution_backend_summary = _build_alpha_execution_backend_summary(stages)
 
     outputs = {
         "request_copy_path": "autoresearch-alpha.request.json",
@@ -277,7 +278,7 @@ def run_alpha_loop(
         "sequence_id": loop_sequence_id,
         "dataset_manifest_id": benchmark_pack.get("meta", {}).get("id"),
         "dataset_version": benchmark_pack.get("meta", {}).get("version"),
-        "control_plane_mode": "runner-bridge-local-replay",
+        "control_plane_mode": _derive_control_plane_mode(execution_backend_summary),
         "integrity_gate": integrity_gate,
         "stages": stages,
         "comparison": comparison,
@@ -1536,6 +1537,20 @@ def _build_alpha_execution_backend_summary(
             "certification, tamper-proofing, or native Clawith parity."
         ),
     }
+
+
+def _derive_control_plane_mode(execution_backend_summary: dict[str, Any] | None) -> str:
+    if not isinstance(execution_backend_summary, dict):
+        return "runner-bridge-local-replay"
+
+    aggregate_status = execution_backend_summary.get("aggregate_status")
+    if aggregate_status == "mixed":
+        return "runner-bridge-mixed-execution"
+
+    mode = str(execution_backend_summary.get("mode") or "").strip()
+    if not mode or mode == "zero_secret_replay":
+        return "runner-bridge-local-replay"
+    return f"runner-bridge-{mode.replace('_', '-')}"
 
 
 def _build_sealing_receipt(

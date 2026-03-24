@@ -204,7 +204,7 @@ python3 -m runner_bridge.cli \
 
 The `--packet` flag and `--request` flag are alternatives. `--packet` loads from the frozen public seed registry by acceptance_test_id, builds a `PacketRunObject`, converts it to a `RunRequest`, and feeds it to the bridge. `--request` loads a pre-built request JSON as before.
 
-`--runner-backend claude_vibecosystem` is the new contract-first beta seam. It selects a named backend, stamps that choice into `run-object.json`, carries a machine-readable `execution_backend_contract`, and routes execution to a tiny non-destructive adapter stub. In tests and local contract checks that stub records intent + claim boundary only: it does **not** invoke Claude Code, vibecosystem hooks, or the live Clawith/OpenClaw gateway. It does not claim sealed evaluation, tamper-proofing, independent executor isolation, or native Clawith parity.
+`--runner-backend claude_vibecosystem` is the contract-first external-executor beta seam. By default it still behaves as a conservative stub that records intent + claim boundary only. In its opt-in `--live-public-smoke` mode it creates an isolated git worktree, invokes a real Claude Code student step when a `student_prompt_pack` is present, executes real verifier commands, and captures stdout/stderr + transcript artifacts honestly. It still does **not** claim sealed evaluation, tamper-proofing, independent executor isolation, or native Clawith parity.
 
 ### run-object.json — runtime artifact export
 
@@ -270,7 +270,7 @@ When `LocalReplayRunner` processes a packet-driven request, `result.json` includ
 
 This makes it explicit that LocalReplayRunner does not execute task commands, enforce mutation budgets, or enforce path constraints. When a real worktree diff is available, the bridge can still audit the actual changed-file surface against the packet contract. When no diff exists, the receipt says so plainly instead of implying the surface passed.
 
-When `--runner-backend claude_vibecosystem` is selected, `execution_honesty` still stays conservative: the backend reports `executes_commands: false`, `executes_checks: false`, `mode: "external_executor_beta"`, and a claim-boundary block that says native Clawith parity, sealed evaluation, tamper-proofing, and independent executor isolation are all **not claimed**. That beta seam is intentionally inspectable but non-destructive.
+When `--runner-backend claude_vibecosystem` is selected, `execution_honesty` stays explicit about which lane actually ran. The default stub path reports `executes_commands: false`, `executes_checks: false`, and keeps the same conservative claim boundary. The opt-in `--live-public-smoke` path reports a real Claude Code student step plus real verifier-command execution for one narrow public-safe slice, while still saying sealed evaluation, tamper-proofing, independent executor isolation, and native Clawith parity are **not claimed**.
 
 ### PacketRunObject contents
 
@@ -568,7 +568,7 @@ The second command is not a claim that Clawith is running. It is just the fastes
 
 - no native consumer OAuth in Clawith
 - no claim that Clawith already ships these exact run-patch endpoints upstream
-- no live `claude_vibecosystem` execution path yet beyond the contract-first beta seam / stub
+- no broad live `claude_vibecosystem` parity yet beyond one narrow public-smoke lane for candidate-student execution + verifier commands
 - no full browser fan-out across live run storage yet; the UI only consumes configured read-only exports / receipts
 
 That is fine. The slice is still useful because it proves one honest run lifecycle end to end, proves a narrow teacher evaluation + iteration loop without leaking holdout prompt text into student-facing artifacts, and now gives the browser a receipt-oriented live shell without pretending the whole native stack is done.

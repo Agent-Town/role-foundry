@@ -31,9 +31,9 @@ _BACKEND_SPECS: dict[str, dict[str, Any]] = {
             "available": True,
             "cli_flag": "--live-public-smoke",
             "description": (
-                "Opt-in mode that creates an isolated git worktree, "
-                "executes real verifier commands, and captures results honestly. "
-                "Does not invoke Claude Code for the student step."
+                "Opt-in mode that creates an isolated git worktree, captures honest runtime artifacts, "
+                "and executes real verifier commands. When a student_prompt_pack is present, it also "
+                "invokes a real Claude Code student step before running the verifiers."
             ),
         },
         "executor": {
