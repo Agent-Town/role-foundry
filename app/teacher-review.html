@@ -48,12 +48,17 @@
   },
   async loadReview() {
     try {
-      const alphaReceipt = await fetch('autoresearch-alpha.public-regression.export.json')
-        .then(r => r.ok ? r.json() : null)
-        .catch(() => null);
+      const [alphaReceipt, alphaRequest] = await Promise.all([
+        fetch('autoresearch-alpha.public-regression.export.json')
+          .then(r => r.ok ? r.json() : null)
+          .catch(() => null),
+        fetch('autoresearch-alpha.public-regression.request.json')
+          .then(r => r.ok ? r.json() : null)
+          .catch(() => null),
+      ]);
 
       if (alphaReceipt && TEACHER_REVIEW_READ_MODEL.looksLikeAutoresearchAlphaReceipt(alphaReceipt)) {
-        this.review = TEACHER_REVIEW_READ_MODEL.buildTeacherReviewSnapshotFromAutoresearchAlpha(alphaReceipt);
+        this.review = TEACHER_REVIEW_READ_MODEL.buildTeacherReviewSnapshotFromAutoresearchAlpha(alphaReceipt, alphaRequest);
         this.dataSource = this.review ? this.review.data_source : 'none';
         return;
       }
@@ -89,7 +94,7 @@
 
   <div class="page-header">
     <h1>Teacher Review Console</h1>
-    <p>Review surface built from stored exports only. It now prefers the real committed public-regression alpha receipt and falls back to sample fixtures when that export is unavailable. Missing fields stay empty rather than invented.</p>
+    <p>Review surface built from stored exports only. It now prefers the real committed public-regression alpha receipt plus its public-safe request copy and falls back to sample fixtures when that export is unavailable. Missing fields stay empty rather than invented.</p>
   </div>
 
   <!-- Honesty badge -->
@@ -132,9 +137,59 @@
     </section>
   </template>
 
-  <article class="card empty-state" x-show="review && !review.task">
+  <!-- Public task context for the real export path -->
+  <template x-if="review?.task_context">
+    <section>
+      <h2>Public Task Context</h2>
+      <div class="grid-2">
+        <article class="card">
+          <h3>Repo task pack / benchmark slice</h3>
+          <ul>
+            <li><strong>Role scope:</strong> <span x-text="review.task_context.role_scope || '—'"></span></li>
+            <li><strong>Dataset:</strong> <code x-text="review.task_context.dataset_id || '—'"></code></li>
+            <li><strong>Dataset version:</strong> <span x-text="review.task_context.dataset_version || '—'"></span></li>
+            <li><strong>Visible episodes:</strong> <span x-text="review.task_context.episode_count ?? review.task_context.episode_ids.length"></span></li>
+            <li><strong>Visible families:</strong> <span x-text="review.task_context.family_ids.length"></span></li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3>Prompt summary</h3>
+          <p x-text="review.task_context.prompt_summary || 'No prompt summary recorded.'"></p>
+          <p><small x-text="review.task_context.honesty_note || 'No additional task-pack honesty note recorded.'"></small></p>
+        </article>
+      </div>
+
+      <article class="card" style="margin-top: 1rem;">
+        <h3>Visible public episodes</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Title</th>
+              <th>Family</th>
+              <th>Difficulty</th>
+              <th>Mutation budget</th>
+            </tr>
+          </thead>
+          <tbody>
+            <template x-for="scenario in review.task_context.visible_scenarios" :key="scenario.id || scenario.title">
+              <tr>
+                <td><code x-text="scenario.id || '—'"></code></td>
+                <td x-text="scenario.title || '—'"></td>
+                <td><code x-text="scenario.family_id || '—'"></code></td>
+                <td x-text="scenario.difficulty || '—'"></td>
+                <td x-text="scenario.mutation_budget || '—'"></td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </article>
+    </section>
+  </template>
+
+  <article class="card empty-state" x-show="review && !review.task && !review.task_context">
     <strong>No task packet loaded.</strong>
-    <p>The review surface will show task identity once a task packet is available in the stored exports.</p>
+    <p>The review surface will show task identity once a task packet or public task-pack context is available in the stored exports.</p>
   </article>
 
   <!-- Baseline vs Candidate Diff Summary -->
@@ -168,6 +223,7 @@
             <li><strong>Kind:</strong> <span x-text="review.baseline?.kind || '—'"></span></li>
             <li><strong>Changed files:</strong> <span x-text="review.diff_summary.baseline_changed_files"></span></li>
             <li><strong>Diff stats:</strong> <span x-text="(review.baseline?.diff_stats?.tracked_files || '?') + ' files, ' + (review.baseline?.diff_stats?.net_lines || '?') + ' net lines'"></span></li>
+            <li><strong>Objective:</strong> <span x-text="review.baseline?.objective || '—'"></span></li>
             <li><strong>Workspace:</strong> <span x-text="review.baseline?.workspace?.kind || '—'"></span>
               <span class="badge badge-pass" x-show="review.baseline?.workspace?.isolated">isolated</span>
             </li>
@@ -180,6 +236,7 @@
             <li><strong>Kind:</strong> <span x-text="review.candidate?.kind || '—'"></span></li>
             <li><strong>Changed files:</strong> <span x-text="review.diff_summary.candidate_changed_files"></span></li>
             <li><strong>Diff stats:</strong> <span x-text="(review.candidate?.diff_stats?.tracked_files || '?') + ' files, ' + (review.candidate?.diff_stats?.net_lines || '?') + ' net lines'"></span></li>
+            <li><strong>Objective:</strong> <span x-text="review.candidate?.objective || '—'"></span></li>
             <li><strong>Baseline ref:</strong> <code x-text="review.candidate?.baseline_run_id || '—'"></code></li>
           </ul>
         </article>
@@ -265,13 +322,48 @@
             <tr>
               <td><code x-text="check.id || '—'"></code></td>
               <td>
-                <span class="badge" :class="check.status === 'passing' ? 'badge-pass' : 'badge-fail'" x-text="check.status || '—'"></span>
+                <span class="badge" :class="check.status === 'passing' ? 'badge-pass' : (check.status === 'not_executed' ? 'badge-holdout' : 'badge-fail')" x-text="check.status || '—'"></span>
               </td>
               <td x-text="check.stage || '—'"></td>
             </tr>
           </template>
         </tbody>
       </table>
+    </section>
+  </template>
+
+  <!-- Transcript excerpts -->
+  <template x-if="(review?.baseline?.transcript_excerpt?.length || 0) > 0 || (review?.candidate?.transcript_excerpt?.length || 0) > 0">
+    <section>
+      <h2>Transcript Excerpts</h2>
+      <div class="grid-2">
+        <article class="card">
+          <h3>Baseline excerpt</h3>
+          <ul>
+            <template x-for="entry in review.baseline?.transcript_excerpt || []" :key="(entry.ts || '') + (entry.event || '') + (entry.message || '')">
+              <li>
+                <strong x-text="entry.event || 'event'"></strong>
+                <span> — </span>
+                <span x-text="entry.message || '—'"></span>
+              </li>
+            </template>
+          </ul>
+          <p><small x-text="review.baseline?.receipts?.transcript_path || 'No baseline transcript path recorded.'"></small></p>
+        </article>
+        <article class="card">
+          <h3>Candidate excerpt</h3>
+          <ul>
+            <template x-for="entry in review.candidate?.transcript_excerpt || []" :key="(entry.ts || '') + (entry.event || '') + (entry.message || '')">
+              <li>
+                <strong x-text="entry.event || 'event'"></strong>
+                <span> — </span>
+                <span x-text="entry.message || '—'"></span>
+              </li>
+            </template>
+          </ul>
+          <p><small x-text="review.candidate?.receipts?.transcript_path || 'No candidate transcript path recorded.'"></small></p>
+        </article>
+      </div>
     </section>
   </template>
 
@@ -325,9 +417,134 @@
   </template>
 
   <article class="card empty-state" x-show="review && !review.scorecard">
-    <strong>No scorecard loaded.</strong>
-    <p>The weighted score breakdown will appear once a scorecard is available in the stored exports.</p>
+    <strong>No dimensioned scorecard loaded.</strong>
+    <p>The weighted score breakdown will appear once a stored export carries a real dimensioned scorecard. This shell does not invent one.</p>
   </article>
+
+  <!-- Teacher verdict / scenario results from the real export path -->
+  <template x-if="review?.teacher_evaluation">
+    <section>
+      <h2>Teacher Verdict &amp; Scenario Results</h2>
+      <div class="score-summary detail-summary">
+        <div class="stat">
+          <div class="value" x-text="review.teacher_evaluation.aggregate_score.average_score !== null ? review.teacher_evaluation.aggregate_score.average_score.toFixed(4) : '—'"></div>
+          <div class="label">Teacher average score</div>
+        </div>
+        <div class="stat">
+          <div class="value improved" x-text="(review.teacher_evaluation.aggregate_score.passed ?? '—') + '/' + (review.teacher_evaluation.aggregate_score.total ?? '—')"></div>
+          <div class="label">Pass count</div>
+        </div>
+        <div class="stat">
+          <div class="value" x-text="(review.teacher_evaluation.aggregate_score.holdout.passed ?? '—') + '/' + (review.teacher_evaluation.aggregate_score.holdout.total ?? '—')"></div>
+          <div class="label">Holdout pass count</div>
+        </div>
+      </div>
+
+      <article class="judge-callout compact-callout" style="margin-top: 1rem;">
+        <strong>Teacher verdict:</strong>
+        <span x-text="review.teacher_evaluation.verdict || 'No teacher verdict recorded.'"></span>
+      </article>
+
+      <div class="grid-2" style="margin-top: 1rem;">
+        <article class="card">
+          <h3>Evaluation context</h3>
+          <ul>
+            <li><strong>Teacher:</strong> <span x-text="review.teacher_evaluation.teacher.name || review.teacher_evaluation.teacher.id || '—'"></span></li>
+            <li><strong>Student:</strong> <span x-text="review.teacher_evaluation.student.name || review.teacher_evaluation.student.id || '—'"></span></li>
+            <li><strong>Comparison verdict:</strong> <span x-text="review.teacher_evaluation.comparison_verdict || '—'"></span></li>
+            <li><strong>Deciding axis:</strong> <span x-text="review.teacher_evaluation.deciding_axis || '—'"></span></li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3>Student prompt summary</h3>
+          <p x-text="review.teacher_evaluation.student_prompt_summary || 'No student prompt summary recorded.'"></p>
+        </article>
+      </div>
+
+      <article class="card" style="margin-top: 1rem;">
+        <h3>Scenario results</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Scenario</th>
+              <th>Type</th>
+              <th>Score</th>
+              <th>Passed</th>
+              <th>Visibility</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <template x-for="scenario in review.teacher_evaluation.scenario_results" :key="scenario.id || scenario.title">
+              <tr>
+                <td>
+                  <strong x-text="scenario.title || scenario.id || '—'"></strong>
+                  <div><small><code x-text="scenario.id || '—'"></code></small></div>
+                </td>
+                <td x-text="scenario.type || '—'"></td>
+                <td x-text="scenario.score !== null ? scenario.score.toFixed(2) : '—'"></td>
+                <td>
+                  <span class="badge" :class="scenario.passed ? 'badge-pass' : 'badge-fail'" x-text="scenario.passed ? 'pass' : 'fail'"></span>
+                </td>
+                <td x-text="scenario.visibility || '—'"></td>
+                <td><small x-text="scenario.notes || '—'"></small></td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </article>
+
+      <div class="grid-2" style="margin-top: 1rem;">
+        <article class="card">
+          <h3>Comparison reasons</h3>
+          <ul>
+            <template x-for="reason in review.teacher_evaluation.comparison_reasons" :key="reason">
+              <li x-text="reason"></li>
+            </template>
+          </ul>
+        </article>
+        <article class="card">
+          <h3>Promoted public themes</h3>
+          <ul>
+            <template x-for="theme in review.teacher_evaluation.public_curriculum_themes" :key="theme.theme || theme.description">
+              <li>
+                <strong x-text="theme.theme || 'Theme'"></strong>
+                <div><small x-text="theme.description || '—'"></small></div>
+              </li>
+            </template>
+          </ul>
+        </article>
+      </div>
+
+      <article class="card" style="margin-top: 1rem;" x-show="review.teacher_evaluation.iteration_history.length > 0">
+        <h3>Iteration history</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Run</th>
+              <th>Label</th>
+              <th>Average score</th>
+              <th>Passes</th>
+              <th>Delta</th>
+            </tr>
+          </thead>
+          <tbody>
+            <template x-for="entry in review.teacher_evaluation.iteration_history" :key="entry.run_id || entry.label">
+              <tr>
+                <td><code x-text="entry.run_id || '—'"></code></td>
+                <td x-text="entry.label || '—'"></td>
+                <td x-text="entry.aggregate_score.average_score !== null ? entry.aggregate_score.average_score.toFixed(4) : '—'"></td>
+                <td x-text="(entry.aggregate_score.passed ?? '—') + '/' + (entry.aggregate_score.total ?? '—')"></td>
+                <td>
+                  <small x-text="entry.delta.pass_count !== null ? ('pass +' + entry.delta.pass_count + ', avg +' + (entry.delta.average_score !== null ? entry.delta.average_score.toFixed(4) : '—')) : '—'"></small>
+                </td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </article>
+    </section>
+  </template>
 
   <!-- Evidence / Receipt Links -->
   <template x-if="review?.evidence_links">
@@ -336,15 +553,60 @@
       <ul>
         <li><strong>Task packet ref:</strong> <code x-text="review.evidence_links.task_packet_ref || 'not available'"></code></li>
         <li><strong>Transcript:</strong> <code x-text="review.evidence_links.transcript_path || 'not available'"></code></li>
-        <li><strong>Scorecard:</strong> <code x-text="review.evidence_links.scorecard_path || 'not available'"></code></li>
+        <li><strong>Teacher result / scorecard:</strong> <code x-text="review.evidence_links.scorecard_path || 'not available'"></code></li>
+        <li><strong>Artifact bundle:</strong> <code x-text="review.evidence_links.artifact_bundle_path || 'not available'"></code></li>
+        <li><strong>Run request:</strong> <code x-text="review.evidence_links.request_path || 'not available'"></code></li>
+        <li><strong>Result JSON:</strong> <code x-text="review.evidence_links.result_path || 'not available'"></code></li>
         <li><strong>Changed files:</strong> <code x-text="review.evidence_links.changed_files_path || 'not available'"></code></li>
         <li><strong>Provenance manifest:</strong> <code x-text="review.evidence_links.provenance_manifest_path || 'not available'"></code></li>
+        <li><strong>Evidence index:</strong> <code x-text="review.evidence_links.evidence_index_path || 'not available'"></code></li>
+        <li><strong>Receipt summary:</strong> <code x-text="review.evidence_links.summary_path || 'not available'"></code></li>
+        <li><strong>Audit bundle:</strong> <code x-text="review.evidence_links.audit_bundle_path || 'not available'"></code></li>
+        <li><strong>Baseline receipt:</strong> <code x-text="review.evidence_links.baseline_receipt_path || 'not available'"></code></li>
+        <li><strong>Candidate receipt:</strong> <code x-text="review.evidence_links.candidate_receipt_path || 'not available'"></code></li>
+        <li><strong>Evaluation receipt:</strong> <code x-text="review.evidence_links.evaluation_receipt_path || 'not available'"></code></li>
+        <li><strong>Alpha receipt copy:</strong> <code x-text="review.evidence_links.alpha_receipt_path || 'not available'"></code></li>
+        <li><strong>Alpha request copy:</strong> <code x-text="review.evidence_links.alpha_request_copy_path || 'not available'"></code></li>
       </ul>
-      <p><small>These are receipt path references from the stored run objects. In a live deployment, these would link to actual artifact files.</small></p>
+      <p><small>These are stored receipt references from the committed export. The shell surfaces the real path graph when it exists and leaves missing links blank instead of fabricating storage.</small></p>
     </section>
   </template>
 
-  <!-- Evaluation Contract Reference -->
+  <template x-if="review?.receipt_coverage?.length > 0">
+    <section>
+      <h2>Receipt Coverage</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Stage</th>
+            <th>Run</th>
+            <th>Complete</th>
+            <th>Request</th>
+            <th>Transcript</th>
+            <th>Manifest</th>
+            <th>Summary</th>
+          </tr>
+        </thead>
+        <tbody>
+          <template x-for="entry in review.receipt_coverage" :key="entry.stage_key">
+            <tr>
+              <td x-text="entry.stage_key"></td>
+              <td><code x-text="entry.run_id || '—'"></code></td>
+              <td>
+                <span class="badge" :class="entry.complete ? 'badge-pass' : 'badge-fail'" x-text="entry.complete ? 'complete' : 'partial'"></span>
+              </td>
+              <td><code x-text="entry.request_path || '—'"></code></td>
+              <td><code x-text="entry.transcript_path || '—'"></code></td>
+              <td><code x-text="entry.manifest_path || '—'"></code></td>
+              <td><code x-text="entry.summary_path || '—'"></code></td>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+    </section>
+  </template>
+
+  <!-- Frozen evaluation contract fallback -->
   <template x-if="review?.contract">
     <section>
       <h2>Evaluation Contract</h2>
@@ -376,11 +638,87 @@
     </section>
   </template>
 
+  <!-- Real export evaluation context -->
+  <template x-if="review?.evaluation_summary">
+    <section>
+      <h2>Alpha Evaluation Context</h2>
+      <div class="grid-2">
+        <article class="card">
+          <h3>Run contract summary</h3>
+          <ul>
+            <li><strong>Control plane mode:</strong> <span x-text="review.evaluation_summary.control_plane_mode || '—'"></span></li>
+            <li><strong>Integrity mode:</strong> <span x-text="review.evaluation_summary.integrity_mode || '—'"></span></li>
+            <li><strong>Claim ceiling:</strong> <span x-text="review.evaluation_summary.claim_ceiling || '—'"></span></li>
+            <li><strong>Deciding axis:</strong> <span x-text="review.evaluation_summary.deciding_axis || '—'"></span></li>
+            <li><strong>Epsilon:</strong> <span x-text="review.evaluation_summary.epsilon !== null ? review.evaluation_summary.epsilon : '—'"></span></li>
+            <li><strong>Verifier gate:</strong> <span x-text="review.evaluation_summary.verifier_gate_status || '—'"></span></li>
+            <li><strong>Executed commands:</strong> <span x-text="(review.evaluation_summary.executed_commands ?? '—') + ' / ' + (review.evaluation_summary.total_commands ?? '—')"></span></li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3>Stored request refs</h3>
+          <ul>
+            <li><strong>Benchmark pack:</strong> <code x-text="review.evaluation_summary.public_benchmark_pack_ref || '—'"></code></li>
+            <li><strong>Family registry:</strong> <code x-text="review.evaluation_summary.family_registry_ref || '—'"></code></li>
+          </ul>
+          <p><small x-text="review.evaluation_summary.integrity_summary || 'No integrity summary recorded.'"></small></p>
+        </article>
+      </div>
+
+      <article class="card" style="margin-top: 1rem;">
+        <h3>Stage labels</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Stage</th>
+              <th>Label</th>
+              <th>Run</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <template x-for="stage in review.evaluation_summary.stage_labels" :key="stage.stage_key">
+              <tr>
+                <td x-text="stage.stage_key"></td>
+                <td x-text="stage.label || '—'"></td>
+                <td><code x-text="stage.run_id || '—'"></code></td>
+                <td x-text="stage.status || '—'"></td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </article>
+
+      <div class="grid-2" style="margin-top: 1rem;">
+        <article class="card">
+          <h3>Required verifier commands</h3>
+          <ul>
+            <template x-for="command in review.evaluation_summary.required_verifier_commands" :key="command">
+              <li><code x-text="command"></code></li>
+            </template>
+          </ul>
+        </article>
+        <article class="card">
+          <h3>Blocked stronger claims</h3>
+          <ul>
+            <template x-for="claim in review.evaluation_summary.blocked_claims" :key="claim.claim || claim.reason">
+              <li>
+                <strong x-text="claim.claim || 'claim'"></strong>
+                <div><small x-text="claim.reason || '—'"></small></div>
+              </li>
+            </template>
+          </ul>
+        </article>
+      </div>
+    </section>
+  </template>
+
   <article>
     <h3>What this console does now vs what it needs</h3>
     <ul>
-      <li><strong>Now:</strong> Renders the committed real public-regression alpha receipt as a stored export when present, with sample-fixture fallback. Baseline/candidate diff summary, changed files, verifier-command status, and evidence links come from the real export without inventing missing task-packet or dimension-scorecard fields.</li>
-      <li><strong>Next:</strong> Richer teacher-review exports that carry task-packet identity, dimensioned scorecards, and deeper receipt linking from non-fixture runtime objects.</li>
+      <li><strong>Now:</strong> Renders the committed real public-regression alpha receipt plus request copy when present, with sample-fixture fallback. The real export path now surfaces public repo-task context, teacher verdict/scenario results, transcript excerpts, alpha evaluation context, and deeper receipt coverage without inventing a frozen task packet or dimensioned contract.</li>
+      <li><strong>Still blank on the real export:</strong> A frozen task-packet identity and the 5-dimension weighted scorecard stay empty because this stored export does not carry them.</li>
+      <li><strong>Next:</strong> Richer teacher-review exports that carry a first-class task packet and dimensioned scorecard straight from runtime objects, rather than only public benchmark-pack context.</li>
       <li><strong>Not yet:</strong> Private-holdout scoring integration, stability checks across multiple runs, regression gate history.</li>
     </ul>
     <p>This shell is the D001 acceptance test surface: an honest read-model over stored exports. It does not pretend live evaluation exists when it does not.</p>

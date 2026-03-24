@@ -26,6 +26,7 @@ SAMPLE_SCORECARD = DATA_DIR / 'frontend-product-engineer-sample-scorecard.v1.jso
 EVAL_CONTRACT = DATA_DIR / 'frontend-product-engineer-evaluation-contract.v1.json'
 SEED_REGISTRY = DATA_DIR / 'frontend-product-engineer-public-seed-registry.v1.json'
 ALPHA_PUBLIC_EXPORT = APP / 'autoresearch-alpha.public-regression.export.json'
+ALPHA_PUBLIC_REQUEST = APP / 'autoresearch-alpha.public-regression.request.json'
 NODE = Path('/Users/robin/.nvm/versions/node/v24.14.0/bin/node')
 
 
@@ -400,7 +401,8 @@ class TeacherReviewReadModelTests(unittest.TestCase):
     def test_autoresearch_alpha_export_maps_to_stored_export_snapshot(self):
         result = self._run_node(f"""
             const receipt = JSON.parse(fs.readFileSync({json.dumps(str(ALPHA_PUBLIC_EXPORT))}, 'utf8'));
-            const snapshot = readModel.buildTeacherReviewSnapshotFromAutoresearchAlpha(receipt);
+            const request = JSON.parse(fs.readFileSync({json.dumps(str(ALPHA_PUBLIC_REQUEST))}, 'utf8'));
+            const snapshot = readModel.buildTeacherReviewSnapshotFromAutoresearchAlpha(receipt, request);
             console.log(JSON.stringify({{
                 data_source: snapshot.data_source,
                 source_contract: snapshot.source_contract,
@@ -411,8 +413,25 @@ class TeacherReviewReadModelTests(unittest.TestCase):
                 candidate_command_count: snapshot.candidate?.commands?.length || 0,
                 first_command_status: snapshot.candidate?.commands?.[0]?.execution_status || null,
                 candidate_changed_files: snapshot.candidate?.changed_files?.length || 0,
+                candidate_transcript_excerpt_count: snapshot.candidate?.transcript_excerpt?.length || 0,
+                task_present: snapshot.task !== null,
+                task_context_source: snapshot.task_context?.source || null,
+                task_context_dataset: snapshot.task_context?.dataset_id || null,
+                task_context_episode_count: snapshot.task_context?.episode_count ?? null,
+                first_visible_family: snapshot.task_context?.visible_scenarios?.[0]?.family_id || null,
                 scorecard_present: snapshot.scorecard !== null,
                 contract_present: snapshot.contract !== null,
+                evaluation_summary_present: snapshot.evaluation_summary !== null,
+                evaluation_deciding_axis: snapshot.evaluation_summary?.deciding_axis || null,
+                evaluation_epsilon: snapshot.evaluation_summary?.epsilon ?? null,
+                teacher_evaluation_present: snapshot.teacher_evaluation !== null,
+                teacher_verdict: snapshot.teacher_evaluation?.verdict || null,
+                teacher_scenario_count: snapshot.teacher_evaluation?.scenario_results?.length || 0,
+                receipt_coverage_count: snapshot.receipt_coverage?.length || 0,
+                receipt_coverage_complete: snapshot.receipt_coverage?.every(entry => entry.complete) || false,
+                evidence_summary_path: snapshot.evidence_links?.summary_path || null,
+                evidence_candidate_receipt_path: snapshot.evidence_links?.candidate_receipt_path || null,
+                alpha_request_copy_path: snapshot.evidence_links?.alpha_request_copy_path || null,
                 honesty_badge: snapshot.honesty_badge,
                 alpha_verdict: snapshot.alpha_receipt?.verdict || null,
             }}));
@@ -426,10 +445,50 @@ class TeacherReviewReadModelTests(unittest.TestCase):
         self.assertGreater(result['candidate_command_count'], 0)
         self.assertEqual(result['first_command_status'], 'not_executed')
         self.assertGreater(result['candidate_changed_files'], 0)
+        self.assertGreater(result['candidate_transcript_excerpt_count'], 0)
+        self.assertFalse(result['task_present'])
+        self.assertEqual(result['task_context_source'], 'repo_task_pack')
+        self.assertEqual(result['task_context_dataset'], 'public-benchmark-pack-v1')
+        self.assertEqual(result['task_context_episode_count'], 3)
+        self.assertEqual(result['first_visible_family'], 'rf.frontend-apprentice.public.score-deltas')
         self.assertFalse(result['scorecard_present'])
         self.assertFalse(result['contract_present'])
+        self.assertTrue(result['evaluation_summary_present'])
+        self.assertEqual(result['evaluation_deciding_axis'], 'machine_score')
+        self.assertAlmostEqual(result['evaluation_epsilon'], 0.0001, places=4)
+        self.assertTrue(result['teacher_evaluation_present'])
+        self.assertIn('Candidate materially improved', result['teacher_verdict'])
+        self.assertEqual(result['teacher_scenario_count'], 5)
+        self.assertEqual(result['receipt_coverage_count'], 3)
+        self.assertTrue(result['receipt_coverage_complete'])
+        self.assertIsNotNone(result['evidence_summary_path'])
+        self.assertIsNotNone(result['evidence_candidate_receipt_path'])
+        self.assertEqual(result['alpha_request_copy_path'], 'autoresearch-alpha.request.json')
         self.assertIn('public-regression', result['honesty_badge'])
         self.assertEqual(result['alpha_verdict'], 'better')
+
+    def test_real_export_keeps_missing_packet_and_dimension_contract_honest(self):
+        result = self._run_node(f"""
+            const receipt = JSON.parse(fs.readFileSync({json.dumps(str(ALPHA_PUBLIC_EXPORT))}, 'utf8'));
+            const request = JSON.parse(fs.readFileSync({json.dumps(str(ALPHA_PUBLIC_REQUEST))}, 'utf8'));
+            const snapshot = readModel.buildTeacherReviewSnapshotFromAutoresearchAlpha(receipt, request);
+            console.log(JSON.stringify({{
+                task: snapshot.task,
+                task_context_present: snapshot.task_context !== null,
+                scorecard: snapshot.scorecard,
+                contract: snapshot.contract,
+                promotion_decision: snapshot.promotion_decision,
+                teacher_evaluation_present: snapshot.teacher_evaluation !== null,
+                evaluation_summary_present: snapshot.evaluation_summary !== null,
+            }}));
+        """)
+        self.assertIsNone(result['task'])
+        self.assertTrue(result['task_context_present'])
+        self.assertIsNone(result['scorecard'])
+        self.assertIsNone(result['contract'])
+        self.assertEqual(result['promotion_decision'], 'pending')
+        self.assertTrue(result['teacher_evaluation_present'])
+        self.assertTrue(result['evaluation_summary_present'])
 
 
 class TeacherReviewHTMLTests(unittest.TestCase):
@@ -453,15 +512,19 @@ class TeacherReviewHTMLTests(unittest.TestCase):
         html_path = APP / 'teacher-review.html'
         content = html_path.read_text()
         required_references = [
-            'task',              # task packet identity
-            'diff_summary',      # diff summary
-            'changed_files',     # changed files
-            'commands',          # command results
-            'scorecard',         # weighted score breakdown
+            'task',               # task packet identity
+            'task_context',       # public task-pack context for real export path
+            'diff_summary',       # diff summary
+            'changed_files',      # changed files
+            'commands',           # command results
+            'scorecard',          # weighted score breakdown
+            'teacher_evaluation', # real export teacher verdict / scenario results
+            'evaluation_summary', # real export alpha evaluation context
+            'receipt_coverage',   # deeper receipt coverage table
             'promotion_decision', # promotion decision
-            'verifier_gate',     # verifier gate status
-            'evidence_links',    # evidence/receipt links
-            'honesty_badge',     # honesty badge
+            'verifier_gate',      # verifier gate status
+            'evidence_links',     # evidence/receipt links
+            'honesty_badge',      # honesty badge
         ]
         for ref in required_references:
             self.assertIn(ref, content, f"teacher-review.html must reference '{ref}'")

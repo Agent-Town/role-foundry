@@ -26,6 +26,38 @@ const TEACHER_REVIEW_READ_MODEL = (function () {
     return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
   }
 
+  function mapTextList(value) {
+    return safeArray(value).map(function (entry) {
+      return safeString(entry);
+    }).filter(Boolean);
+  }
+
+  function extractTranscriptExcerpt(entries) {
+    return safeArray(entries).map(function (entry) {
+      const item = safeObject(entry);
+      return {
+        ts: safeString(item.ts),
+        event: safeString(item.event),
+        message: safeString(item.message),
+      };
+    }).filter(function (entry) {
+      return entry.ts || entry.event || entry.message;
+    });
+  }
+
+  function stageSortKey(stageKey) {
+    if (stageKey === 'baseline-eval') {
+      return 1;
+    }
+    if (stageKey === 'candidate-student') {
+      return 2;
+    }
+    if (stageKey === 'candidate-teacher-eval') {
+      return 3;
+    }
+    return 99;
+  }
+
   // ---------------------------------------------------------------------------
   // Task packet identity
   // ---------------------------------------------------------------------------
@@ -62,11 +94,15 @@ const TEACHER_REVIEW_READ_MODEL = (function () {
       kind: safeString(run.kind),
       example_only: Boolean(run.example_only),
       task_id: safeString(run.task_id),
+      task_packet_version: safeString(run.task_packet_version),
       baseline_run_id: safeString(run.baseline_run_id),
       evaluation_contract_id: safeString(run.evaluation_contract_id),
       evaluation_contract_version: safeString(run.evaluation_contract_version),
       verifier_gate_status: safeString(run.verifier_gate_status),
       verifier_gate_note: safeString(run.verifier_gate_note),
+      objective: safeString(run.objective),
+      policy_snapshot: mapTextList(run.policy_snapshot),
+      transcript_excerpt: extractTranscriptExcerpt(run.transcript_excerpt),
       workspace: {
         kind: safeString(workspace.kind),
         isolated: Boolean(workspace.isolated),
@@ -111,6 +147,15 @@ const TEACHER_REVIEW_READ_MODEL = (function () {
         checks_path: safeString(receipts.checks_path),
         scorecard_path: safeString(receipts.scorecard_path),
         provenance_manifest_path: safeString(receipts.provenance_manifest_path),
+        evidence_index_path: safeString(receipts.evidence_index_path),
+        summary_path: safeString(receipts.summary_path),
+        audit_bundle_path: safeString(receipts.audit_bundle_path),
+        request_path: safeString(receipts.request_path),
+        artifact_bundle_path: safeString(receipts.artifact_bundle_path),
+        result_path: safeString(receipts.result_path),
+        baseline_receipt_path: safeString(receipts.baseline_receipt_path),
+        candidate_receipt_path: safeString(receipts.candidate_receipt_path),
+        evaluation_receipt_path: safeString(receipts.evaluation_receipt_path),
       },
     };
   }
@@ -156,6 +201,11 @@ const TEACHER_REVIEW_READ_MODEL = (function () {
     const comparison = safeObject(receiptObject.comparison);
     const verifierContract = safeObject(stageObject.verifier_contract);
     const commandResults = safeArray(verifierContract.command_results);
+    const artifactCoverage = safeObject(safeObject(receiptObject.artifact_coverage)[stageKey]);
+    const coveragePaths = safeObject(artifactCoverage.paths);
+    const resultProvenance = safeObject(result.provenance);
+    const bundleReceipts = safeObject(artifactBundle.receipts);
+    const episodeReceiptPaths = safeObject(resultProvenance.episode_receipt_paths);
     const changedFiles = safeArray(workspaceSnapshot.changed_files).map(function (file) {
       return typeof file === 'string' ? file : safeString(file);
     }).filter(Boolean);
@@ -165,11 +215,15 @@ const TEACHER_REVIEW_READ_MODEL = (function () {
       kind: stageKey === 'baseline-eval' ? 'baseline' : (stageKey === 'candidate-teacher-eval' ? 'candidate' : safeString(stageKey)),
       example_only: false,
       task_id: safeString(benchmarkPack.id),
+      task_packet_version: null,
       baseline_run_id: stageKey === 'candidate-teacher-eval' ? safeString(comparison.baseline_run_id) : null,
       evaluation_contract_id: null,
       evaluation_contract_version: null,
       verifier_gate_status: safeString(verifierContract.gate_status),
       verifier_gate_note: safeString(verifierContract.honesty_note),
+      objective: safeString(workspaceSnapshot.objective),
+      policy_snapshot: mapTextList(workspaceSnapshot.policy_snapshot),
+      transcript_excerpt: extractTranscriptExcerpt(stageExport.transcript_excerpt),
       workspace: {
         kind: null,
         isolated: false,
@@ -207,20 +261,327 @@ const TEACHER_REVIEW_READ_MODEL = (function () {
       },
       receipts: {
         task_packet_ref: null,
-        transcript_path: safeString(result.transcript_path),
+        transcript_path: safeString(coveragePaths['transcript.ndjson']) || safeString(result.transcript_path),
         changed_files_path: null,
         checks_path: null,
-        scorecard_path: safeString(safeObject(artifactBundle.receipts).result_path),
+        scorecard_path: safeString(coveragePaths['result.json']) || safeString(bundleReceipts.result_path),
         provenance_manifest_path:
-          safeString(safeObject(result.provenance).receipt_manifest_path)
-          || safeString(safeObject(artifactBundle.receipts).receipt_manifest_path),
+          safeString(coveragePaths['receipts/manifest.json'])
+          || safeString(resultProvenance.receipt_manifest_path)
+          || safeString(bundleReceipts.receipt_manifest_path),
+        evidence_index_path:
+          safeString(coveragePaths['receipts/evidence-index.json'])
+          || safeString(resultProvenance.evidence_index_path)
+          || safeString(bundleReceipts.evidence_index_path),
+        summary_path:
+          safeString(coveragePaths['receipts/summary.md'])
+          || safeString(resultProvenance.summary_path)
+          || safeString(bundleReceipts.summary_path),
+        audit_bundle_path:
+          safeString(coveragePaths['receipts/audit-bundle.json'])
+          || safeString(resultProvenance.audit_bundle_path)
+          || safeString(bundleReceipts.audit_bundle_path),
+        request_path: safeString(coveragePaths['request.json']),
+        artifact_bundle_path:
+          safeString(coveragePaths['artifact-bundle.json'])
+          || safeString(result.artifact_bundle_path),
+        result_path:
+          safeString(coveragePaths['result.json'])
+          || safeString(bundleReceipts.result_path),
+        baseline_receipt_path:
+          safeString(coveragePaths['receipts/baseline.json'])
+          || safeString(episodeReceiptPaths.baseline),
+        candidate_receipt_path:
+          safeString(coveragePaths['receipts/candidate.json'])
+          || safeString(episodeReceiptPaths.candidate),
+        evaluation_receipt_path:
+          safeString(coveragePaths['receipts/evaluation.json'])
+          || safeString(episodeReceiptPaths.evaluation),
       },
     };
   }
 
-  function buildTeacherReviewSnapshotFromAutoresearchAlpha(payload) {
+  function extractAlphaTaskContext(receiptPayload, requestPayload) {
+    const receipt = safeObject(receiptPayload.autoresearch_alpha || receiptPayload);
+    const request = safeObject(requestPayload);
+    const candidateStage = safeObject(safeObject(receipt.stages)['candidate-student']);
+    const stageExport = safeObject(candidateStage.export);
+    const artifactBundle = safeObject(stageExport.artifact_bundle);
+    const studentView = safeObject(artifactBundle.student_view);
+    const repoTaskPack = safeObject(studentView.repo_task_pack);
+    const benchmarkPack = safeObject(safeObject(candidateStage.traceability).benchmark_pack);
+    const episodeIds = safeArray(repoTaskPack.episode_ids).map(function (id) {
+      return safeString(id);
+    }).filter(Boolean);
+    const familyIds = safeArray(repoTaskPack.family_ids).map(function (id) {
+      return safeString(id);
+    }).filter(Boolean);
+    const visibleScenarios = safeArray(studentView.visible_scenarios).map(function (scenario) {
+      const item = safeObject(scenario);
+      const meta = safeObject(item.repo_task_meta);
+      return {
+        id: safeString(item.id),
+        title: safeString(item.title),
+        type: safeString(item.type),
+        difficulty: safeString(item.difficulty),
+        student_prompt: safeString(item.student_prompt),
+        family_id: safeString(meta.family_id),
+        mutation_budget: safeString(meta.mutation_budget),
+        artifacts_required: mapTextList(meta.artifacts_required),
+        public_checks: mapTextList(meta.public_checks),
+        tags: mapTextList(meta.tags),
+      };
+    }).filter(function (scenario) {
+      return scenario.id || scenario.title;
+    });
+
+    if (
+      !Object.keys(repoTaskPack).length
+      && !visibleScenarios.length
+      && !safeString(studentView.prompt_summary)
+      && !safeString(receipt.dataset_manifest_id)
+    ) {
+      return null;
+    }
+
+    return {
+      source: 'repo_task_pack',
+      role_scope: safeString(repoTaskPack.role_scope) || safeString(benchmarkPack.role_scope),
+      dataset_id: safeString(repoTaskPack.dataset_id) || safeString(receipt.dataset_manifest_id),
+      dataset_version: safeString(repoTaskPack.dataset_version) || safeString(receipt.dataset_version),
+      episode_count: safeNumber(repoTaskPack.episode_count) || (episodeIds.length ? episodeIds.length : null),
+      episode_ids: episodeIds,
+      family_ids: familyIds,
+      prompt_summary: safeString(studentView.prompt_summary),
+      honesty_note: safeString(repoTaskPack.honesty_note),
+      public_benchmark_pack_ref: safeString(request.public_benchmark_pack),
+      family_registry_ref: safeString(request.family_registry),
+      recommended_verifier_commands: mapTextList(repoTaskPack.recommended_verifier_commands),
+      visible_scenarios: visibleScenarios,
+    };
+  }
+
+  function mapAlphaScenarioResult(result) {
+    const item = safeObject(result);
+    return {
+      id: safeString(item.scenario_id) || safeString(item.id),
+      title: safeString(item.title),
+      type: safeString(item.type),
+      difficulty: safeString(item.difficulty),
+      visibility: safeString(item.visibility),
+      passed: item.passed === true,
+      score: safeNumber(item.score),
+      notes: safeString(item.notes) || safeString(item.teacher_notes),
+    };
+  }
+
+  function mapAlphaIterationHistory(entries) {
+    return safeArray(entries).map(function (entry) {
+      const item = safeObject(entry);
+      const aggregate = safeObject(item.aggregate_score);
+      const holdout = safeObject(aggregate.holdout);
+      const delta = safeObject(item.delta);
+      return {
+        run_id: safeString(item.run_id),
+        label: safeString(item.label),
+        aggregate_score: {
+          passed: safeNumber(aggregate.passed),
+          total: safeNumber(aggregate.total),
+          pass_rate: safeNumber(aggregate.pass_rate),
+          average_score: safeNumber(aggregate.average_score),
+          holdout: {
+            passed: safeNumber(holdout.passed),
+            total: safeNumber(holdout.total),
+            pass_rate: safeNumber(holdout.pass_rate),
+          },
+        },
+        delta: {
+          pass_count: safeNumber(delta.pass_count),
+          pass_rate: safeNumber(delta.pass_rate),
+          average_score: safeNumber(delta.average_score),
+          holdout_pass_count: safeNumber(delta.holdout_pass_count),
+          holdout_pass_rate: safeNumber(delta.holdout_pass_rate),
+        },
+      };
+    }).filter(function (entry) {
+      return entry.run_id || entry.label;
+    });
+  }
+
+  function extractAlphaTeacherEvaluation(receiptPayload, requestPayload) {
+    const receipt = safeObject(receiptPayload.autoresearch_alpha || receiptPayload);
+    const request = safeObject(requestPayload);
+    const stage = safeObject(safeObject(receipt.stages)['candidate-teacher-eval']);
+    const stageExport = safeObject(stage.export);
+    const result = safeObject(stageExport.result);
+    const scorecard = safeObject(result.scorecard);
+    const requestStage = safeObject(safeObject(request.stages)['candidate-teacher-eval']);
+    const requestEval = safeObject(safeObject(safeObject(requestStage.request).teacher_evaluation));
+    const aggregate = safeObject(scorecard.aggregate_score);
+    const holdout = safeObject(aggregate.holdout);
+    const comparison = safeObject(receipt.comparison);
+
+    if (!Object.keys(scorecard).length && !Object.keys(requestEval).length) {
+      return null;
+    }
+
+    const teacher = safeObject(scorecard.teacher || requestEval.teacher);
+    const student = safeObject(scorecard.student || requestEval.student);
+
+    return {
+      teacher: {
+        id: safeString(teacher.id),
+        name: safeString(teacher.name),
+        agent_role: safeString(teacher.agent_role),
+      },
+      student: {
+        id: safeString(student.id),
+        name: safeString(student.name),
+        agent_role: safeString(student.agent_role),
+      },
+      student_prompt_summary:
+        safeString(requestEval.student_prompt_summary)
+        || safeString(safeObject(safeObject(stageExport.artifact_bundle).student_view).prompt_summary),
+      verdict: safeString(scorecard.verdict) || safeString(requestEval.teacher_verdict),
+      comparison_verdict: safeString(comparison.verdict),
+      deciding_axis:
+        safeString(comparison.deciding_axis)
+        || safeString(safeObject(request.comparison_policy).deciding_axis),
+      aggregate_score: {
+        passed: safeNumber(aggregate.passed),
+        total: safeNumber(aggregate.total),
+        pass_rate: safeNumber(aggregate.pass_rate),
+        average_score: safeNumber(aggregate.average_score),
+        holdout: {
+          passed: safeNumber(holdout.passed),
+          total: safeNumber(holdout.total),
+          pass_rate: safeNumber(holdout.pass_rate),
+        },
+      },
+      scenario_results: safeArray(scorecard.scenario_results || requestEval.scenarios).map(mapAlphaScenarioResult).filter(function (entry) {
+        return entry.id || entry.title;
+      }),
+      public_curriculum_themes: safeArray(scorecard.public_curriculum_themes).map(function (theme) {
+        const item = safeObject(theme);
+        return {
+          theme: safeString(item.theme),
+          description: safeString(item.description),
+          source_scenarios: mapTextList(item.source_scenarios),
+        };
+      }).filter(function (entry) {
+        return entry.theme || entry.description;
+      }),
+      iteration_history: mapAlphaIterationHistory(scorecard.iteration_history),
+      comparison_reasons: mapTextList(comparison.reasons),
+    };
+  }
+
+  function extractAlphaRequiredVerifierCommands(receiptPayload) {
+    const receipt = safeObject(receiptPayload.autoresearch_alpha || receiptPayload);
+    const stages = safeObject(receipt.stages);
+    const preferredOrder = ['candidate-teacher-eval', 'candidate-student', 'baseline-eval'];
+    for (var i = 0; i < preferredOrder.length; i += 1) {
+      const stageKey = preferredOrder[i];
+      const commands = mapTextList(safeObject(safeObject(stages[stageKey]).verifier_contract).required_commands);
+      if (commands.length) {
+        return commands;
+      }
+    }
+    return [];
+  }
+
+  function extractAlphaEvaluationSummary(receiptPayload, requestPayload) {
+    const receipt = safeObject(receiptPayload.autoresearch_alpha || receiptPayload);
+    const request = safeObject(requestPayload);
+    const requestStages = safeObject(request.stages);
+    const receiptStages = safeObject(receipt.stages);
+    const comparisonPolicy = safeObject(request.comparison_policy);
+    const integrityGate = safeObject(receipt.integrity_gate);
+    const verifierGate = safeObject(receipt.verifier_gate);
+    const sealingReceipt = safeObject(receipt.sealing_receipt);
+    const stageLabels = Object.keys(Object.keys(requestStages).length ? requestStages : receiptStages)
+      .sort(function (a, b) { return stageSortKey(a) - stageSortKey(b); })
+      .map(function (stageKey) {
+        const requestStage = safeObject(requestStages[stageKey]);
+        const receiptStage = safeObject(receiptStages[stageKey]);
+        return {
+          stage_key: stageKey,
+          label: safeString(requestStage.label),
+          run_id: safeString(receiptStage.run_id),
+          status: safeString(receiptStage.status),
+        };
+      })
+      .filter(function (entry) {
+        return entry.stage_key || entry.label || entry.run_id;
+      });
+
+    if (
+      !safeString(receipt.control_plane_mode)
+      && !safeString(sealingReceipt.claim_ceiling)
+      && !safeString(comparisonPolicy.deciding_axis)
+      && !stageLabels.length
+    ) {
+      return null;
+    }
+
+    return {
+      control_plane_mode: safeString(receipt.control_plane_mode),
+      integrity_mode: safeString(integrityGate.mode),
+      integrity_summary: safeString(integrityGate.summary),
+      claim_ceiling: safeString(sealingReceipt.claim_ceiling),
+      public_benchmark_pack_ref: safeString(request.public_benchmark_pack),
+      family_registry_ref: safeString(request.family_registry),
+      deciding_axis: safeString(comparisonPolicy.deciding_axis) || safeString(safeObject(receipt.comparison).deciding_axis),
+      epsilon: safeNumber(comparisonPolicy.epsilon),
+      verifier_gate_status: safeString(verifierGate.aggregate_status),
+      total_commands: safeNumber(verifierGate.total_commands),
+      executed_commands: safeNumber(verifierGate.executed_commands),
+      required_verifier_commands: extractAlphaRequiredVerifierCommands(receipt),
+      stage_labels: stageLabels,
+      blocked_claims: safeArray(sealingReceipt.blocked_claims).map(function (entry) {
+        const item = safeObject(entry);
+        return {
+          claim: safeString(item.claim),
+          reason: safeString(item.reason),
+          prerequisite: safeString(item.prerequisite),
+        };
+      }).filter(function (entry) {
+        return entry.claim || entry.reason;
+      }),
+    };
+  }
+
+  function mapAlphaArtifactCoverage(receiptPayload) {
+    const receipt = safeObject(receiptPayload.autoresearch_alpha || receiptPayload);
+    const coverage = safeObject(receipt.artifact_coverage);
+    return Object.keys(coverage)
+      .sort(function (a, b) { return stageSortKey(a) - stageSortKey(b); })
+      .map(function (stageKey) {
+        const item = safeObject(coverage[stageKey]);
+        const paths = safeObject(item.paths);
+        return {
+          stage_key: stageKey,
+          run_id: safeString(item.run_id),
+          complete: item.complete === true,
+          request_path: safeString(paths['request.json']),
+          transcript_path: safeString(paths['transcript.ndjson']),
+          artifact_bundle_path: safeString(paths['artifact-bundle.json']),
+          result_path: safeString(paths['result.json']),
+          manifest_path: safeString(paths['receipts/manifest.json']),
+          evidence_index_path: safeString(paths['receipts/evidence-index.json']),
+          summary_path: safeString(paths['receipts/summary.md']),
+          audit_bundle_path: safeString(paths['receipts/audit-bundle.json']),
+          baseline_receipt_path: safeString(paths['receipts/baseline.json']),
+          candidate_receipt_path: safeString(paths['receipts/candidate.json']),
+          evaluation_receipt_path: safeString(paths['receipts/evaluation.json']),
+        };
+      });
+  }
+
+  function buildTeacherReviewSnapshotFromAutoresearchAlpha(payload, requestPayload) {
     const input = safeObject(payload);
     const receipt = safeObject(input.autoresearch_alpha || input);
+    const request = safeObject(requestPayload);
     const stages = safeObject(receipt.stages);
     const baseline = Object.keys(safeObject(stages['baseline-eval'])).length
       ? mapAlphaStageToReviewRun('baseline-eval', stages['baseline-eval'], receipt)
@@ -234,15 +595,27 @@ const TEACHER_REVIEW_READ_MODEL = (function () {
       candidate_run: candidate,
     });
 
-    snapshot.honesty_badge = 'Stored export — rendered from an actual public-regression autoresearch alpha receipt. LocalReplayRunner / zero-secret replay boundaries still apply, and missing task-packet or dimension-scorecard fields stay empty instead of invented.';
+    snapshot.task_context = extractAlphaTaskContext(receipt, request);
+    snapshot.teacher_evaluation = extractAlphaTeacherEvaluation(receipt, request);
+    snapshot.evaluation_summary = extractAlphaEvaluationSummary(receipt, request);
+    snapshot.receipt_coverage = mapAlphaArtifactCoverage(receipt);
+    snapshot.honesty_badge = 'Stored export — rendered from an actual public-regression autoresearch alpha receipt. Public task-pack context, teacher verdicts, transcript excerpts, and receipt paths are shown when present; frozen task-packet identity and dimensioned scorecards stay empty when the export does not carry them.';
     snapshot.source_contract = 'autoresearch_alpha_receipt';
     snapshot.alpha_receipt = {
       sequence_id: safeString(receipt.sequence_id),
       dataset_manifest_id: safeString(receipt.dataset_manifest_id),
+      dataset_version: safeString(receipt.dataset_version),
+      control_plane_mode: safeString(receipt.control_plane_mode),
       verdict: safeString(receipt.verdict),
       integrity_mode: safeString(safeObject(receipt.integrity_gate).mode),
       claim_ceiling: safeString(safeObject(receipt.sealing_receipt).claim_ceiling),
     };
+    snapshot.evidence_links.alpha_receipt_path =
+      safeString(safeObject(receipt.outputs).receipt_path)
+      || safeString(safeObject(safeObject(receipt.sealing_receipt).linked_receipt_paths).alpha_receipt);
+    snapshot.evidence_links.alpha_request_copy_path =
+      safeString(safeObject(receipt.outputs).request_copy_path)
+      || safeString(safeObject(safeObject(receipt.sealing_receipt).linked_receipt_paths).alpha_request_copy);
     return snapshot;
   }
 
@@ -385,13 +758,17 @@ const TEACHER_REVIEW_READ_MODEL = (function () {
         : 'Stored export — rendered from actual run artifacts.',
 
       task: task,
+      task_context: null,
       baseline: baseline,
       candidate: candidate,
       diff_summary: diffSummary,
       scorecard: scorecardBreakdown,
+      teacher_evaluation: null,
       contract: contractSummary,
+      evaluation_summary: null,
       verifier_gate_status: verifierGateStatus,
       promotion_decision: promotionDecision,
+      receipt_coverage: [],
 
       evidence_links: {
         task_packet_ref: candidate
@@ -409,6 +786,35 @@ const TEACHER_REVIEW_READ_MODEL = (function () {
         provenance_manifest_path: candidate
           ? candidate.receipts.provenance_manifest_path
           : (baseline ? baseline.receipts.provenance_manifest_path : null),
+        evidence_index_path: candidate
+          ? candidate.receipts.evidence_index_path
+          : (baseline ? baseline.receipts.evidence_index_path : null),
+        summary_path: candidate
+          ? candidate.receipts.summary_path
+          : (baseline ? baseline.receipts.summary_path : null),
+        audit_bundle_path: candidate
+          ? candidate.receipts.audit_bundle_path
+          : (baseline ? baseline.receipts.audit_bundle_path : null),
+        request_path: candidate
+          ? candidate.receipts.request_path
+          : (baseline ? baseline.receipts.request_path : null),
+        artifact_bundle_path: candidate
+          ? candidate.receipts.artifact_bundle_path
+          : (baseline ? baseline.receipts.artifact_bundle_path : null),
+        result_path: candidate
+          ? candidate.receipts.result_path
+          : (baseline ? baseline.receipts.result_path : null),
+        baseline_receipt_path: candidate
+          ? candidate.receipts.baseline_receipt_path
+          : (baseline ? baseline.receipts.baseline_receipt_path : null),
+        candidate_receipt_path: candidate
+          ? candidate.receipts.candidate_receipt_path
+          : (baseline ? baseline.receipts.candidate_receipt_path : null),
+        evaluation_receipt_path: candidate
+          ? candidate.receipts.evaluation_receipt_path
+          : (baseline ? baseline.receipts.evaluation_receipt_path : null),
+        alpha_receipt_path: null,
+        alpha_request_copy_path: null,
       },
     };
   }
@@ -425,6 +831,9 @@ const TEACHER_REVIEW_READ_MODEL = (function () {
     extractRunSummary: extractRunSummary,
     extractScorecardBreakdown: extractScorecardBreakdown,
     extractContractSummary: extractContractSummary,
+    extractAlphaTaskContext: extractAlphaTaskContext,
+    extractAlphaTeacherEvaluation: extractAlphaTeacherEvaluation,
+    extractAlphaEvaluationSummary: extractAlphaEvaluationSummary,
   });
 })();
 

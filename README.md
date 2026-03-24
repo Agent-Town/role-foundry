@@ -86,7 +86,7 @@ http://localhost:8080/?mode=live&liveDataUrl=live-read-model.alpha-loop.sample.j
 
 That sample remains a **consumer-side envelope derived from a real public alpha-loop receipt**. The browser renders the exported `comparison.verdict`, `deciding_axis`, `baseline_total_score`, `candidate_total_score`, `total_score_delta`, and `category_deltas` directly instead of inventing new score semantics.
 
-The Teacher Review page now also prefers the committed `app/autoresearch-alpha.public-regression.export.json` receipt and only falls back to older sample fixtures if that real export is unavailable.
+The Teacher Review page now also prefers the committed `app/autoresearch-alpha.public-regression.export.json` receipt plus its public-safe request copy, and only falls back to older sample fixtures if that real export is unavailable. On the real export path it now shows public task-pack context, teacher verdict/scenario results, transcript excerpts, alpha evaluation context, and deeper receipt coverage — while still leaving frozen task-packet identity and the 5-dimension scorecard blank unless the export actually carries them.
 
 To start the optional backend-side **live mode** (requires an external Clawith image):
 
