@@ -152,7 +152,7 @@ class RunnerBridgeContractTests(unittest.TestCase):
             self.assertEqual(normalized_result["provenance"]["summary_path"], "receipts/summary.md")
 
             statuses = [patch["payload"]["status"] for patch in server.patches]
-            self.assertEqual(statuses, ["running", "completed"])
+            self.assertEqual(statuses, ["queued", "running", "completed"])
             self.assertTrue(
                 all(patch["authorization"] == "Bearer top-secret" for patch in server.patches)
             )
@@ -215,7 +215,7 @@ class RunnerBridgeContractTests(unittest.TestCase):
             self.assertEqual(failure_result["provenance"]["receipt_manifest_path"], "receipts/manifest.json")
 
             statuses = [patch["payload"]["status"] for patch in server.patches]
-            self.assertEqual(statuses, ["running", "failed"])
+            self.assertEqual(statuses, ["queued", "running", "failed"])
             failed = server.patches[-1]["payload"]
             self.assertEqual(failed["status"], "failed")
             self.assertIn("error", failed)

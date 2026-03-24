@@ -45,7 +45,6 @@ It carries the audit surface the student-facing manifest alone cannot:
 - **normalized weights** — every template sums to `1.0`
 - **14/14 rubric mappings** — every shipped public episode points at a complete public rubric
 - **14/14 provenance mappings** — every shipped public episode cites its public training seed scenario plus public spec/doc references
-- **100% family readiness coverage** — every candidate family has an explicit readiness state
 - **no teacher-only fields** — the registry stays public-safe and never includes hidden prompt text or teacher-side scoring rubrics
 
 For the registry contract itself, see `docs/dataset-episode-registry.md`.
@@ -56,22 +55,19 @@ The pack now leaves explicit **B001–B006** evidence behind instead of asking a
 
 - **B001 — Public episode count:** pass
   - 14 public episodes shipped across 7 families
-  - floor remains `>= 8` episodes across `>= 3` families in the forward spec, and spec 008 still exceeds its own `>= 10` episode bar
+  - current floor remains 10
 - **B002 — Rubric completeness:** pass
   - 7 public rubric templates cover all 14 public episodes
 - **B003 — Weight normalization:** pass
   - every public rubric template sums to `1.0`
 - **B004 — Public/teacher split integrity:** pass
   - 7 `student_visible` families included
-  - 3 `teacher_only` families remain excluded
-  - leak audit outcome: `pass` with `0` teacher-only field hits and `0` teacher-only token hits in tracked public pack artifacts
+  - 3 `teacher_only` families remain `blocked_pending_rewrite` and excluded
 - **B005 — Provenance coverage:** pass
   - 14/14 public episodes cite training-seed + public spec/doc provenance
-  - actual public provenance coverage: `100%`
 - **B006 — Promotion readiness clarity:** pass, with named limits
   - ready to promote as the repo’s **public-safe benchmark pack** for public regression/training use
   - still blocked from sealed certification or fresh hidden-eval integrity claims
-  - every family declares an explicit readiness state from the allowed set: `draft`, `benchmark_ready`, `rewrite_before_holdout_promotion`, `blocked`
 
 ## What is blocked
 
@@ -82,24 +78,24 @@ They are blocked because the current repo already exposes their framing. That me
 - sealed eval families
 - public-safe benchmark families
 
-For compatibility, the legacy family `status` remains `blocked_pending_rewrite`, while the explicit readiness state for promotion planning is `rewrite_before_holdout_promotion`.
+Each blocked family is marked `blocked_pending_rewrite` and includes rewrite requirements.
 
 ## Why this split matters
 
 The existing repo proves the **contract** for student-visible vs teacher-only separation.
 
-It does **not** give us a clean public sealed-eval pack, because the current holdout families are already repo-visible. So the honest move is:
+It does **not** yet give us a clean public sealed-eval pack, because the current holdout families are already repo-visible. So the honest move is:
 
 1. ship a real public benchmark pack now
 2. keep teacher-only / holdout-derived families out of that pack
-3. attach public rubrics, provenance, leak-audit evidence, and readiness states so the pack is audit-friendly instead of hand-wavy
+3. add public rubrics + provenance so the pack is audit-friendly instead of hand-wavy
 4. rewrite fresh teacher-only families later outside the public student pack
 
 That keeps the benchmark story honest.
 
 ## Local private holdout path
 
-Fresh teacher-only holdouts still have a **local-only scaffold**:
+Fresh teacher-only holdouts now have a **local-only scaffold**:
 
 - public schema template: `benchmarks/private-holdout-pack-template.json`
 - private local manifest path: `benchmarks/private-holdout-pack/holdout-manifest.json`
@@ -126,10 +122,10 @@ Use the pack like this:
 Run:
 
 ```bash
-python3 -m unittest tests/test_public_benchmark_pack_v1.py -v
-python3 -m unittest tests/test_dataset_flywheel_phase_g.py -v
-python3 -m unittest tests/test_private_holdout_separation.py -v
-python3 -m unittest tests/test_milestone3_contract.py tests/test_milestone5_teacher_eval_loop.py -v
+python3 -m unittest tests/test_public_benchmark_pack_v1.py
+python3 -m unittest tests/test_private_holdout_separation.py
+python3 scripts/holdout_author.py audit
+python3 -m unittest tests/test_milestone3_contract.py tests/test_milestone5_teacher_eval_loop.py tests/test_autoresearch_alpha_loop.py
 ```
 
 ## Frontend/Product Engineer benchmark pack (new)
@@ -162,14 +158,11 @@ This is **not a sealed certification pack**. It is valid for public training, re
 - `benchmarks/public-pack-v1/episode-family-registry.json`
 - `benchmarks/public-pack-v1/benchmark-pack.json`
 - `data/episode-registry/public-benchmark-pack-v1.json`
-- `data/episode-registry/source-buckets.json`
 - `docs/dataset-episode-registry.md`
-- `docs/dataset-flywheel.md`
 - `benchmarks/private-holdout-pack-template.json`
 - `specs/008-public-benchmark-pack-v1.md`
 - `specs/012-private-holdout-pack.md`
 - `tests/test_public_benchmark_pack_v1.py`
-- `tests/test_dataset_flywheel_phase_g.py`
 - `tests/test_private_holdout_separation.py`
 - `scripts/holdout_author.py`
 - `docs/private-holdout-authoring.md`

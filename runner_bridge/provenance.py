@@ -2,9 +2,171 @@ from __future__ import annotations
 
 import hashlib
 import json
+from copy import deepcopy
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+
+from .backends import backend_contract_for_runner
+
+
+def build_execution_backend_surface(
+    request: dict[str, Any],
+    result: dict[str, Any],
+    artifact_bundle: dict[str, Any] | None = None,
+) -> dict[str, Any] | None:
+    artifact_bundle = artifact_bundle if isinstance(artifact_bundle, dict) else {}
+    packet_runtime = request.get("packet_runtime") if isinstance(request.get("packet_runtime"), dict) else {}
+    scorecard = result.get("scorecard") if isinstance(result.get("scorecard"), dict) else {}
+    execution_honesty = result.get("execution_honesty") if isinstance(result.get("execution_honesty"), dict) else {}
+
+    request_contract = request.get("runner_backend_contract") if isinstance(request.get("runner_backend_contract"), dict) else None
+    packet_contract = packet_runtime.get("execution_backend_contract") if isinstance(packet_runtime.get("execution_backend_contract"), dict) else None
+    bundle_contract = artifact_bundle.get("execution_backend_contract") if isinstance(artifact_bundle.get("execution_backend_contract"), dict) else None
+
+    request_backend_id = _clean_backend_id(request.get("runner_backend"))
+    packet_backend_id = _clean_backend_id(packet_runtime.get("execution_backend"))
+    observed_backend = _string_or_none(execution_honesty.get("backend")) or _string_or_none(scorecard.get("runner"))
+
+    backend_contract = deepcopy(request_contract or packet_contract or bundle_contract or {})
+    contract_backend_id = _clean_backend_id(backend_contract.get("backend_id"))
+    registry_backend_id = (
+        request_backend_id
+        or packet_backend_id
+        or contract_backend_id
+        or _backend_registry_key_from_observed_backend(observed_backend)
+    )
+    if not backend_contract and registry_backend_id:
+        try:
+            backend_contract = backend_contract_for_runner(registry_backend_id)
+        except ValueError:
+            backend_contract = {}
+
+    backend_id = registry_backend_id or _clean_backend_id(observed_backend)
+    if not any([backend_id, observed_backend, backend_contract, execution_honesty]):
+        return None
+
+    summary = {
+        "backend_id": backend_id or "unknown",
+        "runner_name": observed_backend,
+        "selection_source": _execution_backend_selection_source(
+            request_backend_id=request_backend_id,
+            packet_backend_id=packet_backend_id,
+            request_contract=request_contract,
+            packet_contract=packet_contract,
+            bundle_contract=bundle_contract,
+            execution_honesty=execution_honesty,
+            scorecard=scorecard,
+        ),
+        "mode": _string_or_none(execution_honesty.get("mode")) or _string_or_none(backend_contract.get("mode")),
+        "execution_backend_contract": deepcopy(backend_contract) if backend_contract else None,
+        "execution_honesty": _summarize_execution_honesty(
+            execution_honesty,
+            backend_contract=backend_contract,
+        ),
+        "intended_executor_path": _summarize_intended_executor_path(backend_contract),
+        "honesty_note": (
+            "This block records backend provenance and the current execution honesty boundary only. "
+            "It does not by itself prove live execution, independent executor isolation, sealed evaluation, "
+            "certification, tamper-proofing, or native Clawith parity."
+        ),
+    }
+    return summary
+
+
+def _execution_backend_selection_source(
+    *,
+    request_backend_id: str | None,
+    packet_backend_id: str | None,
+    request_contract: dict[str, Any] | None,
+    packet_contract: dict[str, Any] | None,
+    bundle_contract: dict[str, Any] | None,
+    execution_honesty: dict[str, Any],
+    scorecard: dict[str, Any],
+) -> str:
+    if request_backend_id:
+        return "request.runner_backend"
+    if packet_backend_id:
+        return "packet_runtime.execution_backend"
+    if isinstance(request_contract, dict) and request_contract.get("backend_id"):
+        return "request.runner_backend_contract"
+    if isinstance(packet_contract, dict) and packet_contract.get("backend_id"):
+        return "packet_runtime.execution_backend_contract"
+    if isinstance(bundle_contract, dict) and bundle_contract.get("backend_id"):
+        return "artifact_bundle.execution_backend_contract"
+    if _string_or_none(execution_honesty.get("backend")):
+        return "result.execution_honesty.backend"
+    if _string_or_none(scorecard.get("runner")):
+        return "result.scorecard.runner"
+    return "unknown"
+
+
+def _backend_registry_key_from_observed_backend(value: str | None) -> str | None:
+    if value == "LocalReplayRunner":
+        return "local_replay"
+    return _clean_backend_id(value)
+
+
+def _summarize_execution_honesty(
+    execution_honesty: dict[str, Any],
+    *,
+    backend_contract: dict[str, Any],
+) -> dict[str, Any] | None:
+    if not execution_honesty:
+        return None
+
+    check_results = execution_honesty.get("check_results") if isinstance(execution_honesty.get("check_results"), list) else None
+    summary: dict[str, Any] = {
+        "backend": _string_or_none(execution_honesty.get("backend")),
+        "mode": _string_or_none(execution_honesty.get("mode")) or _string_or_none(backend_contract.get("mode")),
+        "beta_status": _string_or_none(execution_honesty.get("beta_status")) or _string_or_none(backend_contract.get("beta_status")),
+        "executes_commands": bool(execution_honesty.get("executes_commands")) if "executes_commands" in execution_honesty else None,
+        "executes_checks": bool(execution_honesty.get("executes_checks")) if "executes_checks" in execution_honesty else None,
+        "mutation_enforcement": _string_or_none(execution_honesty.get("mutation_enforcement")),
+        "path_constraint_enforcement": _string_or_none(execution_honesty.get("path_constraint_enforcement")),
+        "claim_boundary": deepcopy(execution_honesty.get("claim_boundary")) if isinstance(execution_honesty.get("claim_boundary"), dict) else deepcopy(backend_contract.get("claim_boundary")) if isinstance(backend_contract.get("claim_boundary"), dict) else None,
+        "honesty_note": _string_or_none(execution_honesty.get("honesty_note")),
+    }
+    if check_results is not None:
+        summary["check_result_count"] = len(check_results)
+        summary["not_executed_check_count"] = sum(
+            1 for entry in check_results if isinstance(entry, dict) and entry.get("execution_status") == "not_executed"
+        )
+
+    return {key: value for key, value in summary.items() if value is not None}
+
+
+def _summarize_intended_executor_path(backend_contract: dict[str, Any]) -> dict[str, Any] | None:
+    if not backend_contract:
+        return None
+    executor = backend_contract.get("executor") if isinstance(backend_contract.get("executor"), dict) else {}
+    control_plane = backend_contract.get("control_plane") if isinstance(backend_contract.get("control_plane"), dict) else {}
+    summary = {
+        "entrypoint": _string_or_none(backend_contract.get("entrypoint")),
+        "module": _string_or_none(backend_contract.get("module")),
+        "runtime": _string_or_none(executor.get("runtime")),
+        "agent_selection": _string_or_none(executor.get("agent_selection")),
+        "default_agent": _string_or_none(executor.get("default_agent")),
+        "prompt_transport": _string_or_none(executor.get("prompt_transport")),
+        "workdir_mode": _string_or_none(executor.get("workdir_mode")),
+        "control_plane_path": _string_or_none(control_plane.get("path")),
+    }
+    return {key: value for key, value in summary.items() if value is not None} or None
+
+
+def _clean_backend_id(value: Any) -> str | None:
+    if not isinstance(value, str):
+        return None
+    normalized = value.strip()
+    if not normalized or normalized == "pending":
+        return None
+    return normalized
+
+
+def _string_or_none(value: Any) -> str | None:
+    if isinstance(value, str) and value.strip():
+        return value
+    return None
 
 
 def write_receipt_provenance(
@@ -27,6 +189,7 @@ def write_receipt_provenance(
     artifact_bundle_path = run_dir / "artifact-bundle.json"
     artifact_bundle = _load_json(artifact_bundle_path)
     transcript_events = _load_ndjson(run_dir / "transcript.ndjson")
+    execution_backend = build_execution_backend_surface(request, result, artifact_bundle)
 
     receipt_paths: dict[str, str] = {}
     receipt_index: list[dict[str, Any]] = []
@@ -38,6 +201,7 @@ def write_receipt_provenance(
         artifact_bundle=artifact_bundle,
         result=result,
         transcript_events=transcript_events,
+        execution_backend=execution_backend,
     )
     candidate_path = receipts_dir / "candidate.json"
     candidate_path.write_text(json.dumps(candidate_receipt, indent=2))
@@ -81,6 +245,7 @@ def write_receipt_provenance(
             artifact_bundle=artifact_bundle,
             result=result,
             transcript_events=transcript_events,
+            execution_backend=execution_backend,
         )
         evaluation_path = receipts_dir / "evaluation.json"
         evaluation_path.write_text(json.dumps(evaluation_receipt, indent=2))
@@ -249,6 +414,7 @@ def _build_candidate_receipt(
     artifact_bundle: dict[str, Any],
     result: dict[str, Any],
     transcript_events: list[dict[str, Any]],
+    execution_backend: dict[str, Any] | None,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     run_id = request.get("run_id")
     workspace = request.get("workspace_snapshot") if isinstance(request.get("workspace_snapshot"), dict) else {}
@@ -401,6 +567,42 @@ def _build_candidate_receipt(
         result,
     )
 
+    if isinstance(execution_backend, dict):
+        backend_sources = []
+        if execution_backend.get("selection_source") == "request.runner_backend":
+            backend_sources.append(_json_source("request.private.json", "/runner_backend", visibility="private"))
+        if execution_backend.get("selection_source") == "request.runner_backend_contract":
+            backend_sources.append(
+                _json_source("request.private.json", "/runner_backend_contract", visibility="private")
+            )
+        packet_runtime = request.get("packet_runtime") if isinstance(request.get("packet_runtime"), dict) else {}
+        if packet_runtime.get("execution_backend"):
+            backend_sources.append(
+                _json_source("request.private.json", "/packet_runtime/execution_backend", visibility="private")
+            )
+        if isinstance(packet_runtime.get("execution_backend_contract"), dict):
+            backend_sources.append(
+                _json_source("request.private.json", "/packet_runtime/execution_backend_contract", visibility="private")
+            )
+        if isinstance(artifact_bundle.get("execution_backend_contract"), dict):
+            backend_sources.append(
+                _json_source("artifact-bundle.json", "/execution_backend_contract", visibility="public")
+            )
+        if isinstance(result.get("execution_honesty"), dict):
+            backend_sources.append(
+                _json_source("result.json", "/execution_honesty", visibility="public")
+            )
+        evidence.append(
+            {
+                "evidence_id": "candidate-execution-backend",
+                "receipt_id": f"candidate:{run_id}",
+                "kind": "execution_backend",
+                "label": "Execution backend provenance",
+                "summary": execution_backend.get("backend_id") or "unknown",
+                "sources": backend_sources,
+            }
+        )
+
     receipt = {
         "receipt_id": f"candidate:{run_id}",
         "kind": "candidate",
@@ -412,6 +614,7 @@ def _build_candidate_receipt(
         "workspace_snapshot": workspace,
         "student_prompt_pack": prompt_pack_summary,
         "mutation_surface_audit": mutation_surface_audit,
+        "execution_backend": execution_backend,
         "verifier_gate": verifier_gate,
         "evidence_refs": [entry["evidence_id"] for entry in evidence],
     }
@@ -471,6 +674,7 @@ def _build_evaluation_receipt(
     artifact_bundle: dict[str, Any],
     result: dict[str, Any],
     transcript_events: list[dict[str, Any]],
+    execution_backend: dict[str, Any] | None,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     run_id = request.get("run_id")
     teacher_output = artifact_bundle.get("teacher_output") if isinstance(artifact_bundle.get("teacher_output"), dict) else {}
@@ -625,6 +829,21 @@ def _build_evaluation_receipt(
             }
         )
 
+    if isinstance(execution_backend, dict):
+        evidence.append(
+            {
+                "evidence_id": "evaluation-execution-backend",
+                "receipt_id": f"evaluation:{run_id}",
+                "kind": "execution_backend",
+                "label": "Execution backend provenance",
+                "summary": execution_backend.get("backend_id") or "unknown",
+                "sources": [
+                    _json_source("artifact-bundle.json", "/execution_backend", visibility="public"),
+                    _json_source("result.json", "/execution_honesty", visibility="public"),
+                ],
+            }
+        )
+
     receipt = {
         "receipt_id": f"evaluation:{run_id}",
         "kind": "evaluation",
@@ -637,6 +856,7 @@ def _build_evaluation_receipt(
         "verdict": teacher_output.get("verdict") or scorecard.get("verdict"),
         "scenario_results": scenario_results,
         "public_curriculum_themes": public_themes,
+        "execution_backend": execution_backend,
         "evidence_refs": [entry["evidence_id"] for entry in evidence],
     }
     return receipt, evidence
@@ -748,6 +968,7 @@ def _build_human_audit_sections(
     workspace = request.get("workspace_snapshot") if isinstance(request.get("workspace_snapshot"), dict) else {}
     scorecard = result.get("scorecard") if isinstance(result.get("scorecard"), dict) else {}
     execution_honesty = result.get("execution_honesty") if isinstance(result.get("execution_honesty"), dict) else {}
+    execution_backend = build_execution_backend_surface(request, result, artifact_bundle)
     teacher_output = artifact_bundle.get("teacher_output") if isinstance(artifact_bundle.get("teacher_output"), dict) else {}
     student_view = artifact_bundle.get("student_view") if isinstance(artifact_bundle.get("student_view"), dict) else {}
     repo_task_pack = student_view.get("repo_task_pack") if isinstance(student_view.get("repo_task_pack"), dict) else {}
@@ -765,9 +986,12 @@ def _build_human_audit_sections(
             "agent_role": request.get("agent_role"),
             "scenario_set_id": request.get("scenario_set_id"),
             "runner": scorecard.get("runner") or execution_honesty.get("backend") or "unknown",
-            "execution_mode": "local_replay"
-            if (scorecard.get("runner") or execution_honesty.get("backend")) == "LocalReplayRunner"
-            else "unknown",
+            "execution_mode": execution_backend.get("mode") if isinstance(execution_backend, dict) else (
+                "local_replay"
+                if (scorecard.get("runner") or execution_honesty.get("backend")) == "LocalReplayRunner"
+                else "unknown"
+            ),
+            "execution_backend": execution_backend,
             "started_at": result.get("started_at"),
             "finished_at": result.get("finished_at"),
             "evidence_entry_count": len(evidence_entries),
@@ -1357,6 +1581,11 @@ def _build_summary_markdown(
         if section_name == "run_metadata":
             lines.append(f"- Runner: `{data.get('runner', 'unknown')}`")
             lines.append(f"- Execution mode: `{data.get('execution_mode', 'unknown')}`")
+            execution_backend = data.get('execution_backend') if isinstance(data.get('execution_backend'), dict) else {}
+            if execution_backend.get('backend_id'):
+                lines.append(f"- Execution backend: `{execution_backend.get('backend_id')}`")
+            if execution_backend.get('mode'):
+                lines.append(f"- Backend mode: `{execution_backend.get('mode')}`")
         elif section_name == "benchmark_input_summary":
             if data.get('benchmark_pack_id'):
                 lines.append(f"- Benchmark pack: `{data.get('benchmark_pack_id')}` (`{data.get('benchmark_pack_version')}`)")

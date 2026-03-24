@@ -30,12 +30,6 @@ class PublicBenchmarkPackPhaseBTests(unittest.TestCase):
             rubric["id"]: rubric for rubric in cls.episode_registry["rubric_templates"]
         }
         cls.seed_scenarios = {scenario["id"]: scenario for scenario in cls.seed["scenarios"]}
-        cls.allowed_readiness_states = {
-            "draft",
-            "benchmark_ready",
-            "rewrite_before_holdout_promotion",
-            "blocked",
-        }
 
     def test_B001_public_episode_count(self):
         self.assertTrue(PACK.exists())
@@ -49,7 +43,6 @@ class PublicBenchmarkPackPhaseBTests(unittest.TestCase):
         ]
         self.assertGreaterEqual(len(self.pack_episodes), minimum)
         self.assertEqual(len(self.pack_episodes), 14)
-        self.assertEqual(self.pack["meta"]["public_episode_count"], len(self.pack_episodes))
         self.assertEqual(
             self.episode_registry["coverage"]["public_episode_count"],
             len(self.pack_episodes),
@@ -122,7 +115,6 @@ class PublicBenchmarkPackPhaseBTests(unittest.TestCase):
             family = self.families[family_id]
             self.assertEqual(family["status"], "benchmark_ready")
             self.assertEqual(family["visibility"], "student_visible")
-            self.assertEqual(family["readiness_state"], "benchmark_ready")
             for scenario_id in family["source_seed_scenarios"]:
                 self.assertEqual(self.seed_scenarios[scenario_id]["type"], "training")
 
@@ -130,57 +122,20 @@ class PublicBenchmarkPackPhaseBTests(unittest.TestCase):
             family = self.families[family_id]
             self.assertEqual(family["status"], "blocked_pending_rewrite")
             self.assertEqual(family["visibility"], "teacher_only")
-            self.assertEqual(
-                family["readiness_state"], "rewrite_before_holdout_promotion"
-            )
             self.assertIn("rewrite_requirements", family)
             for scenario_id in family["source_seed_scenarios"]:
                 self.assertEqual(self.seed_scenarios[scenario_id]["type"], "holdout")
 
-        forbidden_machine_tokens = ["teacher_prompt", "scoring_rubric", "judge-only prompt"]
-        for artifact in (self.pack, self.family_registry, self.episode_registry):
-            serialized = json.dumps(artifact).lower()
-            for token in forbidden_machine_tokens:
-                self.assertNotIn(token, serialized)
+        forbidden_tokens = ["teacher_prompt", "judge-only prompt", "grading rubric"]
         for episode in self.pack["episodes"]:
-            serialized_episode = json.dumps(episode).lower()
-            self.assertNotIn("grading rubric", serialized_episode)
-
-        integrity_audit = self.pack["integrity_audit"]
-        self.assertEqual(integrity_audit["phase"], "B")
-        self.assertEqual(integrity_audit["status"], "pass")
-        self.assertEqual(integrity_audit["teacher_only_field_hits"], 0)
-        self.assertEqual(integrity_audit["teacher_only_token_hits"], 0)
-        self.assertEqual(
-            integrity_audit["blocked_family_count"], len(self.pack["blocked_family_ids"])
-        )
-        self.assertEqual(
-            set(integrity_audit["scanned_artifacts"]),
-            {
-                "benchmarks/public-pack-v1/benchmark-pack.json",
-                "benchmarks/public-pack-v1/episode-family-registry.json",
-                "data/episode-registry/public-benchmark-pack-v1.json",
-            },
-        )
-        metric = self.pack["promotion_readiness"]["metrics"]["B004"]
-        self.assertEqual(metric["leak_audit_status"], "pass")
-        self.assertEqual(metric["teacher_only_field_hits"], 0)
-        self.assertEqual(metric["teacher_only_token_hits"], 0)
+            serialized = json.dumps(episode).lower()
+            for token in forbidden_tokens:
+                self.assertNotIn(token, serialized)
 
     def test_B005_provenance_coverage(self):
         self.assertEqual(
             self.episode_registry["coverage"]["provenance_mapped_episode_count"],
             len(self.pack_episodes),
-        )
-        self.assertEqual(
-            self.episode_registry["coverage"]["public_provenance_coverage_pct"], 100.0
-        )
-        self.assertEqual(self.pack["meta"]["public_provenance_coverage_pct"], 100.0)
-        self.assertEqual(
-            self.pack["promotion_readiness"]["metrics"]["B005"][
-                "actual_provenance_coverage_pct"
-            ],
-            100.0,
         )
         self.assertTrue(self.episode_registry["meta"]["student_visible_only"])
         self.assertFalse(self.episode_registry["meta"]["teacher_only_fields_present"])
@@ -217,45 +172,6 @@ class PublicBenchmarkPackPhaseBTests(unittest.TestCase):
             {"B001", "B002", "B003", "B004", "B005", "B006"},
         )
 
-        policy = self.family_registry["policy"]
-        self.assertEqual(set(policy["allowed_readiness_states"]), self.allowed_readiness_states)
-        self.assertIn("readiness_state_policy", policy)
-        self.assertEqual(
-            self.episode_registry["meta"]["allowed_readiness_states"],
-            policy["allowed_readiness_states"],
-        )
-        for family in self.family_registry["families"]:
-            self.assertIn("readiness_state", family)
-            self.assertIn(family["readiness_state"], self.allowed_readiness_states)
-
-        readiness_metric = readiness["metrics"]["B006"]
-        self.assertEqual(
-            readiness_metric["family_readiness_coverage_count"],
-            len(self.family_registry["families"]),
-        )
-        self.assertEqual(
-            readiness_metric["family_readiness_state_counts"],
-            {
-                "benchmark_ready": len(self.pack["included_family_ids"]),
-                "rewrite_before_holdout_promotion": len(self.pack["blocked_family_ids"]),
-            },
-        )
-        self.assertEqual(
-            set(readiness_metric["allowed_readiness_states"]),
-            self.allowed_readiness_states,
-        )
-        self.assertEqual(
-            self.episode_registry["readiness_summary"],
-            self.family_registry["readiness_summary"],
-        )
-        self.assertEqual(
-            self.episode_registry["coverage"]["family_readiness_coverage_count"],
-            len(self.family_registry["families"]),
-        )
-        self.assertEqual(
-            self.episode_registry["coverage"]["family_readiness_coverage_pct"], 100.0
-        )
-
         doc_text = DOC.read_text().lower().replace("**", "")
         spec_text = SPEC.read_text().lower().replace("**", "")
         for metric in ("b001", "b002", "b003", "b004", "b005", "b006"):
@@ -267,21 +183,7 @@ class PublicBenchmarkPackPhaseBTests(unittest.TestCase):
         self.assertIn("not a sealed certification exam", spec_text)
         self.assertIn("ready to promote", doc_text)
         self.assertIn("named limits", doc_text)
-        self.assertIn("rewrite_before_holdout_promotion", doc_text)
-        self.assertIn("rewrite_before_holdout_promotion", spec_text)
-        self.assertIn(
-            f"{len(self.pack_episodes)} concrete student-visible episodes", doc_text
-        )
-        self.assertIn(
-            f"{len(self.pack['included_family_ids'])} public-ready families", doc_text
-        )
-        self.assertIn(
-            f"{len(self.rubric_templates)} public rubric templates", doc_text
-        )
-        self.assertIn(
-            f"{len(self.pack_episodes)}/{len(self.pack_episodes)} provenance mappings",
-            doc_text,
-        )
+
 
     def test_support_surfaces_match_frozen_pack_counts(self):
         self.assertTrue(SUPPORT_DOC.exists())

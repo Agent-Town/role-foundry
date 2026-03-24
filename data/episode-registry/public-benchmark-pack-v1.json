@@ -12,12 +12,6 @@
       "seed/role-foundry-apprentice.json",
       "benchmarks/public-pack-v1/benchmark-pack.json",
       "benchmarks/public-pack-v1/episode-family-registry.json"
-    ],
-    "allowed_readiness_states": [
-      "draft",
-      "benchmark_ready",
-      "rewrite_before_holdout_promotion",
-      "blocked"
     ]
   },
   "coverage": {
@@ -25,10 +19,7 @@
     "benchmark_ready_family_count": 7,
     "rubric_template_count": 7,
     "rubric_mapped_episode_count": 14,
-    "provenance_mapped_episode_count": 14,
-    "public_provenance_coverage_pct": 100.0,
-    "family_readiness_coverage_count": 10,
-    "family_readiness_coverage_pct": 100.0
+    "provenance_mapped_episode_count": 14
   },
   "rubric_templates": [
     {
@@ -678,26 +669,5 @@
         "notes": "Source-backed by Playwright public documentation (Apache-2.0). Episode is original RF-authored work informed by Playwright best practices; no Playwright prose is copied verbatim."
       }
     }
-  ],
-  "integrity_audit": {
-    "phase": "B",
-    "status": "pass",
-    "teacher_only_field_hits": 0,
-    "teacher_only_token_hits": 0,
-    "blocked_family_count": 3,
-    "scanned_artifacts": [
-      "benchmarks/public-pack-v1/benchmark-pack.json",
-      "benchmarks/public-pack-v1/episode-family-registry.json",
-      "data/episode-registry/public-benchmark-pack-v1.json"
-    ],
-    "notes": "Tracked public benchmark-pack artifacts contain no teacher-only prompt text or grading-rubric content."
-  },
-  "readiness_summary": {
-    "family_count": 10,
-    "coverage_pct": 100.0,
-    "state_counts": {
-      "benchmark_ready": 7,
-      "rewrite_before_holdout_promotion": 3
-    }
-  }
+  ]
 }

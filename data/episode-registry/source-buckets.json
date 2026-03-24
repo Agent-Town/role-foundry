@@ -11,44 +11,25 @@
       "label": "Public training curriculum",
       "visibility": "student_visible",
       "status": "active",
-      "scenario_ids": [
-        "t1",
-        "t2",
-        "t3",
-        "t4",
-        "t5",
-        "t6",
-        "t7"
-      ],
+      "scenario_ids": ["t1", "t2", "t3", "t4", "t5", "t6", "t7"],
       "family_id_prefix": "rf.frontend-apprentice.public.",
       "family_count": 7,
-      "pack_refs": [
-        "benchmarks/public-pack-v1/benchmark-pack.json"
-      ],
-      "registry_refs": [
-        "data/episode-registry/public-benchmark-pack-v1.json"
-      ],
-      "notes": "All seven public families are benchmark_ready and ship in public-benchmark-pack-v1."
+      "pack_refs": ["benchmarks/public-pack-v1/benchmark-pack.json"],
+      "registry_refs": ["data/episode-registry/public-benchmark-pack-v1.json"],
+      "notes": "All six public families are benchmark_ready and ship in public-benchmark-pack-v1."
     },
     {
       "id": "blocked-teacher-only",
       "label": "Blocked teacher-only families (repo-visible, pending rewrite)",
       "visibility": "teacher_only",
       "status": "blocked_pending_rewrite",
-      "scenario_ids": [
-        "h1",
-        "h2",
-        "h3"
-      ],
+      "scenario_ids": ["h1", "h2", "h3"],
       "family_id_prefix": "rf.frontend-apprentice.blocked.",
       "family_count": 3,
       "pack_refs": [],
-      "registry_refs": [
-        "benchmarks/public-pack-v1/episode-family-registry.json"
-      ],
+      "registry_refs": ["benchmarks/public-pack-v1/episode-family-registry.json"],
       "blocked_reason": "Current repo already discloses framing for h1/h2/h3. Cannot honestly claim these as sealed or promote to teacher-only benchmark status until rewritten with fresh non-repo-visible wording.",
-      "notes": "Listed in the family registry as rewrite_before_holdout_promotion (legacy status: blocked_pending_rewrite). Not included in any benchmark pack.",
-      "readiness_state": "rewrite_before_holdout_promotion"
+      "notes": "Listed in the family registry as blocked_pending_rewrite. Not included in any benchmark pack."
     },
     {
       "id": "local-private-holdout",
@@ -58,12 +39,9 @@
       "scenario_ids": [],
       "family_id_prefix": "rf.frontend-apprentice.holdout.",
       "family_count": 0,
-      "pack_refs": [
-        "benchmarks/private-holdout-pack-template.json"
-      ],
+      "pack_refs": ["benchmarks/private-holdout-pack-template.json"],
       "registry_refs": [],
-      "notes": "Template exists at benchmarks/private-holdout-pack-template.json. Actual holdout episodes are authored locally in a gitignored manifest. No episodes are committed to the repo. This bucket has zero committed families.",
-      "readiness_state": "blocked"
+      "notes": "Template exists at benchmarks/private-holdout-pack-template.json. Actual holdout episodes are authored locally in a gitignored manifest. No episodes are committed to the repo. This bucket has zero committed families."
     }
   ],
   "completeness": {
@@ -72,18 +50,7 @@
     "blocked_buckets": 1,
     "local_only_buckets": 1,
     "all_seed_scenarios_covered": true,
-    "seed_scenario_ids": [
-      "t1",
-      "t2",
-      "t3",
-      "t4",
-      "t5",
-      "t6",
-      "t7",
-      "h1",
-      "h2",
-      "h3"
-    ],
+    "seed_scenario_ids": ["t1", "t2", "t3", "t4", "t5", "t6", "t7", "h1", "h2", "h3"],
     "notes": "Every scenario in seed/role-foundry-apprentice.json maps to exactly one bucket."
   }
 }

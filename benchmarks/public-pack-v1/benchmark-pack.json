@@ -13,9 +13,7 @@
     ],
     "episode_registry": "data/episode-registry/public-benchmark-pack-v1.json",
     "public_episode_count": 14,
-    "public_family_count": 7,
-    "public_provenance_coverage_pct": 100.0,
-    "family_readiness_coverage_pct": 100.0
+    "public_family_count": 7
   },
   "execution_policy": {
     "student_visible_only": true,
@@ -449,7 +447,7 @@
       "student_prompt": "Write or improve a regression check for the scenarios/curriculum page using Playwright best-practice locator strategies: getByRole, getByText, or getByLabel instead of brittle CSS selectors. The check should verify that public curriculum cards render and holdout cards are visually distinct.",
       "constraints": [
         "Target an existing Role Foundry screen (app/scenarios.html)",
-        "Use user-visible locators only \u2014 no data-testid or CSS-path selectors",
+        "Use user-visible locators only — no data-testid or CSS-path selectors",
         "Do not claim a full Playwright CI harness ships if it does not",
         "Leave a regression-check receipt"
       ],
@@ -464,7 +462,7 @@
         "locator strategy notes"
       ],
       "public_checks": [
-        "Locators use role, text, or label \u2014 not CSS selectors or test IDs",
+        "Locators use role, text, or label — not CSS selectors or test IDs",
         "Check targets the real curriculum page, not a hypothetical surface",
         "Check distinguishes public curriculum cards from holdout cards",
         "No overclaim about Playwright CI pipeline if one does not exist"
@@ -490,7 +488,7 @@
       "student_prompt": "Write or improve a regression check for the run detail page that follows Playwright test-isolation best practices: the check should not depend on state left by other checks, should set up its own data context, and should verify proof-bundle rendering independently.",
       "constraints": [
         "Target an existing Role Foundry screen (app/run.html)",
-        "Each check must be independent \u2014 no shared mutable state between checks",
+        "Each check must be independent — no shared mutable state between checks",
         "Keep the scope to one check or one small check file",
         "Do not invent runtime artifact backends that do not exist"
       ],
@@ -561,17 +559,13 @@
         "label": "Public/teacher split integrity",
         "status": "pass",
         "included_student_visible_family_count": 7,
-        "blocked_teacher_only_family_count": 3,
-        "leak_audit_status": "pass",
-        "teacher_only_field_hits": 0,
-        "teacher_only_token_hits": 0
+        "blocked_teacher_only_family_count": 3
       },
       "B005": {
         "label": "Provenance coverage",
         "status": "pass",
         "provenance_mapped_episode_count": 14,
-        "expectation": "Every public episode cites its public source scenario and contract docs/specs.",
-        "actual_provenance_coverage_pct": 100.0
+        "expectation": "Every public episode cites its public source scenario and contract docs/specs."
       },
       "B006": {
         "label": "Promotion readiness clarity",
@@ -580,32 +574,8 @@
         "blocked_claims": [
           "sealed certification",
           "fresh hidden-eval integrity claims"
-        ],
-        "family_readiness_coverage_count": 10,
-        "family_readiness_state_counts": {
-          "benchmark_ready": 7,
-          "rewrite_before_holdout_promotion": 3
-        },
-        "allowed_readiness_states": [
-          "draft",
-          "benchmark_ready",
-          "rewrite_before_holdout_promotion",
-          "blocked"
         ]
       }
     }
-  },
-  "integrity_audit": {
-    "phase": "B",
-    "status": "pass",
-    "teacher_only_field_hits": 0,
-    "teacher_only_token_hits": 0,
-    "blocked_family_count": 3,
-    "scanned_artifacts": [
-      "benchmarks/public-pack-v1/benchmark-pack.json",
-      "benchmarks/public-pack-v1/episode-family-registry.json",
-      "data/episode-registry/public-benchmark-pack-v1.json"
-    ],
-    "notes": "Tracked public benchmark-pack artifacts contain no teacher-only prompt text or grading-rubric content."
   }
 }
