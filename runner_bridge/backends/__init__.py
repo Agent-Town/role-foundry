@@ -22,11 +22,20 @@ _BACKEND_SPECS: dict[str, dict[str, Any]] = {
     },
     "claude_vibecosystem": {
         "backend_id": "claude_vibecosystem",
-        "surface_version": "0.1.0-beta",
+        "surface_version": "0.2.0-beta",
         "entrypoint": "python3 -m runner_bridge.backends.claude_vibecosystem",
         "module": "runner_bridge.backends.claude_vibecosystem",
         "mode": "external_executor_beta",
-        "beta_status": "adapter_first_contract_stub",
+        "beta_status": "live_public_smoke_available",
+        "live_public_smoke": {
+            "available": True,
+            "cli_flag": "--live-public-smoke",
+            "description": (
+                "Opt-in mode that creates an isolated git worktree, "
+                "executes real verifier commands, and captures results honestly. "
+                "Does not invoke Claude Code for the student step."
+            ),
+        },
         "executor": {
             "runtime": "Claude Code",
             "agent_selection": "vibecosystem",

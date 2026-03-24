@@ -357,7 +357,7 @@ class TestHonestyBoundaries(unittest.TestCase):
         req = obj.to_run_request()
         prt = req.extras["packet_runtime"]
         self.assertEqual(prt["execution_backend"], "claude_vibecosystem")
-        self.assertEqual(prt["execution_backend_contract"]["surface_version"], "0.1.0-beta")
+        self.assertEqual(prt["execution_backend_contract"]["surface_version"], "0.2.0-beta")
         self.assertEqual(prt["execution_backend_contract"]["executor"]["default_agent"], "backend-dev")
 
 

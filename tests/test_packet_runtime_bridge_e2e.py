@@ -268,7 +268,7 @@ class TestClaudeVibecosystemBetaSeam(unittest.TestCase):
         self.assertFalse(eh["executes_commands"])
         self.assertFalse(eh["executes_checks"])
         self.assertEqual(eh["mode"], "external_executor_beta")
-        self.assertEqual(eh["beta_status"], "adapter_first_contract_stub")
+        self.assertEqual(eh["beta_status"], "live_public_smoke_available")
         self.assertEqual(eh["external_executor"]["live_execution"], "not_invoked")
         self.assertEqual(eh["claim_boundary"]["native_clawith_parity"], "not_claimed")
         self.assertEqual(eh["claim_boundary"]["independent_executor_isolation"], "not_claimed")

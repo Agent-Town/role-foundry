@@ -19,7 +19,7 @@ class ClaudeVibecosystemBackendRegistryTests(unittest.TestCase):
     def test_backend_contract_pins_honesty_boundary(self):
         contract = backend_contract_for_runner("claude_vibecosystem")
         self.assertEqual(contract["mode"], "external_executor_beta")
-        self.assertEqual(contract["beta_status"], "adapter_first_contract_stub")
+        self.assertEqual(contract["beta_status"], "live_public_smoke_available")
         self.assertEqual(contract["executor"]["runtime"], "Claude Code")
         self.assertEqual(contract["executor"]["agent_selection"], "vibecosystem")
         self.assertEqual(contract["claim_boundary"]["sealed_evaluation"], "not_claimed")

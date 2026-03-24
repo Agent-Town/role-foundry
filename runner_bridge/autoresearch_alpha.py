@@ -44,6 +44,17 @@ VALID_PRE_RUN_MANIFEST_ATTESTATION_REFERENCE_KINDS = {
 }
 
 
+def _detect_runner_name(result: dict[str, Any]) -> str:
+    """Detect runner name from a bridge result dict."""
+    eh = result.get("execution_honesty") if isinstance(result.get("execution_honesty"), dict) else {}
+    if eh.get("backend"):
+        return str(eh["backend"])
+    sc = result.get("scorecard") if isinstance(result.get("scorecard"), dict) else {}
+    if sc.get("runner"):
+        return str(sc["runner"])
+    return "LocalReplayRunner"
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Run the deterministic Role Foundry autoresearch alpha loop"
@@ -143,11 +154,13 @@ def run_alpha_loop(
         loop_sequence_id=loop_sequence_id,
         private_holdout_pack=private_holdout_pack,
     )
+    _inject_verifier_commands(baseline_request, loop_verifier_commands)
     baseline_result = bridge.run(RunRequest.from_dict(baseline_request))
+    baseline_runner = _detect_runner_name(baseline_result)
     _patch_provenance_receipt_verifier_gates(
         artifacts_root / str(baseline_request.get("run_id")),
         loop_verifier_commands,
-        "LocalReplayRunner",
+        baseline_runner,
     )
     baseline_stage = _build_stage_receipt(
         stage_key="baseline-eval",
@@ -171,11 +184,13 @@ def run_alpha_loop(
         benchmark_pack,
         loop_sequence_id=loop_sequence_id,
     )
+    _inject_verifier_commands(candidate_student_request, loop_verifier_commands)
     candidate_student_result = bridge.run(RunRequest.from_dict(candidate_student_request))
+    candidate_student_runner = _detect_runner_name(candidate_student_result)
     _patch_provenance_receipt_verifier_gates(
         artifacts_root / str(candidate_student_request.get("run_id")),
         loop_verifier_commands,
-        "LocalReplayRunner",
+        candidate_student_runner,
     )
     candidate_student_stage = _build_stage_receipt(
         stage_key="candidate-student",
@@ -198,11 +213,13 @@ def run_alpha_loop(
         baseline_stage=baseline_stage,
         private_holdout_pack=private_holdout_pack,
     )
+    _inject_verifier_commands(candidate_teacher_request, loop_verifier_commands)
     candidate_teacher_result = bridge.run(RunRequest.from_dict(candidate_teacher_request))
+    candidate_teacher_runner = _detect_runner_name(candidate_teacher_result)
     _patch_provenance_receipt_verifier_gates(
         artifacts_root / str(candidate_teacher_request.get("run_id")),
         loop_verifier_commands,
-        "LocalReplayRunner",
+        candidate_teacher_runner,
     )
     candidate_teacher_stage = _build_stage_receipt(
         stage_key="candidate-teacher-eval",
@@ -675,6 +692,7 @@ def _build_stage_receipt(
         artifact_bundle=artifact_bundle,
         runner=scorecard.get("runner") if isinstance(scorecard, dict) else "LocalReplayRunner",
         verifier_commands_override=verifier_commands_override,
+        executed_check_results=_extract_executed_check_results(artifact_bundle, stored_result),
     )
 
     request_traceability = request.get("traceability") if isinstance(request.get("traceability"), dict) else {}
@@ -770,8 +788,14 @@ def _build_verifier_contract(
     artifact_bundle: dict[str, Any],
     runner: str,
     verifier_commands_override: list[str] | None = None,
+    executed_check_results: dict[str, dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Build an honest verifier-contract block for a stage receipt.
+
+    When ``executed_check_results`` contains real results for a command
+    (keyed by command string, with ``execution_status == "executed"``),
+    those results are threaded into the contract instead of placeholder
+    stubs.  This lets live backends drive the verifier gate honestly.
 
     In the local-replay alpha path, verifier commands are never actually
     executed.  This function surfaces the required commands and marks each
@@ -779,6 +803,7 @@ def _build_verifier_contract(
     green gate from a replay that never ran the checks.
     """
     is_local_replay = runner == "LocalReplayRunner"
+    executed = executed_check_results or {}
 
     required_commands = _extract_required_verifier_commands(
         request, artifact_bundle, verifier_commands_override=verifier_commands_override,
@@ -786,16 +811,32 @@ def _build_verifier_contract(
 
     command_results = []
     for command in required_commands:
-        command_results.append({
-            "command": command,
-            "execution_status": "not_executed" if is_local_replay else "unknown",
-            "exit_code": None,
-            "honesty_note": (
-                "Local-replay alpha path does not execute verifier commands."
-                if is_local_replay
-                else "Execution status was not captured by the runner."
-            ),
-        })
+        real = executed.get(command)
+        if real and real.get("execution_status") == "executed":
+            command_results.append({
+                "command": command,
+                "execution_status": "executed",
+                "exit_code": real.get("exit_code"),
+                "honesty_note": "Verifier command was executed by the live backend.",
+            })
+        elif is_local_replay:
+            command_results.append({
+                "command": command,
+                "execution_status": "not_executed",
+                "exit_code": None,
+                "honesty_note": (
+                    "Local-replay alpha path does not execute verifier commands."
+                ),
+            })
+        else:
+            command_results.append({
+                "command": command,
+                "execution_status": "unknown",
+                "exit_code": None,
+                "honesty_note": (
+                    "Execution status was not captured by the runner."
+                ),
+            })
 
     has_commands = len(required_commands) > 0
     all_executed = has_commands and all(
@@ -805,7 +846,7 @@ def _build_verifier_contract(
         cr.get("exit_code") == 0 for cr in command_results
     )
 
-    if is_local_replay:
+    if is_local_replay and not any(cr["execution_status"] == "executed" for cr in command_results):
         gate_status = "not_executed"
         gate_honesty_note = (
             "The local-replay runner produces deterministic receipts without "
@@ -1241,6 +1282,34 @@ def _evaluate_integrity_gate(
         "claims_allowed": claims_allowed,
         "claims_blocked": claims_blocked,
     }
+
+
+def _inject_verifier_commands(
+    request: dict[str, Any],
+    verifier_commands: list[str] | None,
+) -> None:
+    """Inject verifier commands into request extras for live backends."""
+    if not verifier_commands:
+        return
+    request.setdefault("extras", {})["recommended_verifier_commands"] = list(verifier_commands)
+
+
+def _extract_executed_check_results(
+    artifact_bundle: dict[str, Any],
+    result: dict[str, Any] | None = None,
+) -> dict[str, dict[str, Any]]:
+    """Extract executed check results keyed by command string.
+
+    Checks both the artifact bundle and the raw result for
+    ``execution_honesty.check_results`` written by a live backend.
+    """
+    results: dict[str, dict[str, Any]] = {}
+    for source in (artifact_bundle, result or {}):
+        eh = source.get("execution_honesty") if isinstance(source.get("execution_honesty"), dict) else {}
+        for cr in eh.get("check_results") or []:
+            if isinstance(cr, dict) and cr.get("command") and cr.get("execution_status") == "executed":
+                results[cr["command"]] = cr
+    return results
 
 
 def _canonical_json_bytes(payload: Any) -> bytes:
