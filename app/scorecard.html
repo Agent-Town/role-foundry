@@ -35,6 +35,7 @@
     <li><a :href="pageHref('scenarios.html')" :class="isActive('scenarios.html') && 'active'">Curriculum</a></li>
     <li><a :href="pageHref('run.html')" :class="isActive('run.html') && 'active'">Runs</a></li>
     <li><a :href="pageHref('scorecard.html')" :class="isActive('scorecard.html') && 'active'">Scorecard</a></li>
+    <li><a :href="pageHref('teacher-review.html')" :class="isActive('teacher-review.html') && 'active'">Teacher Review</a></li>
   </ul>
 </nav>
 
@@ -89,6 +90,53 @@
       <article class="judge-callout compact-callout" x-show="$store.app.teacherSummaryForRun(selectedRun)">
         <strong>Teacher verdict:</strong>
         <span x-text="$store.app.teacherSummaryForRun(selectedRun)"></span>
+      </article>
+
+      <template x-if="$store.app.sourceMode === 'live' && $store.app.alphaLoopReadModel() && $store.app.hasAlphaLoopComparison(selectedRun)">
+        <section>
+          <h3>Exact alpha-loop comparison receipt</h3>
+          <div class="grid-2">
+            <article class="card">
+              <div class="card-header-row">
+                <h4>Verdict + raw score delta</h4>
+                <span class="badge" :class="$store.app.alphaLoopComparison()?.verdict === 'better' ? 'badge-pass' : ($store.app.alphaLoopComparison()?.verdict === 'worse' ? 'badge-fail' : 'badge-training')" x-text="$store.app.alphaLoopComparison()?.verdict || 'pending'"></span>
+              </div>
+              <ul>
+                <li><strong>Deciding axis:</strong> <code x-text="$store.app.alphaLoopComparison()?.deciding_axis || '—'"></code></li>
+                <li><strong>Baseline total score:</strong> <span x-text="$store.app.formatDecimal($store.app.alphaLoopComparison()?.baseline_total_score, 4)"></span></li>
+                <li><strong>Candidate total score:</strong> <span x-text="$store.app.formatDecimal($store.app.alphaLoopComparison()?.candidate_total_score, 4)"></span></li>
+                <li><strong>Total score delta:</strong> <span class="improved" x-text="$store.app.formatSigned($store.app.alphaLoopComparison()?.total_score_delta, 4)"></span></li>
+                <li><strong>Pass-count delta:</strong> <span x-text="$store.app.formatSigned($store.app.alphaLoopComparison()?.category_deltas?.pass_count, 0)"></span></li>
+                <li><strong>Pass-rate delta:</strong> <span x-text="$store.app.formatSigned(($store.app.alphaLoopComparison()?.category_deltas?.pass_rate ?? null) === null ? null : $store.app.alphaLoopComparison()?.category_deltas?.pass_rate * 100, 0, ' pts')"></span></li>
+                <li><strong>Holdout pass-count delta:</strong> <span x-text="$store.app.formatSigned($store.app.alphaLoopComparison()?.category_deltas?.holdout_pass_count, 0)"></span></li>
+                <li><strong>Holdout pass-rate delta:</strong> <span x-text="$store.app.formatSigned(($store.app.alphaLoopComparison()?.category_deltas?.holdout_pass_rate ?? null) === null ? null : $store.app.alphaLoopComparison()?.category_deltas?.holdout_pass_rate * 100, 0, ' pts')"></span></li>
+              </ul>
+            </article>
+            <article class="card">
+              <h4>Compared runs</h4>
+              <ul>
+                <li><strong>Baseline:</strong> <span x-text="$store.app.getRunLabel($store.app.alphaLoopComparison()?.baseline_run_id)"></span></li>
+                <li><strong>Candidate:</strong> <span x-text="$store.app.getRunLabel($store.app.alphaLoopComparison()?.candidate_run_id)"></span></li>
+              </ul>
+              <p><small x-text="$store.app.alphaLoopReadModel()?.integrity_gate?.summary || $store.app.alphaLoopReadModel()?.honesty_note || 'Read-only comparison receipt.'"></small></p>
+              <template x-if="($store.app.alphaLoopComparison()?.reasons || []).length > 0">
+                <div>
+                  <strong>Receipt reasons</strong>
+                  <ul>
+                    <template x-for="(reason, idx) in $store.app.alphaLoopComparison()?.reasons || []" :key="idx">
+                      <li><small x-text="reason"></small></li>
+                    </template>
+                  </ul>
+                </div>
+              </template>
+            </article>
+          </div>
+        </section>
+      </template>
+
+      <article class="card empty-state" x-show="$store.app.sourceMode === 'live' && $store.app.alphaLoopReadModel() && !$store.app.hasAlphaLoopComparison(selectedRun)">
+        <strong>No alpha-loop comparison receipt is attached to this run yet.</strong>
+        <p>That is valid for baseline-only or student-only exports. The shell stays live and leaves the comparison panel empty instead of inventing a verdict.</p>
       </article>
 
       <template x-if="$store.app.resultsForRun(selectedRun).length > 0">

@@ -22,6 +22,7 @@ const ROLE_FOUNDRY_UI_SNAPSHOT_KEYS = Object.freeze([
   'artifacts',
   'run_replays',
   'teacher_source_intake',
+  'read_model',
 ]);
 
 function cloneRoleFoundryData(value) {
@@ -164,16 +165,31 @@ function normalizeFailureThemes(value) {
     .filter(Boolean);
 }
 
-function normalizeVisibleScenarioIds(value) {
+function normalizeVisibleScenarioRefs(value) {
   return (Array.isArray(value) ? value : [])
     .map(item => {
       if (typeof item === 'string') {
-        return item;
+        return {
+          id: item,
+          title: null,
+          type: null,
+          difficulty: null,
+          student_prompt: null,
+          repo_task_meta: null,
+        };
       }
-      if (isPlainObject(item) && item.id) {
-        return String(item.id);
+      if (!isPlainObject(item) || !item.id) {
+        return null;
       }
-      return null;
+      return {
+        ...item,
+        id: String(item.id),
+        title: typeof item.title === 'string' ? item.title : null,
+        type: typeof item.type === 'string' ? item.type : null,
+        difficulty: typeof item.difficulty === 'string' ? item.difficulty : null,
+        student_prompt: typeof item.student_prompt === 'string' ? item.student_prompt : null,
+        repo_task_meta: isPlainObject(item.repo_task_meta) ? item.repo_task_meta : null,
+      };
     })
     .filter(Boolean);
 }
@@ -400,6 +416,7 @@ function validateSnapshotShape(payload) {
   ensureArray(payload.iterations, 'iterations');
   ensureObject(payload.artifacts, 'artifacts');
   ensureObject(payload.run_replays, 'run_replays');
+  ensureObject(payload.read_model, 'read_model');
 }
 
 function defaultRoleForMode(mode) {
@@ -432,6 +449,7 @@ function createDataSkeleton(mode) {
     artifacts: {},
     run_replays: {},
     teacher_source_intake: null,
+    read_model: null,
   };
 }
 
@@ -476,9 +494,12 @@ function normalizeRuns(runs) {
 }
 
 function normalizeScenarios(scenarios) {
-  return (Array.isArray(scenarios) ? scenarios : []).filter(
-    scenario => isPlainObject(scenario) && scenario.id
-  );
+  return (Array.isArray(scenarios) ? scenarios : [])
+    .filter(scenario => isPlainObject(scenario) && scenario.id)
+    .map(scenario => ({
+      ...scenario,
+      id: String(scenario.id),
+    }));
 }
 
 function normalizeIterations(iterations) {
@@ -497,6 +518,57 @@ function normalizeStudentViews(studentViews) {
       })
       .filter(Boolean)
   );
+}
+
+function normalizeReadModel(readModel) {
+  if (!isPlainObject(readModel)) {
+    return null;
+  }
+
+  return {
+    ...readModel,
+    source: typeof readModel.source === 'string' ? readModel.source : null,
+    flow: typeof readModel.flow === 'string' ? readModel.flow : null,
+    sequence_id: typeof readModel.sequence_id === 'string' ? readModel.sequence_id : null,
+    dataset_manifest_id:
+      typeof readModel.dataset_manifest_id === 'string' ? readModel.dataset_manifest_id : null,
+    dataset_version: typeof readModel.dataset_version === 'string' ? readModel.dataset_version : null,
+    control_plane_mode:
+      typeof readModel.control_plane_mode === 'string' ? readModel.control_plane_mode : null,
+    honesty_note: typeof readModel.honesty_note === 'string' ? readModel.honesty_note : null,
+    verdict:
+      typeof readModel.verdict === 'string'
+        ? readModel.verdict
+        : (typeof normalizeRecord(readModel.comparison).verdict === 'string'
+          ? normalizeRecord(readModel.comparison).verdict
+          : null),
+    integrity_gate: isPlainObject(readModel.integrity_gate) ? readModel.integrity_gate : null,
+    comparison: isPlainObject(readModel.comparison) ? readModel.comparison : null,
+    stages: (Array.isArray(readModel.stages) ? readModel.stages : [])
+      .map(stage => {
+        if (!isPlainObject(stage) || !stage.stage_key) {
+          return null;
+        }
+        return {
+          ...stage,
+          stage_key: String(stage.stage_key),
+          run_id: typeof stage.run_id === 'string' ? stage.run_id : null,
+          run_label: typeof stage.run_label === 'string' ? stage.run_label : null,
+          label: typeof stage.label === 'string' ? stage.label : null,
+          status: typeof stage.status === 'string' ? stage.status : null,
+          stage_label: typeof stage.stage_label === 'string' ? stage.stage_label : null,
+          comparison_run_id: typeof stage.comparison_run_id === 'string' ? stage.comparison_run_id : null,
+          iteration: normalizeNumber(stage.iteration),
+          total_score: normalizeNumber(stage.total_score),
+          aggregate_score: isPlainObject(stage.aggregate_score) ? stage.aggregate_score : null,
+          has_scorecard: Boolean(stage.has_scorecard),
+          has_student_view: Boolean(stage.has_student_view),
+          has_artifact: Boolean(stage.has_artifact),
+          has_replay: Boolean(stage.has_replay),
+        };
+      })
+      .filter(Boolean),
+  };
 }
 
 function basenameish(value) {
@@ -568,7 +640,7 @@ function mapLiveStudentView(studentView) {
       typeof studentView.prompt_summary === 'string'
         ? studentView.prompt_summary
         : 'Train on the visible curriculum only. Hidden holdouts stay sealed.',
-    visible_scenarios: normalizeVisibleScenarioIds(studentView.visible_scenarios),
+    visible_scenarios: normalizeVisibleScenarioRefs(studentView.visible_scenarios),
     public_curriculum_themes: normalizeThemeSummaryList(studentView.public_curriculum_themes),
     sealed_holdout_count: normalizeNumber(studentView.sealed_holdout_count) ?? 0,
   };
@@ -717,6 +789,9 @@ function mapLiveReadModelPayloadToSnapshot(payload) {
   if (summary.run_replays !== undefined) {
     snapshot.run_replays = summary.run_replays;
   }
+  if (summary.read_model !== undefined) {
+    snapshot.read_model = summary.read_model;
+  }
 
   (Array.isArray(summary.runs) ? summary.runs : [])
     .map(mapLiveRunEntry)
@@ -756,6 +831,76 @@ function mapSingleRunExportToSnapshot(payload) {
   });
 }
 
+function upsertAutoresearchScenario(map, scenario) {
+  if (!scenario || !scenario.id) {
+    return;
+  }
+
+  const id = String(scenario.id);
+  const current = map.get(id) || { id, title: id, description: '', type: null, difficulty: null };
+  map.set(id, {
+    ...current,
+    ...scenario,
+    id,
+    title: scenario.title || current.title || id,
+    description: scenario.description || current.description || '',
+    type: scenario.type || current.type || null,
+    difficulty: scenario.difficulty || current.difficulty || null,
+  });
+}
+
+function deriveAutoresearchScenarios(stages) {
+  const scenarioMap = new Map();
+  const trainingIds = new Set();
+
+  Object.values(stages).forEach(stageValue => {
+    const stage = normalizeRecord(stageValue);
+    const traceability = normalizeRecord(stage.traceability);
+    const episodes = normalizeRecord(traceability.episodes);
+    normalizeStringList(episodes.training_episode_ids).forEach(id => trainingIds.add(id));
+
+    const stageExport = normalizeRecord(stage.export);
+    const studentView = normalizeRecord(
+      stageExport.student_view || normalizeRecord(stageExport.artifact_bundle).student_view
+    );
+
+    normalizeVisibleScenarioRefs(studentView.visible_scenarios).forEach(scenarioRef => {
+      trainingIds.add(scenarioRef.id);
+      upsertAutoresearchScenario(scenarioMap, {
+        id: scenarioRef.id,
+        title: scenarioRef.title || scenarioRef.id,
+        description: scenarioRef.student_prompt || '',
+        type: scenarioRef.type || 'training',
+        difficulty: scenarioRef.difficulty || null,
+      });
+    });
+
+    const scorecard = normalizeRecord(normalizeRecord(stageExport.result).scorecard);
+    const rawResults = Array.isArray(scorecard.scenario_results)
+      ? scorecard.scenario_results
+      : (Array.isArray(scorecard.results) ? scorecard.results : []);
+
+    rawResults.forEach(result => {
+      if (!isPlainObject(result) || !result.scenario_id) {
+        return;
+      }
+      const scenarioId = String(result.scenario_id);
+      upsertAutoresearchScenario(scenarioMap, {
+        id: scenarioId,
+        title: scenarioMap.get(scenarioId)?.title || scenarioId,
+        description:
+          typeof result.teacher_notes === 'string'
+            ? result.teacher_notes
+            : (typeof result.notes === 'string' ? result.notes : ''),
+        type: trainingIds.has(scenarioId) ? 'training' : 'holdout',
+        difficulty: typeof result.difficulty === 'string' ? result.difficulty : null,
+      });
+    });
+  });
+
+  return Array.from(scenarioMap.values());
+}
+
 function mapAutoresearchAlphaPayloadToSnapshot(payload) {
   const envelope = normalizeRecord(payload.autoresearch_alpha ? payload : {});
   const receipt = normalizeRecord(payload.autoresearch_alpha || payload);
@@ -776,6 +921,8 @@ function mapAutoresearchAlphaPayloadToSnapshot(payload) {
   }
   if (envelope.scenarios !== undefined) {
     snapshot.scenarios = envelope.scenarios;
+  } else {
+    snapshot.scenarios = deriveAutoresearchScenarios(stages);
   }
 
   const orderedStages = [
@@ -795,6 +942,8 @@ function mapAutoresearchAlphaPayloadToSnapshot(payload) {
       fallbackIteration: 3,
     },
   ];
+
+  const readModelStages = [];
 
   orderedStages.forEach((stageSpec, index) => {
     const stage = normalizeRecord(stages[stageSpec.key]);
@@ -886,7 +1035,39 @@ function mapAutoresearchAlphaPayloadToSnapshot(payload) {
     if (mapped.actors.teacher && !snapshot.actors.teacher) {
       snapshot.actors.teacher = mapped.actors.teacher;
     }
+
+    readModelStages.push({
+      stage_key: stageSpec.key,
+      label: stageSpec.label,
+      run_id: mapped.run.id,
+      run_label: mapped.run.label,
+      status: mapped.run.status,
+      stage_label: mapped.run.stage_label,
+      comparison_run_id: mapped.run.comparison_run_id || null,
+      iteration: mapped.run.iteration,
+      total_score: normalizeNumber(stage.total_score),
+      aggregate_score: isPlainObject(stage.aggregate_score) ? stage.aggregate_score : null,
+      has_scorecard: Boolean(mapped.scorecard),
+      has_student_view: Boolean(mapped.studentView),
+      has_artifact: Boolean(mapped.artifact),
+      has_replay: Boolean(mapped.replay.length),
+    });
   });
+
+  snapshot.read_model = {
+    source: 'autoresearch-alpha',
+    flow: receipt.flow || 'autoresearch-alpha',
+    sequence_id: receipt.sequence_id || null,
+    dataset_manifest_id: receipt.dataset_manifest_id || null,
+    dataset_version: receipt.dataset_version || null,
+    control_plane_mode: receipt.control_plane_mode || null,
+    verdict: receipt.verdict || comparison.verdict || null,
+    integrity_gate: isPlainObject(receipt.integrity_gate) ? receipt.integrity_gate : null,
+    comparison: Object.keys(comparison).length ? comparison : null,
+    stages: readModelStages,
+    honesty_note:
+      'Read-only public alpha receipt adapter. Verdict, deciding axis, and score deltas render directly from the exported comparison receipt when present.',
+  };
 
   const baselineRunId = comparison.baseline_run_id || normalizeRecord(stages['baseline-eval']).run_id || null;
   const candidateRunId = comparison.candidate_run_id || normalizeRecord(stages['candidate-teacher-eval']).run_id || null;
@@ -988,6 +1169,7 @@ function normalizeAppData(payload, mode) {
     artifacts: normalizeRecord(payload.artifacts ?? base.artifacts),
     run_replays: normalizeRecord(payload.run_replays ?? base.run_replays),
     teacher_source_intake: payload.teacher_source_intake ?? base.teacher_source_intake ?? null,
+    read_model: normalizeReadModel(payload.read_model ?? base.read_model),
   };
 }
 
@@ -1112,6 +1294,56 @@ function createAppStore(config) {
 
     getStudentView(runId) {
       return this.student_views?.[runId] || null;
+    },
+
+    readModel() {
+      return this.read_model || null;
+    },
+
+    alphaLoopReadModel() {
+      return this.read_model?.source === 'autoresearch-alpha' ? this.read_model : null;
+    },
+
+    alphaLoopComparison() {
+      return this.alphaLoopReadModel()?.comparison || null;
+    },
+
+    alphaLoopStage(stageOrRunId) {
+      if (!stageOrRunId) {
+        return null;
+      }
+      return this.alphaLoopReadModel()?.stages?.find(
+        stage => stage.stage_key === stageOrRunId || stage.run_id === stageOrRunId
+      ) || null;
+    },
+
+    hasAlphaLoopComparison(runId = null) {
+      const comparison = this.alphaLoopComparison();
+      if (!comparison) {
+        return false;
+      }
+      if (!runId) {
+        return true;
+      }
+      return comparison.baseline_run_id === runId || comparison.candidate_run_id === runId;
+    },
+
+    visibleScenarioId(scenarioRef) {
+      if (typeof scenarioRef === 'string') {
+        return scenarioRef;
+      }
+      if (isPlainObject(scenarioRef) && scenarioRef.id) {
+        return String(scenarioRef.id);
+      }
+      return null;
+    },
+
+    visibleScenarioLabel(scenarioRef) {
+      const scenarioId = this.visibleScenarioId(scenarioRef);
+      if (isPlainObject(scenarioRef) && typeof scenarioRef.title === 'string' && scenarioRef.title) {
+        return scenarioRef.title;
+      }
+      return this.getScenario(scenarioId)?.title || scenarioId || '—';
     },
 
     getTeacherForRun(runId) {
@@ -1404,6 +1636,11 @@ function createAppStore(config) {
     formatPercent(value) {
       if (value === null || value === undefined || Number.isNaN(Number(value))) return '—';
       return `${Math.round(Number(value) * 100)}%`;
+    },
+
+    formatDecimal(value, decimals = 4) {
+      if (value === null || value === undefined || Number.isNaN(Number(value))) return '—';
+      return Number(value).toFixed(decimals);
     },
 
     formatSigned(value, decimals = 0, suffix = '') {

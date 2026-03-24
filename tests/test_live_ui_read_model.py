@@ -61,7 +61,7 @@ class LiveUiReadModelTests(unittest.TestCase):
               latestRunId: store.latestRunId(),
               latestScoredRunId: store.latestScoredRunId(),
               latestStudentViewRunId: store.latestStudentViewRunId(),
-              comparisonRunId: store.comparisonRunId('run-eval-002'),
+              candidateComparisonRunId: store.comparisonRunId('run-eval-002'),
               latestScoreSummary: store.latestScoreSummary(),
               overallDelta: store.scoreDelta('run-eval-002'),
               holdoutDelta: store.scoreDelta('run-eval-002', null, 'holdout'),
@@ -70,9 +70,20 @@ class LiveUiReadModelTests(unittest.TestCase):
               candidateTeacherSummary: store.teacherSummaryForRun('run-eval-002'),
               latestFailureThemes: (store.latestIteration()?.failure_themes || []).map(theme => theme.theme),
               latestStudentPrompt: store.getStudentView(store.latestStudentViewRunId())?.prompt_summary || null,
+              latestStudentVisibleLabels: (store.getStudentView(store.latestStudentViewRunId())?.visible_scenarios || []).map(ref => store.visibleScenarioLabel(ref)),
               artifactRunIds: Object.keys(store.artifacts).sort(),
               replayRunIds: Object.keys(store.run_replays).sort(),
               sourceMode: store.sourceMode,
+              trainingScenarioCount: store.trainingScenarios().length,
+              holdoutScenarioCount: store.holdoutScenarios().length,
+              readModelSource: store.alphaLoopReadModel()?.source || null,
+              alphaComparisonVerdict: store.alphaLoopComparison()?.verdict || null,
+              alphaComparisonAxis: store.alphaLoopComparison()?.deciding_axis || null,
+              alphaTotalScoreDelta: store.alphaLoopComparison()?.total_score_delta ?? null,
+              alphaPassCountDelta: store.alphaLoopComparison()?.category_deltas?.pass_count ?? null,
+              alphaHoldoutPassCountDelta: store.alphaLoopComparison()?.category_deltas?.holdout_pass_count ?? null,
+              alphaIntegrityStatus: store.alphaLoopReadModel()?.integrity_gate?.status || null,
+              alphaStageKeys: (store.alphaLoopReadModel()?.stages || []).map(stage => stage.stage_key),
             }}));
             """
         )
@@ -94,17 +105,39 @@ class LiveUiReadModelTests(unittest.TestCase):
         self.assertEqual(result['latestRunId'], 'run-eval-002')
         self.assertEqual(result['latestScoredRunId'], 'run-eval-002')
         self.assertEqual(result['latestStudentViewRunId'], 'run-eval-002')
-        self.assertEqual(result['comparisonRunId'], 'run-eval-001')
-        self.assertEqual(result['overallDelta'], 4)
-        self.assertEqual(result['holdoutDelta'], 2)
-        self.assertEqual(result['candidateResults'], 9)
+        self.assertEqual(result['candidateComparisonRunId'], 'run-eval-001')
+        self.assertEqual(result['latestScoreSummary'], '4/5 (80%)')
+        self.assertEqual(result['overallDelta'], 2)
+        self.assertEqual(result['holdoutDelta'], 1)
+        self.assertEqual(result['candidateResults'], 5)
         self.assertFalse(result['studentHasScorecard'])
-        self.assertIn('materially better', result['candidateTeacherSummary'])
-        self.assertIn('Proof bundle over vibes', result['latestFailureThemes'])
-        self.assertIn('public curriculum plus promoted failure themes only', result['latestStudentPrompt'])
+        self.assertIn('Candidate materially improved', result['candidateTeacherSummary'])
+        self.assertEqual(result['latestFailureThemes'], ['Rewrite teacher-only holdout families outside the public repo'])
+        self.assertIn('public benchmark pack', result['latestStudentPrompt'])
+        self.assertEqual(
+            result['latestStudentVisibleLabels'],
+            [
+                'Expose visible score deltas',
+                'Attach a proof bundle to each strong run',
+                'Convert failures into the next curriculum',
+            ],
+        )
         self.assertEqual(result['artifactRunIds'], ['run-eval-001', 'run-eval-001-student', 'run-eval-002'])
         self.assertEqual(result['replayRunIds'], ['run-eval-001', 'run-eval-001-student', 'run-eval-002'])
         self.assertEqual(result['sourceMode'], 'live')
+        self.assertEqual(result['trainingScenarioCount'], 3)
+        self.assertEqual(result['holdoutScenarioCount'], 2)
+        self.assertEqual(result['readModelSource'], 'autoresearch-alpha')
+        self.assertEqual(result['alphaComparisonVerdict'], 'better')
+        self.assertEqual(result['alphaComparisonAxis'], 'machine_score')
+        self.assertEqual(result['alphaTotalScoreDelta'], 0.4)
+        self.assertEqual(result['alphaPassCountDelta'], 2)
+        self.assertEqual(result['alphaHoldoutPassCountDelta'], 1)
+        self.assertEqual(result['alphaIntegrityStatus'], 'pass')
+        self.assertEqual(
+            result['alphaStageKeys'],
+            ['baseline-eval', 'candidate-student', 'candidate-teacher-eval'],
+        )
 
     def test_raw_autoresearch_receipt_without_outer_envelope_still_adapts(self):
         payload_expression = textwrap.dedent(
@@ -119,9 +152,64 @@ class LiveUiReadModelTests(unittest.TestCase):
 
         self.assertEqual(result['runIds'], ['run-eval-001', 'run-eval-001-student', 'run-eval-002'])
         self.assertEqual(result['scoredRunIds'], ['run-eval-001', 'run-eval-002'])
-        self.assertEqual(result['comparisonRunId'], 'run-eval-001')
-        self.assertEqual(result['overallDelta'], 4)
+        self.assertEqual(result['candidateComparisonRunId'], 'run-eval-001')
+        self.assertEqual(result['trainingScenarioCount'], 6)
+        self.assertEqual(result['holdoutScenarioCount'], 2)
+        self.assertEqual(result['alphaComparisonVerdict'], 'better')
+        self.assertEqual(
+            result['latestStudentVisibleLabels'],
+            [
+                'Expose visible score deltas',
+                'Attach a proof bundle to each strong run',
+                'Convert failures into the next curriculum',
+            ],
+        )
         self.assertFalse(result['studentHasScorecard'])
+
+    def test_student_only_live_receipt_keeps_missing_comparison_honest(self):
+        payload_expression = textwrap.dedent(
+            f"""
+            (() => {{
+              const envelope = JSON.parse(fs.readFileSync({json.dumps(str(ALPHA_SAMPLE))}, 'utf8'));
+              const receipt = envelope.autoresearch_alpha;
+              return {{
+                flow: receipt.flow,
+                sequence_id: receipt.sequence_id,
+                dataset_manifest_id: receipt.dataset_manifest_id,
+                dataset_version: receipt.dataset_version,
+                control_plane_mode: receipt.control_plane_mode,
+                stages: {{
+                  'candidate-student': receipt.stages['candidate-student']
+                }}
+              }};
+            }})()
+            """
+        ).strip()
+        result = self._run_node(payload_expression)
+
+        self.assertEqual(result['runIds'], ['run-eval-001-student'])
+        self.assertEqual(result['scoredRunIds'], [])
+        self.assertEqual(result['latestRunId'], 'run-eval-001-student')
+        self.assertIsNone(result['latestScoredRunId'])
+        self.assertEqual(result['latestStudentViewRunId'], 'run-eval-001-student')
+        self.assertEqual(result['latestScoreSummary'], 'No scored live runs yet')
+        self.assertEqual(result['candidateResults'], 0)
+        self.assertFalse(result['studentHasScorecard'])
+        self.assertEqual(result['alphaComparisonVerdict'], None)
+        self.assertEqual(result['alphaTotalScoreDelta'], None)
+        self.assertEqual(result['trainingScenarioCount'], 3)
+        self.assertEqual(result['holdoutScenarioCount'], 0)
+        self.assertEqual(
+            result['latestStudentVisibleLabels'],
+            [
+                'Show why Run 2 is better with concrete deltas',
+                'Make the proof bundle legible at a glance',
+                'Promote one failed theme into public curriculum safely',
+            ],
+        )
+        self.assertEqual(result['artifactRunIds'], ['run-eval-001-student'])
+        self.assertEqual(result['replayRunIds'], ['run-eval-001-student'])
+        self.assertEqual(result['alphaStageKeys'], ['candidate-student'])
 
 
 if __name__ == '__main__':

@@ -35,6 +35,7 @@
     <li><a :href="pageHref('scenarios.html')" :class="isActive('scenarios.html') && 'active'">Curriculum</a></li>
     <li><a :href="pageHref('run.html')" :class="isActive('run.html') && 'active'">Runs</a></li>
     <li><a :href="pageHref('scorecard.html')" :class="isActive('scorecard.html') && 'active'">Scorecard</a></li>
+    <li><a :href="pageHref('teacher-review.html')" :class="isActive('teacher-review.html') && 'active'">Teacher Review</a></li>
   </ul>
 </nav>
 
@@ -93,13 +94,26 @@
     </article>
   </template>
 
+  <template x-if="$store.app.sourceMode === 'live' && $store.app.alphaLoopStage(detailRun)">
+    <article class="card">
+      <h3>Alpha-loop stage context</h3>
+      <ul>
+        <li><strong>Stage:</strong> <code x-text="$store.app.alphaLoopStage(detailRun)?.stage_key || '—'"></code></li>
+        <li><strong>Status:</strong> <span x-text="$store.app.alphaLoopStage(detailRun)?.status || 'pending'"></span></li>
+        <li><strong>Total score receipt:</strong> <span x-text="$store.app.formatDecimal($store.app.alphaLoopStage(detailRun)?.total_score, 4)"></span></li>
+        <li><strong>Comparison target:</strong> <span x-text="$store.app.alphaLoopStage(detailRun)?.comparison_run_id ? $store.app.getRunLabel($store.app.alphaLoopStage(detailRun)?.comparison_run_id) : 'none exported'"></span></li>
+        <li><strong>Exported surfaces:</strong> <span x-text="($store.app.alphaLoopStage(detailRun)?.has_scorecard ? 'scorecard' : 'no scorecard') + ', ' + ($store.app.alphaLoopStage(detailRun)?.has_student_view ? 'student view' : 'no student view') + ', ' + ($store.app.alphaLoopStage(detailRun)?.has_artifact ? 'proof bundle' : 'no proof bundle') + ', ' + ($store.app.alphaLoopStage(detailRun)?.has_replay ? 'replay lines' : 'no replay lines')"></span></li>
+      </ul>
+    </article>
+  </template>
+
   <div class="grid-2" style="margin-bottom: 1rem;">
     <article class="card" x-show="$store.app.getStudentView(detailRun)">
       <h3>Student Prompt Pack</h3>
       <p><small x-text="$store.app.getStudentView(detailRun)?.prompt_summary"></small></p>
       <ul>
-        <template x-for="scenarioId in $store.app.getStudentView(detailRun)?.visible_scenarios || []" :key="scenarioId">
-          <li x-text="$store.app.getScenario(scenarioId)?.title || scenarioId"></li>
+        <template x-for="scenarioRef in $store.app.getStudentView(detailRun)?.visible_scenarios || []" :key="$store.app.visibleScenarioId(scenarioRef)">
+          <li x-text="$store.app.visibleScenarioLabel(scenarioRef)"></li>
         </template>
       </ul>
       <p><small x-text="($store.app.getStudentView(detailRun)?.sealed_holdout_count || 0) + ' sealed holdouts stayed hidden from this prompt pack.'"></small></p>

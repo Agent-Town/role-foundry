@@ -76,6 +76,8 @@ To exercise the **browser live shell** against the committed alpha-loop sample:
 http://localhost:8080/?mode=live&liveDataUrl=live-read-model.alpha-loop.sample.json
 ```
 
+That sample is a **consumer-side envelope derived from the repo's real public alpha-loop receipt**. The browser now renders the exported `comparison.verdict`, `deciding_axis`, `baseline_total_score`, `candidate_total_score`, `total_score_delta`, and `category_deltas` directly instead of inventing new score semantics.
+
 To start the optional backend-side **live mode** (requires an external Clawith image):
 
 ```bash
@@ -92,25 +94,31 @@ The first honest runner-bridge slice is now in the repo. It is intentionally sma
 - `LocalReplayRunner` is the zero-secret backend that writes a transcript and artifact bundle
 - optional `teacher_evaluation` input produces a teacher scorecard, public curriculum themes, and iteration history deltas
 - the bridge stores a redacted `request.json` plus a raw `request.private.json` so sealed holdout prompts stay out of student-facing artifacts
-- the bridge also emits a receipt provenance pack (`receipts/manifest.json`, baseline/candidate/evaluation exports, `receipts/evidence-index.json`, and `receipts/summary.md`) so judges can trace a run back to its source artifacts without changing the scoring semantics
+- the bridge also emits a receipt provenance pack (`receipts/manifest.json`, baseline/candidate/evaluation exports, `receipts/evidence-index.json`, `receipts/audit-bundle.json`, and `receipts/summary.md`) so judges can trace a run back to its source artifacts without changing the scoring semantics; the audit bundle carries machine-readable artifact coverage, required-artifact validation, redaction checks, and honest section availability for local/sample paths
 - if you pass `--clawith-url`, the bridge patches run state into a Clawith-compatible control plane
 - if you omit `--clawith-url`, you can still exercise the artifact/transcript contract locally
 
 Examples:
 
 ```bash
-python3 -m runner_bridge.cli \
-  --request runner_bridge/examples/first-live-run.json \
-  --clawith-url http://localhost:3000 \
-  --clawith-secret "$CLAWITH_SECRET"
-```
+# Run a task packet by acceptance_test_id (packet-driven path)
+python3 -m runner_bridge.cli --packet A001
 
-```bash
+# Run a task packet with explicit run-id
+python3 -m runner_bridge.cli --packet C001 --run-id my-run-001
+
+# Run from a pre-built request JSON
+python3 -m runner_bridge.cli \
+  --request runner_bridge/examples/first-live-run.json
+
+# With control plane
 python3 -m runner_bridge.cli \
   --request runner_bridge/examples/teacher-eval-loop.json \
   --clawith-url http://localhost:3000 \
   --clawith-secret "$CLAWITH_SECRET"
 ```
+
+The `--packet` path loads a frozen task packet from the public seed registry, validates it against the evaluation contract and role manifest, materializes a `run-object.json` runtime artifact in the run directory, and runs it through the bridge. The `run-object.json` carries the packet id, version, content hash, role id, eval contract ref, mutation budget, paths, checks, and evidence contract. The `result.json` includes a machine-readable `execution_honesty` block that truthfully reports whether the backend actually executed commands.
 
 Artifacts land under `runtime/runs/<run_id>/`.
 
@@ -130,8 +138,20 @@ What it proves today:
 - a concrete **better/equal/worse** comparison receipt
 - artifact coverage across all three stages
 - an explicit **integrity gate** that allows public-regression claims while blocking fake sealed-eval claims
+- a **repo-task-shaped student prompt pack** with per-scenario metadata (`suggested_files`, `mutation_budget`, `constraints`, `public_checks`) derived from the public benchmark episodes, making the candidate-student stage less canned and more like real software-engineering teaching
 
 That last point matters. The public benchmark pack is usable now, but the current teacher-only families are still marked `blocked_pending_rewrite`, so the repo cannot honestly claim a fresh sealed holdout path yet. The alpha loop says that plainly instead of faking it.
+
+A second **Frontend/Product Engineer** benchmark pack is now also available:
+
+```bash
+python3 -m runner_bridge.autoresearch_alpha \
+  --request runner_bridge/examples/fpe-autoresearch-alpha-public-loop.json
+```
+
+This pack ships **20 public episodes across 5 families** (one per curriculum phase) derived from Spec 014 acceptance tests. Rubric templates use the frozen FPE evaluation contract. No teacher-only families are blocked.
+
+All 20 episodes are **public-safe and alpha-consumable** — packets, rubrics, and provenance are complete. However, **runtime readiness varies by phase**: Phase 1 contract surface is complete, Phase 3 execution is partial (verifier-gate landed, live execution pending), and Phases 2/4/5 are packet-defined only with runtime not yet live. See `docs/curriculum-operating-split.md` for the honest status-by-area table and per-family `readiness` fields in the family registry for machine-readable detail.
 
 There is also now a separate **local-only private holdout scaffold**:
 - `benchmarks/private-holdout-pack-template.json` defines the public-safe shape only
@@ -176,7 +196,7 @@ See `docs/erc8004-base-agent0-adapter.md` for usage and `specs/013-erc8004-base-
 This repo is intentionally honest about what is not wired yet:
 - the browser **live shell is read-only** — it consumes configured exports / receipts, but it does not chase native run storage or claim upstream Clawith parity
 - only one **local/mockable runner path** is implemented today (`LocalReplayRunner`); teacher scorecards and iteration history are real contracts, but Claude/Codex-backed adapters still need wiring
-- the committed alpha-loop browser fixture is a **sample/read-model export**, not proof that a fully real baseline → candidate → teacher-eval loop has already executed end to end on this branch
+- the committed alpha-loop browser fixture is a **sample/read-model export derived from a real public alpha receipt**, not proof that native live storage/browser fan-out already exists on this branch
 - no auth, no Privy, no fake consumer OAuth path
 - no live artifact viewer backed by run storage fan-out
 
@@ -214,6 +234,10 @@ Using different model families for building and judging reduces correlated self-
 - `docs/public-benchmark-pack-v1.md` — public-safe benchmark pack scope, blocked families, and local private-holdout path
 - `docs/software-engineer-curriculum-sources.md` — narrow public source inventory for the software-engineering apprentice
 - `docs/teacher-source-curriculum-workflow.md` — discover → curate → promote workflow for teacher-driven curriculum extension
+- `docs/frontend-product-engineer-seed-curriculum.md` — public seed-task registry, packet schema, and audit commands for the frozen Frontend/Product Engineer role
+- `docs/curriculum-operating-split.md` — teacher vs student responsibilities, canonical contract surface, and honest implemented-vs-future status
+- `docs/phase5-lineage-cycle-ops.md` — Phase 5 generation lineage, weekly training cycles, and cross-artifact linkage (contract/fixture level, not live automation)
+- `docs/teacher-review-console.md` — D001 fixture-backed teacher review shell/read-model over stored exports only
 - `docs/private-holdout-authoring.md` — local-only teacher workflow for authoring and auditing fresh holdouts
 - `docs/swe-bench-holdout-extension.md` — teacher-only process for small manually curated SWE-bench-derived holdout episodes
 - `docs/conversation-log.md` — curated build log for the submission
@@ -231,6 +255,7 @@ Using different model families for building and judging reduces correlated self-
 - `specs/011-live-ui-read-model.md` — read-only browser adapter for configured live/read-model exports
 - `specs/012-private-holdout-pack.md` — local-only private holdout contract without shipping teacher material
 - `specs/013-erc8004-base-agent0-adapter.md` — ERC-8004 Base / agent0-sdk adapter spec
+- `specs/014-frontend-product-engineer-20-task-curriculum.md` — TDD-first 20-task curriculum contract for the first Frontend/Product Engineer apprentice
 
 ## License
 

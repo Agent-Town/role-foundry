@@ -25,18 +25,19 @@ def build_student_prompt_pack(payload: dict[str, Any]) -> dict[str, Any]:
         if not isinstance(scenario, dict):
             continue
         title = scenario.get("title") or scenario.get("id") or "unknown"
-        visible_scenarios.append(
-            {
-                "id": scenario.get("id"),
-                "title": title,
-                "type": scenario.get("type", "training"),
-                "difficulty": scenario.get("difficulty"),
-                "student_prompt": scenario.get("student_prompt")
-                or scenario.get("prompt")
-                or scenario.get("description")
-                or "",
-            }
-        )
+        entry = {
+            "id": scenario.get("id"),
+            "title": title,
+            "type": scenario.get("type", "training"),
+            "difficulty": scenario.get("difficulty"),
+            "student_prompt": scenario.get("student_prompt")
+            or scenario.get("prompt")
+            or scenario.get("description")
+            or "",
+        }
+        if isinstance(scenario.get("repo_task_meta"), dict):
+            entry["repo_task_meta"] = scenario["repo_task_meta"]
+        visible_scenarios.append(entry)
 
     raw_themes = []
     for theme in prompt_pack.get("public_curriculum_themes", []):
@@ -57,7 +58,7 @@ def build_student_prompt_pack(payload: dict[str, Any]) -> dict[str, Any]:
                 }
             )
 
-    return {
+    result = {
         "agent_role": "student",
         "actor": _public_actor(prompt_pack.get("actor"), default_role="student"),
         "sealed_holdout_count": int(prompt_pack.get("sealed_holdout_count", 0) or 0),
@@ -66,6 +67,13 @@ def build_student_prompt_pack(payload: dict[str, Any]) -> dict[str, Any]:
         "prompt_summary": prompt_pack.get("prompt_summary")
         or "Train on the public benchmark pack only. Teacher-only evaluation stays separate.",
     }
+    if isinstance(prompt_pack.get("repo_task_pack"), dict):
+        repo_task_pack = dict(prompt_pack["repo_task_pack"])
+        rvc = repo_task_pack.get("recommended_verifier_commands")
+        if isinstance(rvc, list) and rvc:
+            repo_task_pack["recommended_verifier_commands"] = list(rvc)
+        result["repo_task_pack"] = repo_task_pack
+    return result
 
 
 def redact_request_for_artifacts(payload: dict[str, Any]) -> dict[str, Any]:
@@ -79,22 +87,36 @@ def redact_request_for_artifacts(payload: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(evaluation, dict):
         return redacted
 
+    scenario_manifest = []
+    sealed_index = 0
+    for scenario in evaluation.get("scenarios", []):
+        if not isinstance(scenario, dict):
+            continue
+        scenario_type = scenario.get("type", "training")
+        prompt_visibility = "sealed" if scenario_type == "holdout" else "student-visible"
+        if scenario_type == "holdout":
+            sealed_index += 1
+            scenario_id = f"sealed-holdout-{sealed_index}"
+            title = f"Sealed holdout {sealed_index}"
+        else:
+            scenario_id = scenario.get("id")
+            title = scenario.get("title") or scenario.get("id")
+
+        scenario_manifest.append(
+            {
+                "id": scenario_id,
+                "title": title,
+                "type": scenario_type,
+                "difficulty": scenario.get("difficulty"),
+                "prompt_visibility": prompt_visibility,
+            }
+        )
+
     redacted[TEACHER_EVALUATION_KEY] = {
         "teacher": _public_actor(evaluation.get("teacher"), default_role="teacher"),
         "student": _public_actor(evaluation.get("student"), default_role="student"),
         "iteration": evaluation.get("iteration"),
-        "scenario_manifest": [
-            {
-                "id": scenario.get("id"),
-                "title": scenario.get("title") or scenario.get("id"),
-                "type": scenario.get("type", "training"),
-                "difficulty": scenario.get("difficulty"),
-                "prompt_visibility": "sealed"
-                if scenario.get("type") == "holdout"
-                else "student-visible",
-            }
-            for scenario in evaluation.get("scenarios", [])
-        ],
+        "scenario_manifest": scenario_manifest,
     }
     previous = evaluation.get("previous_iteration")
     if isinstance(previous, dict):

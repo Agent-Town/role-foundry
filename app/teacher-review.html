@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Role Foundry — Teacher Review Console</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+  <link rel="stylesheet" href="style.css">
+  <script src="config.js"></script>
+  <script src="data.js"></script>
+  <script src="teacher-review-read-model.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+  <script src="app.js"></script>
+</head>
+<body>
+
+<div class="mode-banner" :class="$store.app.modeBannerTone()" x-data>
+  <div class="mode-banner-inner">
+    <div class="mode-banner-copy">
+      <strong class="mode-banner-title" x-text="$store.app.modeBadgeLabel()"></strong>
+      <span x-text="$store.app.modeBannerText()"></span>
+      <small x-show="$store.app.liveShell.lastError" x-text="$store.app.liveShell.lastError"></small>
+    </div>
+    <div class="mode-banner-actions">
+      <button class="secondary outline" @click="$store.app.switchMode('demo')">Demo data</button>
+      <button class="contrast outline" @click="$store.app.switchMode('live')">Live shell</button>
+    </div>
+  </div>
+</div>
+
+<nav x-data="navComponent()">
+  <ul>
+    <li><a class="brand" :href="pageHref('index.html')">Role Foundry</a></li>
+    <li><a :href="pageHref('vision.html')" :class="isActive('vision.html') && 'active'">Vision</a></li>
+    <li><a :href="pageHref('index.html')" :class="isActive('index.html') && 'active'">Apprentice</a></li>
+    <li><a :href="pageHref('scenarios.html')" :class="isActive('scenarios.html') && 'active'">Curriculum</a></li>
+    <li><a :href="pageHref('run.html')" :class="isActive('run.html') && 'active'">Runs</a></li>
+    <li><a :href="pageHref('scorecard.html')" :class="isActive('scorecard.html') && 'active'">Scorecard</a></li>
+    <li><a :href="pageHref('teacher-review.html')" :class="isActive('teacher-review.html') && 'active'">Teacher Review</a></li>
+  </ul>
+</nav>
+
+<main class="container" x-data="{
+  review: null,
+  dataSource: 'none',
+  init() {
+    this.loadSampleReview();
+  },
+  async loadSampleReview() {
+    try {
+      const [runObjectsRes, scorecardRes, contractRes, registryRes] = await Promise.all([
+        fetch('../data/curriculum/frontend-product-engineer-sample-run-objects.v1.json').then(r => r.ok ? r.json() : null).catch(() => null),
+        fetch('../data/curriculum/frontend-product-engineer-sample-scorecard.v1.json').then(r => r.ok ? r.json() : null).catch(() => null),
+        fetch('../data/curriculum/frontend-product-engineer-evaluation-contract.v1.json').then(r => r.ok ? r.json() : null).catch(() => null),
+        fetch('../data/curriculum/frontend-product-engineer-public-seed-registry.v1.json').then(r => r.ok ? r.json() : null).catch(() => null),
+      ]);
+
+      let taskPacket = null;
+      if (registryRes && Array.isArray(registryRes.tasks)) {
+        const taskId = runObjectsRes?.baseline_run?.task_id || runObjectsRes?.candidate_run?.task_id;
+        taskPacket = registryRes.tasks.find(t => t.task_id === taskId) || null;
+      }
+
+      this.review = TEACHER_REVIEW_READ_MODEL.buildTeacherReviewSnapshot({
+        task_packet: taskPacket,
+        baseline_run: runObjectsRes?.baseline_run || null,
+        candidate_run: runObjectsRes?.candidate_run || null,
+        scorecard: scorecardRes,
+        evaluation_contract: contractRes,
+      });
+      this.dataSource = this.review ? this.review.data_source : 'none';
+    } catch (e) {
+      console.error('Teacher review load failed:', e);
+      this.review = null;
+      this.dataSource = 'error';
+    }
+  }
+}">
+
+  <div class="page-header">
+    <h1>Teacher Review Console</h1>
+    <p>Review surface built from stored exports only. Missing fields stay empty rather than invented. This shell renders task packet identity, diff summary, changed files, command results, transcript references, weighted score breakdown, and promotion decision.</p>
+  </div>
+
+  <!-- Honesty badge -->
+  <article class="judge-callout compact-callout" x-show="review">
+    <strong>Data source:</strong>
+    <span x-text="review?.honesty_badge || 'Unknown'"></span>
+    <span class="badge" :class="review?.data_source === 'sample_fixture' ? 'badge-holdout' : 'badge-pass'" x-text="review?.data_source === 'sample_fixture' ? 'fixture' : 'export'" style="margin-left: 0.5rem;"></span>
+  </article>
+
+  <article class="card empty-state" x-show="!review && dataSource === 'none'">
+    <strong>Loading teacher review data...</strong>
+    <p>Attempting to load stored sample run objects, scorecard, and task packet from data/curriculum/.</p>
+  </article>
+
+  <article class="card empty-state" x-show="!review && dataSource === 'error'">
+    <strong>Could not load review data.</strong>
+    <p>The teacher review console requires stored exports in data/curriculum/. Serve this page from a local server to enable fetch access.</p>
+  </article>
+
+  <!-- Task / Packet Identity -->
+  <template x-if="review?.task">
+    <section>
+      <h2>Task Packet Identity</h2>
+      <div class="grid-2">
+        <article class="card">
+          <h3 x-text="review.task.title || 'Untitled task'"></h3>
+          <ul>
+            <li><strong>Task ID:</strong> <code x-text="review.task.task_id || '—'"></code></li>
+            <li><strong>Role:</strong> <span x-text="review.task.role_id || '—'"></span></li>
+            <li><strong>Phase:</strong> <span x-text="review.task.phase_label ? (review.task.phase_index + '. ' + review.task.phase_label) : '—'"></span></li>
+            <li><strong>Acceptance test:</strong> <span x-text="review.task.acceptance_test_id || '—'"></span></li>
+            <li><strong>Packet version:</strong> <span x-text="review.task.packet_version || '—'"></span></li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3>Objective</h3>
+          <p x-text="review.task.objective || 'No objective recorded.'"></p>
+        </article>
+      </div>
+    </section>
+  </template>
+
+  <article class="card empty-state" x-show="review && !review.task">
+    <strong>No task packet loaded.</strong>
+    <p>The review surface will show task identity once a task packet is available in the stored exports.</p>
+  </article>
+
+  <!-- Baseline vs Candidate Diff Summary -->
+  <template x-if="review?.diff_summary">
+    <section>
+      <h2>Baseline vs Candidate Summary</h2>
+      <div class="score-summary detail-summary">
+        <div class="stat">
+          <div class="value" x-text="review.diff_summary.baseline_score !== null ? review.diff_summary.baseline_score.toFixed(4) : '—'"></div>
+          <div class="label">Baseline score</div>
+        </div>
+        <div class="stat">
+          <div class="value" x-text="review.diff_summary.candidate_score !== null ? review.diff_summary.candidate_score.toFixed(4) : '—'"></div>
+          <div class="label">Candidate score</div>
+        </div>
+        <div class="stat">
+          <div class="value improved" x-text="review.diff_summary.score_delta !== null ? (review.diff_summary.score_delta >= 0 ? '+' : '') + review.diff_summary.score_delta.toFixed(4) : '—'"></div>
+          <div class="label">Score delta</div>
+        </div>
+        <div class="stat">
+          <div class="value" x-text="review.diff_summary.candidate_checks_passing + ' / ' + (review.candidate?.checks_run?.length || '?')"></div>
+          <div class="label">Candidate checks passing</div>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-top: 1rem;">
+        <article class="card">
+          <h3>Baseline Run</h3>
+          <ul>
+            <li><strong>Run ID:</strong> <code x-text="review.baseline?.run_id || '—'"></code></li>
+            <li><strong>Kind:</strong> <span x-text="review.baseline?.kind || '—'"></span></li>
+            <li><strong>Changed files:</strong> <span x-text="review.diff_summary.baseline_changed_files"></span></li>
+            <li><strong>Diff stats:</strong> <span x-text="(review.baseline?.diff_stats?.tracked_files || '?') + ' files, ' + (review.baseline?.diff_stats?.net_lines || '?') + ' net lines'"></span></li>
+            <li><strong>Workspace:</strong> <span x-text="review.baseline?.workspace?.kind || '—'"></span>
+              <span class="badge badge-pass" x-show="review.baseline?.workspace?.isolated">isolated</span>
+            </li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3>Candidate Run</h3>
+          <ul>
+            <li><strong>Run ID:</strong> <code x-text="review.candidate?.run_id || '—'"></code></li>
+            <li><strong>Kind:</strong> <span x-text="review.candidate?.kind || '—'"></span></li>
+            <li><strong>Changed files:</strong> <span x-text="review.diff_summary.candidate_changed_files"></span></li>
+            <li><strong>Diff stats:</strong> <span x-text="(review.candidate?.diff_stats?.tracked_files || '?') + ' files, ' + (review.candidate?.diff_stats?.net_lines || '?') + ' net lines'"></span></li>
+            <li><strong>Baseline ref:</strong> <code x-text="review.candidate?.baseline_run_id || '—'"></code></li>
+          </ul>
+        </article>
+      </div>
+    </section>
+  </template>
+
+  <article class="card empty-state" x-show="review && !review.diff_summary">
+    <strong>No baseline/candidate comparison available.</strong>
+    <p>The diff summary requires both a baseline and candidate run in the stored exports.</p>
+  </article>
+
+  <!-- Changed Files -->
+  <template x-if="review?.candidate?.changed_files?.length > 0">
+    <section>
+      <h2>Changed Files</h2>
+      <ul class="file-list">
+        <template x-for="file in review.candidate.changed_files" :key="file">
+          <li><code x-text="file"></code></li>
+        </template>
+      </ul>
+    </section>
+  </template>
+
+  <!-- Command Results -->
+  <template x-if="review?.candidate?.commands?.length > 0">
+    <section>
+      <h2>Command Results</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Command</th>
+            <th>Exit Code</th>
+            <th>Stdout</th>
+            <th>Stderr</th>
+          </tr>
+        </thead>
+        <tbody>
+          <template x-for="cmd in review.candidate.commands" :key="cmd.command">
+            <tr>
+              <td><code x-text="cmd.command || '—'"></code></td>
+              <td>
+                <span class="badge" :class="cmd.exit_code === 0 ? 'badge-pass' : 'badge-fail'" x-text="cmd.exit_code !== null ? cmd.exit_code : '—'"></span>
+              </td>
+              <td><small x-text="cmd.stdout_capture || '—'"></small></td>
+              <td><small x-text="cmd.stderr_capture || '—'"></small></td>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+    </section>
+  </template>
+
+  <!-- Checks Run -->
+  <template x-if="review?.candidate?.checks_run?.length > 0">
+    <section>
+      <h2>Verifier Gate</h2>
+      <article class="judge-callout compact-callout">
+        <strong>Gate status:</strong>
+        <span x-text="review.verifier_gate_status"></span>
+        <span class="badge" :class="review.verifier_gate_status === 'passing' ? 'badge-pass' : 'badge-fail'" x-text="review.verifier_gate_status" style="margin-left: 0.5rem;"></span>
+      </article>
+      <table>
+        <thead>
+          <tr>
+            <th>Check ID</th>
+            <th>Status</th>
+            <th>Stage</th>
+          </tr>
+        </thead>
+        <tbody>
+          <template x-for="check in review.candidate.checks_run" :key="check.id">
+            <tr>
+              <td><code x-text="check.id || '—'"></code></td>
+              <td>
+                <span class="badge" :class="check.status === 'passing' ? 'badge-pass' : 'badge-fail'" x-text="check.status || '—'"></span>
+              </td>
+              <td x-text="check.stage || '—'"></td>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+    </section>
+  </template>
+
+  <!-- Weighted Score Breakdown -->
+  <template x-if="review?.scorecard">
+    <section>
+      <h2>Weighted Score Breakdown</h2>
+      <div class="score-summary detail-summary">
+        <div class="stat">
+          <div class="value" x-text="review.scorecard.weighted_score !== null ? review.scorecard.weighted_score.toFixed(4) : '—'"></div>
+          <div class="label">Weighted score</div>
+        </div>
+        <div class="stat">
+          <div class="value" :class="review.scorecard.task_pass ? 'improved' : ''" x-text="review.scorecard.task_pass ? 'PASS' : 'FAIL'"></div>
+          <div class="label">Task pass</div>
+        </div>
+        <div class="stat">
+          <div class="value" x-text="review.promotion_decision || '—'"></div>
+          <div class="label">Promotion decision</div>
+        </div>
+      </div>
+
+      <table style="margin-top: 1rem;">
+        <thead>
+          <tr>
+            <th>Dimension</th>
+            <th>Weight</th>
+            <th>Score</th>
+            <th>Weighted</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <template x-for="dim in review.scorecard.dimensions" :key="dim.id">
+            <tr>
+              <td x-text="dim.label || dim.id || '—'"></td>
+              <td x-text="dim.weight !== null ? dim.weight.toFixed(2) : '—'"></td>
+              <td x-text="dim.score !== null ? dim.score.toFixed(2) : '—'"></td>
+              <td x-text="(dim.weight !== null && dim.score !== null) ? (dim.weight * dim.score).toFixed(4) : '—'"></td>
+              <td><small x-text="dim.notes || '—'"></small></td>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+
+      <article class="judge-callout compact-callout" style="margin-top: 1rem;">
+        <strong>Promotion gate:</strong>
+        <span x-text="review.scorecard.promotion_gate.reason || 'No promotion gate reason recorded.'"></span>
+      </article>
+    </section>
+  </template>
+
+  <article class="card empty-state" x-show="review && !review.scorecard">
+    <strong>No scorecard loaded.</strong>
+    <p>The weighted score breakdown will appear once a scorecard is available in the stored exports.</p>
+  </article>
+
+  <!-- Evidence / Receipt Links -->
+  <template x-if="review?.evidence_links">
+    <section>
+      <h2>Evidence &amp; Receipt Links</h2>
+      <ul>
+        <li><strong>Task packet ref:</strong> <code x-text="review.evidence_links.task_packet_ref || 'not available'"></code></li>
+        <li><strong>Transcript:</strong> <code x-text="review.evidence_links.transcript_path || 'not available'"></code></li>
+        <li><strong>Scorecard:</strong> <code x-text="review.evidence_links.scorecard_path || 'not available'"></code></li>
+        <li><strong>Changed files:</strong> <code x-text="review.evidence_links.changed_files_path || 'not available'"></code></li>
+        <li><strong>Provenance manifest:</strong> <code x-text="review.evidence_links.provenance_manifest_path || 'not available'"></code></li>
+      </ul>
+      <p><small>These are receipt path references from the stored run objects. In a live deployment, these would link to actual artifact files.</small></p>
+    </section>
+  </template>
+
+  <!-- Evaluation Contract Reference -->
+  <template x-if="review?.contract">
+    <section>
+      <h2>Evaluation Contract</h2>
+      <p><code x-text="review.contract.contract_id || '—'"></code> v<span x-text="review.contract.version || '?'"></span></p>
+      <table>
+        <thead>
+          <tr>
+            <th>Dimension</th>
+            <th>Weight</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <template x-for="dim in review.contract.dimensions" :key="dim.id">
+            <tr>
+              <td x-text="dim.label || dim.id || '—'"></td>
+              <td x-text="dim.weight !== null ? dim.weight.toFixed(2) : '—'"></td>
+              <td><small x-text="dim.description || '—'"></small></td>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+      <p><small>
+        Task pass: weighted &ge; <span x-text="review.contract.thresholds.task_pass_weighted_min || '?'"></span>,
+        each dimension &ge; <span x-text="review.contract.thresholds.task_pass_dimension_floor || '?'"></span>.
+        Promotion: public &ge; <span x-text="review.contract.thresholds.promotion_public_min || '?'"></span>,
+        holdout &ge; <span x-text="review.contract.thresholds.promotion_holdout_min || '?'"></span>.
+      </small></p>
+    </section>
+  </template>
+
+  <article>
+    <h3>What this console does now vs what it needs</h3>
+    <ul>
+      <li><strong>Now:</strong> Renders task packet identity, baseline/candidate diff summary, changed files, command results, weighted score breakdown with per-dimension detail, promotion decision, verifier gate status, and evidence links from stored sample fixtures.</li>
+      <li><strong>Next:</strong> Live runtime data (real transcript content, actual scorecard from evaluation, verifier gate wired to runner bridge receipts).</li>
+      <li><strong>Not yet:</strong> Private-holdout scoring integration, stability checks across multiple runs, regression gate history.</li>
+    </ul>
+    <p>This shell is the D001 acceptance test surface: an honest read-model over stored exports. It does not pretend live evaluation exists when it does not.</p>
+  </article>
+
+</main>
+
+</body>
+</html>

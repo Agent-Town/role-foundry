@@ -86,6 +86,218 @@ That is intentionally narrow.
 
 **Still blocked:** sealed-eval claims, sealed certification, partner-ready evaluation, tamper-proofing, or any claim that an independent system sealed the holdouts.
 
+## Repo-task-shaped student prompt pack
+
+The candidate-student stage now builds a **repo-task-shaped prompt pack** from the selected public benchmark episodes. Each visible scenario carries a `repo_task_meta` block with the fields the episode author actually provided:
+
+- `family_id` — which episode family this belongs to
+- `mutation_budget` — how wide the student may edit (`narrow`, `medium`, `broad`)
+- `constraints` — policy guardrails authored by the teacher
+- `suggested_files` — targeted file paths for the task
+- `artifacts_required` — what the student must leave behind
+- `public_checks` — verifier-friendly assertions
+- `tags` — episode classification
+
+The student view also includes a top-level `repo_task_pack` summary:
+
+```json
+{
+  "repo_task_pack": {
+    "role_scope": "frontend-apprentice",
+    "dataset_id": "public-benchmark-pack-v1",
+    "dataset_version": "1.0.0",
+    "episode_count": 3,
+    "family_ids": ["rf.frontend-apprentice.public.score-deltas", "..."],
+    "honesty_note": "Repo-task metadata is derived from the public benchmark pack. ...",
+    "recommended_verifier_commands": [
+      "python3 -m unittest tests/test_public_benchmark_pack_v1.py",
+      "python3 -m unittest tests/test_milestone3_contract.py tests/test_milestone5_teacher_eval_loop.py",
+      "python3 -m unittest tests/test_private_holdout_separation.py"
+    ]
+  }
+}
+```
+
+When the benchmark pack's `execution_policy` includes `recommended_verifier_commands`, those commands are carried through into `repo_task_pack` so the student (or an automated runner) can run the same verification suite the benchmark author intended.
+
+The candidate receipt at `receipts/candidate.json` also surfaces the `repo_task_pack` summary — including `recommended_verifier_commands` when present — so a reviewer can inspect what concrete repo task family the student was asked to do and which verifier commands apply.
+
+**What is still not real:** this is still local replay / public-regression alpha. The `repo_task_meta` fields come from the public benchmark pack, not from a live task assignment system. The repo-task shape makes the prompt pack inspectable and less canned, but does not change the evaluation contract.
+
+### Verifier contract (Step C eval-contract)
+
+Every stage receipt now includes a `verifier_contract` block and the top-level alpha receipt includes a `verifier_gate` summary. These make the eval contract state-machine-readable:
+
+- **`verifier_contract.required_commands`** — the verifier commands the benchmark pack specifies.
+- **`verifier_contract.command_results`** — per-command execution status and exit code.
+- **`verifier_contract.gate_status`** — one of `pass`, `fail`, `not_executed`, `no_commands`, or `incomplete`.
+- **`verifier_gate.aggregate_status`** — rolled up across all stages.
+
+In the local-replay alpha path, `gate_status` is always `not_executed` and every command result has `execution_status: "not_executed"` with `exit_code: null`. This is honest: the local-replay runner does not execute verifier commands. The gate becomes meaningful when a live-execution backend (e.g. a real `CodexRunner` or `ClaudeVibeRunner`) is wired.
+
+The candidate receipt at `receipts/candidate.json` also includes a `verifier_gate` block with the same honesty contract.
+
+## Task-packet → runtime bridge
+
+The `runner_bridge.packet_runtime` module is the bridge from versioned curriculum task packets to executable runtime objects. It closes the gap between "the curriculum defines 20 tasks" and "a runner backend can pick one up and execute it."
+
+### How it works
+
+```text
+Teacher authors frozen task packet (in public seed registry)
+  → CLI: python3 -m runner_bridge.cli --packet A001
+  → load_run_object("A001") validates against frozen contract
+  → cross-references evaluation contract + role manifest
+  → produces a PacketRunObject
+  → .to_run_request() → RunRequest the bridge can execute
+  → RunBridge.run() → materializes run-object.json + request.private.json
+  → LocalReplayRunner (today) produces transcript + receipts
+  → result.json includes machine-readable execution_honesty block
+```
+
+### Packet-driven CLI path
+
+The CLI now supports loading a task packet directly by acceptance_test_id:
+
+```bash
+# Run a specific task packet end-to-end through the bridge
+python3 -m runner_bridge.cli --packet A001
+
+# With explicit run-id and artifacts directory
+python3 -m runner_bridge.cli \
+  --packet C001 \
+  --run-id my-run-001 \
+  --artifacts-root runtime/runs
+
+# With control plane
+python3 -m runner_bridge.cli \
+  --packet A001 \
+  --clawith-url http://localhost:3000 \
+  --clawith-secret "$CLAWITH_SECRET"
+```
+
+The `--packet` flag and `--request` flag are alternatives. `--packet` loads from the frozen public seed registry by acceptance_test_id, builds a `PacketRunObject`, converts it to a `RunRequest`, and feeds it to the bridge. `--request` loads a pre-built request JSON as before.
+
+### run-object.json — runtime artifact export
+
+When a run is driven by a task packet (i.e. the request carries a `packet_runtime` block), the bridge materializes a `run-object.json` in the run directory. This is the concrete runtime artifact that proves the bridge consumed the versioned contract surface:
+
+```text
+runtime/runs/<run_id>/run-object.json
+```
+
+Contents:
+
+| Field | Source | Purpose |
+|-------|--------|---------|
+| `run_id` | bridge-assigned | This run's identity |
+| `packet_id` | task packet `task_id` | Stable task identity |
+| `packet_version` | task packet `packet_version` | Version of the packet definition |
+| `packet_content_hash` | SHA-256 of canonical JSON | Detect packet drift without version bump |
+| `acceptance_test_id` | task packet `acceptance_test_id` | Human-readable test ref (A001–E004) |
+| `role_id` | role manifest | Frozen role identity |
+| `phase_index` | task packet | Which curriculum phase |
+| `eval_contract_ref` | evaluation contract | Dimensions, weights, thresholds |
+| `mutation_budget` | task packet | Max tracked files and net lines |
+| `allowed_paths`, `blocked_paths` | task packet | Path constraints for the student workspace |
+| `expected_checks` | task packet | Commands the student must run |
+| `evidence_contract` | task packet | Required artifacts and provenance rules |
+| `execution_status` | always `"not_started"` at creation | Honest: no claim of execution at construction time |
+| `execution_backend` | always `"pending"` at creation | Honest: backend not yet wired |
+| `receipt_output_dir` | bridge | Where receipts will be written |
+| `artifact_locations` | bridge | Paths to request.json, request.private.json, run-object.json, receipts/ |
+
+### execution_honesty — machine-readable backend status
+
+When `LocalReplayRunner` processes a packet-driven request, `result.json` includes an `execution_honesty` block that makes the non-execution status machine-readable:
+
+```json
+{
+  "execution_honesty": {
+    "backend": "LocalReplayRunner",
+    "executes_commands": false,
+    "executes_checks": false,
+    "check_results": [
+      {
+        "id": "check-1",
+        "command": "python3 -m pytest tests/...",
+        "execution_status": "not_executed",
+        "exit_code": null,
+        "reason": "LocalReplayRunner does not execute packet commands"
+      }
+    ],
+    "mutation_enforcement": "not_enforced",
+    "path_constraint_enforcement": "not_enforced",
+    "mutation_surface_audit": {
+      "status": "unavailable",
+      "source": { "kind": "unavailable" },
+      "honesty_note": "No diffable git worktree metadata was provided in workspace_snapshot. This run cannot honestly claim mutation-surface compliance."
+    },
+    "mutation_surface_audit_path": "receipts/mutation-surface-audit.json",
+    "honesty_note": "LocalReplayRunner is a zero-secret replay backend..."
+  }
+}
+```
+
+This makes it explicit that LocalReplayRunner does not execute task commands, enforce mutation budgets, or enforce path constraints. When a real worktree diff is available, the bridge can still audit the actual changed-file surface against the packet contract. When no diff exists, the receipt says so plainly instead of implying the surface passed.
+
+### PacketRunObject contents
+
+Each run object is a frozen, self-contained snapshot:
+
+| Field | Source | Purpose |
+|-------|--------|---------|
+| `packet_id` | task packet `task_id` | Stable task identity |
+| `packet_version` | task packet `packet_version` | Version of the packet definition |
+| `packet_content_hash` | SHA-256 of canonical JSON | Detect packet drift without version bump |
+| `acceptance_test_id` | task packet `acceptance_test_id` | Human-readable test ref (A001–E004) |
+| `role_id`, `role_name` | role manifest | Frozen role identity |
+| `allowed_paths`, `blocked_paths` | task packet | Path constraints for the student workspace |
+| `mutation_budget` | task packet | Max tracked files and net lines |
+| `expected_checks` | task packet | Commands the student must run |
+| `eval_contract_ref` | evaluation contract | Dimensions, weights, thresholds |
+| `evidence_contract` | task packet | Required artifacts and provenance rules |
+| `execution_status` | always `"not_started"` | Honest: no claim of execution at construction time |
+| `execution_backend` | always `"pending"` | Honest: backend not yet wired |
+
+### Usage
+
+```python
+from runner_bridge.packet_runtime import load_run_object
+
+# Load by acceptance test id
+obj = load_run_object("C001", run_id="my-run-001")
+
+# Inspect contract constraints
+print(obj.mutation_budget.tracked_files_max)  # 6
+print(obj.eval_contract_ref.dimensions)       # frozen 5 dimensions
+
+# Convert to a RunRequest for the bridge
+request = obj.to_run_request(
+    workspace_snapshot={"changed_files": ["app/run.html"]},
+    cost_budget_usd=1.50,
+)
+
+# The request carries the full packet_runtime block in extras
+print(request.extras["packet_runtime"]["acceptance_test_id"])  # "C001"
+```
+
+### Batch loading
+
+```python
+from runner_bridge.packet_runtime import load_all_run_objects
+
+# Load all 20 public seed tasks as run objects
+objects = load_all_run_objects()
+for obj in objects:
+    req = obj.to_run_request()
+    # each req is ready for RunBridge.run()
+```
+
+### Honesty note
+
+The run object describes the *input shape* — what the run should do, which constraints apply, and what evidence is required. It does **not** claim that execution has happened. `execution_status` starts as `"not_started"` and `execution_backend` starts as `"pending"`. These fields become meaningful when a live backend is wired. The `execution_honesty` block in `result.json` makes the backend's actual capabilities machine-readable.
+
 ## Current bridge shape
 
 ```text
@@ -209,7 +421,9 @@ The extra files are:
 - `receipts/baseline.json` — prior-run aggregate receipt when `previous_iteration` exists
 - `receipts/evaluation.json` — teacher score/export receipt when `teacher_evaluation` ran
 - `receipts/evidence-index.json` — evidence map linking receipts back to transcript lines, artifact JSON pointers, and private source records where needed
-- `receipts/summary.md` — human-readable export for quick judge/operator inspection
+- `receipts/audit-bundle.json` — machine-readable artifact index plus required-artifact validation, redaction checks, and lineage / benchmark-pack / episode traceability with honest availability flags
+  - the audit bundle is finalized after the manifest, summary, and integration artifacts exist so `clean` vs `not_emitted` reflects the end-state receipt surface, not mid-write timing
+- `receipts/summary.md` — human-readable export for quick judge/operator inspection with explicit run metadata, benchmark input, mutation, teacher scorecard, and verdict sections
 
 Private source artifacts may still be referenced in the evidence index, but only by path + pointer.
 The public provenance files do not quote sealed holdout prompt text.
@@ -271,6 +485,7 @@ runtime/runs/<run_id>/
     baseline.json      # when previous_iteration exists
     evaluation.json    # when teacher_evaluation runs
     evidence-index.json
+    audit-bundle.json
     summary.md
 ```
 
@@ -278,7 +493,7 @@ runtime/runs/<run_id>/
 
 `request.private.json` is the raw backend input. That split is what keeps holdout prompt text out of the student-facing bundle while still letting the teacher side evaluate the run.
 
-`artifact-bundle.json` and `result.json` now also include a small `provenance` block pointing at the receipt manifest, evidence index, summary export, and any baseline / candidate / evaluation receipt files for the run.
+`artifact-bundle.json` and `result.json` now also include a small `provenance` block pointing at the receipt manifest, evidence index, audit bundle, summary export, and any baseline / candidate / evaluation receipt files for the run.
 
 ## First live run
 

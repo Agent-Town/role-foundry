@@ -1,0 +1,166 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "weekly-training-cycle-receipt.schema.v1",
+  "title": "Weekly Training Cycle Receipt Schema v1",
+  "description": "Schema for a single weekly training cycle receipt. Each receipt connects: task selection, baseline run, candidate run, teacher review, promotion decision, regression gate result, and any curriculum updates. This schema is public-safe; holdout scores are referenced by availability, not value.",
+  "type": "object",
+  "required": ["meta", "cycle"],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "required": ["id", "version", "role_id", "example_only", "schema_version"],
+      "properties": {
+        "id": { "type": "string" },
+        "version": { "type": "string" },
+        "role_id": { "type": "string" },
+        "example_only": {
+          "type": "boolean",
+          "description": "True if this is a sample/fixture receipt, not a real weekly cycle."
+        },
+        "schema_version": { "type": "string", "const": "1.0.0" },
+        "notes": { "type": "string" }
+      }
+    },
+    "cycle": {
+      "type": "object",
+      "required": [
+        "cycle_id",
+        "cycle_week",
+        "example_only",
+        "task_selection",
+        "baseline",
+        "candidate",
+        "teacher_review",
+        "promotion_decision",
+        "regression_gate",
+        "curriculum_update",
+        "generation_ref"
+      ],
+      "properties": {
+        "cycle_id": { "type": "string" },
+        "cycle_week": {
+          "type": "string",
+          "format": "date",
+          "description": "ISO date of the Monday of this cycle's week."
+        },
+        "example_only": {
+          "type": "boolean",
+          "description": "True if this receipt is a fixture, not a real weekly cycle."
+        },
+        "task_selection": {
+          "type": "object",
+          "required": ["method", "task_ids"],
+          "properties": {
+            "method": {
+              "type": "string",
+              "enum": ["manual_teacher", "automated_random", "automated_coverage", "fixture"],
+              "description": "How the tasks were selected for this cycle."
+            },
+            "task_ids": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Acceptance test IDs selected for this cycle."
+            },
+            "selection_reason": { "type": "string" }
+          }
+        },
+        "baseline": {
+          "type": "object",
+          "required": ["run_id", "available"],
+          "properties": {
+            "run_id": { "type": ["string", "null"] },
+            "available": {
+              "type": "boolean",
+              "description": "Whether the baseline run object is available."
+            },
+            "weighted_score": { "type": ["number", "null"] },
+            "run_object_path": { "type": ["string", "null"] }
+          }
+        },
+        "candidate": {
+          "type": "object",
+          "required": ["run_id", "available"],
+          "properties": {
+            "run_id": { "type": ["string", "null"] },
+            "available": {
+              "type": "boolean",
+              "description": "Whether the candidate run object is available."
+            },
+            "weighted_score": { "type": ["number", "null"] },
+            "run_object_path": { "type": ["string", "null"] }
+          }
+        },
+        "teacher_review": {
+          "type": "object",
+          "required": ["reviewed", "review_method"],
+          "properties": {
+            "reviewed": { "type": "boolean" },
+            "review_method": {
+              "type": "string",
+              "enum": ["manual", "console", "fixture", "not_reviewed"]
+            },
+            "notes": { "type": "string" }
+          }
+        },
+        "promotion_decision": {
+          "type": "object",
+          "required": ["decision", "reason", "public_score", "holdout_score_available"],
+          "properties": {
+            "decision": {
+              "type": "string",
+              "enum": ["promoted", "not_promoted", "deferred"]
+            },
+            "reason": { "type": "string" },
+            "public_score": { "type": ["number", "null"] },
+            "holdout_score_available": { "type": "boolean" },
+            "stability_check_passed": { "type": ["boolean", "null"] },
+            "regression_gate_passed": { "type": ["boolean", "null"] }
+          }
+        },
+        "regression_gate": {
+          "type": "object",
+          "required": ["enforced"],
+          "properties": {
+            "enforced": { "type": "boolean" },
+            "tasks_checked": { "type": ["integer", "null"] },
+            "regressions_found": { "type": ["integer", "null"] },
+            "gate_passed": { "type": ["boolean", "null"] }
+          }
+        },
+        "curriculum_update": {
+          "type": "object",
+          "required": ["updates_made"],
+          "properties": {
+            "updates_made": { "type": "boolean" },
+            "actions": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["action", "description"],
+                "properties": {
+                  "action": {
+                    "type": "string",
+                    "enum": ["new_task", "modified_existing_task", "ignore_defer"]
+                  },
+                  "task_id": { "type": ["string", "null"] },
+                  "description": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "generation_ref": {
+          "type": "object",
+          "required": ["generation_id"],
+          "properties": {
+            "generation_id": {
+              "type": ["string", "null"],
+              "description": "Links to the generation lineage entry, if promoted."
+            },
+            "generation_index": { "type": ["integer", "null"] }
+          }
+        }
+      }
+    }
+  }
+}

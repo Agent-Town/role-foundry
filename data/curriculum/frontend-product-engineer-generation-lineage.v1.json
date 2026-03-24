@@ -1,0 +1,143 @@
+{
+  "meta": {
+    "id": "frontend-product-engineer-generation-lineage-v1",
+    "version": "1.0.0",
+    "role_id": "role-frontend-product-engineer",
+    "example_only": true,
+    "schema_version": "1.0.0",
+    "notes": "Sample/fixture generation lineage showing 3 promoted generations. These are illustrative artifacts, NOT proof of live weekly automation. Run-object references are marked unavailable where no real run artifact exists in git. Holdout scores are referenced by availability only; values are never exposed in public artifacts."
+  },
+  "generations": [
+    {
+      "generation_id": "gen-fpe-001",
+      "generation_index": 1,
+      "promoted": true,
+      "example_only": true,
+      "parent_generation_id": null,
+      "task_packet_version": "1.0.0",
+      "evaluation_contract_version": "1.0.0",
+      "regression_pack_version": null,
+      "promotion_decision": {
+        "decision": "promoted",
+        "reason": "First generation: froze the role manifest, evaluation contract, mutation surface, and task-packet schema (A001-A004). Public score cleared threshold.",
+        "teacher_reviewed": true,
+        "public_score": 0.8975,
+        "holdout_score_available": false,
+        "stability_check_passed": null,
+        "regression_gate_passed": null
+      },
+      "curriculum_contract_ref": {
+        "seed_registry_path": "data/curriculum/frontend-product-engineer-public-seed-registry.v1.json",
+        "evaluation_contract_path": "data/curriculum/frontend-product-engineer-evaluation-contract.v1.json"
+      },
+      "run_object_ref": {
+        "available": false,
+        "run_id": "sample-fpe-a001-candidate",
+        "artifact_root": null,
+        "sample_run_objects_path": "data/curriculum/frontend-product-engineer-sample-run-objects.v1.json"
+      },
+      "regression_gate": {
+        "enforced": false,
+        "tasks_checked": null,
+        "regressions_found": null
+      },
+      "failure_follow_up": null,
+      "created_at": "2026-03-20"
+    },
+    {
+      "generation_id": "gen-fpe-002",
+      "generation_index": 2,
+      "promoted": true,
+      "example_only": true,
+      "parent_generation_id": "gen-fpe-001",
+      "task_packet_version": "1.0.0",
+      "evaluation_contract_version": "1.0.0",
+      "regression_pack_version": null,
+      "promotion_decision": {
+        "decision": "promoted",
+        "reason": "Second generation: built task authoring template, source-intake workflow, and authored the 20-task seed set (B001-B003). Public score cleared threshold. Holdout scoring not yet available.",
+        "teacher_reviewed": true,
+        "public_score": 0.91,
+        "holdout_score_available": false,
+        "stability_check_passed": null,
+        "regression_gate_passed": null
+      },
+      "curriculum_contract_ref": {
+        "seed_registry_path": "data/curriculum/frontend-product-engineer-public-seed-registry.v1.json",
+        "evaluation_contract_path": "data/curriculum/frontend-product-engineer-evaluation-contract.v1.json"
+      },
+      "run_object_ref": {
+        "available": false,
+        "run_id": null,
+        "artifact_root": null,
+        "sample_run_objects_path": "data/curriculum/frontend-product-engineer-sample-run-objects.v1.json"
+      },
+      "regression_gate": {
+        "enforced": false,
+        "tasks_checked": null,
+        "regressions_found": null
+      },
+      "failure_follow_up": {
+        "failures_identified": 1,
+        "curriculum_updates": [
+          {
+            "action": "modified_existing_task",
+            "task_id": "fpe.seed.b004.add-weekly-holdout-refresh",
+            "description": "Clarified that weekly holdout refresh is teacher-only and must not leak prompt text into public artifacts."
+          }
+        ]
+      },
+      "created_at": "2026-03-21"
+    },
+    {
+      "generation_id": "gen-fpe-003",
+      "generation_index": 3,
+      "promoted": true,
+      "example_only": true,
+      "parent_generation_id": "gen-fpe-002",
+      "task_packet_version": "1.0.0",
+      "evaluation_contract_version": "1.0.0",
+      "regression_pack_version": null,
+      "promotion_decision": {
+        "decision": "promoted",
+        "reason": "Third generation: wired packet-runtime bridge (C001-C003), captured receipts (C004). Public score cleared threshold. Regression gate not yet enforced.",
+        "teacher_reviewed": true,
+        "public_score": 0.925,
+        "holdout_score_available": false,
+        "stability_check_passed": null,
+        "regression_gate_passed": null
+      },
+      "curriculum_contract_ref": {
+        "seed_registry_path": "data/curriculum/frontend-product-engineer-public-seed-registry.v1.json",
+        "evaluation_contract_path": "data/curriculum/frontend-product-engineer-evaluation-contract.v1.json"
+      },
+      "run_object_ref": {
+        "available": false,
+        "run_id": null,
+        "artifact_root": null,
+        "sample_run_objects_path": "data/curriculum/frontend-product-engineer-sample-run-objects.v1.json"
+      },
+      "regression_gate": {
+        "enforced": false,
+        "tasks_checked": null,
+        "regressions_found": null
+      },
+      "failure_follow_up": {
+        "failures_identified": 2,
+        "curriculum_updates": [
+          {
+            "action": "new_task",
+            "task_id": null,
+            "description": "Identified need for a task covering verifier-command live execution (future Phase 3 extension)."
+          },
+          {
+            "action": "ignore_defer",
+            "task_id": null,
+            "description": "Deferred stability gate enforcement to Phase 4 runtime work."
+          }
+        ]
+      },
+      "created_at": "2026-03-22"
+    }
+  ]
+}

@@ -1,0 +1,113 @@
+{
+  "meta": {
+    "id": "frontend-product-engineer-sample-run-objects-v1",
+    "version": "1.0.0",
+    "example_only": true,
+    "role_id": "role-frontend-product-engineer",
+    "notes": "Illustrative public-safe run-object fixtures showing how packet/version/receipt linkage should look once execution is wired."
+  },
+  "baseline_run": {
+    "run_id": "sample-fpe-a001-baseline",
+    "kind": "baseline",
+    "example_only": true,
+    "task_id": "fpe.seed.a001.freeze-the-first-apprentice-role",
+    "task_packet_version": "1.0.0",
+    "evaluation_contract_id": "frontend-product-engineer-evaluation-contract-v1",
+    "evaluation_contract_version": "1.0.0",
+    "workspace": {
+      "kind": "git_worktree",
+      "isolated": true,
+      "base_commit": "e2e6239b03f53fceceb6e63f2f3c6823c306914b",
+      "root_checkout_allowed_for_scoring": false
+    },
+    "artifact_root": "runtime/runs/sample-fpe-a001-baseline",
+    "commands": [
+      {
+        "command": "python3 -m unittest tests/test_frontend_product_engineer_seed_registry.py",
+        "exit_code": 1,
+        "stdout_capture": "receipts/baseline/stdout.txt",
+        "stderr_capture": "receipts/baseline/stderr.txt"
+      }
+    ],
+    "changed_files": [
+      "seed/frontend-product-engineer-role.v1.json",
+      "tests/test_frontend_product_engineer_seed_registry.py"
+    ],
+    "diff_stats": {
+      "tracked_files": 2,
+      "net_lines": 118
+    },
+    "checks_run": [
+      {
+        "id": "failing-contract-fixture",
+        "status": "failing",
+        "stage": "pre_change"
+      }
+    ],
+    "weighted_score": {
+      "value": 0.62,
+      "contract_id": "frontend-product-engineer-evaluation-contract-v1"
+    },
+    "receipts": {
+      "task_packet_ref": "data/curriculum/frontend-product-engineer-public-seed-registry.v1.json#fpe.seed.a001.freeze-the-first-apprentice-role",
+      "transcript_path": "receipts/transcript.md",
+      "changed_files_path": "receipts/changed-files.json",
+      "checks_path": "receipts/checks.json",
+      "scorecard_path": "receipts/scorecard.json",
+      "provenance_manifest_path": "receipts/provenance-manifest.json"
+    }
+  },
+  "candidate_run": {
+    "run_id": "sample-fpe-a001-candidate",
+    "kind": "candidate",
+    "example_only": true,
+    "task_id": "fpe.seed.a001.freeze-the-first-apprentice-role",
+    "baseline_run_id": "sample-fpe-a001-baseline",
+    "task_packet_version": "1.0.0",
+    "evaluation_contract_id": "frontend-product-engineer-evaluation-contract-v1",
+    "evaluation_contract_version": "1.0.0",
+    "workspace": {
+      "kind": "git_worktree",
+      "isolated": true,
+      "base_commit": "e2e6239b03f53fceceb6e63f2f3c6823c306914b",
+      "root_checkout_allowed_for_scoring": false
+    },
+    "artifact_root": "runtime/runs/sample-fpe-a001-candidate",
+    "commands": [
+      {
+        "command": "python3 -m unittest tests/test_frontend_product_engineer_seed_registry.py",
+        "exit_code": 0,
+        "stdout_capture": "receipts/candidate/stdout.txt",
+        "stderr_capture": "receipts/candidate/stderr.txt"
+      }
+    ],
+    "changed_files": [
+      "seed/frontend-product-engineer-role.v1.json",
+      "data/curriculum/frontend-product-engineer-public-seed-registry.v1.json",
+      "tests/test_frontend_product_engineer_seed_registry.py"
+    ],
+    "diff_stats": {
+      "tracked_files": 3,
+      "net_lines": 164
+    },
+    "checks_run": [
+      {
+        "id": "seed-registry-contract",
+        "status": "passing",
+        "stage": "post_change"
+      }
+    ],
+    "weighted_score": {
+      "value": 0.8975,
+      "contract_id": "frontend-product-engineer-evaluation-contract-v1"
+    },
+    "receipts": {
+      "task_packet_ref": "data/curriculum/frontend-product-engineer-public-seed-registry.v1.json#fpe.seed.a001.freeze-the-first-apprentice-role",
+      "transcript_path": "receipts/transcript.md",
+      "changed_files_path": "receipts/changed-files.json",
+      "checks_path": "receipts/checks.json",
+      "scorecard_path": "receipts/scorecard.json",
+      "provenance_manifest_path": "receipts/provenance-manifest.json"
+    }
+  }
+}

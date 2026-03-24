@@ -1,0 +1,65 @@
+{
+  "meta": {
+    "id": "frontend-product-engineer-role-manifest-v1",
+    "version": "1.0.0",
+    "frozen_on": "2026-03-23",
+    "source_spec": "specs/014-frontend-product-engineer-20-task-curriculum.md",
+    "student_visible": true,
+    "teacher_only_fields_present": false
+  },
+  "role": {
+    "id": "role-frontend-product-engineer",
+    "name": "Frontend/Product Engineer",
+    "summary": "Improve judge-facing Role Foundry product slices inside this repo with narrow, reviewable changes and real receipts.",
+    "primary_job": "Improve Role Foundry's judge-facing product slices inside this repo with narrow, reviewable changes.",
+    "allowed_root_paths_default": [
+      "app/**",
+      "docs/**",
+      "specs/**",
+      "tests/**",
+      "data/**",
+      "seed/**"
+    ],
+    "task_gated_extensions": [
+      {
+        "path": "runner_bridge/**",
+        "rule": "Only when the task packet requires narrow proof-surface or read-model/export changes for a visible product slice."
+      },
+      {
+        "path": "runtime/**",
+        "rule": "Only when the task packet requires run receipts, weekly-cycle receipts, or public-safe proof artifacts."
+      },
+      {
+        "path": "benchmarks/**",
+        "rule": "Only for public-safe benchmark manifests or holdout templates that do not contain teacher-only content."
+      }
+    ],
+    "blocked_paths_default": [
+      "submission/**",
+      "benchmarks/private-holdout-pack/**",
+      "scripts/**",
+      "Dockerfile",
+      "docker-compose.yml",
+      ".env*"
+    ],
+    "blocked_scope_notes": [
+      "partner integrations",
+      "wallet / chain work",
+      "gateway / daemon scripts",
+      "secrets, credentials, or environment reconfiguration",
+      "unrelated infra",
+      "unrelated backend/platform rewrites"
+    ],
+    "scoring_contract_path": "data/curriculum/frontend-product-engineer-evaluation-contract.v1.json",
+    "task_packet_schema_path": "data/curriculum/frontend-product-engineer-task-packet.schema.v1.json",
+    "seed_registry_path": "data/curriculum/frontend-product-engineer-public-seed-registry.v1.json"
+  },
+  "policy": {
+    "mutation_budget_default": {
+      "tracked_files_max": 6,
+      "net_lines_max": 400
+    },
+    "public_seed_task_count": 20,
+    "teacher_only_content_allowed_in_tracked_artifacts": false
+  }
+}

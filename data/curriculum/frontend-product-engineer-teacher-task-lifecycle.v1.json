@@ -1,0 +1,127 @@
+{
+  "meta": {
+    "id": "frontend-product-engineer-teacher-task-lifecycle-v1",
+    "version": "1.0.0",
+    "frozen_on": "2026-03-23",
+    "role_id": "role-frontend-product-engineer",
+    "scope": "Defines the formal workflow states and transition rules for teacher-side task authoring, source intake, promotion, and holdout refresh. Machine-readable contract — tests enforce it.",
+    "source_spec": "specs/014-frontend-product-engineer-20-task-curriculum.md",
+    "teacher_only_fields_present": false,
+    "public_repo_safe": true
+  },
+  "task_lifecycle_states": [
+    {
+      "id": "draft",
+      "label": "Draft",
+      "description": "Teacher has started authoring a task packet from the template. Placeholders may remain.",
+      "entry_conditions": ["Template file exists at seed/frontend-product-engineer-task-template.v1.json"],
+      "exit_conditions": ["All required fields populated (no REPLACE-ME placeholders)", "role_id matches frozen role"],
+      "artifacts": ["Partially filled task packet JSON"]
+    },
+    {
+      "id": "intake_recorded",
+      "label": "Source Intake Recorded",
+      "description": "A source record exists linking this task to a spec acceptance test or external source.",
+      "entry_conditions": ["Source record created in source-records file", "source_kind and source_ref are non-empty", "teacher_only_inputs_used is explicitly set"],
+      "exit_conditions": ["Source record status is promotable_public_seed_source or blocked_teacher_only_holdout"],
+      "artifacts": ["Source record in data/curriculum/frontend-product-engineer-source-records.v1.json"]
+    },
+    {
+      "id": "promoted",
+      "label": "Promoted to Public Seed",
+      "description": "A promotion record exists. The task packet is ready to enter the public seed registry.",
+      "entry_conditions": ["Matching source record exists and is promotable", "Promotion record created with source_record_id pointing to real source record", "teacher_only_inputs_used is false for public tasks"],
+      "exit_conditions": ["Task packet added to public seed registry", "Promotion record status updated"],
+      "artifacts": ["Promotion record in data/curriculum/frontend-product-engineer-promotion-records.v1.json"]
+    },
+    {
+      "id": "seed_defined",
+      "label": "Public Seed Defined",
+      "description": "Task packet is in the public seed registry, student-visible, with frozen evaluation contract reference.",
+      "entry_conditions": ["Task packet validates against JSON schema", "rubric_ref points at canonical evaluation contract", "student_visible is true", "teacher_only_fields_present is false", "status is public_seed_defined"],
+      "exit_conditions": ["Isolated execution environment created (future)", "Baseline run captured (future)"],
+      "artifacts": ["Task entry in data/curriculum/frontend-product-engineer-public-seed-registry.v1.json"]
+    },
+    {
+      "id": "executed",
+      "label": "Executed",
+      "description": "A candidate run has been captured in an isolated workspace with real code/test execution.",
+      "entry_conditions": ["Isolated git worktree created", "Baseline run exists as first-class object", "Candidate run recorded with exit codes and changed files"],
+      "exit_conditions": ["Full receipts captured (transcript, changed-files, checks, scorecard, provenance)"],
+      "artifacts": ["Run objects following sample-run-objects schema"],
+      "implementation_status": "future — run object schema defined, runtime not yet live"
+    },
+    {
+      "id": "scored",
+      "label": "Scored",
+      "description": "Teacher has reviewed the run and scored it against the frozen evaluation contract.",
+      "entry_conditions": ["All 5 frozen dimensions scored", "weighted_score computed", "task_pass threshold evaluated"],
+      "exit_conditions": ["Scorecard stored", "Promotion gate evaluated if applicable"],
+      "artifacts": ["Scorecard following sample-scorecard schema"],
+      "implementation_status": "future — scorecard schema defined, teacher review console not yet live"
+    }
+  ],
+  "valid_transitions": [
+    {"from": "draft", "to": "intake_recorded", "trigger": "Teacher creates source record for the task"},
+    {"from": "intake_recorded", "to": "promoted", "trigger": "Teacher creates promotion record after confirming source is promotable"},
+    {"from": "promoted", "to": "seed_defined", "trigger": "Task packet added to public seed registry"},
+    {"from": "seed_defined", "to": "executed", "trigger": "Candidate run completed in isolated workspace"},
+    {"from": "executed", "to": "scored", "trigger": "Teacher scores run against evaluation contract"},
+    {"from": "scored", "to": "seed_defined", "trigger": "Failure fed back into curriculum — task remains in registry for next attempt"}
+  ],
+  "provenance_rules": {
+    "every_promoted_task_must_have": [
+      "source_record_id pointing to a real source record",
+      "promotion_record_id pointing to a real promotion record",
+      "teacher_only_inputs_used explicitly set to false for public tasks",
+      "public_safe_note explaining why the task is safe for student visibility"
+    ],
+    "public_tasks_must_not_contain": [
+      "teacher_prompt",
+      "scoring_rubric",
+      "judge-only prompt",
+      "private scoring rubric"
+    ]
+  },
+  "holdout_refresh_rules": {
+    "description": "Weekly holdout refresh is a local-only teacher operation. The refresh receipt schema is tracked; the actual holdout content is not.",
+    "tracked_artifacts": [
+      "data/curriculum/frontend-product-engineer-private-holdout-refresh-receipt.schema.v1.json",
+      "benchmarks/private-holdout-pack-template.json",
+      "scripts/holdout_author.py"
+    ],
+    "local_only_artifacts": [
+      "benchmarks/private-holdout-pack/holdout-manifest.json",
+      "benchmarks/private-holdout-pack/refresh-receipts/*.json",
+      "benchmarks/private-holdout-pack/episodes/*.json"
+    ],
+    "refresh_cadence": "weekly",
+    "refresh_expectations": [
+      "Teacher reviews existing holdout episodes for staleness",
+      "Teacher archives or retires episodes that have leaked or become stale",
+      "Teacher authors fresh replacement episodes if needed",
+      "Teacher runs holdout_author.py audit to confirm no leaks",
+      "Teacher generates a refresh receipt recording what changed"
+    ],
+    "honesty_note": "Refresh receipts confirm the teacher did the work. They do not contain holdout content and are safe to track if desired, but by default stay local."
+  },
+  "implementation_status": {
+    "implemented": [
+      "Task lifecycle states draft through seed_defined",
+      "Source records for all 20 tasks",
+      "Promotion records for all 20 tasks",
+      "Public seed registry with 20 validated task packets",
+      "Task packet JSON schema validation",
+      "Evaluation contract with frozen dimensions and thresholds",
+      "Holdout authoring script (init, audit, status)",
+      "Holdout refresh receipt schema"
+    ],
+    "future": [
+      "Executed state — isolated run environment",
+      "Scored state — teacher review console",
+      "Automated transition enforcement",
+      "Promotion gating based on holdout scores",
+      "Weekly cycle automation"
+    ]
+  }
+}

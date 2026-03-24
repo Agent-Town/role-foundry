@@ -1,0 +1,180 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "generation-lineage-registry.schema.v1",
+  "title": "Generation Lineage Registry Schema v1",
+  "description": "Schema for tracking promoted generation lineage: which task-packet versions, evaluation-contract versions, run objects, and promotion decisions led to each promoted generation. This schema is public-safe and never references teacher-only holdout content by value.",
+  "type": "object",
+  "required": ["meta", "generations"],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "required": ["id", "version", "role_id", "example_only", "schema_version"],
+      "properties": {
+        "id": { "type": "string" },
+        "version": { "type": "string" },
+        "role_id": { "type": "string" },
+        "example_only": {
+          "type": "boolean",
+          "description": "True if these are sample/fixture artifacts, not proof of live weekly automation."
+        },
+        "schema_version": { "type": "string", "const": "1.0.0" },
+        "notes": { "type": "string" }
+      }
+    },
+    "generations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "generation_id",
+          "generation_index",
+          "promoted",
+          "example_only",
+          "parent_generation_id",
+          "task_packet_version",
+          "evaluation_contract_version",
+          "promotion_decision",
+          "curriculum_contract_ref",
+          "run_object_ref",
+          "regression_gate",
+          "created_at"
+        ],
+        "properties": {
+          "generation_id": {
+            "type": "string",
+            "description": "Unique id for this generation."
+          },
+          "generation_index": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Monotonically increasing index. gen-1 is the first promoted generation."
+          },
+          "promoted": {
+            "type": "boolean",
+            "description": "True if this generation cleared the promotion gate."
+          },
+          "example_only": {
+            "type": "boolean",
+            "description": "True if this entry is a fixture/sample, not proof of a live promotion."
+          },
+          "parent_generation_id": {
+            "type": ["string", "null"],
+            "description": "Null for the first generation; points to the prior promoted generation otherwise."
+          },
+          "task_packet_version": {
+            "type": "string",
+            "description": "Version of the public seed registry that was active for this generation."
+          },
+          "evaluation_contract_version": {
+            "type": "string",
+            "description": "Version of the evaluation contract that scored this generation."
+          },
+          "regression_pack_version": {
+            "type": ["string", "null"],
+            "description": "Version of the regression pack used, if available."
+          },
+          "promotion_decision": {
+            "type": "object",
+            "required": ["decision", "reason", "teacher_reviewed", "public_score", "holdout_score_available"],
+            "properties": {
+              "decision": {
+                "type": "string",
+                "enum": ["promoted", "not_promoted", "deferred"]
+              },
+              "reason": { "type": "string" },
+              "teacher_reviewed": { "type": "boolean" },
+              "public_score": {
+                "type": ["number", "null"],
+                "description": "Weighted public score from the evaluation contract."
+              },
+              "holdout_score_available": {
+                "type": "boolean",
+                "description": "Whether a private holdout score was available. True does not expose the score value."
+              },
+              "stability_check_passed": {
+                "type": ["boolean", "null"],
+                "description": "Null if stability checks were not run."
+              },
+              "regression_gate_passed": {
+                "type": ["boolean", "null"],
+                "description": "Null if regression gate was not run."
+              }
+            }
+          },
+          "curriculum_contract_ref": {
+            "type": "object",
+            "required": ["seed_registry_path", "evaluation_contract_path"],
+            "properties": {
+              "seed_registry_path": { "type": "string" },
+              "evaluation_contract_path": { "type": "string" }
+            }
+          },
+          "run_object_ref": {
+            "type": "object",
+            "required": ["available", "run_id"],
+            "properties": {
+              "available": {
+                "type": "boolean",
+                "description": "False if the run object is not tracked in git (e.g. runtime-only)."
+              },
+              "run_id": {
+                "type": ["string", "null"],
+                "description": "Null if the run object is not available."
+              },
+              "artifact_root": {
+                "type": ["string", "null"],
+                "description": "Path to the run artifact root, if available."
+              },
+              "sample_run_objects_path": {
+                "type": ["string", "null"],
+                "description": "Path to the sample run-objects file showing the expected shape."
+              }
+            }
+          },
+          "regression_gate": {
+            "type": "object",
+            "required": ["enforced"],
+            "properties": {
+              "enforced": {
+                "type": "boolean",
+                "description": "Whether the regression gate was actually enforced for this generation."
+              },
+              "tasks_checked": {
+                "type": ["integer", "null"]
+              },
+              "regressions_found": {
+                "type": ["integer", "null"]
+              }
+            }
+          },
+          "failure_follow_up": {
+            "type": ["object", "null"],
+            "properties": {
+              "failures_identified": { "type": "integer" },
+              "curriculum_updates": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["action", "description"],
+                  "properties": {
+                    "action": {
+                      "type": "string",
+                      "enum": ["new_task", "modified_existing_task", "ignore_defer"]
+                    },
+                    "task_id": { "type": ["string", "null"] },
+                    "description": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date",
+            "description": "ISO date when this generation was recorded."
+          }
+        }
+      }
+    }
+  }
+}

@@ -15,8 +15,8 @@ Role Foundry does **not** need a giant generic software corpus right now. The fi
 
 What the repo already has is solid but narrow:
 
-- `benchmarks/public-pack-v1/benchmark-pack.json` ships **12 public episodes across 6 public families**
-- those families are all derived from the internal seed scenarios `t1`–`t6`
+- `benchmarks/public-pack-v1/benchmark-pack.json` ships **14 public episodes across 7 public families**
+- those families are all derived from the internal seed scenarios `t1`–`t7`
 - they are strong on:
   - landing-story clarity
   - curriculum vs holdout separation
@@ -24,11 +24,11 @@ What the repo already has is solid but narrow:
   - proof-bundle visibility
   - demo honesty
   - failure -> curriculum promotion
+  - first-wave executable UI regression tasks via the Playwright-informed public family
 - they are **not yet strong** on:
   - true external issue -> patch exemplars
   - stack-adjacent frontend bugfixes
   - explicit code-review comment discipline
-  - executable UI regression tasks
   - accessibility/product-polish references grounded in public standards
 
 That matters because the current apprentice is already a real software role, not a generic “agent” role.
@@ -105,22 +105,22 @@ APG should be used as a **supporting reference** inside the first two additions,
 
 ## Narrow next-step plan for the top 3 additions
 
-### 1. Playwright regression mini-pack
+### 1. Expand the Playwright regression mini-pack
 
-Add one small public family for RF itself, something like:
+The first small public family already shipped in the frozen pack:
 
-- `rf.software-engineer.public.playwright-regression`
+- `rf.frontend-apprentice.public.playwright-regression`
 
-Start with **4-6 episodes** only, tied to current UI surfaces:
+Right now it contributes **2 public episodes** (`pbpv1-e13`, `pbpv1-e14`) tied to real RF screens. If we expand it further, the next step is to grow toward **4-6 episodes** covering nearby UI surfaces such as:
 
-- landing page story clarity stays visible after a copy edit
-- run detail page preserves proof-bundle evidence panels
-- curriculum vs teacher-only labels stay explicit
-- live/read-model fallback stays honest when data is missing
+- landing page story clarity staying visible after a copy edit
+- run detail page preserving proof-bundle evidence panels
+- curriculum vs teacher-only labels staying explicit
+- live/read-model fallback staying honest when data is missing
 
 Rules:
 
-- use role/text/test-id style selectors, not brittle CSS/XPath
+- use role/text/label locators, not brittle CSS/XPath or hidden test IDs
 - every episode should have a visible product reason, not just “more tests”
 - require receipts: failing check, fix, and passing rerun
 
@@ -156,6 +156,6 @@ This gets RF real issue -> patch texture without pretending raw GitHub discussio
 
 ## One best immediate next move
 
-Add the **Playwright regression mini-pack first**.
+Add the **code-review / diff-critique mini-pack next**.
 
-It is the narrowest honest upgrade that immediately improves the current apprentice on exactly the work RF already does: visible frontend changes, regression prevention, receipts, and small-scope bugfixing.
+The first Playwright-informed slice already landed in the frozen public pack, so the next highest-signal gap is review discipline: small-diff critique, blocking-vs-non-blocking comments, test/doc expectations, and uncertainty honesty.

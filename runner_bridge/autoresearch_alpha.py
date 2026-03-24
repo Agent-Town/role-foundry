@@ -1,15 +1,18 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import shlex
 import sys
 from copy import deepcopy
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 from .bridge import ClawithRunClient, RunBridge
 from .contract import ContractError, RunRequest
+from .provenance import build_execution_backend_surface
 
 STAGE_ORDER = (
     ("baseline-eval", {"iteration": 1, "iteration_label": "baseline"}),
@@ -28,6 +31,17 @@ PRIVATE_HOLDOUT_REQUIRED_KEYS = {
     "difficulty",
 }
 VALID_DIFFICULTIES = {"easy", "medium", "hard"}
+VALID_PRE_RUN_MANIFEST_ATTESTATION_TYPES = {
+    "third_party_witness",
+    "third_party_signature",
+    "other",
+}
+VALID_PRE_RUN_MANIFEST_ATTESTATION_REFERENCE_KINDS = {
+    "url",
+    "path",
+    "opaque_id",
+    "text",
+}
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -89,6 +103,8 @@ def run_alpha_loop(
         config,
         blocked_family_ids=benchmark_pack.get("blocked_family_ids", []),
     )
+    pack_meta = benchmark_pack.get("meta") if isinstance(benchmark_pack.get("meta"), dict) else {}
+    loop_sequence_id = config.get("sequence_id") or f"{pack_meta.get('id', 'alpha')}:{artifacts_root.name}"
     integrity_gate = _evaluate_integrity_gate(
         config,
         benchmark_pack,
@@ -99,6 +115,13 @@ def run_alpha_loop(
         raise ContractError(integrity_gate["summary"])
 
     (artifacts_root / "autoresearch-alpha.request.json").write_text(json.dumps(config, indent=2))
+    pre_run_commitment = _write_pre_run_manifest_commitment(
+        integrity_gate_mode=integrity_gate.get("mode", "public_regression"),
+        private_holdout_pack=private_holdout_pack,
+        artifacts_root=artifacts_root,
+        sequence_id=loop_sequence_id,
+        pre_run_manifest_attestation=config.get("pre_run_manifest_attestation"),
+    )
 
     control_plane = ClawithRunClient(clawith_url, clawith_secret)
     bridge = RunBridge(
@@ -107,13 +130,25 @@ def run_alpha_loop(
         backend_command=backend_command,
     )
 
+    execution_policy = benchmark_pack.get("execution_policy") or {}
+    loop_verifier_commands = execution_policy.get("recommended_verifier_commands")
+    if not isinstance(loop_verifier_commands, list) or not loop_verifier_commands:
+        loop_verifier_commands = None
+
     baseline_stage_config = _stage_config(config, "baseline-eval")
     baseline_request = _prepare_teacher_stage_request(
         stage_key="baseline-eval",
         stage_config=baseline_stage_config,
+        benchmark_pack=benchmark_pack,
+        loop_sequence_id=loop_sequence_id,
         private_holdout_pack=private_holdout_pack,
     )
     baseline_result = bridge.run(RunRequest.from_dict(baseline_request))
+    _patch_provenance_receipt_verifier_gates(
+        artifacts_root / str(baseline_request.get("run_id")),
+        loop_verifier_commands,
+        "LocalReplayRunner",
+    )
     baseline_stage = _build_stage_receipt(
         stage_key="baseline-eval",
         stage_config=baseline_stage_config,
@@ -122,6 +157,9 @@ def run_alpha_loop(
         artifacts_root=artifacts_root,
         baseline_run_id=None,
         candidate_student_run_id=None,
+        verifier_commands_override=loop_verifier_commands,
+        loop_sequence_id=loop_sequence_id,
+        benchmark_pack_meta=pack_meta,
     )
 
     candidate_teacher_stage_config = _stage_config(config, "candidate-teacher-eval")
@@ -131,8 +169,14 @@ def run_alpha_loop(
         candidate_teacher_stage_config,
         baseline_stage,
         benchmark_pack,
+        loop_sequence_id=loop_sequence_id,
     )
     candidate_student_result = bridge.run(RunRequest.from_dict(candidate_student_request))
+    _patch_provenance_receipt_verifier_gates(
+        artifacts_root / str(candidate_student_request.get("run_id")),
+        loop_verifier_commands,
+        "LocalReplayRunner",
+    )
     candidate_student_stage = _build_stage_receipt(
         stage_key="candidate-student",
         stage_config=candidate_student_stage_config,
@@ -141,15 +185,26 @@ def run_alpha_loop(
         artifacts_root=artifacts_root,
         baseline_run_id=baseline_stage["run_id"],
         candidate_student_run_id=None,
+        verifier_commands_override=loop_verifier_commands,
+        loop_sequence_id=loop_sequence_id,
+        benchmark_pack_meta=pack_meta,
     )
 
     candidate_teacher_request = _prepare_teacher_stage_request(
         stage_key="candidate-teacher-eval",
         stage_config=candidate_teacher_stage_config,
+        benchmark_pack=benchmark_pack,
+        loop_sequence_id=loop_sequence_id,
         baseline_stage=baseline_stage,
+        candidate_student_stage=candidate_student_stage,
         private_holdout_pack=private_holdout_pack,
     )
     candidate_teacher_result = bridge.run(RunRequest.from_dict(candidate_teacher_request))
+    _patch_provenance_receipt_verifier_gates(
+        artifacts_root / str(candidate_teacher_request.get("run_id")),
+        loop_verifier_commands,
+        "LocalReplayRunner",
+    )
     candidate_teacher_stage = _build_stage_receipt(
         stage_key="candidate-teacher-eval",
         stage_config=candidate_teacher_stage_config,
@@ -158,6 +213,9 @@ def run_alpha_loop(
         artifacts_root=artifacts_root,
         baseline_run_id=baseline_stage["run_id"],
         candidate_student_run_id=candidate_student_stage["run_id"],
+        verifier_commands_override=loop_verifier_commands,
+        loop_sequence_id=loop_sequence_id,
+        benchmark_pack_meta=pack_meta,
     )
 
     comparison = _build_comparison(
@@ -166,14 +224,40 @@ def run_alpha_loop(
         comparison_policy=config.get("comparison_policy") if isinstance(config.get("comparison_policy"), dict) else {},
         integrity_gate=integrity_gate,
     )
+    stages = {
+        "baseline-eval": baseline_stage,
+        "candidate-student": candidate_student_stage,
+        "candidate-teacher-eval": candidate_teacher_stage,
+    }
     artifact_coverage = _build_artifact_coverage(
         artifacts_root,
-        {
-            "baseline-eval": baseline_stage,
-            "candidate-student": candidate_student_stage,
-            "candidate-teacher-eval": candidate_teacher_stage,
-        },
+        stages,
     )
+
+    verifier_gate_summary = _build_verifier_gate_summary(stages)
+    verdict_stability = _build_verdict_stability(comparison)
+    phase_c_acceptance = _build_phase_c_acceptance(
+        stages=stages,
+        comparison=comparison,
+        integrity_gate=integrity_gate,
+        artifact_coverage=artifact_coverage,
+        verdict_stability=verdict_stability,
+    )
+
+    sealing_receipt = _build_sealing_receipt(
+        integrity_gate=integrity_gate,
+        private_holdout_pack=private_holdout_pack,
+        artifacts_root=artifacts_root,
+        pre_run_commitment=pre_run_commitment,
+        stages=stages,
+    )
+
+    outputs = {
+        "request_copy_path": "autoresearch-alpha.request.json",
+        "receipt_path": "autoresearch-alpha.json",
+    }
+    if pre_run_commitment:
+        outputs["pre_run_manifest_commitment_path"] = pre_run_commitment["artifact_path"]
 
     receipt = {
         "ok": all(
@@ -182,23 +266,20 @@ def run_alpha_loop(
         )
         and comparison.get("complete", False),
         "flow": "autoresearch-alpha",
-        "sequence_id": config.get("sequence_id") or f"{benchmark_pack.get('meta', {}).get('id', 'alpha')}:{artifacts_root.name}",
+        "sequence_id": loop_sequence_id,
         "dataset_manifest_id": benchmark_pack.get("meta", {}).get("id"),
         "dataset_version": benchmark_pack.get("meta", {}).get("version"),
         "control_plane_mode": "runner-bridge-local-replay",
         "integrity_gate": integrity_gate,
-        "stages": {
-            "baseline-eval": baseline_stage,
-            "candidate-student": candidate_student_stage,
-            "candidate-teacher-eval": candidate_teacher_stage,
-        },
+        "stages": stages,
         "comparison": comparison,
         "verdict": comparison.get("verdict"),
+        "verdict_stability": verdict_stability,
+        "verifier_gate": verifier_gate_summary,
+        "phase_c_acceptance": phase_c_acceptance,
+        "sealing_receipt": sealing_receipt,
         "artifact_coverage": artifact_coverage,
-        "outputs": {
-            "request_copy_path": "autoresearch-alpha.request.json",
-            "receipt_path": "autoresearch-alpha.json",
-        },
+        "outputs": outputs,
     }
     (artifacts_root / "autoresearch-alpha.json").write_text(json.dumps(receipt, indent=2))
     return receipt
@@ -221,6 +302,8 @@ def _prepare_candidate_student_request(
     candidate_teacher_stage_config: dict[str, Any],
     baseline_stage: dict[str, Any],
     benchmark_pack: dict[str, Any],
+    *,
+    loop_sequence_id: str,
 ) -> dict[str, Any]:
     request = deepcopy(stage_config["request"])
     teacher_eval = ((candidate_teacher_stage_config.get("request") or {}).get("teacher_evaluation")) or {}
@@ -246,6 +329,36 @@ def _prepare_candidate_student_request(
         raise ContractError("candidate-student prompt pack did not resolve any benchmark episodes")
 
     baseline_themes = _extract_public_themes(baseline_stage)
+    visible_scenarios = []
+    for episode in episodes:
+        scenario = {
+            "id": episode.get("id"),
+            "title": episode.get("title") or episode.get("id"),
+            "type": "training",
+            "difficulty": episode.get("difficulty"),
+            "student_prompt": episode.get("student_prompt") or "",
+        }
+        repo_task_meta = _extract_repo_task_meta(episode)
+        if repo_task_meta:
+            scenario["repo_task_meta"] = repo_task_meta
+        visible_scenarios.append(scenario)
+
+    pack_meta = benchmark_pack.get("meta") or {}
+    execution_policy = benchmark_pack.get("execution_policy") or {}
+    repo_task_pack: dict[str, Any] = {
+        "role_scope": pack_meta.get("role_scope") or pack_meta.get("role") or "unknown",
+        "dataset_id": pack_meta.get("id"),
+        "dataset_version": pack_meta.get("version"),
+        "episode_count": len(visible_scenarios),
+        "episode_ids": [scenario.get("id") for scenario in visible_scenarios if scenario.get("id")],
+        "family_ids": sorted({episode.get("family_id") for episode in episodes if episode.get("family_id")}),
+        "honesty_note": "Repo-task metadata is derived from the public benchmark pack. "
+        "This is still local replay / public-regression alpha unless a private holdout manifest is used.",
+    }
+    recommended_verifier_commands = execution_policy.get("recommended_verifier_commands")
+    if isinstance(recommended_verifier_commands, list) and recommended_verifier_commands:
+        repo_task_pack["recommended_verifier_commands"] = list(recommended_verifier_commands)
+
     request["student_prompt_pack"] = {
         "actor": teacher_eval.get("student"),
         "sealed_holdout_count": _sealed_holdout_count(teacher_eval),
@@ -253,18 +366,20 @@ def _prepare_candidate_student_request(
         or teacher_eval.get("student_prompt_summary")
         or benchmark_pack.get("meta", {}).get("honesty_note")
         or "Train on the public benchmark pack only. Teacher-only evaluation stays separate.",
-        "visible_scenarios": [
-            {
-                "id": episode.get("id"),
-                "title": episode.get("title") or episode.get("id"),
-                "type": "training",
-                "difficulty": episode.get("difficulty"),
-                "student_prompt": episode.get("student_prompt") or "",
-            }
-            for episode in episodes
-        ],
+        "visible_scenarios": visible_scenarios,
         "public_curriculum_themes": baseline_themes,
+        "repo_task_pack": repo_task_pack,
     }
+    _apply_stage_traceability(
+        request,
+        stage_key="candidate-student",
+        loop_sequence_id=loop_sequence_id,
+        benchmark_pack=benchmark_pack,
+        visible_episodes=episodes,
+        sealed_holdout_count=_sealed_holdout_count(teacher_eval),
+        root_run_id=baseline_stage.get("run_id"),
+        parent_run_id=baseline_stage.get("run_id"),
+    )
     return request
 
 
@@ -272,7 +387,10 @@ def _prepare_teacher_stage_request(
     *,
     stage_key: str,
     stage_config: dict[str, Any],
+    benchmark_pack: dict[str, Any],
+    loop_sequence_id: str,
     baseline_stage: dict[str, Any] | None = None,
+    candidate_student_stage: dict[str, Any] | None = None,
     private_holdout_pack: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     request = deepcopy(stage_config["request"])
@@ -296,7 +414,94 @@ def _prepare_teacher_stage_request(
         }
 
     request["teacher_evaluation"] = teacher_eval
+    root_run_id = baseline_stage.get("run_id") if isinstance(baseline_stage, dict) else request.get("run_id")
+    parent_run_id = None
+    if stage_key == "candidate-teacher-eval":
+        parent_run_id = (
+            candidate_student_stage.get("run_id")
+            if isinstance(candidate_student_stage, dict)
+            else root_run_id
+        )
+
+    _apply_stage_traceability(
+        request,
+        stage_key=stage_key,
+        loop_sequence_id=loop_sequence_id,
+        benchmark_pack=benchmark_pack,
+        teacher_scenarios=teacher_eval.get("scenarios") if isinstance(teacher_eval.get("scenarios"), list) else [],
+        root_run_id=root_run_id,
+        parent_run_id=parent_run_id,
+    )
     return request
+
+
+def _apply_stage_traceability(
+    request: dict[str, Any],
+    *,
+    stage_key: str,
+    loop_sequence_id: str,
+    benchmark_pack: dict[str, Any],
+    visible_episodes: list[dict[str, Any]] | None = None,
+    teacher_scenarios: list[dict[str, Any]] | None = None,
+    sealed_holdout_count: int | None = None,
+    root_run_id: str | None = None,
+    parent_run_id: str | None = None,
+) -> None:
+    pack_meta = benchmark_pack.get("meta") if isinstance(benchmark_pack.get("meta"), dict) else {}
+    episodes: dict[str, Any] = {}
+    visible_episodes = visible_episodes if isinstance(visible_episodes, list) else []
+    teacher_scenarios = teacher_scenarios if isinstance(teacher_scenarios, list) else []
+
+    if visible_episodes:
+        episodes["visible_episode_ids"] = [
+            episode.get("id") for episode in visible_episodes if isinstance(episode, dict) and episode.get("id")
+        ]
+        family_ids = sorted(
+            {
+                episode.get("family_id")
+                for episode in visible_episodes
+                if isinstance(episode, dict) and episode.get("family_id")
+            }
+        )
+        if family_ids:
+            episodes["family_ids"] = family_ids
+
+    if teacher_scenarios:
+        training_episode_ids = [
+            scenario.get("id")
+            for scenario in teacher_scenarios
+            if isinstance(scenario, dict) and scenario.get("type") != "holdout" and scenario.get("id")
+        ]
+        if training_episode_ids:
+            episodes["training_episode_ids"] = training_episode_ids
+        holdout_total = len(
+            [scenario for scenario in teacher_scenarios if isinstance(scenario, dict) and scenario.get("type") == "holdout"]
+        )
+        if holdout_total:
+            episodes["holdout_count"] = holdout_total
+            episodes["holdout_episode_ids"] = {
+                "status": "withheld",
+                "honesty_note": "Teacher-side holdout episode ids are intentionally withheld from student-facing traceability exports.",
+            }
+
+    if sealed_holdout_count is not None:
+        episodes["sealed_holdout_count"] = int(sealed_holdout_count)
+
+    stage_meta = dict(STAGE_ORDER)[stage_key]
+    request["traceability"] = {
+        "sequence_id": loop_sequence_id,
+        "stage_key": stage_key,
+        "root_run_id": root_run_id,
+        "parent_run_id": parent_run_id,
+        "iteration_index": stage_meta["iteration"],
+        "iteration_label": stage_meta["iteration_label"],
+        "benchmark_pack": {
+            "id": pack_meta.get("id"),
+            "version": pack_meta.get("version"),
+            "role_scope": pack_meta.get("role_scope") or pack_meta.get("role"),
+        },
+        "episodes": episodes,
+    }
 
 
 def _hydrate_teacher_scenarios(
@@ -460,6 +665,9 @@ def _build_stage_receipt(
     artifacts_root: Path,
     baseline_run_id: str | None,
     candidate_student_run_id: str | None,
+    verifier_commands_override: list[str] | None = None,
+    loop_sequence_id: str | None = None,
+    benchmark_pack_meta: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     stage_meta = dict(STAGE_ORDER)[stage_key]
     run_id = str(request.get("run_id"))
@@ -468,8 +676,12 @@ def _build_stage_receipt(
     stored_result = _load_json(run_dir / "result.json")
     transcript_excerpt = _transcript_excerpt(run_dir / "transcript.ndjson")
 
+    execution_backend = build_execution_backend_surface(request, stored_result, artifact_bundle)
     scorecard = stored_result.get("scorecard") if isinstance(stored_result.get("scorecard"), dict) else None
     aggregate_score = scorecard.get("aggregate_score") if isinstance(scorecard, dict) and isinstance(scorecard.get("aggregate_score"), dict) else None
+    run_record_history = _load_run_record_history(stored_result)
+    lifecycle = _build_stage_lifecycle(run_record_history)
+    budget_adherence = _build_stage_budget_adherence(request, result)
 
     export_run = {
         "id": run_id,
@@ -490,34 +702,302 @@ def _build_stage_receipt(
         if export_result.get(path_key):
             export_result[path_key] = _relative_to_root(artifacts_root, Path(export_result[path_key]))
 
+    run_record_history_path = None
+    if stored_result.get("run_record_history_path"):
+        run_record_history_path = _relative_to_root(
+            artifacts_root,
+            run_dir / str(stored_result["run_record_history_path"]),
+        )
+
+    receipt_completeness = _build_stage_receipt_completeness(run_dir, artifact_bundle, stored_result)
+
+    verifier_contract = _build_verifier_contract(
+        stage_key=stage_key,
+        request=request,
+        artifact_bundle=artifact_bundle,
+        runner=scorecard.get("runner") if isinstance(scorecard, dict) else "LocalReplayRunner",
+        verifier_commands_override=verifier_commands_override,
+    )
+
+    request_traceability = request.get("traceability") if isinstance(request.get("traceability"), dict) else {}
+    lineage: dict[str, Any] = {
+        "sequence_id": request_traceability.get("sequence_id") or loop_sequence_id or request.get("scenario_set_id"),
+        "scenario_set_id": request.get("scenario_set_id"),
+        "root_run_id": baseline_run_id or run_id,
+        "parent_run_id": baseline_run_id if stage_key == "candidate-student" else candidate_student_run_id,
+        "iteration_index": stage_meta["iteration"],
+        "iteration_label": stage_meta["iteration_label"],
+    }
+    if stage_key == "candidate-teacher-eval" and candidate_student_run_id and baseline_run_id:
+        lineage["student_run_id"] = candidate_student_run_id
+        lineage["derived_previous_iteration_from"] = baseline_run_id
+
+    traceability = _build_stage_traceability_export(
+        request=request,
+        artifact_bundle=artifact_bundle,
+        request_traceability=request_traceability,
+        benchmark_pack_meta=benchmark_pack_meta,
+    )
+
+    # audit_bundle_path from provenance
+    audit_bundle_path = None
+    provenance = stored_result.get("provenance") if isinstance(stored_result.get("provenance"), dict) else {}
+    if provenance.get("audit_bundle_path"):
+        audit_bundle_path = provenance["audit_bundle_path"]
+
     stage = {
         "run_id": run_id,
         "status": result.get("status"),
         "total_score": export_result.get("machine_score"),
         "aggregate_score": aggregate_score,
-        "lineage": {
-            "sequence_id": request.get("scenario_set_id"),
-            "root_run_id": baseline_run_id or run_id,
-            "parent_run_id": baseline_run_id if stage_key == "candidate-student" else candidate_student_run_id,
-            "iteration_index": stage_meta["iteration"],
-            "iteration_label": stage_meta["iteration_label"],
-            **(
-                {
-                    "student_run_id": candidate_student_run_id,
-                    "derived_previous_iteration_from": baseline_run_id,
-                }
-                if stage_key == "candidate-teacher-eval" and candidate_student_run_id and baseline_run_id
-                else {}
-            ),
-        },
+        "execution_backend": execution_backend,
+        "verifier_contract": verifier_contract,
+        "lineage": lineage,
+        "traceability": traceability,
+        "lifecycle": lifecycle,
+        "budget_adherence": budget_adherence,
+        "audit_bundle_path": audit_bundle_path,
         "export": {
             "run": export_run,
+            "run_record_history": run_record_history,
+            "run_record_history_path": run_record_history_path,
             "result": export_result,
             "artifact_bundle": artifact_bundle,
             "transcript_excerpt": transcript_excerpt,
+            "receipt_completeness": receipt_completeness,
         },
     }
     return stage
+
+
+def _build_stage_traceability_export(
+    *,
+    request: dict[str, Any],
+    artifact_bundle: dict[str, Any],
+    request_traceability: dict[str, Any],
+    benchmark_pack_meta: dict[str, Any] | None,
+) -> dict[str, Any]:
+    benchmark_pack_meta = benchmark_pack_meta if isinstance(benchmark_pack_meta, dict) else {}
+    traceability = {
+        "sequence_id": request_traceability.get("sequence_id"),
+        "stage_key": request_traceability.get("stage_key"),
+        "root_run_id": request_traceability.get("root_run_id"),
+        "parent_run_id": request_traceability.get("parent_run_id"),
+        "iteration_index": request_traceability.get("iteration_index"),
+        "iteration_label": request_traceability.get("iteration_label"),
+        "benchmark_pack": {
+            "id": request_traceability.get("benchmark_pack", {}).get("id")
+            if isinstance(request_traceability.get("benchmark_pack"), dict)
+            else benchmark_pack_meta.get("id"),
+            "version": request_traceability.get("benchmark_pack", {}).get("version")
+            if isinstance(request_traceability.get("benchmark_pack"), dict)
+            else benchmark_pack_meta.get("version"),
+            "role_scope": request_traceability.get("benchmark_pack", {}).get("role_scope")
+            if isinstance(request_traceability.get("benchmark_pack"), dict)
+            else benchmark_pack_meta.get("role_scope") or benchmark_pack_meta.get("role"),
+        },
+        "episodes": deepcopy(request_traceability.get("episodes"))
+        if isinstance(request_traceability.get("episodes"), dict)
+        else {},
+    }
+
+    student_view = artifact_bundle.get("student_view") if isinstance(artifact_bundle.get("student_view"), dict) else {}
+    repo_task_pack = student_view.get("repo_task_pack") if isinstance(student_view.get("repo_task_pack"), dict) else {}
+    episodes = traceability["episodes"]
+    if repo_task_pack.get("episode_ids") and not episodes.get("visible_episode_ids"):
+        episodes["visible_episode_ids"] = list(repo_task_pack.get("episode_ids"))
+    if repo_task_pack.get("family_ids") and not episodes.get("family_ids"):
+        episodes["family_ids"] = list(repo_task_pack.get("family_ids"))
+    if student_view.get("sealed_holdout_count") is not None and not episodes.get("sealed_holdout_count"):
+        episodes["sealed_holdout_count"] = int(student_view.get("sealed_holdout_count") or 0)
+    return traceability
+
+
+def _build_verifier_contract(
+    *,
+    stage_key: str,
+    request: dict[str, Any],
+    artifact_bundle: dict[str, Any],
+    runner: str,
+    verifier_commands_override: list[str] | None = None,
+) -> dict[str, Any]:
+    """Build an honest verifier-contract block for a stage receipt.
+
+    In the local-replay alpha path, verifier commands are never actually
+    executed.  This function surfaces the required commands and marks each
+    one as ``not_executed`` so downstream consumers can distinguish a real
+    green gate from a replay that never ran the checks.
+    """
+    is_local_replay = runner == "LocalReplayRunner"
+
+    required_commands = _extract_required_verifier_commands(
+        request, artifact_bundle, verifier_commands_override=verifier_commands_override,
+    )
+
+    command_results = []
+    for command in required_commands:
+        command_results.append({
+            "command": command,
+            "execution_status": "not_executed" if is_local_replay else "unknown",
+            "exit_code": None,
+            "honesty_note": (
+                "Local-replay alpha path does not execute verifier commands."
+                if is_local_replay
+                else "Execution status was not captured by the runner."
+            ),
+        })
+
+    has_commands = len(required_commands) > 0
+    all_executed = has_commands and all(
+        cr["execution_status"] == "executed" for cr in command_results
+    )
+    all_passed = all_executed and all(
+        cr.get("exit_code") == 0 for cr in command_results
+    )
+
+    if is_local_replay:
+        gate_status = "not_executed"
+        gate_honesty_note = (
+            "The local-replay runner produces deterministic receipts without "
+            "executing verifier commands. Gate status will become meaningful "
+            "when a live-execution backend is wired."
+        )
+    elif not has_commands:
+        gate_status = "no_commands"
+        gate_honesty_note = "No verifier commands were specified for this stage."
+    elif all_passed:
+        gate_status = "pass"
+        gate_honesty_note = "All verifier commands executed and returned exit code 0."
+    elif all_executed:
+        gate_status = "fail"
+        gate_honesty_note = "One or more verifier commands returned a non-zero exit code."
+    else:
+        gate_status = "incomplete"
+        gate_honesty_note = "Not all verifier commands have execution results."
+
+    return {
+        "stage_key": stage_key,
+        "runner": runner,
+        "required_commands": required_commands,
+        "command_results": command_results,
+        "gate_status": gate_status,
+        "honesty_note": gate_honesty_note,
+    }
+
+
+def _extract_required_verifier_commands(
+    request: dict[str, Any],
+    artifact_bundle: dict[str, Any],
+    *,
+    verifier_commands_override: list[str] | None = None,
+) -> list[str]:
+    """Collect verifier commands from the request, artifact bundle, or override.
+
+    Teacher stages (baseline-eval, candidate-teacher-eval) do not carry a
+    ``student_prompt_pack``, so their request/artifact_bundle will not contain
+    verifier commands.  The ``verifier_commands_override`` parameter lets the
+    caller inject the commands from the benchmark-pack execution policy so
+    that every stage receipt surfaces the same contract.
+    """
+    commands: list[str] = []
+    seen: set[str] = set()
+
+    for source in (
+        ((request.get("student_prompt_pack") or {}).get("repo_task_pack") or {}).get("recommended_verifier_commands"),
+        ((artifact_bundle.get("student_view") or {}).get("repo_task_pack") or {}).get("recommended_verifier_commands"),
+        verifier_commands_override,
+    ):
+        if isinstance(source, list):
+            for cmd in source:
+                cmd_str = str(cmd)
+                if cmd_str not in seen:
+                    seen.add(cmd_str)
+                    commands.append(cmd_str)
+
+    return commands
+
+
+def _patch_provenance_receipt_verifier_gates(
+    run_dir: Path,
+    verifier_commands: list[str] | None,
+    runner: str,
+) -> None:
+    """Add ``verifier_gate`` to baseline.json and evaluation.json receipts.
+
+    The provenance writer (called by the bridge) creates these files but does
+    not have access to the benchmark-pack execution policy.  This post-hoc
+    patch adds the gate so that every provenance receipt surfaces the same
+    verifier-command contract.  ``candidate.json`` already has the gate from
+    the provenance writer, so it is left untouched.
+    """
+    receipts_dir = run_dir / "receipts"
+    if not receipts_dir.is_dir():
+        return
+
+    commands = verifier_commands if isinstance(verifier_commands, list) else []
+    is_local_replay = runner == "LocalReplayRunner"
+
+    if commands:
+        gate = {
+            "status": "not_executed" if is_local_replay else "unknown",
+            "required_commands": list(commands),
+            "executed_count": 0 if is_local_replay else None,
+            "honesty_note": (
+                "Local-replay alpha path does not execute verifier commands. "
+                "These commands should be run by a live-execution backend to "
+                "produce a meaningful gate result."
+                if is_local_replay
+                else "Verifier command execution status was not captured."
+            ),
+        }
+    else:
+        gate = {
+            "status": "no_commands",
+            "required_commands": [],
+            "executed_count": 0,
+            "honesty_note": "No verifier commands were specified in the execution policy.",
+        }
+
+    for receipt_name in ("baseline.json", "evaluation.json"):
+        receipt_path = receipts_dir / receipt_name
+        if not receipt_path.exists():
+            continue
+        try:
+            receipt = json.loads(receipt_path.read_text())
+        except (json.JSONDecodeError, OSError):
+            continue
+        if "verifier_gate" not in receipt:
+            receipt["verifier_gate"] = gate
+            receipt_path.write_text(json.dumps(receipt, indent=2))
+
+
+def _build_stage_receipt_completeness(
+    run_dir: Path,
+    artifact_bundle: dict[str, Any],
+    result: dict[str, Any],
+) -> dict[str, Any]:
+    receipts_dir = run_dir / "receipts"
+    receipt_files = {
+        "manifest.json": (receipts_dir / "manifest.json").exists(),
+        "evidence-index.json": (receipts_dir / "evidence-index.json").exists(),
+        "summary.md": (receipts_dir / "summary.md").exists(),
+        "candidate.json": (receipts_dir / "candidate.json").exists(),
+    }
+    for optional in ("evaluation.json", "baseline.json"):
+        path = receipts_dir / optional
+        if path.exists():
+            receipt_files[optional] = True
+
+    provenance_pointers = _check_provenance_pointers(artifact_bundle, result)
+
+    all_receipt_files_present = all(receipt_files.values())
+    all_provenance_pointers_valid = all(provenance_pointers.values())
+
+    return {
+        "complete": all_receipt_files_present and all_provenance_pointers_valid,
+        "receipt_files": receipt_files,
+        "provenance_pointers": provenance_pointers,
+    }
 
 
 def _build_comparison(
@@ -588,6 +1068,289 @@ def _build_comparison(
     }
 
 
+def _build_verifier_gate_summary(
+    stages: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    """Build an aggregate verifier gate across all stages."""
+    stage_statuses: dict[str, str] = {}
+    total_commands = 0
+    executed_commands = 0
+
+    for stage_key, stage in stages.items():
+        vc = stage.get("verifier_contract") or {}
+        gate_status = vc.get("gate_status", "unknown")
+        stage_statuses[stage_key] = gate_status
+        for cr in vc.get("command_results", []):
+            total_commands += 1
+            if cr.get("execution_status") == "executed":
+                executed_commands += 1
+
+    all_not_executed = all(s == "not_executed" for s in stage_statuses.values())
+    any_fail = any(s == "fail" for s in stage_statuses.values())
+
+    if all_not_executed:
+        aggregate_status = "not_executed"
+        honesty_note = (
+            "All stages used the local-replay runner. No verifier commands were "
+            "actually executed. This alpha loop proves receipt structure and "
+            "evaluation-contract wiring, not real code execution."
+        )
+    elif any_fail:
+        aggregate_status = "fail"
+        honesty_note = "One or more stages had failing verifier commands."
+    elif all(s == "pass" for s in stage_statuses.values()):
+        aggregate_status = "pass"
+        honesty_note = "All verifier commands across all stages passed."
+    else:
+        aggregate_status = "incomplete"
+        honesty_note = "Not all stages have complete verifier execution results."
+
+    return {
+        "aggregate_status": aggregate_status,
+        "stage_statuses": stage_statuses,
+        "total_commands": total_commands,
+        "executed_commands": executed_commands,
+        "honesty_note": honesty_note,
+    }
+
+
+def _build_verdict_stability(comparison: dict[str, Any]) -> dict[str, Any]:
+    verdict = comparison.get("verdict")
+    return {
+        "status": "blocked_single_sample",
+        "sample_count": 1,
+        "stable_count": 1 if verdict else 0,
+        "target_threshold": ">=2/3 repeated runs on frozen input, or explicit nondeterminism flag",
+        "verdict": verdict,
+        "meets_threshold": False,
+        "blocker": "Only one alpha-loop sample was executed. Repeated frozen-input stability runs are not wired yet.",
+        "honesty_note": (
+            "Local replay is deterministic, but this receipt only captures a single executed sample. "
+            "It does not overclaim empirical stability."
+        ),
+    }
+
+
+def _build_phase_c_acceptance(
+    *,
+    stages: dict[str, dict[str, Any]],
+    comparison: dict[str, Any],
+    integrity_gate: dict[str, Any],
+    artifact_coverage: dict[str, Any],
+    verdict_stability: dict[str, Any],
+) -> dict[str, Any]:
+    baseline = stages["baseline-eval"]
+    candidate_student = stages["candidate-student"]
+    candidate_teacher = stages["candidate-teacher-eval"]
+
+    criteria = {
+        "C001": _phase_c_lifecycle_entry(
+            code="C001",
+            label="Baseline lifecycle completeness",
+            stage_key="baseline-eval",
+            stage=baseline,
+        ),
+        "C002": _phase_c_lifecycle_entry(
+            code="C002",
+            label="Candidate lifecycle completeness",
+            stage_key="candidate-student",
+            stage=candidate_student,
+        ),
+        "C003": _phase_c_mutation_surface_entry(candidate_student),
+        "C004": _phase_c_budget_entry(stages),
+        "C005": _phase_c_teacher_eval_entry(candidate_teacher),
+        "C006": _phase_c_comparison_entry(comparison),
+        "C007": _phase_c_verdict_stability_entry(verdict_stability),
+        "C008": _phase_c_integrity_gate_entry(integrity_gate, comparison),
+        "C009": _phase_c_delta_visibility_entry(comparison),
+    }
+    green = [code for code, entry in criteria.items() if entry["status"] == "green"]
+    blocked = [code for code, entry in criteria.items() if entry["status"] != "green"]
+    return {
+        "summary": {
+            "green": green,
+            "blocked": blocked,
+            "green_count": len(green),
+            "blocked_count": len(blocked),
+            "artifact_coverage_complete": all(
+                artifact_coverage.get(stage_key, {}).get("complete")
+                for stage_key in ("baseline-eval", "candidate-student", "candidate-teacher-eval")
+            ),
+        },
+        "criteria": criteria,
+    }
+
+
+def _phase_c_lifecycle_entry(*, code: str, label: str, stage_key: str, stage: dict[str, Any]) -> dict[str, Any]:
+    lifecycle = stage.get("lifecycle") if isinstance(stage.get("lifecycle"), dict) else {}
+    states = lifecycle.get("states") if isinstance(lifecycle.get("states"), list) else []
+    status = "green" if states in (["queued", "running", "completed"], ["queued", "running", "failed"]) else "blocked"
+    blocker = None if status == "green" else f"{stage_key} lifecycle did not record queued -> running -> completed|failed exactly."
+    return {
+        "status": status,
+        "label": label,
+        "stage_key": stage_key,
+        "observed_states": states,
+        "evidence": {
+            "run_id": stage.get("run_id"),
+            "run_record_history_path": stage.get("export", {}).get("run_record_history_path"),
+        },
+        "pass_threshold": "queued -> running -> completed|failed",
+        "blocker": blocker,
+    }
+
+
+def _phase_c_mutation_surface_entry(stage: dict[str, Any]) -> dict[str, Any]:
+    result = stage.get("export", {}).get("result") if isinstance(stage.get("export"), dict) else {}
+    execution_honesty = result.get("execution_honesty") if isinstance(result.get("execution_honesty"), dict) else {}
+    audit = execution_honesty.get("mutation_surface_audit") if isinstance(execution_honesty.get("mutation_surface_audit"), dict) else None
+    if audit is None:
+        return {
+            "status": "blocked",
+            "label": "Mutation surface compliance",
+            "stage_key": "candidate-student",
+            "pass_threshold": "0 changed files outside the allowed mutation surface",
+            "blocker": "candidate-student did not carry a mutation-surface audit contract, so no diff audit was recorded.",
+            "evidence": {"run_id": stage.get("run_id")},
+        }
+
+    violations = audit.get("violations") if isinstance(audit.get("violations"), dict) else {}
+    budget_report = audit.get("budget_report") if isinstance(audit.get("budget_report"), dict) else {}
+    passed = (
+        audit.get("status") == "passed"
+        and not violations.get("blocked_paths")
+        and not violations.get("out_of_scope_paths")
+        and budget_report.get("within_budget") is True
+    )
+    blocker = None if passed else (
+        audit.get("honesty_note") or "Mutation-surface audit did not pass cleanly."
+    )
+    return {
+        "status": "green" if passed else "blocked",
+        "label": "Mutation surface compliance",
+        "stage_key": "candidate-student",
+        "pass_threshold": "0 changed files outside the allowed mutation surface",
+        "audit_status": audit.get("status"),
+        "changed_files": audit.get("changed_files"),
+        "budget_report": budget_report,
+        "violations": violations,
+        "evidence": {
+            "run_id": stage.get("run_id"),
+            "mutation_surface_audit_path": result.get("provenance", {}).get("mutation_surface_audit_path"),
+        },
+        "blocker": blocker,
+    }
+
+
+def _phase_c_budget_entry(stages: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    stage_reports = {
+        stage_key: stage.get("budget_adherence")
+        for stage_key, stage in stages.items()
+        if isinstance(stage.get("budget_adherence"), dict)
+    }
+    any_fail = any(report.get("status") == "fail" for report in stage_reports.values())
+    any_missing = len(stage_reports) != 3
+    return {
+        "status": "blocked" if any_fail or any_missing else "green",
+        "label": "Budget adherence",
+        "pass_threshold": "0 overruns, or explicit blocked/unknown recorded when cost data is unavailable",
+        "stage_reports": stage_reports,
+        "blocker": (
+            "One or more stages exceeded a declared budget or did not record budget adherence."
+            if any_fail or any_missing
+            else None
+        ),
+    }
+
+
+def _phase_c_teacher_eval_entry(stage: dict[str, Any]) -> dict[str, Any]:
+    result = stage.get("export", {}).get("result") if isinstance(stage.get("export"), dict) else {}
+    scorecard = result.get("scorecard") if isinstance(result.get("scorecard"), dict) else {}
+    aggregate = scorecard.get("aggregate_score") if isinstance(scorecard.get("aggregate_score"), dict) else {}
+    scenario_results = scorecard.get("scenario_results") if isinstance(scorecard.get("scenario_results"), list) else []
+    holdouts = [item for item in scenario_results if isinstance(item, dict) and item.get("type") == "holdout"]
+    complete = bool(holdouts) and all("score" in item and "passed" in item for item in holdouts)
+    return {
+        "status": "green" if complete else "blocked",
+        "label": "Teacher evaluation completeness",
+        "pass_threshold": "100% of holdout scenarios scored",
+        "holdout_total": aggregate.get("holdout", {}).get("total"),
+        "holdout_scored": len(holdouts),
+        "evidence": {
+            "run_id": stage.get("run_id"),
+            "scorecard_present": bool(scorecard),
+        },
+        "blocker": None if complete else "Candidate teacher-eval scorecard did not expose complete holdout scoring.",
+    }
+
+
+def _phase_c_comparison_entry(comparison: dict[str, Any]) -> dict[str, Any]:
+    complete = bool(
+        comparison.get("complete")
+        and comparison.get("verdict")
+        and isinstance(comparison.get("reasons"), list)
+        and isinstance(comparison.get("category_deltas"), dict)
+        and "total_score_delta" in comparison
+    )
+    return {
+        "status": "green" if complete else "blocked",
+        "label": "Comparison verdict completeness",
+        "pass_threshold": "verdict + reasons + score deltas all present",
+        "evidence": {
+            "verdict": comparison.get("verdict"),
+            "reason_count": len(comparison.get("reasons", [])) if isinstance(comparison.get("reasons"), list) else 0,
+            "has_category_deltas": isinstance(comparison.get("category_deltas"), dict),
+            "has_total_score_delta": "total_score_delta" in comparison,
+        },
+        "blocker": None if complete else "comparison receipt was missing required verdict fields.",
+    }
+
+
+def _phase_c_verdict_stability_entry(verdict_stability: dict[str, Any]) -> dict[str, Any]:
+    meets = verdict_stability.get("meets_threshold") is True
+    return {
+        "status": "green" if meets else "blocked",
+        "label": "Verdict stability",
+        "pass_threshold": ">=2/3 repeated runs on frozen input, or explicit nondeterminism flag",
+        "evidence": verdict_stability,
+        "blocker": None if meets else verdict_stability.get("blocker"),
+    }
+
+
+def _phase_c_integrity_gate_entry(integrity_gate: dict[str, Any], comparison: dict[str, Any]) -> dict[str, Any]:
+    passed = integrity_gate.get("status") == "pass" and comparison.get("complete") is True
+    return {
+        "status": "green" if passed else "blocked",
+        "label": "Integrity gate enforcement",
+        "pass_threshold": "0 failed integrity gates allowed to promote weighted verdicts",
+        "evidence": {
+            "integrity_gate_status": integrity_gate.get("status"),
+            "claims_blocked": integrity_gate.get("claims_blocked"),
+            "comparison_complete": comparison.get("complete"),
+        },
+        "blocker": None if passed else "integrity gate did not pass cleanly before comparison verdicting.",
+    }
+
+
+def _phase_c_delta_visibility_entry(comparison: dict[str, Any]) -> dict[str, Any]:
+    visible = bool(
+        comparison.get("verdict")
+        and "total_score_delta" in comparison
+        and isinstance(comparison.get("category_deltas"), dict)
+    )
+    return {
+        "status": "green" if visible else "blocked",
+        "label": "Meaningful delta visibility",
+        "pass_threshold": "total score, verdict, and category deltas all machine-readable",
+        "evidence": {
+            "verdict": comparison.get("verdict"),
+            "total_score_delta": comparison.get("total_score_delta"),
+            "category_deltas": comparison.get("category_deltas"),
+        },
+        "blocker": None if visible else "comparison receipt did not expose machine-readable deltas.",
+    }
+
+
 def _build_artifact_coverage(
     artifacts_root: Path,
     stages: dict[str, dict[str, Any]],
@@ -603,6 +1366,9 @@ def _build_artifact_coverage(
             "result.json": run_dir / "result.json",
             "receipts/manifest.json": run_dir / "receipts" / "manifest.json",
             "receipts/candidate.json": run_dir / "receipts" / "candidate.json",
+            "receipts/evidence-index.json": run_dir / "receipts" / "evidence-index.json",
+            "receipts/summary.md": run_dir / "receipts" / "summary.md",
+            "receipts/audit-bundle.json": run_dir / "receipts" / "audit-bundle.json",
         }
         if stage_key != "candidate-student":
             required_paths["receipts/evaluation.json"] = run_dir / "receipts" / "evaluation.json"
@@ -619,6 +1385,9 @@ def _build_artifact_coverage(
         if stage_key == "candidate-student":
             checks["teacher_verdict_present"] = False
 
+        provenance_pointers = _check_provenance_pointers(artifact_bundle, result)
+        checks.update(provenance_pointers)
+
         coverage[stage_key] = {
             "run_id": stage["run_id"],
             "complete": all(checks.values()) if stage_key != "candidate-student" else all(
@@ -631,6 +1400,49 @@ def _build_artifact_coverage(
         }
 
     return coverage
+
+
+def _check_provenance_pointers(
+    artifact_bundle: dict[str, Any],
+    result: dict[str, Any],
+) -> dict[str, bool]:
+    checks: dict[str, bool] = {}
+
+    bundle_provenance = artifact_bundle.get("provenance") if isinstance(artifact_bundle.get("provenance"), dict) else {}
+    bundle_receipts = artifact_bundle.get("receipts") if isinstance(artifact_bundle.get("receipts"), dict) else {}
+    bundle_paths = set()
+    if bundle_provenance.get("receipt_manifest_path"):
+        bundle_paths.add(bundle_provenance["receipt_manifest_path"])
+    if bundle_provenance.get("evidence_index_path"):
+        bundle_paths.add(bundle_provenance["evidence_index_path"])
+    if bundle_provenance.get("summary_path"):
+        bundle_paths.add(bundle_provenance["summary_path"])
+    if bundle_provenance.get("audit_bundle_path"):
+        bundle_paths.add(bundle_provenance["audit_bundle_path"])
+    for key in ("receipt_manifest_path", "evidence_index_path", "summary_path", "audit_bundle_path"):
+        if bundle_receipts.get(key):
+            bundle_paths.add(bundle_receipts[key])
+    checks["bundle_provenance_has_manifest"] = "receipts/manifest.json" in bundle_paths
+    checks["bundle_provenance_has_evidence_index"] = "receipts/evidence-index.json" in bundle_paths
+    checks["bundle_provenance_has_summary"] = "receipts/summary.md" in bundle_paths
+    checks["bundle_provenance_has_audit_bundle"] = "receipts/audit-bundle.json" in bundle_paths
+
+    result_provenance = result.get("provenance") if isinstance(result.get("provenance"), dict) else {}
+    result_paths = set()
+    if result_provenance.get("receipt_manifest_path"):
+        result_paths.add(result_provenance["receipt_manifest_path"])
+    if result_provenance.get("evidence_index_path"):
+        result_paths.add(result_provenance["evidence_index_path"])
+    if result_provenance.get("summary_path"):
+        result_paths.add(result_provenance["summary_path"])
+    if result_provenance.get("audit_bundle_path"):
+        result_paths.add(result_provenance["audit_bundle_path"])
+    checks["result_provenance_has_manifest"] = "receipts/manifest.json" in result_paths
+    checks["result_provenance_has_evidence_index"] = "receipts/evidence-index.json" in result_paths
+    checks["result_provenance_has_summary"] = "receipts/summary.md" in result_paths
+    checks["result_provenance_has_audit_bundle"] = "receipts/audit-bundle.json" in result_paths
+
+    return checks
 
 
 def _evaluate_integrity_gate(
@@ -715,6 +1527,413 @@ def _evaluate_integrity_gate(
         },
         "claims_allowed": claims_allowed,
         "claims_blocked": claims_blocked,
+    }
+
+
+def _canonical_json_bytes(payload: Any) -> bytes:
+    return json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
+
+
+def _canonical_manifest_hash(manifest: dict[str, Any]) -> dict[str, str]:
+    return {
+        "algorithm": "sha256",
+        "hex_digest": hashlib.sha256(_canonical_json_bytes(manifest)).hexdigest(),
+        "canonicalization": 'json.dumps(sort_keys=True,separators=(",",":"))',
+    }
+
+
+def _normalize_pre_run_manifest_attestation(
+    attestation: Any,
+    *,
+    manifest_hash: dict[str, str],
+) -> dict[str, Any] | None:
+    if attestation is None:
+        return None
+    if not isinstance(attestation, dict):
+        raise ContractError("pre_run_manifest_attestation must be an object when provided")
+
+    attestation_type = str(attestation.get("attestation_type") or "").strip()
+    if attestation_type not in VALID_PRE_RUN_MANIFEST_ATTESTATION_TYPES:
+        allowed = ", ".join(sorted(VALID_PRE_RUN_MANIFEST_ATTESTATION_TYPES))
+        raise ContractError(
+            f"pre_run_manifest_attestation.attestation_type must be one of: {allowed}"
+        )
+
+    attestor = attestation.get("attestor")
+    if not isinstance(attestor, dict):
+        raise ContractError("pre_run_manifest_attestation.attestor must be an object")
+    display_name = str(attestor.get("display_name") or "").strip()
+    if not display_name:
+        raise ContractError(
+            "pre_run_manifest_attestation.attestor.display_name is required"
+        )
+
+    reference = attestation.get("reference")
+    if not isinstance(reference, dict):
+        raise ContractError("pre_run_manifest_attestation.reference must be an object")
+    reference_kind = str(reference.get("kind") or "").strip()
+    if reference_kind not in VALID_PRE_RUN_MANIFEST_ATTESTATION_REFERENCE_KINDS:
+        allowed = ", ".join(sorted(VALID_PRE_RUN_MANIFEST_ATTESTATION_REFERENCE_KINDS))
+        raise ContractError(
+            f"pre_run_manifest_attestation.reference.kind must be one of: {allowed}"
+        )
+    reference_value = str(reference.get("value") or "").strip()
+    if not reference_value:
+        raise ContractError("pre_run_manifest_attestation.reference.value is required")
+
+    attested_manifest_hash = attestation.get("attested_manifest_hash")
+    if not isinstance(attested_manifest_hash, dict):
+        raise ContractError(
+            "pre_run_manifest_attestation.attested_manifest_hash must be an object"
+        )
+    algorithm = str(attested_manifest_hash.get("algorithm") or "").strip().lower()
+    hex_digest = str(attested_manifest_hash.get("hex_digest") or "").strip().lower()
+    if not algorithm or not hex_digest:
+        raise ContractError(
+            "pre_run_manifest_attestation.attested_manifest_hash.algorithm and hex_digest are required"
+        )
+
+    matches_local_manifest_hash = (
+        algorithm == manifest_hash.get("algorithm") and hex_digest == manifest_hash.get("hex_digest")
+    )
+
+    normalized = {
+        "status": "metadata_reference_only",
+        "attestation_type": attestation_type,
+        "attestor": {
+            "display_name": display_name,
+        },
+        "reference": {
+            "kind": reference_kind,
+            "value": reference_value,
+        },
+        "attested_manifest_hash": {
+            "algorithm": algorithm,
+            "hex_digest": hex_digest,
+            "matches_local_manifest_hash": matches_local_manifest_hash,
+        },
+        "verification": {
+            "status": "not_verified_by_role_foundry",
+            "reason": (
+                "Role Foundry records caller-supplied attestation metadata/reference only. "
+                "It does not verify witness identity, signature validity, publication timing, or independence."
+            ),
+        },
+        "honesty_note": (
+            "This optional attestation/witness block is a public-safe metadata/reference seam for future stronger "
+            "tamper-evidence work. It does not by itself prove sealed evaluation, independent execution, "
+            "certification, tamper-proofing, or audit."
+        ),
+    }
+
+    role = str(attestor.get("role") or "").strip()
+    if role:
+        normalized["attestor"]["role"] = role
+    uri = str(attestor.get("uri") or "").strip()
+    if uri:
+        normalized["attestor"]["uri"] = uri
+
+    attested_at = str(attestation.get("attested_at") or "").strip()
+    if attested_at:
+        normalized["attested_at"] = attested_at
+
+    public_note = str(attestation.get("public_note") or "").strip()
+    if public_note:
+        normalized["public_note"] = public_note
+
+    return normalized
+
+
+def _write_pre_run_manifest_commitment(
+    *,
+    integrity_gate_mode: str,
+    private_holdout_pack: dict[str, Any] | None,
+    artifacts_root: Path,
+    sequence_id: str,
+    pre_run_manifest_attestation: dict[str, Any] | None = None,
+) -> dict[str, Any] | None:
+    """Write a local-only pre-run manifest commitment artifact.
+
+    The artifact is written before any stage execution when the run actually
+    enters the local private-holdout lane. It improves local auditability and
+    later operator correlation, but it does not constitute publication,
+    third-party witnessing, signing, or tamper-proofing.
+    """
+    if integrity_gate_mode != "local_private_holdout":
+        return None
+    if not private_holdout_pack or not private_holdout_pack.get("manifest"):
+        return None
+
+    artifact_path = "pre-run-manifest-commitment.json"
+    manifest_hash = _canonical_manifest_hash(private_holdout_pack["manifest"])
+    normalized_attestation = _normalize_pre_run_manifest_attestation(
+        pre_run_manifest_attestation,
+        manifest_hash=manifest_hash,
+    )
+    commitment = {
+        "spec": "015-sealed-receipt-surface",
+        "type": "pre_run_manifest_commitment",
+        "status": "recorded_local_only",
+        "integrity_gate_mode": integrity_gate_mode,
+        "recorded_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "sequence_id": sequence_id,
+        "private_holdout_manifest_id": private_holdout_pack.get("meta", {}).get("id"),
+        "artifact_path": artifact_path,
+        "linked_receipt_paths": {
+            "alpha_receipt": "autoresearch-alpha.json",
+            "alpha_request_copy": "autoresearch-alpha.request.json",
+        },
+        "manifest_hash": manifest_hash,
+        "pre_run_manifest_attestation": normalized_attestation,
+        "honesty_note": (
+            "This local-only commitment receipt was recorded before stage execution began. "
+            "It improves operator auditability and later correlation, but it was not independently "
+            "published, third-party witnessed, signed, or made tamper-proof. Any optional "
+            "pre_run_manifest_attestation is preserved as caller-supplied reference metadata only "
+            "and does not unlock stronger claims automatically."
+        ),
+    }
+    (artifacts_root / artifact_path).write_text(json.dumps(commitment, indent=2))
+    return commitment
+
+
+def _build_alpha_execution_backend_summary(
+    stages: dict[str, dict[str, Any]] | None,
+) -> dict[str, Any] | None:
+    if not isinstance(stages, dict) or not stages:
+        return None
+
+    stage_backends: dict[str, dict[str, Any]] = {}
+    primary_backend: dict[str, Any] | None = None
+    consistent = True
+
+    for stage_key, stage in stages.items():
+        execution_backend = stage.get("execution_backend") if isinstance(stage.get("execution_backend"), dict) else None
+        if not execution_backend:
+            continue
+        stage_backends[stage_key] = {
+            "backend_id": execution_backend.get("backend_id"),
+            "runner_name": execution_backend.get("runner_name"),
+            "mode": execution_backend.get("mode"),
+            "selection_source": execution_backend.get("selection_source"),
+        }
+        if primary_backend is None:
+            primary_backend = execution_backend
+            continue
+        if (
+            execution_backend.get("backend_id") != primary_backend.get("backend_id")
+            or execution_backend.get("mode") != primary_backend.get("mode")
+        ):
+            consistent = False
+
+    if not stage_backends or primary_backend is None:
+        return None
+
+    return {
+        "aggregate_status": "consistent" if consistent else "mixed",
+        "backend_id": primary_backend.get("backend_id") if consistent else None,
+        "mode": primary_backend.get("mode") if consistent else None,
+        "stage_backends": stage_backends,
+        "execution_backend_contract": (
+            primary_backend.get("execution_backend_contract") if consistent else None
+        ),
+        "execution_honesty": primary_backend.get("execution_honesty") if consistent else None,
+        "intended_executor_path": (
+            primary_backend.get("intended_executor_path") if consistent else None
+        ),
+        "honesty_note": (
+            "This block records backend provenance and current execution honesty across alpha stages only. "
+            "It does not by itself prove live execution, independent executor isolation, sealed evaluation, "
+            "certification, tamper-proofing, or native Clawith parity."
+        ),
+    }
+
+
+def _build_sealing_receipt(
+    *,
+    integrity_gate: dict[str, Any],
+    private_holdout_pack: dict[str, Any] | None,
+    artifacts_root: Path,
+    pre_run_commitment: dict[str, Any] | None = None,
+    stages: dict[str, dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """Build a public-safe sealing receipt surface (Spec 015).
+
+    This is explicitly a boundary record, not a seal.  It records the
+    claim ceiling, operator checklist states, and blocked stronger claims
+    so downstream consumers can see exactly what the run does and does not
+    prove.
+    """
+    mode = integrity_gate.get("mode", "public_regression")
+    is_private_holdout = mode == "local_private_holdout"
+
+    if is_private_holdout:
+        claim_ceiling = "local private-holdout alpha execution with public-safe receipts"
+        status = "local_private_holdout_alpha"
+    else:
+        claim_ceiling = "public-regression alpha execution with public-safe receipts"
+        status = "public_regression_alpha"
+
+    execution_backend = _build_alpha_execution_backend_summary(stages)
+    pre_run_attestation = (
+        pre_run_commitment.get("pre_run_manifest_attestation")
+        if isinstance(pre_run_commitment, dict)
+        else None
+    )
+
+    operator_checklist = {
+        "public_benchmark_pack_loaded": {
+            "present": True,
+            "reason": "Public benchmark episodes were loaded for the candidate lifecycle.",
+        },
+        "integrity_gate_passed": {
+            "present": integrity_gate.get("status") == "pass",
+            "reason": integrity_gate.get("summary", ""),
+        },
+        "private_holdout_manifest_loaded": {
+            "present": is_private_holdout,
+            "reason": (
+                "Fresh teacher-only holdouts loaded from a local private manifest."
+                if is_private_holdout
+                else "No private holdout manifest was configured for this run."
+            ),
+        },
+        "independent_executor_sandbox": {
+            "present": False,
+            "reason": "No independent executor sandbox isolates the student from holdout content at runtime.",
+        },
+        "third_party_holdout_auditor": {
+            "present": False,
+            "reason": "No third-party auditor has reviewed or signed the holdout separation.",
+        },
+        "hardware_attestation_or_enclave": {
+            "present": False,
+            "reason": "The operator controls the local machine; no hardware attestation or remote enclave is used.",
+        },
+        "external_audit": {
+            "present": False,
+            "reason": "No external party has inspected the holdout manifest, run artifacts, or scoring pipeline.",
+        },
+        "pre_run_manifest_commitment": {
+            "present": pre_run_commitment is not None,
+            "reason": (
+                "A local-only pre-run manifest commitment receipt was recorded at "
+                f"{pre_run_commitment['artifact_path']} before stage execution. It improves operator auditability, "
+                "but it was not independently published, third-party witnessed, signed, or made tamper-proof."
+                if pre_run_commitment is not None
+                else "No local pre-run manifest commitment receipt was recorded for this run."
+            ),
+        },
+        "pre_run_manifest_attestation": {
+            "present": pre_run_attestation is not None,
+            "reason": (
+                "Caller-supplied pre-run manifest attestation metadata/reference was recorded and its attested "
+                "manifest hash matches the local pre-run manifest commitment, but Role Foundry does not verify "
+                "witness identity, signature validity, publication timing, or independence."
+                if pre_run_attestation is not None
+                and pre_run_attestation["attested_manifest_hash"].get("matches_local_manifest_hash")
+                else "Caller-supplied pre-run manifest attestation metadata/reference was recorded, but the "
+                "attested manifest hash does not match the local pre-run manifest commitment. Stronger "
+                "tamper-evidence claims remain blocked."
+                if pre_run_attestation is not None
+                else "No caller-supplied pre-run manifest attestation metadata/reference was recorded for this run."
+            ),
+        },
+    }
+
+    blocked_claims = [
+        {
+            "claim": "sealed evaluation",
+            "reason": "No independent executor sandbox isolates the student from holdout content at runtime.",
+            "prerequisite": "Independent executor sandbox where the student cannot read holdout files at runtime.",
+        },
+        {
+            "claim": "sealed certification",
+            "reason": "No third-party auditor has reviewed or signed the holdout separation.",
+            "prerequisite": "Third-party holdout auditor signs the manifest before the run.",
+        },
+        {
+            "claim": "tamper-proof execution",
+            "reason": "The operator controls the local machine; no hardware attestation or remote enclave is used.",
+            "prerequisite": "Hardware attestation or remote enclave execution with verifiable logs.",
+        },
+        {
+            "claim": "independently audited",
+            "reason": "No external party has inspected the holdout manifest, run artifacts, or scoring pipeline.",
+            "prerequisite": "External audit of the scoring pipeline, holdout manifest, and run artifacts.",
+        },
+    ]
+
+    # Private manifest fingerprint: local operator correlation only.
+    private_manifest_fingerprint = None
+    if private_holdout_pack and private_holdout_pack.get("manifest"):
+        manifest_hash = _canonical_manifest_hash(private_holdout_pack["manifest"])
+        private_manifest_fingerprint = {
+            "algorithm": manifest_hash["algorithm"],
+            "hex_digest": manifest_hash["hex_digest"],
+            "scope": "local_operator_correlation_only",
+            "honesty_note": (
+                "This fingerprint lets the same operator correlate a receipt with a "
+                "manifest later. It does not prove anything to a third party because "
+                "the operator controls both the manifest and the hashing process."
+            ),
+        }
+
+    stronger_claim_prerequisites = [
+        {
+            "prerequisite": "Independent executor sandbox where the student cannot read holdout files at runtime",
+            "enables": "sealed evaluation",
+            "met": False,
+        },
+        {
+            "prerequisite": "Third-party holdout auditor signs the manifest before the run",
+            "enables": "sealed certification",
+            "met": False,
+        },
+        {
+            "prerequisite": "Hardware attestation or remote enclave execution with verifiable logs",
+            "enables": "tamper-proof execution",
+            "met": False,
+        },
+        {
+            "prerequisite": "External audit of the scoring pipeline, holdout manifest, and run artifacts",
+            "enables": "independently audited",
+            "met": False,
+        },
+        {
+            "prerequisite": "Independently published or third-party-witnessed cryptographic commitment to holdout manifest hash before the run",
+            "enables": "stronger tamper-evidence claims beyond local correlation",
+            "met": False,
+        },
+    ]
+
+    linked_receipt_paths: dict[str, Any] = {
+        "alpha_receipt": "autoresearch-alpha.json",
+        "alpha_request_copy": "autoresearch-alpha.request.json",
+    }
+    if pre_run_commitment is not None:
+        linked_receipt_paths["pre_run_manifest_commitment"] = pre_run_commitment["artifact_path"]
+
+    return {
+        "spec": "015-sealed-receipt-surface",
+        "claim_ceiling": claim_ceiling,
+        "status": status,
+        "integrity_gate_mode": mode,
+        "operator_checklist": operator_checklist,
+        "blocked_claims": blocked_claims,
+        "stronger_claim_prerequisites": stronger_claim_prerequisites,
+        "execution_backend": execution_backend,
+        "private_manifest_fingerprint": private_manifest_fingerprint,
+        "pre_run_manifest_commitment": pre_run_commitment,
+        "pre_run_manifest_attestation": pre_run_attestation,
+        "linked_receipt_paths": linked_receipt_paths,
+        "honesty_note": (
+            "This is a public-safe boundary record, not a seal. "
+            "It records what the run can honestly claim and what controls "
+            "are missing before stronger language becomes honest. Optional "
+            "pre_run_manifest_attestation metadata is reference-only and does not "
+            "unlock stronger claims automatically."
+        ),
     }
 
 
@@ -817,6 +2036,98 @@ def _sealed_holdout_count(teacher_eval: dict[str, Any]) -> int:
     )
 
 
+def _load_run_record_history(stored_result: dict[str, Any]) -> list[dict[str, Any]]:
+    history = stored_result.get("run_record_history")
+    if not isinstance(history, list):
+        return []
+    return [entry for entry in history if isinstance(entry, dict) and entry.get("status")]
+
+
+def _build_stage_lifecycle(run_record_history: list[dict[str, Any]]) -> dict[str, Any]:
+    states = [str(entry.get("status")) for entry in run_record_history if entry.get("status")]
+    expected_terminal = states[-1] if states else None
+    complete = states in (
+        ["queued", "running", "completed"],
+        ["queued", "running", "failed"],
+    )
+    timestamps = {
+        str(entry.get("status")): entry.get("ts")
+        for entry in run_record_history
+        if entry.get("status") and entry.get("ts")
+    }
+    return {
+        "states": states,
+        "complete": complete,
+        "queued_at": timestamps.get("queued"),
+        "running_at": timestamps.get("running"),
+        "terminal_at": timestamps.get(expected_terminal) if expected_terminal else None,
+        "terminal_status": expected_terminal,
+    }
+
+
+def _build_stage_budget_adherence(request: dict[str, Any], result: dict[str, Any]) -> dict[str, Any]:
+    time_budget = request.get("time_budget") if isinstance(request.get("time_budget"), dict) else {}
+    cost_budget = request.get("cost_budget") if isinstance(request.get("cost_budget"), dict) else {}
+
+    observed_duration = _duration_seconds(result.get("started_at"), result.get("finished_at"))
+    budget_seconds = time_budget.get("seconds") if isinstance(time_budget.get("seconds"), (int, float)) else None
+    observed_cost = result.get("cost_usd_actual") if isinstance(result.get("cost_usd_actual"), (int, float)) else None
+    budget_usd = cost_budget.get("usd") if isinstance(cost_budget.get("usd"), (int, float)) else None
+
+    if budget_seconds is None or observed_duration is None:
+        time_status = "unknown"
+        time_note = "Time budget or observed duration was unavailable, so time adherence is unknown."
+    elif observed_duration <= float(budget_seconds):
+        time_status = "pass"
+        time_note = "Observed duration stayed within the declared time budget."
+    else:
+        time_status = "fail"
+        time_note = "Observed duration exceeded the declared time budget."
+
+    if budget_usd is None:
+        cost_status = "unknown"
+        cost_note = "No cost budget was declared for this stage."
+    elif observed_cost is None:
+        cost_status = "unknown"
+        cost_note = (
+            "No observed cost telemetry was available from this backend, so cost adherence remains unknown "
+            "instead of being claimed as a pass."
+        )
+    elif observed_cost <= float(budget_usd):
+        cost_status = "pass"
+        cost_note = "Observed cost stayed within the declared cost budget."
+    else:
+        cost_status = "fail"
+        cost_note = "Observed cost exceeded the declared cost budget."
+
+    if "fail" in {time_status, cost_status}:
+        overall_status = "fail"
+    elif "unknown" in {time_status, cost_status}:
+        overall_status = "unknown"
+    else:
+        overall_status = "pass"
+
+    return {
+        "status": overall_status,
+        "time": {
+            "status": time_status,
+            "budget_seconds": float(budget_seconds) if budget_seconds is not None else None,
+            "observed_duration_seconds": observed_duration,
+            "honesty_note": time_note,
+        },
+        "cost": {
+            "status": cost_status,
+            "budget_usd": float(budget_usd) if budget_usd is not None else None,
+            "observed_cost_usd": float(observed_cost) if observed_cost is not None else None,
+            "honesty_note": cost_note,
+        },
+        "honesty_note": (
+            "Budget adherence is reported from declared budgets plus observed runtime telemetry only. "
+            "Unknown fields stay unknown."
+        ),
+    }
+
+
 def _transcript_excerpt(path: Path, limit: int = 4) -> list[dict[str, Any]]:
     if not path.exists():
         return []
@@ -850,6 +2161,20 @@ def _resolve_json_path(request_path: Path, config: dict[str, Any], key: str) -> 
     if not path.is_absolute():
         path = (request_path.parent / path).resolve()
     return path
+
+
+def _extract_repo_task_meta(episode: dict[str, Any]) -> dict[str, Any] | None:
+    """Pull repo-task-shaped metadata from a benchmark episode.
+
+    Only includes fields that actually exist on the episode so the shape
+    stays honest about what was authored vs. inferred.
+    """
+    meta: dict[str, Any] = {}
+    for key in ("family_id", "mutation_budget", "constraints", "suggested_files", "artifacts_required", "public_checks", "tags"):
+        value = episode.get(key)
+        if value is not None:
+            meta[key] = deepcopy(value) if isinstance(value, (list, dict)) else value
+    return meta if meta else None
 
 
 def _load_json(path: Path) -> dict[str, Any]:

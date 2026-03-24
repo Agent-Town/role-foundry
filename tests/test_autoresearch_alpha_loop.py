@@ -72,6 +72,13 @@ class AutoresearchAlphaLoopContractTests(unittest.TestCase):
             self.assertEqual(candidate_teacher["lineage"]["parent_run_id"], "run-eval-001-student")
             self.assertEqual(candidate_teacher["lineage"]["derived_previous_iteration_from"], "run-eval-001")
 
+            self.assertEqual(baseline["lifecycle"]["states"], ["queued", "running", "completed"])
+            self.assertEqual(candidate_student["lifecycle"]["states"], ["queued", "running", "completed"])
+            self.assertEqual(candidate_teacher["lifecycle"]["states"], ["queued", "running", "completed"])
+            self.assertTrue(baseline["lifecycle"]["complete"])
+            self.assertTrue(candidate_student["lifecycle"]["complete"])
+            self.assertTrue(candidate_teacher["lifecycle"]["complete"])
+
             self.assertEqual(baseline["aggregate_score"]["passed"], 2)
             self.assertEqual(candidate_teacher["aggregate_score"]["passed"], 4)
             self.assertAlmostEqual(candidate_teacher["aggregate_score"]["holdout"]["pass_rate"], 0.5)
@@ -91,6 +98,40 @@ class AutoresearchAlphaLoopContractTests(unittest.TestCase):
                 ],
             )
 
+            student_view = candidate_student_bundle["student_view"]
+            self.assertIn("repo_task_pack", student_view)
+            rtp = student_view["repo_task_pack"]
+            self.assertEqual(rtp["role_scope"], "frontend-apprentice")
+            self.assertEqual(rtp["dataset_id"], "public-benchmark-pack-v1")
+            self.assertEqual(rtp["episode_count"], 3)
+            self.assertIsInstance(rtp["family_ids"], list)
+            self.assertTrue(len(rtp["family_ids"]) > 0)
+            self.assertIn("honesty_note", rtp)
+            self.assertIn("recommended_verifier_commands", rtp)
+            self.assertIsInstance(rtp["recommended_verifier_commands"], list)
+            self.assertTrue(len(rtp["recommended_verifier_commands"]) > 0)
+
+            for scenario in student_view["visible_scenarios"]:
+                self.assertIn("repo_task_meta", scenario)
+                meta = scenario["repo_task_meta"]
+                self.assertIn("family_id", meta)
+                self.assertIn("mutation_budget", meta)
+                self.assertIn("suggested_files", meta)
+                self.assertIn("public_checks", meta)
+                self.assertIsInstance(meta["suggested_files"], list)
+                self.assertIsInstance(meta["public_checks"], list)
+
+            candidate_student_receipt = json.loads(
+                (artifacts_root / "run-eval-001-student" / "receipts" / "candidate.json").read_text()
+            )
+            receipt_pack = candidate_student_receipt["student_prompt_pack"]
+            self.assertIn("repo_task_pack", receipt_pack)
+            self.assertEqual(receipt_pack["repo_task_pack"]["dataset_id"], "public-benchmark-pack-v1")
+            self.assertEqual(receipt_pack["repo_task_pack"]["episode_count"], 3)
+            self.assertIn("recommended_verifier_commands", receipt_pack["repo_task_pack"])
+            self.assertIsInstance(receipt_pack["repo_task_pack"]["recommended_verifier_commands"], list)
+            self.assertTrue(len(receipt_pack["repo_task_pack"]["recommended_verifier_commands"]) > 0)
+
             candidate_teacher_scorecard = candidate_teacher["export"]["result"]["scorecard"]
             self.assertEqual(candidate_teacher_scorecard["aggregate_score"]["passed"], 4)
             self.assertEqual(candidate_teacher_scorecard["iteration_history"][-1]["delta"]["pass_count"], 2)
@@ -109,6 +150,25 @@ class AutoresearchAlphaLoopContractTests(unittest.TestCase):
                 any("sealed-eval claims" in reason for reason in comparison["reasons"])
             )
 
+            self.assertEqual(candidate_student["budget_adherence"]["status"], "unknown")
+            self.assertEqual(candidate_student["budget_adherence"]["time"]["status"], "pass")
+            self.assertEqual(candidate_student["budget_adherence"]["cost"]["status"], "unknown")
+            self.assertIn("cost telemetry", candidate_student["budget_adherence"]["cost"]["honesty_note"])
+
+            verdict_stability = receipt["verdict_stability"]
+            self.assertEqual(verdict_stability["status"], "blocked_single_sample")
+            self.assertFalse(verdict_stability["meets_threshold"])
+
+            phase_c = receipt["phase_c_acceptance"]
+            self.assertEqual(phase_c["summary"]["green"], ["C001", "C002", "C004", "C005", "C006", "C008", "C009"])
+            self.assertEqual(phase_c["summary"]["blocked"], ["C003", "C007"])
+            self.assertEqual(phase_c["criteria"]["C001"]["status"], "green")
+            self.assertEqual(phase_c["criteria"]["C002"]["status"], "green")
+            self.assertEqual(phase_c["criteria"]["C003"]["status"], "blocked")
+            self.assertEqual(phase_c["criteria"]["C004"]["status"], "green")
+            self.assertEqual(phase_c["criteria"]["C007"]["status"], "blocked")
+            self.assertIn("single executed sample", phase_c["criteria"]["C007"]["evidence"]["honesty_note"])
+
             coverage = receipt["artifact_coverage"]
             self.assertTrue(coverage["baseline-eval"]["complete"])
             self.assertTrue(coverage["candidate-student"]["complete"])
@@ -116,6 +176,62 @@ class AutoresearchAlphaLoopContractTests(unittest.TestCase):
             self.assertFalse(coverage["candidate-student"]["checks"]["teacher_verdict_present"])
             self.assertTrue(coverage["candidate-teacher-eval"]["checks"]["teacher_verdict_present"])
             self.assertTrue(coverage["candidate-teacher-eval"]["checks"]["receipts/baseline.json"])
+
+            for stage_key in ("baseline-eval", "candidate-student", "candidate-teacher-eval"):
+                stage_checks = coverage[stage_key]["checks"]
+                self.assertTrue(
+                    stage_checks["receipts/evidence-index.json"],
+                    f"{stage_key} missing receipts/evidence-index.json",
+                )
+                self.assertTrue(
+                    stage_checks["receipts/summary.md"],
+                    f"{stage_key} missing receipts/summary.md",
+                )
+                self.assertTrue(
+                    stage_checks["bundle_provenance_has_manifest"],
+                    f"{stage_key} artifact bundle missing manifest provenance pointer",
+                )
+                self.assertTrue(
+                    stage_checks["bundle_provenance_has_evidence_index"],
+                    f"{stage_key} artifact bundle missing evidence-index provenance pointer",
+                )
+                self.assertTrue(
+                    stage_checks["bundle_provenance_has_summary"],
+                    f"{stage_key} artifact bundle missing summary provenance pointer",
+                )
+                self.assertTrue(
+                    stage_checks["result_provenance_has_manifest"],
+                    f"{stage_key} result missing manifest provenance pointer",
+                )
+                self.assertTrue(
+                    stage_checks["result_provenance_has_evidence_index"],
+                    f"{stage_key} result missing evidence-index provenance pointer",
+                )
+                self.assertTrue(
+                    stage_checks["result_provenance_has_summary"],
+                    f"{stage_key} result missing summary provenance pointer",
+                )
+
+                stage_export = receipt["stages"][stage_key]["export"]
+                self.assertIn("receipt_completeness", stage_export)
+                self.assertIn("run_record_history", stage_export)
+                self.assertEqual(
+                    [entry["status"] for entry in stage_export["run_record_history"]],
+                    ["queued", "running", "completed"],
+                )
+                self.assertEqual(stage_export["run_record_history_path"], f"{receipt['stages'][stage_key]['run_id']}/run-record-history.json")
+                self.assertTrue((artifacts_root / receipt['stages'][stage_key]['run_id'] / "run-record-history.json").exists())
+                rc = stage_export["receipt_completeness"]
+                self.assertTrue(
+                    rc["complete"],
+                    f"{stage_key} receipt_completeness not complete: {rc}",
+                )
+                self.assertTrue(rc["receipt_files"]["manifest.json"])
+                self.assertTrue(rc["receipt_files"]["evidence-index.json"])
+                self.assertTrue(rc["receipt_files"]["summary.md"])
+                self.assertTrue(rc["receipt_files"]["candidate.json"])
+                self.assertTrue(rc["provenance_pointers"]["bundle_provenance_has_manifest"])
+                self.assertTrue(rc["provenance_pointers"]["result_provenance_has_manifest"])
 
             injected_request = json.loads(
                 (artifacts_root / "run-eval-002" / "request.private.json").read_text()
@@ -374,6 +490,250 @@ class AutoresearchAlphaDocumentationTests(unittest.TestCase):
         self.assertIn("local private-holdout", runner_doc)
         self.assertIn("sealed holdout path", spec)
         self.assertIn("candidate lifecycle", spec)
+
+    def test_docs_mention_repo_task_pack(self):
+        runner_doc = RUNNER_DOC.read_text().lower()
+        self.assertIn("repo_task_pack", runner_doc)
+        self.assertIn("repo_task_meta", runner_doc)
+        self.assertIn("recommended_verifier_commands", runner_doc)
+
+
+class StepCVerifierContractTests(unittest.TestCase):
+    """Step C eval-contract: verifier gate fields are honest and inspectable."""
+
+    def test_verifier_contract_present_in_all_stages(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            artifacts_root = Path(tmpdir) / "artifacts"
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "runner_bridge.autoresearch_alpha",
+                    "--request",
+                    str(EXAMPLE_REQUEST),
+                    "--artifacts-root",
+                    str(artifacts_root),
+                ],
+                capture_output=True,
+                text=True,
+                cwd=ROOT,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            receipt = json.loads((artifacts_root / "autoresearch-alpha.json").read_text())
+
+            for stage_key in ("baseline-eval", "candidate-student", "candidate-teacher-eval"):
+                stage = receipt["stages"][stage_key]
+                vc = stage.get("verifier_contract")
+                self.assertIsNotNone(vc, f"{stage_key} missing verifier_contract")
+                self.assertEqual(vc["stage_key"], stage_key)
+                self.assertEqual(vc["runner"], "LocalReplayRunner")
+                self.assertEqual(
+                    vc["gate_status"],
+                    "not_executed",
+                    f"{stage_key} gate_status should be 'not_executed' in local-replay",
+                )
+                self.assertIsInstance(vc["required_commands"], list)
+                self.assertIn("honesty_note", vc)
+                self.assertIn("local-replay", vc["honesty_note"].lower())
+
+                for cr in vc["command_results"]:
+                    self.assertEqual(cr["execution_status"], "not_executed")
+                    self.assertIsNone(cr["exit_code"])
+
+    def test_candidate_student_stage_has_verifier_commands(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            artifacts_root = Path(tmpdir) / "artifacts"
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "runner_bridge.autoresearch_alpha",
+                    "--request",
+                    str(EXAMPLE_REQUEST),
+                    "--artifacts-root",
+                    str(artifacts_root),
+                ],
+                capture_output=True,
+                text=True,
+                cwd=ROOT,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            receipt = json.loads((artifacts_root / "autoresearch-alpha.json").read_text())
+
+            student_vc = receipt["stages"]["candidate-student"]["verifier_contract"]
+            self.assertTrue(
+                len(student_vc["required_commands"]) > 0,
+                "candidate-student should have verifier commands from the benchmark pack",
+            )
+            self.assertEqual(
+                len(student_vc["command_results"]),
+                len(student_vc["required_commands"]),
+            )
+
+    def test_top_level_verifier_gate_summary(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            artifacts_root = Path(tmpdir) / "artifacts"
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "runner_bridge.autoresearch_alpha",
+                    "--request",
+                    str(EXAMPLE_REQUEST),
+                    "--artifacts-root",
+                    str(artifacts_root),
+                ],
+                capture_output=True,
+                text=True,
+                cwd=ROOT,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            receipt = json.loads((artifacts_root / "autoresearch-alpha.json").read_text())
+
+            vg = receipt.get("verifier_gate")
+            self.assertIsNotNone(vg, "top-level verifier_gate missing")
+            self.assertEqual(vg["aggregate_status"], "not_executed")
+            self.assertIn("local-replay", vg["honesty_note"].lower())
+            self.assertIsInstance(vg["stage_statuses"], dict)
+            for stage_key in ("baseline-eval", "candidate-student", "candidate-teacher-eval"):
+                self.assertEqual(vg["stage_statuses"][stage_key], "not_executed")
+            self.assertEqual(vg["executed_commands"], 0)
+            self.assertGreater(vg["total_commands"], 0)
+
+    def test_candidate_receipt_has_verifier_gate(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            artifacts_root = Path(tmpdir) / "artifacts"
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "runner_bridge.autoresearch_alpha",
+                    "--request",
+                    str(EXAMPLE_REQUEST),
+                    "--artifacts-root",
+                    str(artifacts_root),
+                ],
+                capture_output=True,
+                text=True,
+                cwd=ROOT,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+
+            candidate_receipt = json.loads(
+                (artifacts_root / "run-eval-001-student" / "receipts" / "candidate.json").read_text()
+            )
+            vg = candidate_receipt.get("verifier_gate")
+            self.assertIsNotNone(vg, "candidate receipt missing verifier_gate")
+            self.assertEqual(vg["status"], "not_executed")
+            self.assertIsInstance(vg["required_commands"], list)
+            self.assertTrue(len(vg["required_commands"]) > 0)
+            self.assertEqual(vg["executed_count"], 0)
+            self.assertIn("local-replay", vg["honesty_note"].lower())
+
+    def test_all_stages_have_verifier_commands(self):
+        """Every stage receipt (not just candidate-student) must surface verifier commands."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            artifacts_root = Path(tmpdir) / "artifacts"
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "runner_bridge.autoresearch_alpha",
+                    "--request",
+                    str(EXAMPLE_REQUEST),
+                    "--artifacts-root",
+                    str(artifacts_root),
+                ],
+                capture_output=True,
+                text=True,
+                cwd=ROOT,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            receipt = json.loads((artifacts_root / "autoresearch-alpha.json").read_text())
+
+            for stage_key in ("baseline-eval", "candidate-student", "candidate-teacher-eval"):
+                vc = receipt["stages"][stage_key]["verifier_contract"]
+                self.assertTrue(
+                    len(vc["required_commands"]) > 0,
+                    f"{stage_key} should have verifier commands from the benchmark pack",
+                )
+                self.assertEqual(
+                    len(vc["command_results"]),
+                    len(vc["required_commands"]),
+                    f"{stage_key} command_results length should match required_commands",
+                )
+                for cr in vc["command_results"]:
+                    self.assertEqual(cr["execution_status"], "not_executed")
+                    self.assertIsNone(cr["exit_code"])
+
+    def test_baseline_receipt_has_verifier_gate(self):
+        """baseline.json provenance receipt should include verifier_gate."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            artifacts_root = Path(tmpdir) / "artifacts"
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "runner_bridge.autoresearch_alpha",
+                    "--request",
+                    str(EXAMPLE_REQUEST),
+                    "--artifacts-root",
+                    str(artifacts_root),
+                ],
+                capture_output=True,
+                text=True,
+                cwd=ROOT,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+
+            baseline_path = artifacts_root / "run-eval-002" / "receipts" / "baseline.json"
+            self.assertTrue(baseline_path.exists(), "baseline.json receipt should exist")
+            baseline_receipt = json.loads(baseline_path.read_text())
+            vg = baseline_receipt.get("verifier_gate")
+            self.assertIsNotNone(vg, "baseline receipt missing verifier_gate")
+            self.assertEqual(vg["status"], "not_executed")
+            self.assertIsInstance(vg["required_commands"], list)
+            self.assertTrue(len(vg["required_commands"]) > 0)
+            self.assertEqual(vg["executed_count"], 0)
+            self.assertIn("local-replay", vg["honesty_note"].lower())
+
+    def test_evaluation_receipt_has_verifier_gate(self):
+        """evaluation.json provenance receipt should include verifier_gate."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            artifacts_root = Path(tmpdir) / "artifacts"
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "runner_bridge.autoresearch_alpha",
+                    "--request",
+                    str(EXAMPLE_REQUEST),
+                    "--artifacts-root",
+                    str(artifacts_root),
+                ],
+                capture_output=True,
+                text=True,
+                cwd=ROOT,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+
+            eval_path = artifacts_root / "run-eval-002" / "receipts" / "evaluation.json"
+            self.assertTrue(eval_path.exists(), "evaluation.json receipt should exist")
+            eval_receipt = json.loads(eval_path.read_text())
+            vg = eval_receipt.get("verifier_gate")
+            self.assertIsNotNone(vg, "evaluation receipt missing verifier_gate")
+            self.assertEqual(vg["status"], "not_executed")
+            self.assertIsInstance(vg["required_commands"], list)
+            self.assertTrue(len(vg["required_commands"]) > 0)
+            self.assertEqual(vg["executed_count"], 0)
+            self.assertIn("local-replay", vg["honesty_note"].lower())
 
 
 if __name__ == "__main__":

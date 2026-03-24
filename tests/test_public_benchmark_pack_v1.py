@@ -9,6 +9,8 @@ PACK = ROOT / "benchmarks" / "public-pack-v1" / "benchmark-pack.json"
 EPISODE_REGISTRY = ROOT / "data" / "episode-registry" / "public-benchmark-pack-v1.json"
 SPEC = ROOT / "specs" / "008-public-benchmark-pack-v1.md"
 DOC = ROOT / "docs" / "public-benchmark-pack-v1.md"
+SUPPORT_DOC = ROOT / "docs" / "software-engineer-curriculum-sources.md"
+VISION_PAGE = ROOT / "app" / "vision.html"
 SEED = ROOT / "seed" / "role-foundry-apprentice.json"
 
 
@@ -181,6 +183,27 @@ class PublicBenchmarkPackPhaseBTests(unittest.TestCase):
         self.assertIn("not a sealed certification exam", spec_text)
         self.assertIn("ready to promote", doc_text)
         self.assertIn("named limits", doc_text)
+
+
+    def test_support_surfaces_match_frozen_pack_counts(self):
+        self.assertTrue(SUPPORT_DOC.exists())
+        self.assertTrue(VISION_PAGE.exists())
+
+        support_text = SUPPORT_DOC.read_text().lower().replace("**", "")
+        vision_text = VISION_PAGE.read_text().lower()
+
+        self.assertIn(
+            f"{len(self.pack_episodes)} public episodes across {len(self.pack['included_family_ids'])} public families",
+            support_text,
+        )
+        self.assertIn("t7", support_text)
+        self.assertIn("playwright", support_text)
+
+        self.assertIn(
+            f"{len(self.pack_episodes)} episodes across {len(self.pack['included_family_ids'])} families",
+            vision_text,
+        )
+        self.assertIn("playwright", vision_text)
 
 
 if __name__ == "__main__":

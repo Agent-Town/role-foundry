@@ -2,16 +2,16 @@
 
 This repo now has a first **public-safe benchmark pack** for the Frontend Apprentice.
 
-The important honesty line:
+The honesty line is simple:
 
 - **benchmark-ready now:** public curriculum families only
-- **blocked / pending rewrite:** any teacher-only or holdout-derived family whose framing is already visible in this public repo
+- **blocked / rewrite-needed:** any teacher-only or holdout-derived family whose framing is already visible in this public repo
 - **not claimed:** sealed certification, partner-track work, or fresh hidden-eval integrity from the current public holdout families
 - **plainly:** this pack is **not a sealed certification** pack
 
 ## What is benchmark-ready now
 
-`benchmarks/public-pack-v1/benchmark-pack.json` contains **12 concrete student-visible episodes** across **6 public-ready families**:
+`benchmarks/public-pack-v1/benchmark-pack.json` currently contains **14 concrete student-visible episodes** across **7 public-ready families**:
 
 - `rf.frontend-apprentice.public.landing-story`
   - make the dogfood apprentice loop obvious
@@ -25,6 +25,8 @@ The important honesty line:
   - refuse fake live claims and keep slices narrow
 - `rf.frontend-apprentice.public.failure-to-curriculum`
   - promote sanitized lessons into public curriculum
+- `rf.frontend-apprentice.public.playwright-regression`
+  - add source-backed public UI regression tasks without inventing a fake Playwright harness
 
 These are appropriate for:
 
@@ -37,34 +39,34 @@ These are appropriate for:
 
 `data/episode-registry/public-benchmark-pack-v1.json` is the companion registry for the pack.
 
-It adds the missing audit surface that the original manifest only implied:
+It carries the audit surface the student-facing manifest alone cannot:
 
-- **6 public rubric templates** — one per public family
+- **7 public rubric templates** — one per public family
 - **normalized weights** — every template sums to `1.0`
-- **12/12 rubric mappings** — every shipped public episode points at a complete public rubric
-- **12/12 provenance mappings** — every shipped public episode cites its public training seed scenario plus public spec/doc references
+- **14/14 rubric mappings** — every shipped public episode points at a complete public rubric
+- **14/14 provenance mappings** — every shipped public episode cites its public training seed scenario plus public spec/doc references
 - **no teacher-only fields** — the registry stays public-safe and never includes hidden prompt text or teacher-side scoring rubrics
 
 For the registry contract itself, see `docs/dataset-episode-registry.md`.
 
 ## Phase B acceptance snapshot
 
-The clean public-pack lane now carries explicit **B001–B006** status instead of leaving them implicit:
+The pack now leaves explicit **B001–B006** evidence behind instead of asking a reader to infer it:
 
 - **B001 — Public episode count:** pass
-  - 12 public episodes shipped
+  - 14 public episodes shipped across 7 families
   - current floor remains 10
 - **B002 — Rubric completeness:** pass
-  - 6 public rubric templates cover all 12 public episodes
+  - 7 public rubric templates cover all 14 public episodes
 - **B003 — Weight normalization:** pass
   - every public rubric template sums to `1.0`
 - **B004 — Public/teacher split integrity:** pass
-  - 6 `student_visible` families included
+  - 7 `student_visible` families included
   - 3 `teacher_only` families remain `blocked_pending_rewrite` and excluded
 - **B005 — Provenance coverage:** pass
-  - 12/12 public episodes cite training-seed + public spec/doc provenance
+  - 14/14 public episodes cite training-seed + public spec/doc provenance
 - **B006 — Promotion readiness clarity:** pass, with named limits
-  - ready to promote as the repo's **public-safe benchmark pack** for public regression/training use
+  - ready to promote as the repo’s **public-safe benchmark pack** for public regression/training use
   - still blocked from sealed certification or fresh hidden-eval integrity claims
 
 ## What is blocked
@@ -82,7 +84,7 @@ Each blocked family is marked `blocked_pending_rewrite` and includes rewrite req
 
 The existing repo proves the **contract** for student-visible vs teacher-only separation.
 
-It does **not** yet give us a clean public sealed-eval pack, because the current holdout families are already repo-visible. So the right move is:
+It does **not** yet give us a clean public sealed-eval pack, because the current holdout families are already repo-visible. So the honest move is:
 
 1. ship a real public benchmark pack now
 2. keep teacher-only / holdout-derived families out of that pack
@@ -126,8 +128,33 @@ python3 scripts/holdout_author.py audit
 python3 -m unittest tests/test_milestone3_contract.py tests/test_milestone5_teacher_eval_loop.py tests/test_autoresearch_alpha_loop.py
 ```
 
+## Frontend/Product Engineer benchmark pack (new)
+
+A second public benchmark pack now exists for the **Frontend/Product Engineer** 20-task curriculum:
+
+- `benchmarks/public-pack-v1-fpe/benchmark-pack.json` — 20 episodes across 5 families (one per curriculum phase)
+- `benchmarks/public-pack-v1-fpe/episode-family-registry.json` — family registry
+- `data/episode-registry/fpe-public-benchmark-pack-v1.json` — episode registry with rubric templates and provenance
+- `runner_bridge/examples/fpe-autoresearch-alpha-public-loop.json` — example alpha-loop request
+- `tests/test_fpe_public_benchmark_pack_v1.py` — contract tests (B001–B006 + alpha-loop consumability)
+
+All 20 episodes are **public-safe, benchmark-ready, and alpha-consumable** — packets, rubrics, and provenance are complete. No teacher-only families are blocked because no holdout framing has been disclosed for this curriculum. Rubric templates use the frozen FPE evaluation contract dimensions (5 dimensions, weights sum to 1.0).
+
+However, **runtime readiness varies by phase**: Phase 1 contract surface is complete, Phase 3 execution is partial (verifier-gate landed, live execution pending), and Phases 2/4/5 are packet-defined only with runtime not yet live. See `docs/curriculum-operating-split.md` for the honest status-by-area table and per-family `readiness` fields in the family registry for machine-readable detail.
+
+The pack is immediately consumable by `runner_bridge.autoresearch_alpha`:
+
+```bash
+python3 -m runner_bridge.autoresearch_alpha \
+  --request runner_bridge/examples/fpe-autoresearch-alpha-public-loop.json \
+  --artifacts-root runtime/fpe-alpha
+```
+
+This is **not a sealed certification pack**. It is valid for public training, regression, and alpha-loop consumption.
+
 ## Files
 
+### Legacy Frontend Apprentice pack
 - `benchmarks/public-pack-v1/episode-family-registry.json`
 - `benchmarks/public-pack-v1/benchmark-pack.json`
 - `data/episode-registry/public-benchmark-pack-v1.json`
@@ -139,3 +166,10 @@ python3 -m unittest tests/test_milestone3_contract.py tests/test_milestone5_teac
 - `tests/test_private_holdout_separation.py`
 - `scripts/holdout_author.py`
 - `docs/private-holdout-authoring.md`
+
+### Frontend/Product Engineer pack
+- `benchmarks/public-pack-v1-fpe/benchmark-pack.json`
+- `benchmarks/public-pack-v1-fpe/episode-family-registry.json`
+- `data/episode-registry/fpe-public-benchmark-pack-v1.json`
+- `runner_bridge/examples/fpe-autoresearch-alpha-public-loop.json`
+- `tests/test_fpe_public_benchmark_pack_v1.py`

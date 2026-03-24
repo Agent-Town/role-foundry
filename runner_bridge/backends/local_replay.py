@@ -184,6 +184,35 @@ def main(argv: list[str] | None = None) -> int:
     }
     if error:
         result["error"] = error
+
+    packet_runtime = request.get("packet_runtime")
+    if packet_runtime:
+        expected_checks = packet_runtime.get("expected_checks", [])
+        result["execution_honesty"] = {
+            "backend": "LocalReplayRunner",
+            "executes_commands": False,
+            "executes_checks": False,
+            "check_results": [
+                {
+                    "id": check.get("id", ""),
+                    "command": check.get("command", ""),
+                    "execution_status": "not_executed",
+                    "exit_code": None,
+                    "reason": "LocalReplayRunner does not execute packet commands",
+                }
+                for check in expected_checks
+            ],
+            "mutation_enforcement": "not_enforced",
+            "path_constraint_enforcement": "not_enforced",
+            "honesty_note": (
+                "LocalReplayRunner is a zero-secret replay backend. "
+                "It validates the request contract and produces receipts, "
+                "but does not execute task commands, enforce mutation budgets, "
+                "or enforce path constraints. These become meaningful when a "
+                "live execution backend is wired."
+            ),
+        }
+
     result_path.write_text(json.dumps(result, indent=2))
 
     return 1 if error else 0
