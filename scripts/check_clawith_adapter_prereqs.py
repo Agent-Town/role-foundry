@@ -79,6 +79,7 @@ class PrereqReport:
     blockers: list[str] = field(default_factory=list)
     endpoint_mismatches: list[str] = field(default_factory=list)
     overall_status: str = "unknown"  # ready | blocked | unknown
+    next_steps: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -86,6 +87,7 @@ class PrereqReport:
             "overall_status": self.overall_status,
             "categories": self.categories,
             "blockers": self.blockers,
+            "next_steps": self.next_steps,
             "endpoint_mismatches": self.endpoint_mismatches,
             "checks": [asdict(c) for c in self.checks],
         }
@@ -328,8 +330,9 @@ def run_checks(base_url: str, token: str, timeout: float) -> PrereqReport:
     # This category is always satisfied by the report structure itself.
     report.categories["status_categorized"] = "ready"
 
-    # --- Derive overall_status ---
+    # --- Derive overall_status and next steps ---
     report.overall_status = _derive_overall_status(report.categories)
+    report.next_steps = _derive_next_steps(report.categories)
 
     return report
 
@@ -343,6 +346,31 @@ def _count_models(body: Any) -> int | None:
         if isinstance(items, list):
             return len(items)
     return None
+
+
+def _derive_next_steps(categories: dict[str, str]) -> list[str]:
+    """Build an actionable next-step list from category statuses."""
+    steps: list[str] = []
+    admin_status = categories.get("admin_presence_known", "unknown")
+    model_status = categories.get("model_pool_presence_known", "unknown")
+
+    if admin_status in ("blocked", "unknown"):
+        steps.append(
+            "First-admin bootstrap: register the first user via the Clawith UI "
+            "or POST /api/auth/register — the first successful registration "
+            "becomes platform_admin. This is a manual step."
+        )
+    if model_status in ("blocked", "unknown"):
+        steps.append(
+            "Model-pool setup: configure at least one LLM provider and model "
+            "via the Clawith admin UI or enterprise API. This is a manual step."
+        )
+    steps.append(
+        "RF-native endpoint parity: upstream Clawith does not expose "
+        "/api/roles, /api/scenarios, or PATCH /api/runs/{run_id}. "
+        "An adapter or shim is required for Role Foundry write operations."
+    )
+    return steps
 
 
 def _derive_overall_status(categories: dict[str, str]) -> str:
@@ -387,6 +415,12 @@ def render_human(report: PrereqReport) -> None:
         print("Endpoint mismatches (adapter needed):")
         for m in report.endpoint_mismatches:
             print(f"  - {m}")
+
+    if report.next_steps:
+        print()
+        print("Next steps:")
+        for step in report.next_steps:
+            print(f"  → {step}")
 
     # --- Concise readiness statement ---
     print()

@@ -430,6 +430,96 @@ class TestF002FalseReadyRate(unittest.TestCase):
             server.shutdown()
             server.server_close()
 
+    def test_json_next_steps_present(self):
+        """JSON output must include a next_steps list."""
+        server, url = _start_server(_HealthyHandler)
+        try:
+            _, payload = _run_helper(url)
+            self.assertIsNotNone(payload)
+            self.assertIn("next_steps", payload)
+            self.assertIsInstance(payload["next_steps"], list)
+            self.assertGreater(len(payload["next_steps"]), 0)
+        finally:
+            server.shutdown()
+            server.server_close()
+
+    def test_next_steps_mention_admin_bootstrap_when_unknown(self):
+        """When admin is unknown, next_steps must mention first-admin bootstrap."""
+        server, url = _start_server(_HealthyHandler)
+        try:
+            _, payload = _run_helper(url)
+            self.assertIsNotNone(payload)
+            steps_text = " ".join(payload["next_steps"])
+            self.assertTrue(
+                "bootstrap" in steps_text.lower() or "first" in steps_text.lower(),
+                f"next_steps should mention admin bootstrap: {payload['next_steps']}",
+            )
+        finally:
+            server.shutdown()
+            server.server_close()
+
+    def test_next_steps_mention_model_pool_when_blocked(self):
+        """When model pool is blocked, next_steps must mention model-pool setup."""
+        server, url = _start_server(_HealthyHandler)
+        try:
+            _, payload = _run_helper(url, token=_HealthyHandler.token)
+            self.assertIsNotNone(payload)
+            steps_text = " ".join(payload["next_steps"])
+            self.assertTrue(
+                "model" in steps_text.lower(),
+                f"next_steps should mention model-pool setup: {payload['next_steps']}",
+            )
+        finally:
+            server.shutdown()
+            server.server_close()
+
+    def test_next_steps_always_mention_adapter_shim(self):
+        """next_steps must always surface the adapter/shim requirement for RF endpoints."""
+        server, url = _start_server(_FullyReadyHandler)
+        try:
+            _, payload = _run_helper(url, token=_FullyReadyHandler.token)
+            self.assertIsNotNone(payload)
+            steps_text = " ".join(payload["next_steps"])
+            self.assertTrue(
+                "adapter" in steps_text.lower() or "shim" in steps_text.lower(),
+                f"next_steps should always mention adapter/shim: {payload['next_steps']}",
+            )
+        finally:
+            server.shutdown()
+            server.server_close()
+
+    def test_fully_ready_next_steps_omit_admin_and_model_pool(self):
+        """When fully ready, next_steps should not mention admin bootstrap or model-pool setup."""
+        server, url = _start_server(_FullyReadyHandler)
+        try:
+            _, payload = _run_helper(url, token=_FullyReadyHandler.token)
+            self.assertIsNotNone(payload)
+            admin_steps = []
+            model_steps = []
+            for step in payload["next_steps"]:
+                lower = step.lower()
+                if "first-admin" in lower or ("bootstrap" in lower and "register" in lower):
+                    admin_steps.append(step)
+                if "model-pool setup" in lower:
+                    model_steps.append(step)
+            self.assertEqual(len(admin_steps), 0, f"should not mention admin bootstrap when ready: {admin_steps}")
+            self.assertEqual(len(model_steps), 0, f"should not mention model-pool setup when ready: {model_steps}")
+        finally:
+            server.shutdown()
+            server.server_close()
+
+    def test_human_output_includes_next_steps_section(self):
+        """Human output must include a Next steps section."""
+        server, url = _start_server(_HealthyHandler)
+        try:
+            cmd = [sys.executable, str(HELPER), "--base-url", url]
+            result = subprocess.run(cmd, capture_output=True, text=True, cwd=ROOT)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("Next steps:", result.stdout)
+        finally:
+            server.shutdown()
+            server.server_close()
+
     def test_human_readiness_statement_shows_blocked(self):
         """Human output readiness statement shows BLOCKED when model pool is empty."""
         server, url = _start_server(_HealthyHandler)

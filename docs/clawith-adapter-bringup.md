@@ -113,6 +113,10 @@ mapping matrix above.
 The human output ends with a **Readiness Statement** that plainly says what is
 ready now, blocked now, and unknown until locally probed.
 
+Both human and JSON output now also include a `next_steps` summary so operators can
+see the remaining manual bootstrap work (`platform_admin` creation, model-pool setup)
+and the still-required adapter/shim boundary without reading between the lines.
+
 It uses **GET requests only** and performs no writes.
 
 ---
