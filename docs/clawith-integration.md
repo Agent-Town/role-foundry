@@ -192,6 +192,24 @@ If you point `--seed` at a stock upstream instance, it now refuses the write whe
 - no claim that runner bridge patch endpoints already ship in upstream Clawith
 - no destructive seed writes during the default compose live preflight
 
+## Phase F — Today stop-line
+
+What is real today:
+
+- **Demo mode** works end-to-end, no Clawith required.
+- **Live image wiring** works behind `--profile live` with a real Clawith image.
+- **Read-only prereq checker** (`scripts/check_clawith_adapter_prereqs.py`) covers all six F001 categories and now reports blockers, endpoint mismatches, and actionable next steps in both human and JSON output.
+- **Public probe lane** (`seed/probe_clawith.py`) confirms health, auth surface, and admin/model-pool presence without writes.
+
+What still requires **manual bootstrap**:
+
+- First-admin creation: the first user registered via the Clawith UI or `POST /api/auth/register` becomes `platform_admin`. There is no automated path for this.
+- Model-pool setup: at least one LLM provider and model must be configured via the Clawith admin UI or enterprise API.
+
+What still requires an **adapter or shim**:
+
+- Upstream Clawith does not expose `/api/roles`, `/api/scenarios`, or `PATCH /api/runs/{run_id}`. Role Foundry write operations still need an adapter layer.
+
 ## Bottom line
 
 Use live mode to verify **real upstream Clawith readiness**, not to fake it.
