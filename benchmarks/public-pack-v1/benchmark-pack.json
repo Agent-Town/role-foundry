@@ -9,7 +9,13 @@
     "generated_from": [
       "seed/role-foundry-apprentice.json",
       "benchmarks/public-pack-v1/episode-family-registry.json"
-    ]
+    ],
+    "role_scope": "frontend-apprentice",
+    "episode_registry": "data/episode-registry/public-benchmark-pack-v1.json",
+    "public_episode_count": 12,
+    "public_family_count": 6,
+    "public_provenance_coverage_pct": 100.0,
+    "family_readiness_coverage_pct": 100.0
   },
   "execution_policy": {
     "student_visible_only": true,
@@ -32,8 +38,8 @@
       "run the recommended verifier commands before scoring the result"
     ],
     "recommended_verifier_commands": [
-      "python3 -m unittest tests/test_public_benchmark_pack_v1.py",
-      "python3 -m unittest tests/test_milestone3_contract.py tests/test_milestone5_teacher_eval_loop.py"
+      "python3 -m unittest tests/test_public_benchmark_pack_v1.py -v",
+      "python3 -m unittest tests/test_milestone3_contract.py tests/test_milestone5_teacher_eval_loop.py -v"
     ]
   },
   "included_family_ids": [
@@ -62,14 +68,26 @@
         "Do not introduce auth, Privy, or fake live wiring",
         "Leave behind a concise receipt trail"
       ],
-      "suggested_files": ["app/index.html", "app/data.js", "README.md"],
-      "artifacts_required": ["changed-files summary", "before-after copy summary", "policy snapshot"],
+      "suggested_files": [
+        "app/index.html",
+        "app/data.js",
+        "README.md"
+      ],
+      "artifacts_required": [
+        "changed-files summary",
+        "before-after copy summary",
+        "policy snapshot"
+      ],
       "public_checks": [
         "Frontend Apprentice is named explicitly",
         "Robin + Neo are named explicitly as teachers",
         "The story says the apprentice is building Role Foundry itself"
       ],
-      "tags": ["copy", "landing", "dogfood"]
+      "tags": [
+        "copy",
+        "landing",
+        "dogfood"
+      ]
     },
     {
       "id": "pbpv1-e02",
@@ -77,20 +95,30 @@
       "title": "Tighten the README intro around the dogfood loop",
       "difficulty": "medium",
       "mutation_budget": "narrow",
-      "student_prompt": "Refactor the README intro so it frames the repo as a teacher → student → evaluation loop, not a generic agent platform.",
+      "student_prompt": "Refactor the README intro so it frames the repo as a teacher \u2192 student \u2192 evaluation loop, not a generic agent platform.",
       "constraints": [
         "Keep the repo description concrete and judge-facing",
         "Avoid fake future-looking claims",
         "Preserve quickstart clarity"
       ],
-      "suggested_files": ["README.md", "docs/conversation-log.md"],
-      "artifacts_required": ["changed-files summary", "receipt note"],
+      "suggested_files": [
+        "README.md",
+        "docs/conversation-log.md"
+      ],
+      "artifacts_required": [
+        "changed-files summary",
+        "receipt note"
+      ],
       "public_checks": [
         "README explains the named apprentice loop",
         "README does not read like a generic marketplace or infra pitch",
         "Demo-mode honesty remains explicit"
       ],
-      "tags": ["docs", "copy", "README"]
+      "tags": [
+        "docs",
+        "copy",
+        "README"
+      ]
     },
     {
       "id": "pbpv1-e03",
@@ -104,14 +132,24 @@
         "Explain the contract boundary in plain language",
         "Keep the slice scoped to one page or one doc"
       ],
-      "suggested_files": ["app/scenarios.html", "app/data.js"],
-      "artifacts_required": ["changed-files summary", "student-view snapshot"],
+      "suggested_files": [
+        "app/scenarios.html",
+        "app/data.js"
+      ],
+      "artifacts_required": [
+        "changed-files summary",
+        "student-view snapshot"
+      ],
       "public_checks": [
         "Student-visible and teacher-only surfaces are labeled clearly",
         "Prompt-pack copy references public curriculum only",
         "No teacher-only rubric leaks into student-visible text"
       ],
-      "tags": ["ui", "scenarios", "visibility-boundary"]
+      "tags": [
+        "ui",
+        "scenarios",
+        "visibility-boundary"
+      ]
     },
     {
       "id": "pbpv1-e04",
@@ -125,14 +163,24 @@
         "No core contract churn in runner_bridge",
         "Leave a short receipt note"
       ],
-      "suggested_files": ["app/run.html", "docs/runner-bridge.md"],
-      "artifacts_required": ["changed-files summary", "receipt note"],
+      "suggested_files": [
+        "app/run.html",
+        "docs/runner-bridge.md"
+      ],
+      "artifacts_required": [
+        "changed-files summary",
+        "receipt note"
+      ],
       "public_checks": [
         "Student prompt pack is described as public-only",
         "Teacher-only evaluation is described without leaking prompts",
         "The explanation stays concrete, not hand-wavy"
       ],
-      "tags": ["ui", "docs", "contract-boundary"]
+      "tags": [
+        "ui",
+        "docs",
+        "contract-boundary"
+      ]
     },
     {
       "id": "pbpv1-e05",
@@ -146,14 +194,25 @@
         "Keep demo-vs-live honesty intact",
         "Do not invent unimplemented telemetry"
       ],
-      "suggested_files": ["app/scorecard.html", "app/data.js", "app/run.html"],
-      "artifacts_required": ["score summary", "changed-files summary"],
+      "suggested_files": [
+        "app/scorecard.html",
+        "app/data.js",
+        "app/run.html"
+      ],
+      "artifacts_required": [
+        "score summary",
+        "changed-files summary"
+      ],
       "public_checks": [
         "At least two runs are compared",
         "Improvement is visible as a delta",
         "No fake instrumentation is implied"
       ],
-      "tags": ["scorecard", "iteration", "metrics"]
+      "tags": [
+        "scorecard",
+        "iteration",
+        "metrics"
+      ]
     },
     {
       "id": "pbpv1-e06",
@@ -167,14 +226,24 @@
         "Do not leak teacher-only prompts",
         "Keep the explanation grounded in this repo"
       ],
-      "suggested_files": ["README.md", "app/scorecard.html", "docs/conversation-log.md"],
-      "artifacts_required": ["before-after copy summary"],
+      "suggested_files": [
+        "README.md",
+        "app/scorecard.html",
+        "docs/conversation-log.md"
+      ],
+      "artifacts_required": [
+        "before-after copy summary"
+      ],
       "public_checks": [
         "The copy argues for concrete deltas",
         "The copy stays specific to Role Foundry",
         "The copy does not oversell live capability"
       ],
-      "tags": ["copy", "scorecard", "judge-facing"]
+      "tags": [
+        "copy",
+        "scorecard",
+        "judge-facing"
+      ]
     },
     {
       "id": "pbpv1-e07",
@@ -188,14 +257,26 @@
         "Do not claim live artifact backends that do not exist",
         "Leave a receipt note"
       ],
-      "suggested_files": ["app/run.html", "app/data.js"],
-      "artifacts_required": ["receipt summary", "changed-files summary", "transcript excerpt", "policy snapshot"],
+      "suggested_files": [
+        "app/run.html",
+        "app/data.js"
+      ],
+      "artifacts_required": [
+        "receipt summary",
+        "changed-files summary",
+        "transcript excerpt",
+        "policy snapshot"
+      ],
       "public_checks": [
         "Proof bundle contains changed files, transcript evidence, and policy snapshot",
         "Receipts are easy to scan",
         "No fake storage or API wiring is claimed"
       ],
-      "tags": ["artifacts", "run-detail", "receipts"]
+      "tags": [
+        "artifacts",
+        "run-detail",
+        "receipts"
+      ]
     },
     {
       "id": "pbpv1-e08",
@@ -209,14 +290,24 @@
         "No new live integrations",
         "Preserve demo-mode honesty"
       ],
-      "suggested_files": ["app/run.html", "README.md"],
-      "artifacts_required": ["before-after copy summary", "receipt note"],
+      "suggested_files": [
+        "app/run.html",
+        "README.md"
+      ],
+      "artifacts_required": [
+        "before-after copy summary",
+        "receipt note"
+      ],
       "public_checks": [
         "Transcript evidence is explained as audit material",
         "The slice stays narrow",
         "The copy does not imply full production artifact plumbing"
       ],
-      "tags": ["copy", "artifacts", "transcript"]
+      "tags": [
+        "copy",
+        "artifacts",
+        "transcript"
+      ]
     },
     {
       "id": "pbpv1-e09",
@@ -230,14 +321,25 @@
         "Do not add compensating fluff",
         "Keep the change narrowly scoped"
       ],
-      "suggested_files": ["README.md", "app/index.html", "app/run.html"],
-      "artifacts_required": ["risk note", "changed-files summary"],
+      "suggested_files": [
+        "README.md",
+        "app/index.html",
+        "app/run.html"
+      ],
+      "artifacts_required": [
+        "risk note",
+        "changed-files summary"
+      ],
       "public_checks": [
         "Demo-only versus live-mode status is explicit",
         "No fake auth or control-plane claims remain in the edited slice",
         "The result is clearer, not emptier"
       ],
-      "tags": ["honesty", "risk", "docs"]
+      "tags": [
+        "honesty",
+        "risk",
+        "docs"
+      ]
     },
     {
       "id": "pbpv1-e10",
@@ -251,14 +353,25 @@
         "No runner_bridge core-contract churn unless absolutely necessary",
         "Leave behind a short keep-discard note"
       ],
-      "suggested_files": ["docs/v1-mvp-plan.md", "app/index.html", "app/scenarios.html"],
-      "artifacts_required": ["changed-files summary", "keep-discard note"],
+      "suggested_files": [
+        "docs/v1-mvp-plan.md",
+        "app/index.html",
+        "app/scenarios.html"
+      ],
+      "artifacts_required": [
+        "changed-files summary",
+        "keep-discard note"
+      ],
       "public_checks": [
         "The response stays within one coherent slice",
         "No decorative partner-track language appears",
         "Core contracts remain stable unless the task truly requires otherwise"
       ],
-      "tags": ["scope-control", "honesty", "product-slice"]
+      "tags": [
+        "scope-control",
+        "honesty",
+        "product-slice"
+      ]
     },
     {
       "id": "pbpv1-e11",
@@ -272,14 +385,26 @@
         "Do not reveal grading internals",
         "Leave a policy snapshot"
       ],
-      "suggested_files": ["app/scenarios.html", "app/data.js", "docs/runner-bridge.md"],
-      "artifacts_required": ["public curriculum theme summary", "changed-files summary", "policy snapshot"],
+      "suggested_files": [
+        "app/scenarios.html",
+        "app/data.js",
+        "docs/runner-bridge.md"
+      ],
+      "artifacts_required": [
+        "public curriculum theme summary",
+        "changed-files summary",
+        "policy snapshot"
+      ],
       "public_checks": [
         "The new lesson reads as a public theme",
         "Teacher-only wording is not quoted or reconstructed",
         "The result is useful for the next public training loop"
       ],
-      "tags": ["flywheel", "curriculum", "sanitization"]
+      "tags": [
+        "flywheel",
+        "curriculum",
+        "sanitization"
+      ]
     },
     {
       "id": "pbpv1-e12",
@@ -293,14 +418,110 @@
         "No grading-rubric leakage",
         "Keep the change focused to one surface"
       ],
-      "suggested_files": ["app/scenarios.html", "app/run.html", "app/data.js"],
-      "artifacts_required": ["student-view snapshot", "changed-files summary"],
+      "suggested_files": [
+        "app/scenarios.html",
+        "app/run.html",
+        "app/data.js"
+      ],
+      "artifacts_required": [
+        "student-view snapshot",
+        "changed-files summary"
+      ],
       "public_checks": [
         "Student prompt pack references public curriculum only",
         "Teacher-only evaluation remains separate",
         "Public failure themes read like lessons, not leaked exam text"
       ],
-      "tags": ["flywheel", "student-view", "prompt-pack"]
+      "tags": [
+        "flywheel",
+        "student-view",
+        "prompt-pack"
+      ]
     }
-  ]
+  ],
+  "promotion_readiness": {
+    "phase": "B",
+    "status": "pass",
+    "summary": "Public Benchmark Pack v1 is ready to promote as the repo's public-safe benchmark pack for public training and regression loops. It is not a sealed certification pack.",
+    "ready_for": [
+      "public autoresearch loops",
+      "public regression checks",
+      "judge-facing benchmark-pack documentation"
+    ],
+    "blocked_for": [
+      "sealed certification",
+      "fresh hidden-eval integrity claims",
+      "teacher-only prompt/rubric publication"
+    ],
+    "metrics": {
+      "B001": {
+        "label": "Public episode count",
+        "status": "pass",
+        "minimum_episode_count": 10,
+        "actual_episode_count": 12
+      },
+      "B002": {
+        "label": "Rubric completeness",
+        "status": "pass",
+        "rubric_template_count": 6,
+        "rubric_mapped_episode_count": 12,
+        "expectation": "Every public episode maps to a complete public rubric template."
+      },
+      "B003": {
+        "label": "Weight normalization",
+        "status": "pass",
+        "normalized_template_count": 6,
+        "expectation": "Each public rubric template sums to 1.0."
+      },
+      "B004": {
+        "label": "Public/teacher split integrity",
+        "status": "pass",
+        "included_student_visible_family_count": 6,
+        "blocked_teacher_only_family_count": 3,
+        "leak_audit_status": "pass",
+        "teacher_only_field_hits": 0,
+        "teacher_only_token_hits": 0
+      },
+      "B005": {
+        "label": "Provenance coverage",
+        "status": "pass",
+        "provenance_mapped_episode_count": 12,
+        "expectation": "Every public episode cites its public source scenario and contract docs/specs.",
+        "actual_provenance_coverage_pct": 100.0
+      },
+      "B006": {
+        "label": "Promotion readiness clarity",
+        "status": "pass",
+        "scope": "Ready for public pack promotion with named limits only.",
+        "blocked_claims": [
+          "sealed certification",
+          "fresh hidden-eval integrity claims"
+        ],
+        "family_readiness_coverage_count": 9,
+        "family_readiness_state_counts": {
+          "benchmark_ready": 6,
+          "rewrite_before_holdout_promotion": 3
+        },
+        "allowed_readiness_states": [
+          "draft",
+          "benchmark_ready",
+          "rewrite_before_holdout_promotion",
+          "blocked"
+        ]
+      }
+    }
+  },
+  "integrity_audit": {
+    "phase": "B",
+    "status": "pass",
+    "teacher_only_field_hits": 0,
+    "teacher_only_token_hits": 0,
+    "blocked_family_count": 3,
+    "scanned_artifacts": [
+      "benchmarks/public-pack-v1/benchmark-pack.json",
+      "benchmarks/public-pack-v1/episode-family-registry.json",
+      "data/episode-registry/public-benchmark-pack-v1.json"
+    ],
+    "notes": "Tracked public benchmark-pack artifacts contain no teacher-only prompt text or grading-rubric content."
+  }
 }
