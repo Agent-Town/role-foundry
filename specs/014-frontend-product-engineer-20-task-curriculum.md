@@ -25,7 +25,7 @@ The repo already has useful pieces of this spine:
 - source intake and promotion workflow (`docs/teacher-source-curriculum-workflow.md`)
 - baseline/candidate/teacher-eval receipts (`specs/010-autoresearch-alpha-public-loop.md`)
 - a local private-holdout path (`specs/012-private-holdout-pack.md`)
-- a read-only browser/export contract (`specs/011-live-ui-read-model.md`)
+- a read-only browser/export contract (`specs/010-live-ui-read-model.md`)
 
 What it does **not** have yet is a fully frozen curriculum operating system for one concrete agentic AI developer role. That is the job of this spec.
 
