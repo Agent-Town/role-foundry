@@ -24,6 +24,17 @@ This is the **public seed-task registry** for the frozen `Frontend/Product Engin
 - one packet per acceptance test (`A001` … `E004`)
 - public-safe only — no teacher-only prompt text, no private-holdout rubric text, no sealed-certification claims
 
+## A001-A004 contract freeze note
+
+The first forward-spec slice is now frozen at the contract level:
+
+- **A001** — role identity is frozen in `seed/frontend-product-engineer-role.v1.json`
+- **A002** — scoring dimensions / thresholds are frozen in `data/curriculum/frontend-product-engineer-evaluation-contract.v1.json`
+- **A003** — default allowed / blocked paths and mutation-budget rules are frozen in the role manifest plus packet schema
+- **A004** — the canonical task-packet shape is frozen in `data/curriculum/frontend-product-engineer-task-packet.schema.v1.json` and instantiated in the public seed registry
+
+That freeze is real. It does **not** claim that Phase 2-5 runtime systems are fully live.
+
 ## Why the extra fixtures exist
 
 The scorecard and run-object files are **illustrative contract fixtures**, not claims about a real learner run.

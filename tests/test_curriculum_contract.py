@@ -194,10 +194,10 @@ class TestOperatingSplitHonesty(unittest.TestCase):
         self.assertIn("Packet-defined, runtime not yet live", self.doc_text)
         self.assertIn("There is intentionally no separate generic", self.doc_text)
 
-    def test_doc_keeps_step_c_verifier_gate_honest(self):
-        self.assertIn("verifier_contract", self.doc_text)
-        self.assertIn("verifier_gate", self.doc_text)
-        self.assertIn('not_executed', self.doc_text)
+    def test_doc_keeps_packet_runtime_execution_honest(self):
+        self.assertIn("run-object.json", self.doc_text)
+        self.assertIn("execution_honesty", self.doc_text)
+        self.assertIn("executes_commands: false", self.doc_text)
 
 
 class TestValidatorModule(unittest.TestCase):
