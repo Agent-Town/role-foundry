@@ -1,0 +1,198 @@
+{
+  "receipt_type": "autoresearch-alpha",
+  "receipt_version": "0.2.0",
+  "run_id_prefix": "autoresearch-alpha-example",
+  "started_at": "2026-03-28T04:19:35Z",
+  "finished_at": "2026-03-28T04:19:35Z",
+  "benchmark_pack": {
+    "id": "public-benchmark-pack-v1",
+    "version": "1.0.0",
+    "episode_count": 4,
+    "public_only": true
+  },
+  "stages": {
+    "baseline-eval": {
+      "run_id": "autoresearch-alpha-example-baseline-eval",
+      "status": "completed",
+      "aggregate_score": {
+        "passed": 4,
+        "total": 4,
+        "pass_rate": 1.0,
+        "average_score": 0.5,
+        "holdout": {
+          "passed": 0,
+          "total": 0,
+          "pass_rate": 0.0
+        }
+      },
+      "machine_score": 0.5
+    },
+    "candidate-student": {
+      "run_id": "autoresearch-alpha-example-candidate-student",
+      "status": "completed",
+      "machine_score": 0.8,
+      "note": "Student prompt-pack only; no teacher evaluation in this stage."
+    },
+    "candidate-teacher-eval": {
+      "run_id": "autoresearch-alpha-example-candidate-teacher-eval",
+      "status": "completed",
+      "aggregate_score": {
+        "passed": 4,
+        "total": 4,
+        "pass_rate": 1.0,
+        "average_score": 0.75,
+        "holdout": {
+          "passed": 0,
+          "total": 0,
+          "pass_rate": 0.0
+        }
+      },
+      "machine_score": 0.75,
+      "verdict_text": "Candidate teacher evaluation against public benchmark pack.",
+      "scenario_count": 4,
+      "public_curriculum_themes": []
+    }
+  },
+  "comparison_verdict": {
+    "label": "better",
+    "baseline_pass_rate": 1.0,
+    "candidate_pass_rate": 1.0,
+    "delta_pass_rate": 0.0,
+    "baseline_average_score": 0.5,
+    "candidate_average_score": 0.75,
+    "delta_average_score": 0.25
+  },
+  "score_deltas": {
+    "pass_rate": 0.0,
+    "average_score": 0.25
+  },
+  "iteration_history": [
+    {
+      "run_id": "autoresearch-alpha-example-baseline-eval",
+      "label": "baseline",
+      "aggregate_score": {
+        "passed": 4,
+        "total": 4,
+        "pass_rate": 1.0,
+        "average_score": 0.5,
+        "holdout": {
+          "passed": 0,
+          "total": 0,
+          "pass_rate": 0.0
+        }
+      }
+    },
+    {
+      "run_id": "autoresearch-alpha-example-candidate-teacher-eval",
+      "label": "current",
+      "aggregate_score": {
+        "passed": 4,
+        "total": 4,
+        "pass_rate": 1.0,
+        "average_score": 0.75,
+        "holdout": {
+          "passed": 0,
+          "total": 0,
+          "pass_rate": 0.0
+        }
+      },
+      "delta": {
+        "pass_count": 0,
+        "pass_rate": 0.0,
+        "average_score": 0.25,
+        "holdout_pass_count": 0,
+        "holdout_pass_rate": 0.0
+      }
+    }
+  ],
+  "run_record_history": [
+    {
+      "stage": "baseline-eval",
+      "run_id": "autoresearch-alpha-example-baseline-eval",
+      "state": "completed",
+      "queued_at": "2026-03-28T04:19:35Z",
+      "started_at": "2026-03-28T04:19:35Z",
+      "completed_at": "2026-03-28T04:19:35Z",
+      "status": "completed",
+      "machine_score": 0.5,
+      "error": null
+    },
+    {
+      "stage": "candidate-student",
+      "run_id": "autoresearch-alpha-example-candidate-student",
+      "state": "completed",
+      "queued_at": "2026-03-28T04:19:35Z",
+      "started_at": "2026-03-28T04:19:35Z",
+      "completed_at": "2026-03-28T04:19:35Z",
+      "status": "completed",
+      "machine_score": 0.8,
+      "error": null
+    },
+    {
+      "stage": "candidate-teacher-eval",
+      "run_id": "autoresearch-alpha-example-candidate-teacher-eval",
+      "state": "completed",
+      "queued_at": "2026-03-28T04:19:35Z",
+      "started_at": "2026-03-28T04:19:35Z",
+      "completed_at": "2026-03-28T04:19:35Z",
+      "status": "completed",
+      "machine_score": 0.75,
+      "error": null
+    }
+  ],
+  "integrity_gate": {
+    "public_regression": "pass",
+    "sealed_eval": "blocked",
+    "certification": "blocked",
+    "all_artifacts_present": true,
+    "artifact_coverage": {
+      "baseline_eval": {
+        "request_json": true,
+        "request_private_json": true,
+        "result_json": true,
+        "transcript_ndjson": true,
+        "artifact_bundle_json": true,
+        "receipts_manifest": true,
+        "receipts_candidate": true,
+        "receipts_evidence_index": true
+      },
+      "candidate_student": {
+        "request_json": true,
+        "request_private_json": true,
+        "result_json": true,
+        "transcript_ndjson": true,
+        "artifact_bundle_json": true,
+        "receipts_manifest": true,
+        "receipts_candidate": true,
+        "receipts_evidence_index": true
+      },
+      "candidate_teacher_eval": {
+        "request_json": true,
+        "request_private_json": true,
+        "result_json": true,
+        "transcript_ndjson": true,
+        "artifact_bundle_json": true,
+        "receipts_manifest": true,
+        "receipts_candidate": true,
+        "receipts_evidence_index": true
+      }
+    },
+    "provenance_present": true
+  },
+  "phase_c_acceptance": {
+    "C001": { "label": "Three-stage lifecycle", "status": "pass" },
+    "C002": { "label": "Per-stage run-record-history", "status": "pass" },
+    "C003": { "label": "Live execution backend", "status": "blocked", "reason": "LocalReplayRunner only; no live executor wired." },
+    "C004": { "label": "Public regression comparison", "status": "pass" },
+    "C005": { "label": "Honest integrity gating", "status": "pass" },
+    "C006": { "label": "Artifact coverage surface", "status": "pass" },
+    "C007": { "label": "Sealed eval / certification", "status": "blocked", "reason": "Public-regression lane only; sealed families excluded." }
+  },
+  "blocked_criteria": [
+    { "id": "mutation-surface-enforcement", "status": "blocked", "reason": "LocalReplayRunner does not enforce file-level mutation budgets." },
+    { "id": "verdict-stability", "status": "blocked", "reason": "Single-pass verdict only; multi-round convergence not yet implemented." },
+    { "id": "sealed-holdout-coverage", "status": "blocked", "reason": "Public-regression lane only; sealed/private families are explicitly excluded." },
+    { "id": "live-execution-backend", "status": "blocked", "reason": "LocalReplayRunner is a deterministic replay shim, not a live executor." }
+  ],
+  "honesty_note": "This is a public-regression autoresearch alpha loop with three real stages executed through RunBridge. The backend is LocalReplayRunner (deterministic shim, not live execution). Sealed holdout families are explicitly excluded. Mutation-surface enforcement and verdict stability are not yet implemented."
+}

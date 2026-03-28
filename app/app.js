@@ -377,15 +377,28 @@ function looksLikeAutoresearchAlphaPayload(payload) {
     return false;
   }
 
+  // Rich envelope shape (sample/export format)
   if (payload.flow === 'autoresearch-alpha' && isPlainObject(payload.stages)) {
     return true;
   }
 
-  return (
-    isPlainObject(payload.autoresearch_alpha) &&
-    payload.autoresearch_alpha.flow === 'autoresearch-alpha' &&
-    isPlainObject(payload.autoresearch_alpha.stages)
-  );
+  // Real executable receipt shape from runner_bridge.autoresearch_alpha
+  if (payload.receipt_type === 'autoresearch-alpha' && isPlainObject(payload.stages)) {
+    return true;
+  }
+
+  // Nested envelope (outer wrapper with .autoresearch_alpha sub-object)
+  if (isPlainObject(payload.autoresearch_alpha)) {
+    const inner = payload.autoresearch_alpha;
+    if (
+      (inner.flow === 'autoresearch-alpha' || inner.receipt_type === 'autoresearch-alpha') &&
+      isPlainObject(inner.stages)
+    ) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 function validateSnapshotShape(payload) {
@@ -762,7 +775,8 @@ function mapAutoresearchAlphaPayloadToSnapshot(payload) {
     ...normalizeRecord(envelope.stage_exports),
   };
   const stages = normalizeRecord(receipt.stages);
-  const comparison = normalizeRecord(receipt.comparison);
+  // Real receipt uses comparison_verdict; rich envelope uses comparison
+  const comparison = normalizeRecord(receipt.comparison || receipt.comparison_verdict);
   const snapshot = createDataSkeleton('live');
   snapshot.mode = 'live';
 
@@ -811,7 +825,9 @@ function mapAutoresearchAlphaPayloadToSnapshot(payload) {
       ? {
           aggregate_score: stage.aggregate_score,
           total_score: stage.total_score,
-          verdict: stageSpec.key === 'candidate-teacher-eval' ? comparison.verdict : undefined,
+          verdict: stage.verdict_text || (stageSpec.key === 'candidate-teacher-eval' ? (comparison.verdict || comparison.label) : undefined),
+          scenario_results: [],
+          public_curriculum_themes: stage.public_curriculum_themes,
         }
       : null;
 
@@ -912,7 +928,7 @@ function mapAutoresearchAlphaPayloadToSnapshot(payload) {
       label: 'Autoresearch alpha — candidate teacher eval',
       identity_snapshot:
         candidateScorecard?.teacher_summary ||
-        (comparison.verdict ? `Teacher verdict: ${comparison.verdict}` : 'Teacher evaluation recorded.'),
+        ((comparison.verdict || comparison.label) ? `Teacher verdict: ${comparison.verdict || comparison.label}` : 'Teacher evaluation recorded.'),
       policy_changes: policyChanges,
       curriculum_notes:
         reasons.join(' ') ||
