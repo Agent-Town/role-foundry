@@ -1,4 +1,4 @@
-"""Phase F acceptance tests: F001–F004.
+"""Phase F acceptance tests: F001–F004 + integration_state classification.
 
 F001 — Prereq probe coverage (6 checks present and evidenced)
 F002 — False-ready rate (zero cases marked ready when prereqs missing)
@@ -7,6 +7,7 @@ F004 — Non-destructive guarantee (bring-up probe performs no write operations)
 """
 
 import ast
+import importlib.util
 import json
 import subprocess
 import sys
@@ -65,6 +66,55 @@ class _HealthyHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
+
+
+class _HealthyAuthHandler(BaseHTTPRequestHandler):
+    """Simulates a healthy upstream Clawith with bearer-token auth support.
+
+    Public surface is open; auth-gated endpoints return 200 with valid token
+    but 401 otherwise.  Model pool is non-empty when authenticated.
+    """
+
+    _TOKEN = "test-bearer-token"
+
+    def log_message(self, *a, **kw):
+        return
+
+    def _authorized(self):
+        return self.headers.get("Authorization") == f"Bearer {self._TOKEN}"
+
+    def _send_json(self, status, payload):
+        body = json.dumps(payload).encode()
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def do_GET(self):
+        public = {
+            "/api/health": (200, {"status": "ok"}),
+            "/api/version": (200, {"version": "1.0.0"}),
+            "/api/auth/registration-config": (200, {"invitation_code_required": False}),
+        }
+        if self.path in public:
+            status, payload = public[self.path]
+            return self._send_json(status, payload)
+
+        # Auth-gated routes
+        auth_routes = {
+            "/api/auth/me": (200, {"username": "admin", "role": "platform_admin"}),
+            "/api/enterprise/llm-models": (200, [{"id": "m1", "name": "gpt-4"}]),
+            "/api/enterprise/llm-providers": (200, [{"provider": "openai"}]),
+            "/api/admin/companies": (200, [{"id": "c1", "name": "Acme"}]),
+        }
+        if self.path in auth_routes:
+            if not self._authorized():
+                return self._send_json(401, {"detail": "Not authenticated"})
+            status, payload = auth_routes[self.path]
+            return self._send_json(status, payload)
+
+        self._send_json(404, {"detail": "Not Found"})
 
 
 class _UnhealthyHandler(BaseHTTPRequestHandler):
@@ -412,9 +462,133 @@ class TestHumanOutput(unittest.TestCase):
             text=True,
         )
         self.assertIn("Phase F", proc.stdout)
+        self.assertIn("Integration state:", proc.stdout)
         self.assertIn("PREREQ CHECKS", proc.stdout)
         self.assertIn("SEAM-TO-UPSTREAM MAPPING", proc.stdout)
         self.assertIn("NON-CLAIMS", proc.stdout)
+
+
+# ---------------------------------------------------------------------------
+# Integration state classification
+# ---------------------------------------------------------------------------
+
+def _load_checker():
+    spec = importlib.util.spec_from_file_location("checker", CHECKER)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+class TestIntegrationState(unittest.TestCase):
+    """Tests for the top-level integration_state classification."""
+
+    def test_healthy_public_no_token_is_auth_blocked(self):
+        """Healthy public surface + no token => auth_blocked."""
+        server = _TestServer(_HealthyHandler).start()
+        try:
+            out = _run_checker(server.base_url)
+            report = out["report"]
+            self.assertIn("integration_state", report)
+            self.assertEqual(
+                report["integration_state"],
+                "auth_blocked",
+                "Public surface healthy but no auth → must be auth_blocked",
+            )
+        finally:
+            server.shutdown()
+            server.server_close()
+
+    def test_authenticated_with_seam_gaps_is_adapter_needed(self):
+        """Healthy auth + non-empty model pool + known RF seam gaps => adapter_needed."""
+        server = _TestServer(_HealthyAuthHandler).start()
+        try:
+            out = _run_checker(server.base_url, ["--token", _HealthyAuthHandler._TOKEN])
+            report = out["report"]
+            self.assertEqual(
+                report["integration_state"],
+                "adapter_needed",
+                "Admin+models confirmed but RF-native seams missing → adapter_needed",
+            )
+        finally:
+            server.shutdown()
+            server.server_close()
+
+    def test_unhealthy_is_unknown(self):
+        """Unhealthy/offline => unknown."""
+        server = _TestServer(_UnhealthyHandler).start()
+        try:
+            out = _run_checker(server.base_url)
+            report = out["report"]
+            self.assertEqual(report["integration_state"], "unknown")
+        finally:
+            server.shutdown()
+            server.server_close()
+
+    def test_offline_is_unknown(self):
+        """Offline mode => unknown."""
+        out = _run_checker("http://localhost:1", ["--offline"])
+        report = out["report"]
+        self.assertEqual(report["integration_state"], "unknown")
+
+    def test_classify_returns_ready_when_all_match(self):
+        """Synthetic: classify can return ready given all-match inputs."""
+        mod = _load_checker()
+        checks = [
+            {"check": "base_url_reachable", "status": "ready"},
+            {"check": "auth_surface_understood", "status": "ready"},
+            {"check": "admin_presence_known", "status": "ready"},
+            {"check": "model_pool_presence_known", "status": "ready"},
+            {"check": "endpoint_mismatch_documented", "status": "ready"},
+            {"check": "status_categorization_valid", "status": "ready"},
+        ]
+        # Seam mapping with no gaps — all matches
+        seam_mapping = [
+            {"seam": "GET /api/health", "upstream": "GET /api/health", "status": "matches", "note": ""},
+        ]
+        result = mod.classify_integration_state(checks, seam_mapping)
+        self.assertEqual(result, "ready")
+
+    def test_classify_auth_blocked_when_admin_unknown(self):
+        """Synthetic: base healthy but admin unknown → auth_blocked."""
+        mod = _load_checker()
+        checks = [
+            {"check": "base_url_reachable", "status": "ready"},
+            {"check": "admin_presence_known", "status": "unknown"},
+            {"check": "model_pool_presence_known", "status": "ready"},
+        ]
+        result = mod.classify_integration_state(checks, [])
+        self.assertEqual(result, "auth_blocked")
+
+    def test_classify_adapter_needed_with_missing_upstream(self):
+        """Synthetic: all checks ready but seam has missing_upstream → adapter_needed."""
+        mod = _load_checker()
+        checks = [
+            {"check": "base_url_reachable", "status": "ready"},
+            {"check": "admin_presence_known", "status": "ready"},
+            {"check": "model_pool_presence_known", "status": "ready"},
+        ]
+        seam = [{"seam": "POST /api/roles", "upstream": "—", "status": "missing_upstream", "note": ""}]
+        result = mod.classify_integration_state(checks, seam)
+        self.assertEqual(result, "adapter_needed")
+
+    def test_integration_state_in_allowed_set(self):
+        """Every report must produce a valid integration_state."""
+        mod = _load_checker()
+        for mode_args in [["--offline"], []]:
+            if not mode_args:
+                server = _TestServer(_HealthyHandler).start()
+                try:
+                    out = _run_checker(server.base_url, mode_args)
+                finally:
+                    server.shutdown()
+                    server.server_close()
+            else:
+                out = _run_checker("http://localhost:1", mode_args)
+            report = out["report"]
+            self.assertIn(
+                report["integration_state"],
+                mod.ALLOWED_INTEGRATION_STATES,
+            )
 
 
 if __name__ == "__main__":

@@ -17,11 +17,29 @@ python3 scripts/check_clawith_readiness.py --base-url http://localhost:3000
 # Machine-readable JSON
 python3 scripts/check_clawith_readiness.py --base-url http://localhost:3000 --json
 
+# Authenticated probe (unlocks admin/model-pool checks)
+python3 scripts/check_clawith_readiness.py --base-url http://localhost:3000 --token <bearer>
+# or via environment variable:
+CLAWITH_BEARER_TOKEN=<bearer> python3 scripts/check_clawith_readiness.py --base-url http://localhost:3000
+
 # Offline (no network — all network checks report 'unknown')
 python3 scripts/check_clawith_readiness.py --offline --json
 ```
 
 The checker is **GET-only** and performs **no write operations** (F004).
+
+### Integration state classification
+
+The report includes a top-level `integration_state` field with one of four values:
+
+| State | Meaning |
+|---|---|
+| `ready` | All prereqs confirmed, no adapter/missing gaps in seam mapping |
+| `adapter_needed` | Admin and model pool confirmed, but RF-native seams still missing upstream |
+| `auth_blocked` | Public surface healthy, but auth prevents determining admin/model readiness |
+| `unknown` | Public surface unreachable or otherwise non-deterministic |
+
+This complements the per-check `ready`/`blocked`/`unknown` statuses from F001/F002.
 
 ## Prereq checks (F001)
 
@@ -85,8 +103,10 @@ credential-gated and opt-in — the readiness checker does not use it.
   upstream Clawith. They remain adapter-side assumptions.
 - **No consumer OAuth inside Clawith.** Auth is token-based; no OAuth flow
   is wired.
-- **Admin/model-pool presence is unknown without auth.** The readiness checker
-  honestly reports `unknown` rather than guessing.
+- **Admin/model-pool presence is unknown without auth.** Without `--token`
+  or `CLAWITH_BEARER_TOKEN`, the readiness checker honestly reports
+  `auth_blocked` (public surface healthy but cannot confirm admin/model state)
+  rather than guessing.
 - **This is not a deployment guide.** It is a readiness probe and mapping
   reference.
 

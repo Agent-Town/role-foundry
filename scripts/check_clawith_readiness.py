@@ -9,13 +9,19 @@ Produces a structured readiness report covering the six F001 checks:
   5. endpoint mismatch documented
   6. status output clearly categorized as ready/blocked/unknown
 
+Plus a top-level ``integration_state`` classification:
+  ready | adapter_needed | auth_blocked | unknown
+
 This script is **GET-only** (F004 non-destructive guarantee).
 It never issues POST, PUT, PATCH, DELETE, or any write operation.
 
 Usage:
   python3 scripts/check_clawith_readiness.py --base-url http://localhost:3000
   python3 scripts/check_clawith_readiness.py --base-url http://localhost:3000 --json
+  python3 scripts/check_clawith_readiness.py --base-url http://localhost:3000 --token <bearer>
   python3 scripts/check_clawith_readiness.py --offline   # no network, reports unknown
+
+Bearer token can also be supplied via CLAWITH_BEARER_TOKEN env var.
 """
 
 from __future__ import annotations
@@ -119,9 +125,11 @@ SEAM_MAPPING: list[dict[str, str]] = [
 ]
 
 
-def _get(url: str, *, timeout: float = 5.0) -> dict[str, Any]:
+def _get(url: str, *, timeout: float = 5.0, token: str | None = None) -> dict[str, Any]:
     """Perform a GET request. Never issues writes."""
     req = urllib.request.Request(url, method="GET")
+    if token:
+        req.add_header("Authorization", f"Bearer {token}")
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             raw = resp.read()
@@ -169,9 +177,10 @@ def check_base_url_reachable(base_url: str, timeout: float) -> dict[str, Any]:
     }
 
 
-def check_auth_surface_understood(base_url: str, timeout: float) -> dict[str, Any]:
+def check_auth_surface_understood(base_url: str, timeout: float, token: str | None = None) -> dict[str, Any]:
     """F001 check 2: auth surface understood."""
     reg = _get(f"{base_url}/api/auth/registration-config", timeout=timeout)
+    # Always probe unauthenticated first to verify the 401 challenge exists
     me = _get(f"{base_url}/api/auth/me", timeout=timeout)
 
     # We understand the auth surface if registration-config is 200
@@ -197,35 +206,45 @@ def check_auth_surface_understood(base_url: str, timeout: float) -> dict[str, An
     }
 
 
-def check_admin_presence_known(base_url: str, timeout: float) -> dict[str, Any]:
+def check_admin_presence_known(base_url: str, timeout: float, token: str | None = None) -> dict[str, Any]:
     """F001 check 3: admin presence known.
 
     Without auth or DB access, this is honestly 'unknown'.
     """
-    # We can only know admin presence via authenticated probe or DB.
-    # GET-only unauthenticated: we cannot determine this.
-    companies = _get(f"{base_url}/api/admin/companies", timeout=timeout)
+    companies = _get(f"{base_url}/api/admin/companies", timeout=timeout, token=token)
+    authed_me = None
+    if token:
+        authed_me = _get(f"{base_url}/api/auth/me", timeout=timeout, token=token)
+
     if companies["reachable"] and companies["status"] == 200:
-        # Authenticated as admin — admin exists
         status = "ready"
+    elif authed_me and authed_me["reachable"] and authed_me["status"] == 200:
+        # Token works on /auth/me — we have an authenticated user, but
+        # /admin/companies returned non-200 (likely 403 = not platform_admin).
+        # We know *a* user exists but cannot confirm admin presence.
+        status = "unknown"
     elif companies["reachable"] and companies["status"] in {401, 403}:
-        # Auth-gated — admin presence unknown from this vantage
         status = "unknown"
     else:
         status = "unknown"
+
+    detail: dict[str, Any] = {"admin_companies": companies}
+    if authed_me is not None:
+        detail["auth_me_authenticated"] = authed_me
+
     return {
         "check": "admin_presence_known",
         "status": status,
-        "detail": {"admin_companies": companies},
+        "detail": detail,
         "note": "Admin presence cannot be determined without auth or DB access."
         if status == "unknown"
         else "",
     }
 
 
-def check_model_pool_presence_known(base_url: str, timeout: float) -> dict[str, Any]:
+def check_model_pool_presence_known(base_url: str, timeout: float, token: str | None = None) -> dict[str, Any]:
     """F001 check 4: model-pool presence known."""
-    models = _get(f"{base_url}/api/enterprise/llm-models", timeout=timeout)
+    models = _get(f"{base_url}/api/enterprise/llm-models", timeout=timeout, token=token)
     if models["reachable"] and models["status"] == 200:
         payload = models["json"]
         if isinstance(payload, list) and len(payload) > 0:
@@ -302,6 +321,51 @@ def compute_overall_readiness(checks: list[dict[str, Any]]) -> str:
     return "ready"
 
 
+def classify_integration_state(
+    checks: list[dict[str, Any]],
+    seam_mapping: list[dict[str, str]],
+) -> str:
+    """Derive a top-level integration classification.
+
+    Returns one of: ready, adapter_needed, auth_blocked, unknown.
+
+    Logic:
+      - If the public surface (base_url_reachable) is not ready → unknown.
+      - If public surface is healthy but admin or model-pool checks are
+        unknown (auth-gated, no token) → auth_blocked.
+      - If admin and model-pool are confirmed but RF-native seams have
+        missing_upstream or adapter_needed entries → adapter_needed.
+      - Only ready when every check is ready AND no adapter/missing gaps
+        remain in the seam mapping.
+    """
+    by_name: dict[str, str] = {c["check"]: c["status"] for c in checks}
+
+    base_status = by_name.get("base_url_reachable", "unknown")
+    if base_status != "ready":
+        return "unknown"
+
+    admin_status = by_name.get("admin_presence_known", "unknown")
+    model_status = by_name.get("model_pool_presence_known", "unknown")
+
+    if admin_status == "unknown" or model_status == "unknown":
+        return "auth_blocked"
+
+    if admin_status == "blocked" or model_status == "blocked":
+        return "unknown"
+
+    # At this point admin and model-pool are 'ready'.
+    # Check for RF-native seam gaps.
+    gap_statuses = {"missing_upstream", "adapter_needed"}
+    has_gaps = any(row["status"] in gap_statuses for row in seam_mapping)
+    if has_gaps:
+        return "adapter_needed"
+
+    return "ready"
+
+
+ALLOWED_INTEGRATION_STATES = {"ready", "adapter_needed", "auth_blocked", "unknown"}
+
+
 def validate_mapping_statuses() -> dict[str, Any]:
     """F003: verify all mapping rows use allowed statuses only."""
     invalid = [
@@ -315,7 +379,11 @@ def validate_mapping_statuses() -> dict[str, Any]:
 
 
 def build_report(
-    base_url: str, timeout: float, *, offline: bool = False
+    base_url: str,
+    timeout: float,
+    *,
+    offline: bool = False,
+    token: str | None = None,
 ) -> dict[str, Any]:
     """Build the full readiness report."""
     if offline:
@@ -330,20 +398,22 @@ def build_report(
     else:
         checks = [
             check_base_url_reachable(base_url, timeout),
-            check_auth_surface_understood(base_url, timeout),
-            check_admin_presence_known(base_url, timeout),
-            check_model_pool_presence_known(base_url, timeout),
+            check_auth_surface_understood(base_url, timeout, token=token),
+            check_admin_presence_known(base_url, timeout, token=token),
+            check_model_pool_presence_known(base_url, timeout, token=token),
             check_endpoint_mismatch_documented(),
         ]
         checks.append(check_status_categorization(checks))
 
     overall = compute_overall_readiness(checks)
+    integration_state = classify_integration_state(checks, SEAM_MAPPING)
     mapping_validation = validate_mapping_statuses()
 
     return {
         "phase": "F",
         "base_url": base_url,
         "overall_readiness": overall,
+        "integration_state": integration_state,
         "checks": checks,
         "seam_mapping": SEAM_MAPPING,
         "mapping_validation": mapping_validation,
@@ -356,10 +426,11 @@ def print_human(report: dict[str, Any]) -> None:
     """Human-readable output."""
     print(f"Phase F — Clawith Adapter-First Bring-up Readiness")
     print(f"{'=' * 52}")
-    print(f"Base URL:          {report['base_url']}")
-    print(f"Overall readiness: {report['overall_readiness']}")
-    print(f"Non-destructive:   {report['non_destructive']}")
-    print(f"HTTP methods used: {', '.join(report['http_methods_used'])}")
+    print(f"Base URL:           {report['base_url']}")
+    print(f"Integration state:  {report['integration_state']}")
+    print(f"Overall readiness:  {report['overall_readiness']}")
+    print(f"Non-destructive:    {report['non_destructive']}")
+    print(f"HTTP methods used:  {', '.join(report['http_methods_used'])}")
     print()
 
     print("PREREQ CHECKS (F001)")
@@ -405,6 +476,11 @@ def main() -> int:
     parser.add_argument("--timeout", type=float, default=5.0)
     parser.add_argument("--json", action="store_true", help="JSON output")
     parser.add_argument(
+        "--token",
+        default=None,
+        help="Bearer token for authenticated GET probes (or set CLAWITH_BEARER_TOKEN)",
+    )
+    parser.add_argument(
         "--offline",
         action="store_true",
         help="Skip network checks; report unknown for all network-dependent checks",
@@ -412,7 +488,8 @@ def main() -> int:
     args = parser.parse_args()
 
     base_url = args.base_url.rstrip("/")
-    report = build_report(base_url, args.timeout, offline=args.offline)
+    token = args.token or os.environ.get("CLAWITH_BEARER_TOKEN")
+    report = build_report(base_url, args.timeout, offline=args.offline, token=token)
 
     if args.json:
         json.dump(report, sys.stdout, indent=2, sort_keys=True)
