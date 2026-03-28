@@ -28,7 +28,9 @@ def redact_request_for_artifacts(payload: dict[str, Any]) -> dict[str, Any]:
         "scenario_manifest": [
             {
                 "id": scenario.get("id"),
-                "title": scenario.get("title") or scenario.get("id"),
+                "title": "Sealed holdout"
+                if scenario.get("type") == "holdout"
+                else (scenario.get("title") or scenario.get("id")),
                 "type": scenario.get("type", "training"),
                 "difficulty": scenario.get("difficulty"),
                 "prompt_visibility": "sealed"

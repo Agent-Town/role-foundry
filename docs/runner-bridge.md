@@ -195,7 +195,8 @@ The extra files are:
 - `receipts/baseline.json` — prior-run aggregate receipt when `previous_iteration` exists
 - `receipts/evaluation.json` — teacher score/export receipt when `teacher_evaluation` ran
 - `receipts/evidence-index.json` — evidence map linking receipts back to transcript lines, artifact JSON pointers, and private source records where needed
-- `receipts/summary.md` — human-readable export for quick judge/operator inspection
+- `receipts/audit-bundle.json` — machine-readable audit bundle with artifact validation, redaction audit, traceability, and human-audit sections
+- `receipts/summary.md` — human-readable export for quick judge/operator inspection; includes audit-bundle headings for the five human-audit sections
 
 Private source artifacts may still be referenced in the evidence index, but only by path + pointer.
 The public provenance files do not quote sealed holdout prompt text.
@@ -257,6 +258,7 @@ runtime/runs/<run_id>/
     baseline.json      # when previous_iteration exists
     evaluation.json    # when teacher_evaluation runs
     evidence-index.json
+    audit-bundle.json
     summary.md
 ```
 
