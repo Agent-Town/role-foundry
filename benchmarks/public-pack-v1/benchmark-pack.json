@@ -11,11 +11,14 @@
       "benchmarks/public-pack-v1/episode-family-registry.json"
     ],
     "role_scope": "frontend-apprentice",
+    "source_bucket_id": "frontend-apprentice-public-benchmark",
+    "source_bucket_registry": "data/episode-registry/source-buckets.json",
     "episode_registry": "data/episode-registry/public-benchmark-pack-v1.json",
     "public_episode_count": 12,
     "public_family_count": 6,
     "public_provenance_coverage_pct": 100.0,
-    "family_readiness_coverage_pct": 100.0
+    "family_readiness_coverage_pct": 100.0,
+    "promotion_policy_path": "data/episode-registry/promotion-policy.json"
   },
   "execution_policy": {
     "student_visible_only": true,

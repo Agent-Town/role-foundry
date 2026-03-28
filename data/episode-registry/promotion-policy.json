@@ -1,0 +1,218 @@
+{
+  "meta": {
+    "id": "role-foundry-promotion-policy",
+    "version": "1.0.0",
+    "phase": "G",
+    "source_bucket_registry_path": "data/episode-registry/source-buckets.json",
+    "description": "Machine-readable promotion policy for candidate families on the current spine. Families become candidates only when they exist in a committed family registry; seed-only buckets remain explicitly non-candidate until a role-scoped benchmark pack is authored.",
+    "honesty_note": "This policy is intentionally bounded to the current spine. It records the Frontend Apprentice public + blocked families explicitly and leaves Frontend/Product Engineer as seed-only / local-only rather than pretending a second benchmark pack already exists."
+  },
+  "allowed_candidate_readiness_states": [
+    "draft",
+    "benchmark_ready",
+    "rewrite_before_holdout_promotion",
+    "blocked"
+  ],
+  "required_promotion_criteria_keys": [
+    "source_is_public_curriculum",
+    "no_teacher_only_inputs",
+    "rubric_template_exists",
+    "not_repo_visible_holdout"
+  ],
+  "global_rules": {
+    "holdout_promotion_safety": "Families marked repo_visible_or_leaky or rewrite_before_holdout_promotion MUST NOT be promoted to teacher-only benchmark status. They require fresh non-disclosed wording plus storage outside tracked public pack artifacts.",
+    "role_pack_separation": "Every benchmark pack must declare role_scope and source_bucket_id. Families and episodes inside that pack must match the declared role_scope unless an explicit cross_role_scope policy is added.",
+    "promotion_criteria_completeness": "Every candidate family must declare promotion_criteria with the required base keys. Zero committed candidate families may omit those criteria."
+  },
+  "buckets": [
+    {
+      "bucket_id": "frontend-apprentice-public-benchmark",
+      "candidate_family_count": 6,
+      "families": [
+        {
+          "family_id": "rf.frontend-apprentice.public.landing-story",
+          "role_scope": "frontend-apprentice",
+          "promotion_status": "promoted",
+          "promoted_to": "public-benchmark-pack-v1",
+          "readiness_state": "benchmark_ready",
+          "promotion_criteria": {
+            "source_is_public_curriculum": true,
+            "no_teacher_only_inputs": true,
+            "rubric_template_exists": true,
+            "not_repo_visible_holdout": true
+          },
+          "repo_visible_or_leaky": false
+        },
+        {
+          "family_id": "rf.frontend-apprentice.public.curriculum-split",
+          "role_scope": "frontend-apprentice",
+          "promotion_status": "promoted",
+          "promoted_to": "public-benchmark-pack-v1",
+          "readiness_state": "benchmark_ready",
+          "promotion_criteria": {
+            "source_is_public_curriculum": true,
+            "no_teacher_only_inputs": true,
+            "rubric_template_exists": true,
+            "not_repo_visible_holdout": true
+          },
+          "repo_visible_or_leaky": false
+        },
+        {
+          "family_id": "rf.frontend-apprentice.public.score-deltas",
+          "role_scope": "frontend-apprentice",
+          "promotion_status": "promoted",
+          "promoted_to": "public-benchmark-pack-v1",
+          "readiness_state": "benchmark_ready",
+          "promotion_criteria": {
+            "source_is_public_curriculum": true,
+            "no_teacher_only_inputs": true,
+            "rubric_template_exists": true,
+            "not_repo_visible_holdout": true
+          },
+          "repo_visible_or_leaky": false
+        },
+        {
+          "family_id": "rf.frontend-apprentice.public.proof-bundle",
+          "role_scope": "frontend-apprentice",
+          "promotion_status": "promoted",
+          "promoted_to": "public-benchmark-pack-v1",
+          "readiness_state": "benchmark_ready",
+          "promotion_criteria": {
+            "source_is_public_curriculum": true,
+            "no_teacher_only_inputs": true,
+            "rubric_template_exists": true,
+            "not_repo_visible_holdout": true
+          },
+          "repo_visible_or_leaky": false
+        },
+        {
+          "family_id": "rf.frontend-apprentice.public.demo-honesty",
+          "role_scope": "frontend-apprentice",
+          "promotion_status": "promoted",
+          "promoted_to": "public-benchmark-pack-v1",
+          "readiness_state": "benchmark_ready",
+          "promotion_criteria": {
+            "source_is_public_curriculum": true,
+            "no_teacher_only_inputs": true,
+            "rubric_template_exists": true,
+            "not_repo_visible_holdout": true
+          },
+          "repo_visible_or_leaky": false
+        },
+        {
+          "family_id": "rf.frontend-apprentice.public.failure-to-curriculum",
+          "role_scope": "frontend-apprentice",
+          "promotion_status": "promoted",
+          "promoted_to": "public-benchmark-pack-v1",
+          "readiness_state": "benchmark_ready",
+          "promotion_criteria": {
+            "source_is_public_curriculum": true,
+            "no_teacher_only_inputs": true,
+            "rubric_template_exists": true,
+            "not_repo_visible_holdout": true
+          },
+          "repo_visible_or_leaky": false
+        }
+      ]
+    },
+    {
+      "bucket_id": "frontend-apprentice-blocked-teacher-only",
+      "candidate_family_count": 3,
+      "families": [
+        {
+          "family_id": "rf.frontend-apprentice.blocked.teacher-only-h1",
+          "role_scope": "frontend-apprentice",
+          "promotion_status": "blocked",
+          "promoted_to": null,
+          "readiness_state": "rewrite_before_holdout_promotion",
+          "promotion_criteria": {
+            "source_is_public_curriculum": false,
+            "no_teacher_only_inputs": false,
+            "rubric_template_exists": false,
+            "not_repo_visible_holdout": false,
+            "fresh_non_disclosed_wording": false,
+            "stored_outside_public_pack": false
+          },
+          "repo_visible_or_leaky": true,
+          "block_reason": "The current repo already discloses this holdout family's framing, so it cannot honestly be promoted as a public-safe benchmark or sealed evaluation family.",
+          "rewrite_requirements": [
+            "Create a fresh teacher-only family with new wording and rubric",
+            "Store teacher-only prompt text outside the public benchmark pack",
+            "Expose only a sanitized public failure theme after evaluation"
+          ]
+        },
+        {
+          "family_id": "rf.frontend-apprentice.blocked.teacher-only-h2",
+          "role_scope": "frontend-apprentice",
+          "promotion_status": "blocked",
+          "promoted_to": null,
+          "readiness_state": "rewrite_before_holdout_promotion",
+          "promotion_criteria": {
+            "source_is_public_curriculum": false,
+            "no_teacher_only_inputs": false,
+            "rubric_template_exists": false,
+            "not_repo_visible_holdout": false,
+            "fresh_non_disclosed_wording": false,
+            "stored_outside_public_pack": false
+          },
+          "repo_visible_or_leaky": true,
+          "block_reason": "The exam-integrity framing is already visible in the public repo, so a public benchmark pack cannot claim this family is sealed. It needs a rewrite and separate teacher-only storage.",
+          "rewrite_requirements": [
+            "Write a new teacher-only prompt family with non-public wording",
+            "Keep the grading rubric outside student-visible artifacts",
+            "Promote only sanitized lesson text into public curriculum"
+          ]
+        },
+        {
+          "family_id": "rf.frontend-apprentice.blocked.teacher-only-h3",
+          "role_scope": "frontend-apprentice",
+          "promotion_status": "blocked",
+          "promoted_to": null,
+          "readiness_state": "rewrite_before_holdout_promotion",
+          "promotion_criteria": {
+            "source_is_public_curriculum": false,
+            "no_teacher_only_inputs": false,
+            "rubric_template_exists": false,
+            "not_repo_visible_holdout": false,
+            "fresh_non_disclosed_wording": false,
+            "stored_outside_public_pack": false
+          },
+          "repo_visible_or_leaky": true,
+          "block_reason": "This adversarial low-churn family is already described in the public repo, so it is teacher-only at best and should not ship in a public benchmark pack until rewritten.",
+          "rewrite_requirements": [
+            "Author a fresh teacher-only variant that is not already disclosed publicly",
+            "Keep the evaluation prompt and scoring rubric outside the public repo",
+            "Publish only the public-safe lesson after scoring"
+          ]
+        }
+      ]
+    },
+    {
+      "bucket_id": "frontend-apprentice-local-private-holdout",
+      "candidate_family_count": 0,
+      "families": [],
+      "note": "Fresh teacher-only rewrites are local-only and uncommitted on this spine. No candidate families exist here yet."
+    },
+    {
+      "bucket_id": "frontend-product-engineer-public-seed-curriculum",
+      "candidate_family_count": 0,
+      "families": [],
+      "note": "Seed curriculum exists, but no FPE family registry or benchmark pack has been authored on this spine. Treat as non-candidate until role-scoped pack artifacts exist."
+    },
+    {
+      "bucket_id": "frontend-product-engineer-local-private-holdout",
+      "candidate_family_count": 0,
+      "families": [],
+      "note": "Local/private holdout path is implied by the evaluation contract only. No committed candidate families exist here."
+    }
+  ],
+  "pack_refs": [
+    {
+      "pack_id": "public-benchmark-pack-v1",
+      "role_scope": "frontend-apprentice",
+      "source_bucket_id": "frontend-apprentice-public-benchmark",
+      "family_registry_path": "benchmarks/public-pack-v1/episode-family-registry.json",
+      "episode_registry_path": "data/episode-registry/public-benchmark-pack-v1.json"
+    }
+  ]
+}

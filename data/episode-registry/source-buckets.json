@@ -1,0 +1,165 @@
+{
+  "meta": {
+    "id": "role-foundry-source-bucket-registry",
+    "version": "1.0.0",
+    "phase": "G",
+    "description": "Machine-readable scaffold for controlled dataset expansion. Every currently known role-scoped source bucket is registered explicitly so benchmark-ready, blocked, seed-only, and local-only material are not silently mixed.",
+    "honesty_note": "Only the Frontend Apprentice public bucket has a committed benchmark pack on this spine. Frontend/Product Engineer remains seed-curriculum-only, and local/private holdout buckets are registered as uncommitted placeholders rather than faked as packs.",
+    "allowed_bucket_readiness_states": [
+      "benchmark_pack_committed",
+      "blocked_pending_rewrite",
+      "seed_curriculum_only",
+      "local_only_uncommitted"
+    ],
+    "bucket_state_policy": "Use benchmark_pack_committed only when a tracked benchmark pack, family registry, and episode registry all exist. Use blocked_pending_rewrite for repo-visible teacher-only material that must not be promoted. Use seed_curriculum_only for committed seed/task curriculum without a benchmark pack. Use local_only_uncommitted for intentionally untracked private-holdout paths."
+  },
+  "buckets": [
+    {
+      "id": "frontend-apprentice-public-benchmark",
+      "role_id": "role-frontend-apprentice",
+      "role": "Frontend Apprentice",
+      "role_scope": "frontend-apprentice",
+      "bucket_type": "public_benchmark_pack",
+      "readiness_state": "benchmark_pack_committed",
+      "benchmark_pack_path": "benchmarks/public-pack-v1/benchmark-pack.json",
+      "family_registry_path": "benchmarks/public-pack-v1/episode-family-registry.json",
+      "episode_registry_path": "data/episode-registry/public-benchmark-pack-v1.json",
+      "seed_path": "seed/role-foundry-apprentice.json",
+      "seed_scenario_ids": [
+        "t1",
+        "t2",
+        "t3",
+        "t4",
+        "t5",
+        "t6"
+      ],
+      "committed_family_ids": [
+        "rf.frontend-apprentice.public.landing-story",
+        "rf.frontend-apprentice.public.curriculum-split",
+        "rf.frontend-apprentice.public.score-deltas",
+        "rf.frontend-apprentice.public.proof-bundle",
+        "rf.frontend-apprentice.public.demo-honesty",
+        "rf.frontend-apprentice.public.failure-to-curriculum"
+      ],
+      "blocked_family_ids": [],
+      "committed_family_count": 6,
+      "committed_episode_count": 12,
+      "notes": "Current public-safe benchmark pack. This is the only committed benchmark pack on the Phase F spine."
+    },
+    {
+      "id": "frontend-apprentice-blocked-teacher-only",
+      "role_id": "role-frontend-apprentice",
+      "role": "Frontend Apprentice",
+      "role_scope": "frontend-apprentice",
+      "bucket_type": "blocked_teacher_only",
+      "readiness_state": "blocked_pending_rewrite",
+      "benchmark_pack_path": null,
+      "family_registry_path": "benchmarks/public-pack-v1/episode-family-registry.json",
+      "episode_registry_path": null,
+      "seed_path": "seed/role-foundry-apprentice.json",
+      "seed_scenario_ids": [
+        "h1",
+        "h2",
+        "h3"
+      ],
+      "committed_family_ids": [],
+      "blocked_family_ids": [
+        "rf.frontend-apprentice.blocked.teacher-only-h1",
+        "rf.frontend-apprentice.blocked.teacher-only-h2",
+        "rf.frontend-apprentice.blocked.teacher-only-h3"
+      ],
+      "committed_family_count": 3,
+      "committed_episode_count": 0,
+      "notes": "Repo-visible holdout-derived families h1/h2/h3. Explicitly blocked from both public-pack inclusion and holdout promotion until rewritten with fresh non-disclosed wording."
+    },
+    {
+      "id": "frontend-apprentice-local-private-holdout",
+      "role_id": "role-frontend-apprentice",
+      "role": "Frontend Apprentice",
+      "role_scope": "frontend-apprentice",
+      "bucket_type": "local_private_holdout",
+      "readiness_state": "local_only_uncommitted",
+      "benchmark_pack_path": null,
+      "family_registry_path": null,
+      "episode_registry_path": null,
+      "evidence_refs": [
+        "benchmarks/public-pack-v1/episode-family-registry.json",
+        "docs/public-benchmark-pack-v1.md",
+        "specs/008-public-benchmark-pack-v1.md"
+      ],
+      "committed_family_ids": [],
+      "blocked_family_ids": [],
+      "committed_family_count": 0,
+      "committed_episode_count": 0,
+      "notes": "Fresh teacher-only rewrites are allowed only as local/private material outside the tracked public pack. No such rewritten holdout families are committed on this spine."
+    },
+    {
+      "id": "frontend-product-engineer-public-seed-curriculum",
+      "role_id": "role-frontend-product-engineer",
+      "role": "Frontend/Product Engineer",
+      "role_scope": "frontend-product-engineer",
+      "bucket_type": "public_seed_curriculum",
+      "readiness_state": "seed_curriculum_only",
+      "benchmark_pack_path": null,
+      "family_registry_path": null,
+      "episode_registry_path": null,
+      "seed_path": "seed/frontend-product-engineer-role.v1.json",
+      "curriculum_registry_path": "data/curriculum/frontend-product-engineer-public-seed-registry.v1.json",
+      "curriculum_paths": [
+        "data/curriculum/frontend-product-engineer-public-seed-registry.v1.json",
+        "data/curriculum/frontend-product-engineer-task-packet.schema.v1.json",
+        "data/curriculum/frontend-product-engineer-evaluation-contract.v1.json",
+        "data/curriculum/frontend-product-engineer-promotion-records.v1.json",
+        "data/curriculum/frontend-product-engineer-source-records.v1.json",
+        "data/curriculum/frontend-product-engineer-sample-scorecard.v1.json",
+        "data/curriculum/frontend-product-engineer-sample-run-objects.v1.json"
+      ],
+      "seed_task_count": 20,
+      "committed_family_ids": [],
+      "blocked_family_ids": [],
+      "committed_family_count": 0,
+      "committed_episode_count": 0,
+      "notes": "Committed public seed/task curriculum only. No FPE family registry, episode registry, or benchmark pack exists on this spine."
+    },
+    {
+      "id": "frontend-product-engineer-local-private-holdout",
+      "role_id": "role-frontend-product-engineer",
+      "role": "Frontend/Product Engineer",
+      "role_scope": "frontend-product-engineer",
+      "bucket_type": "local_private_holdout",
+      "readiness_state": "local_only_uncommitted",
+      "benchmark_pack_path": null,
+      "family_registry_path": null,
+      "episode_registry_path": null,
+      "evidence_refs": [
+        "data/curriculum/frontend-product-engineer-evaluation-contract.v1.json",
+        "data/curriculum/frontend-product-engineer-public-seed-registry.v1.json",
+        "specs/014-frontend-product-engineer-20-task-curriculum.md"
+      ],
+      "committed_family_ids": [],
+      "blocked_family_ids": [],
+      "committed_family_count": 0,
+      "committed_episode_count": 0,
+      "notes": "The FPE curriculum and evaluation contract name private-holdout scoring, but actual holdout content remains local-only and uncommitted on this spine."
+    }
+  ],
+  "coverage": {
+    "total_bucket_count": 5,
+    "benchmark_pack_committed_bucket_count": 1,
+    "blocked_pending_rewrite_bucket_count": 1,
+    "seed_curriculum_only_bucket_count": 1,
+    "local_only_uncommitted_bucket_count": 2,
+    "frontend_apprentice_seed_scenarios_covered": [
+      "h1",
+      "h2",
+      "h3",
+      "t1",
+      "t2",
+      "t3",
+      "t4",
+      "t5",
+      "t6"
+    ],
+    "frontend_product_engineer_seed_task_count": 20
+  }
+}

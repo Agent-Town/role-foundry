@@ -18,7 +18,11 @@
       "benchmark_ready",
       "rewrite_before_holdout_promotion",
       "blocked"
-    ]
+    ],
+    "role_scope": "frontend-apprentice",
+    "source_bucket_id": "frontend-apprentice-public-benchmark",
+    "source_bucket_registry_path": "data/episode-registry/source-buckets.json",
+    "promotion_policy_path": "data/episode-registry/promotion-policy.json"
   },
   "coverage": {
     "public_episode_count": 12,

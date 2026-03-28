@@ -72,19 +72,38 @@ This registry makes five Phase B claims explicit instead of implied:
 4. **leak-audit clarity** — tracked public pack artifacts record zero teacher-only field/token hits
 5. **promotion clarity** — every candidate family has an explicit readiness state
 
+## Phase G overlay
+
+Phase G adds two more machine-readable control surfaces on top of this companion registry:
+
+- `data/episode-registry/source-buckets.json`
+- `data/episode-registry/promotion-policy.json`
+
+Those files do not replace `public-benchmark-pack-v1.json`.
+They do a different job:
+
+- make every current role-scoped source bucket explicit
+- separate benchmark-committed material from blocked or local-only holdout paths
+- record promotion criteria for every committed candidate family
+- keep Frontend/Product Engineer seed curriculum visible without pretending it already has a benchmark pack
+
+See `docs/dataset-flywheel.md` and `specs/011-phase-g-dataset-expansion.md` for the bounded Phase G contract.
+
 ## Audit commands
 
 ```bash
 python3 -m unittest tests/test_public_benchmark_pack_v1.py -v
+python3 -m unittest tests/test_dataset_flywheel_phase_g.py -v
 python3 -m unittest tests/test_milestone3_contract.py tests/test_milestone5_teacher_eval_loop.py -v
 ```
 
-If those pass, the public pack still has:
+If those pass, the public pack and Phase G control layer still have:
 
-- only student-visible included families
+- only student-visible included families in the committed public pack
 - blocked teacher-only families excluded from the public pack
 - complete public rubric coverage
 - normalized public weights
 - full public provenance coverage
-- explicit readiness states across all candidate families
+- explicit readiness states across all committed candidate families
+- explicit source-bucket coverage for benchmark, blocked, seed-only, and local-only paths
 - zero teacher-only leakage in tracked public pack artifacts

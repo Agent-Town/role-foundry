@@ -20,7 +20,14 @@
       "rewrite_before_holdout_promotion",
       "blocked"
     ],
-    "readiness_state_policy": "Every candidate family must declare readiness_state using the allowed readiness-state set. Public-benchmark-pack-v1 may include only families whose readiness_state is benchmark_ready. Families derived from repo-visible holdout framing must be marked rewrite_before_holdout_promotion until fresh teacher-only wording exists outside the public pack."
+    "readiness_state_policy": "Every candidate family must declare readiness_state using the allowed readiness-state set. Public-benchmark-pack-v1 may include only families whose readiness_state is benchmark_ready. Families derived from repo-visible holdout framing must be marked rewrite_before_holdout_promotion until fresh teacher-only wording exists outside the public pack.",
+    "source_bucket_registry_ref": "data/episode-registry/source-buckets.json",
+    "promotion_policy_ref": "data/episode-registry/promotion-policy.json",
+    "candidate_bucket_ids": [
+      "frontend-apprentice-public-benchmark",
+      "frontend-apprentice-blocked-teacher-only",
+      "frontend-apprentice-local-private-holdout"
+    ]
   },
   "families": [
     {
