@@ -4,17 +4,17 @@
 
 | # | Branch | Commit | Status |
 |---|--------|--------|--------|
-| 1 | review/clean-spine-alpha-reconcile-20260327-0938 | 6171881 | landed |
-| 2 | review/public-benchmark-pack-clean-spine-20260327-2328 | 54d3f79 | landed |
-| 3 | review/receipt-provenance-clean-benchmark-20260328-0934 | 1e6cc97 | landed |
-| 4 | review/autoresearch-alpha-exec-clean-20260328-1102 | 799686e | landed |
-| 5 | review/live-ui-readmodel-alpha-hookup-20260328-1118 | b4700eb | landed |
-| 6 | review/clawith-phase-f-readiness-20260328-1201 | 26edd3e | landed |
-| 7 | review/phase-g-dataset-slice-20260328-1216 | 864606a | landed |
+| 1 | review/clean-spine-alpha-reconcile-20260327-0938 | 6171881 | present on stack |
+| 2 | review/public-benchmark-pack-clean-spine-20260327-2328 | 54d3f79 | present on stack |
+| 3 | review/receipt-provenance-clean-benchmark-20260328-0934 | 1e6cc97 | present on stack |
+| 4 | review/autoresearch-alpha-exec-clean-20260328-1102 | 799686e | present on stack |
+| 5 | review/live-ui-readmodel-alpha-hookup-20260328-1118 | b4700eb | present on stack |
+| 6 | review/clawith-phase-f-readiness-20260328-1201 | 26edd3e | present on stack |
+| 7 | review/phase-g-dataset-slice-20260328-1216 | 864606a | present on stack |
 
-All seven slices are present on `main` at HEAD (864606a).
+All seven slices are present on the stacked review branch lineage (tip: 864606a). They have **not** been merged to `main`.
 
-## What is real / landed
+## What is real / present on stack
 
 - **Public benchmark pack v1** — seed-only, 20 tasks, no partner data.
 - **Receipt provenance** — additive audit bundle on runner-bridge outputs.
