@@ -1,0 +1,26 @@
+{
+  "description": "Example autoresearch alpha loop configuration — public-regression lane only.",
+  "run_id_prefix": "autoresearch-alpha-example",
+  "benchmark_pack_path": "benchmarks/public-pack-v1/benchmark-pack.json",
+  "max_episodes": 4,
+  "previous_iteration": {
+    "run_id": "autoresearch-alpha-baseline-000",
+    "label": "baseline",
+    "aggregate_score": {
+      "passed": 1,
+      "total": 4,
+      "pass_rate": 0.25,
+      "average_score": 0.4,
+      "holdout": {
+        "passed": 0,
+        "total": 0,
+        "pass_rate": 0.0
+      }
+    },
+    "public_failure_themes": [
+      "Landing copy does not name the apprentice explicitly",
+      "README reads like a generic platform pitch"
+    ]
+  },
+  "honesty_note": "This example runs against LocalReplayRunner (deterministic shim). No real code execution happens. Sealed holdout families are explicitly excluded."
+}
