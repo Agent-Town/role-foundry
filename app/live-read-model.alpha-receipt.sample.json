@@ -2,8 +2,8 @@
   "receipt_type": "autoresearch-alpha",
   "receipt_version": "0.2.0",
   "run_id_prefix": "autoresearch-alpha-example",
-  "started_at": "2026-03-28T15:10:09Z",
-  "finished_at": "2026-03-28T15:10:09Z",
+  "started_at": "2026-03-28T15:57:23Z",
+  "finished_at": "2026-03-28T15:57:23Z",
   "benchmark_pack": {
     "id": "public-benchmark-pack-v1",
     "version": "1.0.0",
@@ -33,6 +33,7 @@
       "status": "completed",
       "total_score": 0.8,
       "machine_score": 0.8,
+      "mutation_surface_status": "unavailable",
       "note": "Student prompt-pack only; no teacher evaluation in this stage."
     },
     "candidate-teacher-eval": {
@@ -107,11 +108,23 @@
     "eligible_for_weighted_promotion": false,
     "failed_gates": [],
     "blocked_gates": [
+      "mutation_surface_enforcement",
       "demo_tests_still_work",
       "sealed_eval",
       "certification"
     ],
-    "reason": "Weighted promotion is blocked until: demo_tests_still_work, sealed_eval, certification."
+    "reason": "Weighted promotion is blocked until: mutation_surface_enforcement, demo_tests_still_work, sealed_eval, certification."
+  },
+  "mutation_surface_audit": {
+    "status": "unavailable",
+    "honesty_note": "No packet_runtime mutation surface was attached to the candidate stage, so mutation enforcement cannot be cleared on this path.",
+    "source": {
+      "kind": "missing-packet-runtime",
+      "backend_verified": false
+    },
+    "changed_files": [],
+    "budget_report": {},
+    "violations": []
   },
   "iteration_history": [
     {
@@ -157,9 +170,9 @@
       "stage": "baseline-eval",
       "run_id": "autoresearch-alpha-example-baseline-eval",
       "state": "completed",
-      "queued_at": "2026-03-28T15:10:09Z",
-      "started_at": "2026-03-28T15:10:09Z",
-      "completed_at": "2026-03-28T15:10:09Z",
+      "queued_at": "2026-03-28T15:57:23Z",
+      "started_at": "2026-03-28T15:57:23Z",
+      "completed_at": "2026-03-28T15:57:23Z",
       "status": "completed",
       "machine_score": 0.5,
       "error": null
@@ -168,9 +181,9 @@
       "stage": "candidate-student",
       "run_id": "autoresearch-alpha-example-candidate-student",
       "state": "completed",
-      "queued_at": "2026-03-28T15:10:09Z",
-      "started_at": "2026-03-28T15:10:09Z",
-      "completed_at": "2026-03-28T15:10:09Z",
+      "queued_at": "2026-03-28T15:57:23Z",
+      "started_at": "2026-03-28T15:57:23Z",
+      "completed_at": "2026-03-28T15:57:23Z",
       "status": "completed",
       "machine_score": 0.8,
       "error": null
@@ -179,9 +192,9 @@
       "stage": "candidate-teacher-eval",
       "run_id": "autoresearch-alpha-example-candidate-teacher-eval",
       "state": "completed",
-      "queued_at": "2026-03-28T15:10:09Z",
-      "started_at": "2026-03-28T15:10:09Z",
-      "completed_at": "2026-03-28T15:10:09Z",
+      "queued_at": "2026-03-28T15:57:23Z",
+      "started_at": "2026-03-28T15:57:23Z",
+      "completed_at": "2026-03-28T15:57:23Z",
       "status": "completed",
       "machine_score": 0.75,
       "error": null
@@ -192,6 +205,7 @@
     "promotion_eligible": false,
     "failed_gates": [],
     "blocked_gates": [
+      "mutation_surface_enforcement",
       "demo_tests_still_work",
       "sealed_eval",
       "certification"
@@ -224,6 +238,21 @@
           "teacher_output_present": false
         }
       },
+      "mutation_surface_enforcement": {
+        "status": "blocked",
+        "reason": "Mutation-surface audit could not clear because the run lacked enough declared diff evidence.",
+        "detail": {
+          "status": "unavailable",
+          "honesty_note": "No packet_runtime mutation surface was attached to the candidate stage, so mutation enforcement cannot be cleared on this path.",
+          "source": {
+            "kind": "missing-packet-runtime",
+            "backend_verified": false
+          },
+          "changed_files": [],
+          "budget_report": {},
+          "violations": []
+        }
+      },
       "no_fake_claims": {
         "status": "pass",
         "reason": "Known limitations are surfaced explicitly instead of being claimed away.",
@@ -234,7 +263,8 @@
             "sealed-holdout-coverage",
             "verdict-stability"
           ],
-          "honesty_note": "This is a public-regression autoresearch alpha loop with three real stages executed through RunBridge. The backend is LocalReplayRunner (deterministic shim, not live execution). Sealed holdout families are explicitly excluded. Mutation-surface enforcement and verdict stability are not yet implemented."
+          "mutation_surface_status": "unavailable",
+          "honesty_note": "This is a public-regression autoresearch alpha loop with three real stages executed through RunBridge. The backend is LocalReplayRunner (deterministic shim, not live execution). Sealed holdout families are explicitly excluded. Mutation-surface auditing is wired, but this run did not provide enough declared diff evidence to clear it. Verdict stability is still single-pass only."
         }
       },
       "demo_tests_still_work": {
@@ -342,7 +372,7 @@
     {
       "id": "mutation-surface-enforcement",
       "status": "blocked",
-      "reason": "LocalReplayRunner does not enforce file-level mutation budgets."
+      "reason": "No mutation-surface contract/evidence was strong enough to clear this run path yet."
     },
     {
       "id": "verdict-stability",
@@ -360,5 +390,5 @@
       "reason": "LocalReplayRunner is a deterministic replay shim, not a live executor."
     }
   ],
-  "honesty_note": "This is a public-regression autoresearch alpha loop with three real stages executed through RunBridge. The backend is LocalReplayRunner (deterministic shim, not live execution). Sealed holdout families are explicitly excluded. Mutation-surface enforcement and verdict stability are not yet implemented."
+  "honesty_note": "This is a public-regression autoresearch alpha loop with three real stages executed through RunBridge. The backend is LocalReplayRunner (deterministic shim, not live execution). Sealed holdout families are explicitly excluded. Mutation-surface auditing is wired, but this run did not provide enough declared diff evidence to clear it. Verdict stability is still single-pass only."
 }

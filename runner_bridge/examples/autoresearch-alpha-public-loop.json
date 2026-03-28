@@ -62,5 +62,5 @@
       }
     }
   },
-  "honesty_note": "This example runs against LocalReplayRunner (deterministic shim). It exercises three real stages through RunBridge but does not execute live commands, enforce mutation budgets, or claim sealed-holdout coverage."
+  "honesty_note": "This example runs against LocalReplayRunner (deterministic shim). It exercises three real stages through RunBridge, can audit declared mutation-surface evidence when provided, but does not execute live commands or claim sealed-holdout coverage."
 }

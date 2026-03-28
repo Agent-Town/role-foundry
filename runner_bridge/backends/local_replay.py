@@ -3,7 +3,8 @@ from __future__ import annotations
 import argparse
 import json
 from datetime import UTC, datetime
-from pathlib import Path
+from pathlib import Path, PurePosixPath
+from typing import Any
 
 from runner_bridge.eval_loop import build_teacher_evaluation, has_teacher_evaluation
 
@@ -18,6 +19,182 @@ def build_parser() -> argparse.ArgumentParser:
 def _has_student_prompt_pack(request: dict) -> bool:
     """Check if request has a student_prompt_pack extra (student-only stage, no teacher)."""
     return isinstance(request.get("student_prompt_pack"), dict)
+
+
+def _normalise_repo_path(value: Any) -> str | None:
+    if not isinstance(value, str):
+        return None
+    path = value.replace("\\", "/").strip()
+    if not path:
+        return None
+    while path.startswith("./"):
+        path = path[2:]
+    return path or None
+
+
+def _coerce_int(value: Any) -> int | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float) and value.is_integer():
+        return int(value)
+    if isinstance(value, str):
+        try:
+            return int(value)
+        except ValueError:
+            return None
+    return None
+
+
+def _match_pattern(path: str, patterns: list[str]) -> str | None:
+    pure_path = PurePosixPath(path)
+    for raw_pattern in patterns:
+        pattern = _normalise_repo_path(raw_pattern)
+        if not pattern:
+            continue
+        if pure_path.match(pattern):
+            return pattern
+    return None
+
+
+def _build_mutation_surface_audit(request: dict[str, Any]) -> dict[str, Any] | None:
+    packet_runtime = request.get("packet_runtime")
+    if not isinstance(packet_runtime, dict):
+        return None
+
+    workspace = request.get("workspace_snapshot") if isinstance(request.get("workspace_snapshot"), dict) else {}
+    changed_files_raw = workspace.get("changed_files") if isinstance(workspace.get("changed_files"), list) else None
+    changed_files = [path for path in (_normalise_repo_path(item) for item in (changed_files_raw or [])) if path]
+    diff_stats = workspace.get("diff_stats") if isinstance(workspace.get("diff_stats"), dict) else {}
+
+    allowed_paths = [pattern for pattern in (_normalise_repo_path(item) for item in packet_runtime.get("allowed_paths", [])) if pattern]
+    blocked_paths = [pattern for pattern in (_normalise_repo_path(item) for item in packet_runtime.get("blocked_paths", [])) if pattern]
+    mutation_budget = packet_runtime.get("mutation_budget") if isinstance(packet_runtime.get("mutation_budget"), dict) else {}
+
+    tracked_files_limit = _coerce_int(mutation_budget.get("tracked_files_max", mutation_budget.get("max_files")))
+    net_lines_limit = _coerce_int(mutation_budget.get("net_lines_max", mutation_budget.get("max_lines")))
+    tracked_files_observed = _coerce_int(diff_stats.get("tracked_files"))
+    if tracked_files_observed is None and changed_files_raw is not None:
+        tracked_files_observed = len(changed_files)
+    net_lines_observed = _coerce_int(diff_stats.get("net_lines"))
+
+    path_checks: list[dict[str, Any]] = []
+    violations: list[dict[str, Any]] = []
+    for path in changed_files:
+        blocked_match = _match_pattern(path, blocked_paths)
+        allowed_match = _match_pattern(path, allowed_paths)
+        path_checks.append({
+            "path": path,
+            "allowed_match": allowed_match,
+            "blocked_match": blocked_match,
+        })
+        if blocked_match:
+            violations.append({
+                "kind": "blocked_path",
+                "path": path,
+                "matched_pattern": blocked_match,
+            })
+        elif allowed_paths and not allowed_match:
+            violations.append({
+                "kind": "outside_allowed_paths",
+                "path": path,
+                "allowed_paths": allowed_paths,
+            })
+
+    if tracked_files_limit is not None and tracked_files_observed is not None and tracked_files_observed > tracked_files_limit:
+        violations.append({
+            "kind": "tracked_files_budget",
+            "observed": tracked_files_observed,
+            "limit": tracked_files_limit,
+        })
+    if net_lines_limit is not None and net_lines_observed is not None and net_lines_observed > net_lines_limit:
+        violations.append({
+            "kind": "net_lines_budget",
+            "observed": net_lines_observed,
+            "limit": net_lines_limit,
+        })
+
+    evidence_gaps: list[str] = []
+    if not allowed_paths and not blocked_paths:
+        evidence_gaps.append("packet_runtime did not declare allowed_paths/blocked_paths.")
+    if changed_files_raw is None:
+        evidence_gaps.append("workspace_snapshot.changed_files was not provided.")
+    if net_lines_limit is not None and net_lines_observed is None:
+        evidence_gaps.append("workspace_snapshot.diff_stats.net_lines was not provided.")
+
+    if violations:
+        status = "fail"
+        honesty_note = (
+            "Declared mutation-surface auditing found out-of-scope or over-budget changes. "
+            "LocalReplayRunner did not independently compute the diff; this verdict is based on workspace_snapshot evidence."
+        )
+    elif evidence_gaps:
+        status = "unavailable"
+        honesty_note = (
+            "LocalReplayRunner received a mutation surface, but not enough declared diff evidence to clear it honestly. "
+            "It does not independently compute git diffs or net-line counts."
+        )
+    else:
+        status = "pass"
+        honesty_note = (
+            "Declared mutation-surface auditing passed against workspace_snapshot changed-files/diff-stats evidence. "
+            "LocalReplayRunner still does not independently compute the diff."
+        )
+
+    budget_report = {
+        "declared": {
+            "allowed_paths": allowed_paths,
+            "blocked_paths": blocked_paths,
+            "tracked_files_max": tracked_files_limit,
+            "net_lines_max": net_lines_limit,
+        },
+        "observed": {
+            "changed_files_count": len(changed_files) if changed_files_raw is not None else None,
+            "tracked_files": tracked_files_observed,
+            "net_lines": net_lines_observed,
+        },
+        "checks": {
+            "paths": {
+                "status": "fail" if any(v["kind"] in {"blocked_path", "outside_allowed_paths"} for v in violations) else "pass",
+                "checked_file_count": len(changed_files) if changed_files_raw is not None else 0,
+            },
+            "tracked_files": {
+                "status": (
+                    "fail"
+                    if any(v["kind"] == "tracked_files_budget" for v in violations)
+                    else "pass" if tracked_files_limit is None or tracked_files_observed is not None else "unavailable"
+                ),
+                "observed": tracked_files_observed,
+                "limit": tracked_files_limit,
+            },
+            "net_lines": {
+                "status": (
+                    "fail"
+                    if any(v["kind"] == "net_lines_budget" for v in violations)
+                    else "pass" if net_lines_limit is None or net_lines_observed is not None else "unavailable"
+                ),
+                "observed": net_lines_observed,
+                "limit": net_lines_limit,
+            },
+        },
+        "evidence_gaps": evidence_gaps,
+        "path_checks": path_checks,
+    }
+
+    source_kind = "workspace_snapshot.changed_files+diff_stats" if diff_stats else "workspace_snapshot.changed_files"
+    return {
+        "status": status,
+        "honesty_note": honesty_note,
+        "source": {
+            "kind": source_kind,
+            "backend_verified": False,
+            "packet_runtime_present": True,
+        },
+        "changed_files": changed_files,
+        "budget_report": budget_report,
+        "violations": violations,
+    }
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -232,6 +409,7 @@ def main(argv: list[str] | None = None) -> int:
     packet_runtime = request.get("packet_runtime")
     if packet_runtime:
         expected_checks = packet_runtime.get("expected_checks", [])
+        mutation_surface_audit = _build_mutation_surface_audit(request)
         result["execution_honesty"] = {
             "backend": "LocalReplayRunner",
             "executes_commands": False,
@@ -246,14 +424,15 @@ def main(argv: list[str] | None = None) -> int:
                 }
                 for check in expected_checks
             ],
-            "mutation_enforcement": "not_enforced",
-            "path_constraint_enforcement": "not_enforced",
+            "mutation_enforcement": "declared_audit",
+            "path_constraint_enforcement": "declared_audit",
+            "mutation_surface_audit": mutation_surface_audit,
             "honesty_note": (
                 "LocalReplayRunner is a zero-secret replay backend. "
                 "It validates the request contract and produces receipts, "
-                "but does not execute task commands, enforce mutation budgets, "
-                "or enforce path constraints. These become meaningful when a "
-                "live execution backend is wired."
+                "but does not execute task commands or independently compute diffs. "
+                "When packet_runtime is attached it can audit declared changed-files/diff-stats evidence, "
+                "but live execution and independently verified mutation/path enforcement still require a real executor."
             ),
         }
 

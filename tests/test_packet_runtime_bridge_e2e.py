@@ -213,11 +213,13 @@ class TestExecutionHonesty(unittest.TestCase):
             self.assertEqual(cr["execution_status"], "not_executed")
             self.assertIsNone(cr["exit_code"])
 
-    def test_execution_honesty_enforcement_not_enforced(self):
+    def test_execution_honesty_emits_declared_mutation_audit(self):
         result = self._run_and_load_result("A001", "hon-enf-a001")
         eh = result["execution_honesty"]
-        self.assertEqual(eh["mutation_enforcement"], "not_enforced")
-        self.assertEqual(eh["path_constraint_enforcement"], "not_enforced")
+        self.assertEqual(eh["mutation_enforcement"], "declared_audit")
+        self.assertEqual(eh["path_constraint_enforcement"], "declared_audit")
+        self.assertIn("mutation_surface_audit", eh)
+        self.assertEqual(eh["mutation_surface_audit"]["status"], "unavailable")
 
 
 class TestRequestPrivateJsonCarriesPacketRuntime(unittest.TestCase):

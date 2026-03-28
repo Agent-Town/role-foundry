@@ -57,7 +57,7 @@ What is real now:
 
 What is **not** claimed:
 - `LocalReplayRunner` does **not** execute packet commands
-- mutation budgets and path constraints are carried into runtime artifacts, but not yet enforced by the backend
+- mutation budgets and path constraints can be audited against declared `workspace_snapshot` diff evidence, but the backend does **not** independently compute diffs or prove live enforcement
 - packet-driven runs are an honest contract surface for execution, not proof that live execution is complete
 
 A packet-driven run now follows this shape:
@@ -359,7 +359,7 @@ The receipt surfaces explicit `blocked_criteria` and `phase_c_acceptance`:
 
 The `integrity_gate` reports `public_regression: pass|fail` but honestly marks `sealed_eval: blocked` and `certification: blocked`.
 
-This loop does not claim sealed-holdout coverage, live execution, mutation enforcement, or verdict stability. Those remain honestly blocked.
+This loop does not claim sealed-holdout coverage or live execution. Mutation-surface auditing is available when declared diff evidence is present; otherwise it stays honestly blocked. Verdict stability still remains blocked.
 
 ## What is still not done
 

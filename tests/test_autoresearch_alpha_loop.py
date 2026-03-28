@@ -260,6 +260,7 @@ class AutoresearchAlphaThreeStageTests(unittest.TestCase):
         self.assertIn("gates", gate)
         self.assertEqual(gate["gates"]["no_holdout_leakage"]["status"], "pass")
         self.assertEqual(gate["gates"]["required_artifacts_present"]["status"], "pass")
+        self.assertEqual(gate["gates"]["mutation_surface_enforcement"]["status"], "blocked")
         self.assertEqual(gate["gates"]["demo_tests_still_work"]["status"], "blocked")
 
     def test_promotion_decision_blocks_weighted_promotion_when_integrity_is_not_clear(self):
@@ -271,6 +272,7 @@ class AutoresearchAlphaThreeStageTests(unittest.TestCase):
         self.assertEqual(receipt["comparison_verdict"]["label"], "better")
         self.assertEqual(receipt["promotion_decision"]["status"], "blocked")
         self.assertFalse(receipt["promotion_decision"]["eligible_for_weighted_promotion"])
+        self.assertIn("mutation_surface_enforcement", receipt["promotion_decision"]["blocked_gates"])
         self.assertIn("demo_tests_still_work", receipt["promotion_decision"]["blocked_gates"])
         self.assertEqual(
             receipt["stages"]["candidate-teacher-eval"]["effective_label"],
@@ -306,6 +308,83 @@ class AutoresearchAlphaThreeStageTests(unittest.TestCase):
         self.assertIn("sealed-holdout-coverage", blocked_ids)
         self.assertIn("live-execution-backend", blocked_ids)
         self.assertIn("verdict-stability", blocked_ids)
+
+    def _mutation_surface_config(self) -> dict:
+        config = json.loads(EXAMPLE_CONFIG.read_text())
+        config["stages"]["candidate-student"]["request"].update(
+            {
+                "packet_runtime": {
+                    "packet_id": "inline-mutation-surface-alpha",
+                    "packet_version": "1.0.0",
+                    "acceptance_test_id": "alpha-mutation-surface",
+                    "role_id": "role-autoresearch-alpha",
+                    "phase_index": 0,
+                    "allowed_paths": ["runner_bridge/**", "tests/**", "docs/**"],
+                    "blocked_paths": ["submission/**", "benchmarks/private-holdout-pack/**"],
+                    "mutation_budget": {
+                        "tracked_files_max": 3,
+                        "net_lines_max": 40,
+                    },
+                    "expected_checks": [],
+                    "eval_contract_ref": {},
+                    "evidence_contract": {
+                        "required_artifacts": [],
+                        "provenance_required": True,
+                        "student_visible_only": True,
+                    },
+                },
+            }
+        )
+        return config
+
+    def test_mutation_surface_audit_passes_when_declared_changes_stay_in_scope(self):
+        bridge = RunBridge(artifacts_root=str(self.artifacts_root))
+        config = self._mutation_surface_config()
+        config["stages"]["candidate-student"]["request"]["workspace_snapshot"] = {
+            "changed_files": [
+                "runner_bridge/autoresearch_alpha.py",
+                "tests/test_autoresearch_alpha_loop.py",
+            ],
+            "diff_stats": {"tracked_files": 2, "net_lines": 24},
+        }
+
+        receipt = run_autoresearch_alpha(request_payload=config, bridge=bridge)
+
+        self.assertEqual(receipt["mutation_surface_audit"]["status"], "pass")
+        self.assertEqual(receipt["integrity_gate"]["gates"]["mutation_surface_enforcement"]["status"], "pass")
+        blocked_ids = {c["id"] for c in receipt["blocked_criteria"]}
+        self.assertNotIn("mutation-surface-enforcement", blocked_ids)
+
+    def test_mutation_surface_audit_fails_on_out_of_scope_file(self):
+        bridge = RunBridge(artifacts_root=str(self.artifacts_root))
+        config = self._mutation_surface_config()
+        config["stages"]["candidate-student"]["request"]["workspace_snapshot"] = {
+            "changed_files": [
+                "runner_bridge/autoresearch_alpha.py",
+                "app/live-read-model.alpha-receipt.sample.json",
+            ],
+            "diff_stats": {"tracked_files": 2, "net_lines": 18},
+        }
+
+        receipt = run_autoresearch_alpha(request_payload=config, bridge=bridge)
+
+        self.assertEqual(receipt["mutation_surface_audit"]["status"], "fail")
+        self.assertEqual(receipt["integrity_gate"]["gates"]["mutation_surface_enforcement"]["status"], "fail")
+        self.assertIn("mutation_surface_enforcement", receipt["promotion_decision"]["failed_gates"])
+
+    def test_mutation_surface_audit_blocks_when_net_lines_evidence_is_missing(self):
+        bridge = RunBridge(artifacts_root=str(self.artifacts_root))
+        config = self._mutation_surface_config()
+        config["stages"]["candidate-student"]["request"]["workspace_snapshot"] = {
+            "changed_files": ["runner_bridge/autoresearch_alpha.py"],
+        }
+
+        receipt = run_autoresearch_alpha(request_payload=config, bridge=bridge)
+
+        self.assertEqual(receipt["mutation_surface_audit"]["status"], "unavailable")
+        self.assertEqual(receipt["integrity_gate"]["gates"]["mutation_surface_enforcement"]["status"], "blocked")
+        blocked_ids = {c["id"] for c in receipt["blocked_criteria"]}
+        self.assertIn("mutation-surface-enforcement", blocked_ids)
 
 
 class AutoresearchAlphaPromotionDecisionUnitTests(unittest.TestCase):
@@ -390,6 +469,7 @@ class AutoresearchAlphaHonestyTests(unittest.TestCase):
         self.assertIn("three real stages", receipt["honesty_note"].lower())
         self.assertIn("LocalReplayRunner", receipt["honesty_note"])
         self.assertIn("deterministic", receipt["honesty_note"].lower())
+        self.assertIn("verdict stability", receipt["honesty_note"].lower())
 
     def test_student_stage_has_no_sealed_scenarios(self):
         """Student view in candidate-student must not contain holdout scenarios."""

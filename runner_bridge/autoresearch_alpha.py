@@ -7,8 +7,9 @@ Runs a real THREE-STAGE loop through RunBridge:
     3. candidate-teacher-eval — teacher evaluation comparing against real baseline
 
 This orchestrator consumes the public benchmark pack only.  It does NOT claim
-sealed/holdout coverage, live execution, or mutation-surface enforcement —
-those are surfaced honestly as blocked criteria in the receipt.
+sealed/holdout coverage or live execution. Mutation-surface auditing is wired
+through the receipt layer, but it only clears when the run provides a declared
+diff surface strong enough to evaluate honestly.
 
 CLI entrypoint:
     python3 -m runner_bridge.autoresearch_alpha \\
@@ -17,7 +18,7 @@ CLI entrypoint:
 
 Honest status:
   - LocalReplayRunner is the only wired backend (deterministic, no real exec).
-  - Mutation budget enforcement: NOT enforced (blocked).
+  - Mutation-surface auditing only uses declared changed-files / diff-stats evidence.
   - Verdict stability: single-pass only; no multi-round convergence yet.
   - Holdout/private families: explicitly blocked.
 """
@@ -25,6 +26,7 @@ Honest status:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 from copy import deepcopy
@@ -34,17 +36,19 @@ from typing import Any
 
 from .bridge import RunBridge
 from .contract import RunRequest
+from .packet_runtime import load_run_object
 
 BENCHMARK_PACK_PATH = Path(__file__).resolve().parents[1] / "benchmarks" / "public-pack-v1" / "benchmark-pack.json"
 
 STAGE_NAMES = ("baseline-eval", "candidate-student", "candidate-teacher-eval")
 
-BLOCKED_CRITERIA = [
-    {
-        "id": "mutation-surface-enforcement",
-        "status": "blocked",
-        "reason": "LocalReplayRunner does not enforce file-level mutation budgets.",
-    },
+MUTATION_SURFACE_BLOCKED_CRITERION = {
+    "id": "mutation-surface-enforcement",
+    "status": "blocked",
+    "reason": "No mutation-surface contract/evidence was strong enough to clear this run path yet.",
+}
+
+STATIC_BLOCKED_CRITERIA = [
     {
         "id": "verdict-stability",
         "status": "blocked",
@@ -61,6 +65,8 @@ BLOCKED_CRITERIA = [
         "reason": "LocalReplayRunner is a deterministic replay shim, not a live executor.",
     },
 ]
+
+BLOCKED_CRITERIA = [MUTATION_SURFACE_BLOCKED_CRITERION, *STATIC_BLOCKED_CRITERIA]
 
 PHASE_C_ACCEPTANCE = {
     "C001": {"label": "Three-stage lifecycle", "status": "pass"},
@@ -93,6 +99,137 @@ def load_benchmark_pack(pack_path: str | Path | None = None) -> dict[str, Any]:
 
 def _utc_now() -> str:
     return datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def _canonical_hash(payload: dict[str, Any]) -> str:
+    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(canonical.encode()).hexdigest()
+
+
+def _build_workspace_snapshot(
+    *,
+    request_cfg: dict[str, Any],
+    default_objective: str,
+    public_failure_themes: list[str] | None = None,
+) -> dict[str, Any]:
+    snapshot = deepcopy(request_cfg.get("workspace_snapshot", {})) if isinstance(request_cfg.get("workspace_snapshot"), dict) else {}
+    snapshot.setdefault("objective", default_objective)
+    snapshot.setdefault("changed_files", [])
+    if public_failure_themes:
+        snapshot.setdefault("public_failure_themes_consumed", public_failure_themes)
+    return snapshot
+
+
+def _inline_packet_runtime(request_cfg: dict[str, Any], run_id: str) -> dict[str, Any] | None:
+    inline = request_cfg.get("packet_runtime")
+    if not isinstance(inline, dict):
+        return None
+
+    runtime = deepcopy(inline)
+    runtime.setdefault("packet_id", f"inline-mutation-surface:{run_id}")
+    runtime.setdefault("packet_version", "1.0.0")
+    runtime.setdefault("acceptance_test_id", str(request_cfg.get("acceptance_test_id", "")))
+    runtime.setdefault("role_id", str(request_cfg.get("role_id", "")))
+    runtime.setdefault("phase_index", 0)
+    runtime.setdefault("expected_checks", [])
+    runtime.setdefault("eval_contract_ref", {})
+    runtime.setdefault(
+        "evidence_contract",
+        {
+            "required_artifacts": [],
+            "provenance_required": True,
+            "student_visible_only": True,
+        },
+    )
+    runtime.setdefault("run_object_version", "1.0.0")
+    runtime.setdefault("execution_status", "not_started")
+    runtime.setdefault("execution_backend", "LocalReplayRunner")
+    runtime.setdefault("packet_content_hash", _canonical_hash(runtime))
+    return runtime
+
+
+def _load_stage_packet_runtime(request_cfg: dict[str, Any], run_id: str) -> dict[str, Any] | None:
+    inline_runtime = _inline_packet_runtime(request_cfg, run_id)
+    if inline_runtime:
+        return inline_runtime
+
+    acceptance_test_id = request_cfg.get("packet_acceptance_test_id")
+    if not acceptance_test_id:
+        return None
+
+    request = load_run_object(str(acceptance_test_id), run_id=run_id).to_run_request(workspace_snapshot={})
+    packet_runtime = request.extras.get("packet_runtime")
+    return deepcopy(packet_runtime) if isinstance(packet_runtime, dict) else None
+
+
+def _build_blocked_criteria(mutation_surface_audit: dict[str, Any]) -> list[dict[str, Any]]:
+    if mutation_surface_audit.get("status") in {"pass", "fail"}:
+        return deepcopy(STATIC_BLOCKED_CRITERIA)
+    return deepcopy(BLOCKED_CRITERIA)
+
+
+def _derive_mutation_surface_audit(
+    *,
+    student_request: RunRequest,
+    student_result: dict[str, Any],
+) -> dict[str, Any]:
+    execution_honesty = student_result.get("execution_honesty") if isinstance(student_result.get("execution_honesty"), dict) else {}
+    audit = execution_honesty.get("mutation_surface_audit") if isinstance(execution_honesty.get("mutation_surface_audit"), dict) else None
+    if audit:
+        return deepcopy(audit)
+
+    packet_runtime = student_request.extras.get("packet_runtime") if isinstance(student_request.extras.get("packet_runtime"), dict) else None
+    changed_files = []
+    if isinstance(student_request.workspace_snapshot, dict) and isinstance(student_request.workspace_snapshot.get("changed_files"), list):
+        changed_files = list(student_request.workspace_snapshot.get("changed_files", []))
+
+    if packet_runtime:
+        return {
+            "status": "unavailable",
+            "honesty_note": (
+                "A mutation-surface contract was attached, but the backend did not emit a dedicated audit result for this run path."
+            ),
+            "source": {"kind": "missing-runtime-audit", "backend_verified": False},
+            "changed_files": changed_files,
+            "budget_report": packet_runtime.get("mutation_budget", {}),
+            "violations": [],
+        }
+
+    return {
+        "status": "unavailable",
+        "honesty_note": (
+            "No packet_runtime mutation surface was attached to the candidate stage, so mutation enforcement cannot be cleared on this path."
+        ),
+        "source": {"kind": "missing-packet-runtime", "backend_verified": False},
+        "changed_files": changed_files,
+        "budget_report": {},
+        "violations": [],
+    }
+
+
+def _build_honesty_note(mutation_surface_audit: dict[str, Any]) -> str:
+    mutation_status = mutation_surface_audit.get("status", "unavailable")
+    if mutation_status == "pass":
+        mutation_line = (
+            "Mutation-surface auditing passed against declared changed-files/diff-stats evidence; "
+            "LocalReplayRunner still does not independently compute diffs."
+        )
+    elif mutation_status == "fail":
+        mutation_line = (
+            "Mutation-surface auditing is active and flagged an out-of-scope or over-budget change on this run."
+        )
+    else:
+        mutation_line = (
+            "Mutation-surface auditing is wired, but this run did not provide enough declared diff evidence to clear it."
+        )
+    return (
+        "This is a public-regression autoresearch alpha loop with three real stages "
+        "executed through RunBridge. "
+        "The backend is LocalReplayRunner (deterministic shim, not live execution). "
+        "Sealed holdout families are explicitly excluded. "
+        f"{mutation_line} "
+        "Verdict stability is still single-pass only."
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -181,10 +318,15 @@ def _prepare_baseline_eval_request(
     te.setdefault("student_prompt_summary", "Baseline evaluation of public benchmark episodes.")
     te.setdefault("teacher_verdict", "Baseline teacher evaluation against public benchmark pack.")
 
-    snapshot = {
-        "objective": "Baseline teacher evaluation against public benchmark pack.",
-        "changed_files": [],
-    }
+    snapshot = _build_workspace_snapshot(
+        request_cfg=request_cfg,
+        default_objective="Baseline teacher evaluation against public benchmark pack.",
+    )
+
+    extras: dict[str, Any] = {"teacher_evaluation": te}
+    packet_runtime = _load_stage_packet_runtime(request_cfg, run_id)
+    if packet_runtime:
+        extras["packet_runtime"] = packet_runtime
 
     return RunRequest(
         run_id=run_id,
@@ -193,7 +335,7 @@ def _prepare_baseline_eval_request(
         workspace_snapshot=snapshot,
         time_budget={"seconds": 60},
         cost_budget={"usd": 0.0},
-        extras={"teacher_evaluation": te},
+        extras=extras,
     )
 
 
@@ -219,12 +361,11 @@ def _prepare_candidate_student_request(
                 "public_checks": ep.get("public_checks", []),
             })
 
-    snapshot = {
-        "objective": "Candidate student run against public benchmark episodes.",
-        "changed_files": [],
-    }
-    if public_failure_themes:
-        snapshot["public_failure_themes_consumed"] = public_failure_themes
+    snapshot = _build_workspace_snapshot(
+        request_cfg=request_cfg,
+        default_objective="Candidate student run against public benchmark episodes.",
+        public_failure_themes=public_failure_themes,
+    )
 
     student_prompt_pack = {
         "episode_count": len(prompt_pack_episodes),
@@ -237,6 +378,11 @@ def _prepare_candidate_student_request(
         ),
     }
 
+    extras: dict[str, Any] = {"student_prompt_pack": student_prompt_pack}
+    packet_runtime = _load_stage_packet_runtime(request_cfg, run_id)
+    if packet_runtime:
+        extras["packet_runtime"] = packet_runtime
+
     return RunRequest(
         run_id=run_id,
         agent_role="student",
@@ -244,7 +390,7 @@ def _prepare_candidate_student_request(
         workspace_snapshot=snapshot,
         time_budget={"seconds": 60},
         cost_budget={"usd": 0.0},
-        extras={"student_prompt_pack": student_prompt_pack},
+        extras=extras,
     )
 
 
@@ -299,10 +445,15 @@ def _prepare_candidate_teacher_eval_request(
         "aggregate_score": baseline_aggregate_score,
     }
 
-    snapshot = {
-        "objective": "Candidate teacher evaluation comparing against real baseline.",
-        "changed_files": [],
-    }
+    snapshot = _build_workspace_snapshot(
+        request_cfg=request_cfg,
+        default_objective="Candidate teacher evaluation comparing against real baseline.",
+    )
+
+    extras: dict[str, Any] = {"teacher_evaluation": te}
+    packet_runtime = _load_stage_packet_runtime(request_cfg, run_id)
+    if packet_runtime:
+        extras["packet_runtime"] = packet_runtime
 
     return RunRequest(
         run_id=run_id,
@@ -311,7 +462,7 @@ def _prepare_candidate_teacher_eval_request(
         workspace_snapshot=snapshot,
         time_budget={"seconds": 60},
         cost_budget={"usd": 0.0},
-        extras={"teacher_evaluation": te},
+        extras=extras,
     )
 
 
@@ -442,6 +593,7 @@ def build_integrity_gate(
     student_request: RunRequest,
     student_result: dict[str, Any],
     teacher_eval_result: dict[str, Any],
+    mutation_surface_audit: dict[str, Any],
     integrity_policy: dict[str, Any] | None = None,
     blocked_criteria: list[dict[str, Any]] | None = None,
     honesty_note: str = "",
@@ -510,15 +662,39 @@ def build_integrity_gate(
         },
     }
 
+    mutation_status = mutation_surface_audit.get("status", "unavailable")
+    if mutation_status == "pass":
+        mutation_gate = {
+            "status": "pass",
+            "reason": "Declared changed files stayed inside the allowed mutation surface and budget.",
+            "detail": mutation_surface_audit,
+        }
+    elif mutation_status == "fail":
+        mutation_gate = {
+            "status": "fail",
+            "reason": "Mutation-surface audit detected an out-of-scope or over-budget change.",
+            "detail": mutation_surface_audit,
+        }
+    else:
+        mutation_gate = {
+            "status": "blocked",
+            "reason": "Mutation-surface audit could not clear because the run lacked enough declared diff evidence.",
+            "detail": mutation_surface_audit,
+        }
+
     fake_claims_ok = all(
         marker in blocked_ids
         for marker in (
-            "mutation-surface-enforcement",
             "verdict-stability",
             "sealed-holdout-coverage",
             "live-execution-backend",
         )
     ) and "LocalReplayRunner" in honesty_note and "not live execution" in honesty_note
+    if mutation_status not in {"pass", "fail"}:
+        fake_claims_ok = fake_claims_ok and "mutation-surface-enforcement" in blocked_ids
+    else:
+        fake_claims_ok = fake_claims_ok and "mutation-surface-enforcement" not in blocked_ids
+
     fake_claims_gate = {
         "status": "pass" if fake_claims_ok else "fail",
         "reason": (
@@ -528,6 +704,7 @@ def build_integrity_gate(
         ),
         "detail": {
             "blocked_criteria_ids": sorted(blocked_ids),
+            "mutation_surface_status": mutation_status,
             "honesty_note": honesty_note,
         },
     }
@@ -578,6 +755,7 @@ def build_integrity_gate(
         "public_regression": public_regression_gate,
         "required_artifacts_present": artifact_gate,
         "no_holdout_leakage": holdout_gate,
+        "mutation_surface_enforcement": mutation_gate,
         "no_fake_claims": fake_claims_gate,
         "demo_tests_still_work": demo_tests_gate,
         "sealed_eval": {
@@ -848,21 +1026,21 @@ def run_autoresearch_alpha(
         verdict=verdict,
         comparison_policy=comparison_policy,
     )
-    honesty_note = (
-        "This is a public-regression autoresearch alpha loop with three real stages "
-        "executed through RunBridge. "
-        "The backend is LocalReplayRunner (deterministic shim, not live execution). "
-        "Sealed holdout families are explicitly excluded. "
-        "Mutation-surface enforcement and verdict stability are not yet implemented."
+    mutation_surface_audit = _derive_mutation_surface_audit(
+        student_request=student_request,
+        student_result=student_result,
     )
+    blocked_criteria = _build_blocked_criteria(mutation_surface_audit)
+    honesty_note = _build_honesty_note(mutation_surface_audit)
     integrity_gate = build_integrity_gate(
         verdict=verdict,
         artifact_coverage=artifact_coverage,
         student_request=student_request,
         student_result=student_result,
         teacher_eval_result=teacher_eval_result,
+        mutation_surface_audit=mutation_surface_audit,
         integrity_policy=integrity_policy,
-        blocked_criteria=BLOCKED_CRITERIA,
+        blocked_criteria=blocked_criteria,
         honesty_note=honesty_note,
     )
     promotion_decision = build_promotion_decision(
@@ -897,6 +1075,7 @@ def run_autoresearch_alpha(
                 "status": student_result.get("status", "unknown"),
                 "total_score": round(float(student_result.get("machine_score", 0.0) or 0.0), 4),
                 "machine_score": student_result.get("machine_score", 0.0),
+                "mutation_surface_status": mutation_surface_audit.get("status", "unavailable"),
                 "note": "Student prompt-pack only; no teacher evaluation in this stage.",
             },
             "candidate-teacher-eval": {
@@ -920,11 +1099,12 @@ def run_autoresearch_alpha(
             "category_deltas": comparison["category_deltas"],
         },
         "promotion_decision": promotion_decision,
+        "mutation_surface_audit": mutation_surface_audit,
         "iteration_history": iteration_history,
         "run_record_history": records,
         "integrity_gate": integrity_gate,
         "phase_c_acceptance": PHASE_C_ACCEPTANCE,
-        "blocked_criteria": BLOCKED_CRITERIA,
+        "blocked_criteria": blocked_criteria,
         "honesty_note": honesty_note,
     }
 
