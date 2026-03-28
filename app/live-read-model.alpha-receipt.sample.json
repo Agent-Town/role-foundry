@@ -2,8 +2,8 @@
   "receipt_type": "autoresearch-alpha",
   "receipt_version": "0.2.0",
   "run_id_prefix": "autoresearch-alpha-example",
-  "started_at": "2026-03-28T04:19:35Z",
-  "finished_at": "2026-03-28T04:19:35Z",
+  "started_at": "2026-03-28T15:10:09Z",
+  "finished_at": "2026-03-28T15:10:09Z",
   "benchmark_pack": {
     "id": "public-benchmark-pack-v1",
     "version": "1.0.0",
@@ -25,11 +25,13 @@
           "pass_rate": 0.0
         }
       },
+      "total_score": 0.5,
       "machine_score": 0.5
     },
     "candidate-student": {
       "run_id": "autoresearch-alpha-example-candidate-student",
       "status": "completed",
+      "total_score": 0.8,
       "machine_score": 0.8,
       "note": "Student prompt-pack only; no teacher evaluation in this stage."
     },
@@ -47,11 +49,35 @@
           "pass_rate": 0.0
         }
       },
+      "total_score": 0.75,
       "machine_score": 0.75,
       "verdict_text": "Candidate teacher evaluation against public benchmark pack.",
       "scenario_count": 4,
-      "public_curriculum_themes": []
+      "public_curriculum_themes": [],
+      "effective_label": "blocked"
     }
+  },
+  "comparison": {
+    "verdict": "better",
+    "deciding_axis": "pass_rate",
+    "direction": "higher_is_better",
+    "baseline_run_id": "autoresearch-alpha-example-baseline-eval",
+    "candidate_run_id": "autoresearch-alpha-example-candidate-teacher-eval",
+    "score_basis": "scorecard.aggregate_score.average_score",
+    "baseline_total_score": 0.5,
+    "candidate_total_score": 0.75,
+    "total_score_delta": 0.25,
+    "category_deltas": {
+      "pass_count": 0,
+      "pass_rate": 0.0,
+      "average_score": 0.25,
+      "holdout_pass_count": 0,
+      "holdout_pass_rate": 0.0
+    },
+    "reasons": [
+      "Candidate improved on the public comparison surface.",
+      "Aggregate average score changed by +0.2500."
+    ]
   },
   "comparison_verdict": {
     "label": "better",
@@ -64,7 +90,28 @@
   },
   "score_deltas": {
     "pass_rate": 0.0,
-    "average_score": 0.25
+    "average_score": 0.25,
+    "total_score": 0.25,
+    "category_deltas": {
+      "pass_count": 0,
+      "pass_rate": 0.0,
+      "average_score": 0.25,
+      "holdout_pass_count": 0,
+      "holdout_pass_rate": 0.0
+    }
+  },
+  "promotion_decision": {
+    "status": "blocked",
+    "effective_label": "blocked",
+    "comparison_label": "better",
+    "eligible_for_weighted_promotion": false,
+    "failed_gates": [],
+    "blocked_gates": [
+      "demo_tests_still_work",
+      "sealed_eval",
+      "certification"
+    ],
+    "reason": "Weighted promotion is blocked until: demo_tests_still_work, sealed_eval, certification."
   },
   "iteration_history": [
     {
@@ -110,9 +157,9 @@
       "stage": "baseline-eval",
       "run_id": "autoresearch-alpha-example-baseline-eval",
       "state": "completed",
-      "queued_at": "2026-03-28T04:19:35Z",
-      "started_at": "2026-03-28T04:19:35Z",
-      "completed_at": "2026-03-28T04:19:35Z",
+      "queued_at": "2026-03-28T15:10:09Z",
+      "started_at": "2026-03-28T15:10:09Z",
+      "completed_at": "2026-03-28T15:10:09Z",
       "status": "completed",
       "machine_score": 0.5,
       "error": null
@@ -121,9 +168,9 @@
       "stage": "candidate-student",
       "run_id": "autoresearch-alpha-example-candidate-student",
       "state": "completed",
-      "queued_at": "2026-03-28T04:19:35Z",
-      "started_at": "2026-03-28T04:19:35Z",
-      "completed_at": "2026-03-28T04:19:35Z",
+      "queued_at": "2026-03-28T15:10:09Z",
+      "started_at": "2026-03-28T15:10:09Z",
+      "completed_at": "2026-03-28T15:10:09Z",
       "status": "completed",
       "machine_score": 0.8,
       "error": null
@@ -132,15 +179,87 @@
       "stage": "candidate-teacher-eval",
       "run_id": "autoresearch-alpha-example-candidate-teacher-eval",
       "state": "completed",
-      "queued_at": "2026-03-28T04:19:35Z",
-      "started_at": "2026-03-28T04:19:35Z",
-      "completed_at": "2026-03-28T04:19:35Z",
+      "queued_at": "2026-03-28T15:10:09Z",
+      "started_at": "2026-03-28T15:10:09Z",
+      "completed_at": "2026-03-28T15:10:09Z",
       "status": "completed",
       "machine_score": 0.75,
       "error": null
     }
   ],
   "integrity_gate": {
+    "status": "blocked",
+    "promotion_eligible": false,
+    "failed_gates": [],
+    "blocked_gates": [
+      "demo_tests_still_work",
+      "sealed_eval",
+      "certification"
+    ],
+    "gates": {
+      "public_regression": {
+        "status": "pass",
+        "reason": "Candidate cleared the public regression comparison.",
+        "detail": {
+          "comparison_label": "better",
+          "delta_pass_rate": 0.0,
+          "delta_average_score": 0.25
+        }
+      },
+      "required_artifacts_present": {
+        "status": "pass",
+        "reason": "Required stage artifacts are present.",
+        "detail": {
+          "all_artifacts_present": true,
+          "missing_artifacts": {}
+        }
+      },
+      "no_holdout_leakage": {
+        "status": "pass",
+        "reason": "Student stage stayed public-only and exposed no teacher score output.",
+        "detail": {
+          "request_has_teacher_evaluation": false,
+          "prompt_pack_sealed_holdout_count": 0,
+          "student_view_sealed_holdout_count": 0,
+          "teacher_output_present": false
+        }
+      },
+      "no_fake_claims": {
+        "status": "pass",
+        "reason": "Known limitations are surfaced explicitly instead of being claimed away.",
+        "detail": {
+          "blocked_criteria_ids": [
+            "live-execution-backend",
+            "mutation-surface-enforcement",
+            "sealed-holdout-coverage",
+            "verdict-stability"
+          ],
+          "honesty_note": "This is a public-regression autoresearch alpha loop with three real stages executed through RunBridge. The backend is LocalReplayRunner (deterministic shim, not live execution). Sealed holdout families are explicitly excluded. Mutation-surface enforcement and verdict stability are not yet implemented."
+        }
+      },
+      "demo_tests_still_work": {
+        "status": "blocked",
+        "reason": "Repo checks were not executed on this LocalReplayRunner path, so demo/tests cannot clear yet.",
+        "detail": {
+          "check_results_present": false,
+          "executed_check_count": 0
+        }
+      },
+      "sealed_eval": {
+        "status": "blocked",
+        "reason": "Sealed/private families are outside this public-regression lane.",
+        "detail": {
+          "policy": "blocked"
+        }
+      },
+      "certification": {
+        "status": "blocked",
+        "reason": "Certification remains blocked until a sealed evaluation lane exists.",
+        "detail": {
+          "policy": "blocked"
+        }
+      }
+    },
     "public_regression": "pass",
     "sealed_eval": "blocked",
     "certification": "blocked",
@@ -180,19 +299,66 @@
     "provenance_present": true
   },
   "phase_c_acceptance": {
-    "C001": { "label": "Three-stage lifecycle", "status": "pass" },
-    "C002": { "label": "Per-stage run-record-history", "status": "pass" },
-    "C003": { "label": "Live execution backend", "status": "blocked", "reason": "LocalReplayRunner only; no live executor wired." },
-    "C004": { "label": "Public regression comparison", "status": "pass" },
-    "C005": { "label": "Honest integrity gating", "status": "pass" },
-    "C006": { "label": "Artifact coverage surface", "status": "pass" },
-    "C007": { "label": "Sealed eval / certification", "status": "blocked", "reason": "Public-regression lane only; sealed families excluded." }
+    "C001": {
+      "label": "Three-stage lifecycle",
+      "status": "pass"
+    },
+    "C002": {
+      "label": "Per-stage run-record-history",
+      "status": "pass"
+    },
+    "C003": {
+      "label": "Live execution backend",
+      "status": "blocked",
+      "reason": "LocalReplayRunner only; no live executor wired."
+    },
+    "C004": {
+      "label": "Public regression comparison",
+      "status": "pass"
+    },
+    "C005": {
+      "label": "Honest integrity gating",
+      "status": "pass"
+    },
+    "C006": {
+      "label": "Artifact coverage surface",
+      "status": "pass"
+    },
+    "C007": {
+      "label": "Sealed eval / certification",
+      "status": "blocked",
+      "reason": "Public-regression lane only; sealed families excluded."
+    },
+    "C008": {
+      "label": "Integrity gate enforcement",
+      "status": "pass"
+    },
+    "C009": {
+      "label": "Meaningful delta visibility",
+      "status": "pass"
+    }
   },
   "blocked_criteria": [
-    { "id": "mutation-surface-enforcement", "status": "blocked", "reason": "LocalReplayRunner does not enforce file-level mutation budgets." },
-    { "id": "verdict-stability", "status": "blocked", "reason": "Single-pass verdict only; multi-round convergence not yet implemented." },
-    { "id": "sealed-holdout-coverage", "status": "blocked", "reason": "Public-regression lane only; sealed/private families are explicitly excluded." },
-    { "id": "live-execution-backend", "status": "blocked", "reason": "LocalReplayRunner is a deterministic replay shim, not a live executor." }
+    {
+      "id": "mutation-surface-enforcement",
+      "status": "blocked",
+      "reason": "LocalReplayRunner does not enforce file-level mutation budgets."
+    },
+    {
+      "id": "verdict-stability",
+      "status": "blocked",
+      "reason": "Single-pass verdict only; multi-round convergence not yet implemented."
+    },
+    {
+      "id": "sealed-holdout-coverage",
+      "status": "blocked",
+      "reason": "Public-regression lane only; sealed/private families are explicitly excluded."
+    },
+    {
+      "id": "live-execution-backend",
+      "status": "blocked",
+      "reason": "LocalReplayRunner is a deterministic replay shim, not a live executor."
+    }
   ],
   "honesty_note": "This is a public-regression autoresearch alpha loop with three real stages executed through RunBridge. The backend is LocalReplayRunner (deterministic shim, not live execution). Sealed holdout families are explicitly excluded. Mutation-surface enforcement and verdict stability are not yet implemented."
 }

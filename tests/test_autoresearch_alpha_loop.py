@@ -11,6 +11,8 @@ from runner_bridge.autoresearch_alpha import (
     BLOCKED_CRITERIA,
     PHASE_C_ACCEPTANCE,
     STAGE_NAMES,
+    build_comparison_summary,
+    build_promotion_decision,
     load_benchmark_pack,
     run_autoresearch_alpha,
 )
@@ -158,6 +160,27 @@ class AutoresearchAlphaThreeStageTests(unittest.TestCase):
         self.assertIn("delta_average_score", verdict)
         self.assertIn("score_deltas", receipt)
 
+    def test_comparison_summary_exposes_total_and_category_deltas(self):
+        """Comparison summary JSON must surface total score + category deltas."""
+        bridge = RunBridge(artifacts_root=str(self.artifacts_root))
+        config = json.loads(EXAMPLE_CONFIG.read_text())
+        receipt = run_autoresearch_alpha(request_payload=config, bridge=bridge)
+
+        comparison = receipt["comparison"]
+        self.assertEqual(comparison["baseline_run_id"], receipt["stages"]["baseline-eval"]["run_id"])
+        self.assertEqual(comparison["candidate_run_id"], receipt["stages"]["candidate-teacher-eval"]["run_id"])
+        self.assertIn("total_score_delta", comparison)
+        self.assertIn("category_deltas", comparison)
+        self.assertEqual(comparison["total_score_delta"], 0.25)
+        self.assertEqual(comparison["category_deltas"]["average_score"], 0.25)
+        self.assertIn("pass_count", comparison["category_deltas"])
+        self.assertTrue(comparison["reasons"])
+
+        comparison_summary_path = Path(receipt["comparison_summary_path"])
+        self.assertTrue(comparison_summary_path.exists(), "missing comparison summary JSON")
+        comparison_summary = json.loads(comparison_summary_path.read_text())
+        self.assertEqual(comparison_summary["comparison"]["total_score_delta"], 0.25)
+
     def test_run_record_history_tracks_lifecycle(self):
         """Per-stage run-record-history.json must track queued → running → completed."""
         bridge = RunBridge(artifacts_root=str(self.artifacts_root))
@@ -184,7 +207,7 @@ class AutoresearchAlphaThreeStageTests(unittest.TestCase):
         self.assertEqual(len(receipt["run_record_history"]), 3)
 
     def test_top_level_artifacts_written(self):
-        """artifacts_root must contain autoresearch-alpha.json + request copy."""
+        """artifacts_root must contain receipt + request copy + comparison summary."""
         bridge = RunBridge(artifacts_root=str(self.artifacts_root))
         config = json.loads(EXAMPLE_CONFIG.read_text())
         receipt = run_autoresearch_alpha(request_payload=config, bridge=bridge)
@@ -197,11 +220,17 @@ class AutoresearchAlphaThreeStageTests(unittest.TestCase):
             (self.artifacts_root / "autoresearch-alpha.request.json").exists(),
             "missing autoresearch-alpha.request.json",
         )
+        self.assertTrue(
+            (self.artifacts_root / "autoresearch-alpha.comparison.json").exists(),
+            "missing autoresearch-alpha.comparison.json",
+        )
 
-        # Receipt on disk matches returned receipt (minus receipt_path)
+        # Receipt on disk matches returned receipt (minus runtime-added paths)
         disk_receipt = json.loads((self.artifacts_root / "autoresearch-alpha.json").read_text())
         self.assertEqual(disk_receipt["receipt_type"], "autoresearch-alpha")
         self.assertEqual(disk_receipt["receipt_version"], "0.2.0")
+        self.assertIn("comparison", disk_receipt)
+        self.assertIn("promotion_decision", disk_receipt)
 
     def test_artifact_coverage_across_all_stages(self):
         """Artifact coverage must span all three stage run directories."""
@@ -219,7 +248,7 @@ class AutoresearchAlphaThreeStageTests(unittest.TestCase):
                 self.assertTrue(present, f"missing artifact {artifact} in {stage_name}")
 
     def test_integrity_gating_honest(self):
-        """Integrity gate must show public_regression pass, sealed/cert blocked."""
+        """Integrity gate must surface detailed machine-readable gate status."""
         bridge = RunBridge(artifacts_root=str(self.artifacts_root))
         config = json.loads(EXAMPLE_CONFIG.read_text())
         receipt = run_autoresearch_alpha(request_payload=config, bridge=bridge)
@@ -228,9 +257,28 @@ class AutoresearchAlphaThreeStageTests(unittest.TestCase):
         self.assertIn(gate["public_regression"], ("pass", "fail"))
         self.assertEqual(gate["sealed_eval"], "blocked")
         self.assertEqual(gate["certification"], "blocked")
+        self.assertIn("gates", gate)
+        self.assertEqual(gate["gates"]["no_holdout_leakage"]["status"], "pass")
+        self.assertEqual(gate["gates"]["required_artifacts_present"]["status"], "pass")
+        self.assertEqual(gate["gates"]["demo_tests_still_work"]["status"], "blocked")
+
+    def test_promotion_decision_blocks_weighted_promotion_when_integrity_is_not_clear(self):
+        """Raw comparison may be better, but weighted promotion must stay blocked."""
+        bridge = RunBridge(artifacts_root=str(self.artifacts_root))
+        config = json.loads(EXAMPLE_CONFIG.read_text())
+        receipt = run_autoresearch_alpha(request_payload=config, bridge=bridge)
+
+        self.assertEqual(receipt["comparison_verdict"]["label"], "better")
+        self.assertEqual(receipt["promotion_decision"]["status"], "blocked")
+        self.assertFalse(receipt["promotion_decision"]["eligible_for_weighted_promotion"])
+        self.assertIn("demo_tests_still_work", receipt["promotion_decision"]["blocked_gates"])
+        self.assertEqual(
+            receipt["stages"]["candidate-teacher-eval"]["effective_label"],
+            "blocked",
+        )
 
     def test_phase_c_acceptance_honest(self):
-        """Phase C acceptance must surface C003 and C007 as blocked."""
+        """Phase C acceptance must surface C003/C007 blocked and C008/C009 passed."""
         bridge = RunBridge(artifacts_root=str(self.artifacts_root))
         config = json.loads(EXAMPLE_CONFIG.read_text())
         receipt = run_autoresearch_alpha(request_payload=config, bridge=bridge)
@@ -243,6 +291,8 @@ class AutoresearchAlphaThreeStageTests(unittest.TestCase):
         self.assertEqual(pca["C005"]["status"], "pass")
         self.assertEqual(pca["C006"]["status"], "pass")
         self.assertEqual(pca["C007"]["status"], "blocked")
+        self.assertEqual(pca["C008"]["status"], "pass")
+        self.assertEqual(pca["C009"]["status"], "pass")
 
     def test_blocked_criteria_surfaced(self):
         """Blocked criteria must be honest about what is not implemented."""
@@ -256,6 +306,69 @@ class AutoresearchAlphaThreeStageTests(unittest.TestCase):
         self.assertIn("sealed-holdout-coverage", blocked_ids)
         self.assertIn("live-execution-backend", blocked_ids)
         self.assertIn("verdict-stability", blocked_ids)
+
+
+class AutoresearchAlphaPromotionDecisionUnitTests(unittest.TestCase):
+    """Focused comparison/promotion logic tests for C008/C009."""
+
+    def test_build_comparison_summary_uses_existing_aggregate_score_surface(self):
+        baseline = {
+            "passed": 3,
+            "total": 4,
+            "pass_rate": 0.75,
+            "average_score": 0.5,
+            "holdout": {"passed": 0, "total": 0, "pass_rate": 0.0},
+        }
+        candidate = {
+            "passed": 4,
+            "total": 4,
+            "pass_rate": 1.0,
+            "average_score": 0.75,
+            "holdout": {"passed": 0, "total": 0, "pass_rate": 0.0},
+        }
+        comparison = build_comparison_summary(
+            baseline_run_id="baseline-run",
+            candidate_run_id="candidate-run",
+            baseline_score=baseline,
+            candidate_score=candidate,
+            verdict={
+                "label": "better",
+                "delta_pass_rate": 0.25,
+                "delta_average_score": 0.25,
+            },
+            comparison_policy={"metric": "pass_rate", "direction": "higher_is_better"},
+        )
+
+        self.assertEqual(comparison["score_basis"], "scorecard.aggregate_score.average_score")
+        self.assertEqual(comparison["baseline_total_score"], 0.5)
+        self.assertEqual(comparison["candidate_total_score"], 0.75)
+        self.assertEqual(comparison["total_score_delta"], 0.25)
+        self.assertEqual(comparison["category_deltas"]["pass_count"], 1)
+        self.assertEqual(comparison["category_deltas"]["pass_rate"], 0.25)
+
+    def test_build_promotion_decision_requires_all_integrity_gates_to_pass(self):
+        comparison = {"verdict": "better"}
+
+        blocked_decision = build_promotion_decision(
+            comparison=comparison,
+            integrity_gate={"failed_gates": [], "blocked_gates": ["demo_tests_still_work"]},
+        )
+        self.assertEqual(blocked_decision["status"], "blocked")
+        self.assertFalse(blocked_decision["eligible_for_weighted_promotion"])
+
+        failed_decision = build_promotion_decision(
+            comparison=comparison,
+            integrity_gate={"failed_gates": ["required_artifacts_present"], "blocked_gates": []},
+        )
+        self.assertEqual(failed_decision["status"], "fail")
+        self.assertFalse(failed_decision["eligible_for_weighted_promotion"])
+
+        passing_decision = build_promotion_decision(
+            comparison=comparison,
+            integrity_gate={"failed_gates": [], "blocked_gates": []},
+        )
+        self.assertEqual(passing_decision["status"], "pass")
+        self.assertTrue(passing_decision["eligible_for_weighted_promotion"])
 
 
 class AutoresearchAlphaHonestyTests(unittest.TestCase):
@@ -329,6 +442,7 @@ class AutoresearchAlphaCLITests(unittest.TestCase):
             # Top-level artifacts
             self.assertTrue((artifacts_root / "autoresearch-alpha.json").exists())
             self.assertTrue((artifacts_root / "autoresearch-alpha.request.json").exists())
+            self.assertTrue((artifacts_root / "autoresearch-alpha.comparison.json").exists())
 
 
 class AutoresearchAlphaLegacyCompatTests(unittest.TestCase):

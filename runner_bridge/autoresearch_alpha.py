@@ -78,6 +78,8 @@ PHASE_C_ACCEPTANCE = {
         "status": "blocked",
         "reason": "Public-regression lane only; sealed families excluded.",
     },
+    "C008": {"label": "Integrity gate enforcement", "status": "pass"},
+    "C009": {"label": "Meaningful delta visibility", "status": "pass"},
 }
 
 
@@ -365,6 +367,301 @@ def _collect_stage_artifact_coverage(run_dir: Path) -> dict[str, bool]:
     return checks
 
 
+def _load_json_file(path: str | Path | None) -> dict[str, Any]:
+    """Best-effort JSON loader for result-adjacent artifacts."""
+    if not path:
+        return {}
+    artifact_path = Path(path)
+    if not artifact_path.exists():
+        return {}
+    return json.loads(artifact_path.read_text())
+
+
+def build_comparison_summary(
+    *,
+    baseline_run_id: str,
+    candidate_run_id: str,
+    baseline_score: dict[str, Any],
+    candidate_score: dict[str, Any],
+    verdict: dict[str, Any],
+    comparison_policy: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Build a richer machine-readable comparison summary for the alpha loop."""
+    comparison_policy = comparison_policy or {}
+    baseline_total_score = round(float(baseline_score.get("average_score", 0.0) or 0.0), 4)
+    candidate_total_score = round(float(candidate_score.get("average_score", 0.0) or 0.0), 4)
+    total_score_delta = round(candidate_total_score - baseline_total_score, 4)
+
+    baseline_holdout = baseline_score.get("holdout") if isinstance(baseline_score.get("holdout"), dict) else {}
+    candidate_holdout = candidate_score.get("holdout") if isinstance(candidate_score.get("holdout"), dict) else {}
+
+    reasons: list[str] = []
+    if verdict["label"] == "better":
+        reasons.append("Candidate improved on the public comparison surface.")
+    elif verdict["label"] == "equal":
+        reasons.append("Candidate matched the baseline on the public comparison surface.")
+    else:
+        reasons.append("Candidate regressed against the baseline on the public comparison surface.")
+
+    if verdict["delta_pass_rate"]:
+        reasons.append(f"Public pass rate changed by {verdict['delta_pass_rate']:+.4f}.")
+    if verdict["delta_average_score"]:
+        reasons.append(f"Aggregate average score changed by {verdict['delta_average_score']:+.4f}.")
+    if not reasons or len(reasons) == 1:
+        reasons.append("Score deltas are computed from aggregate teacher scorecards only; no new metric was invented.")
+
+    return {
+        "verdict": verdict["label"],
+        "deciding_axis": comparison_policy.get("metric", "pass_rate"),
+        "direction": comparison_policy.get("direction", "higher_is_better"),
+        "baseline_run_id": baseline_run_id,
+        "candidate_run_id": candidate_run_id,
+        "score_basis": "scorecard.aggregate_score.average_score",
+        "baseline_total_score": baseline_total_score,
+        "candidate_total_score": candidate_total_score,
+        "total_score_delta": total_score_delta,
+        "category_deltas": {
+            "pass_count": int(candidate_score.get("passed", 0) or 0) - int(baseline_score.get("passed", 0) or 0),
+            "pass_rate": verdict["delta_pass_rate"],
+            "average_score": verdict["delta_average_score"],
+            "holdout_pass_count": int(candidate_holdout.get("passed", 0) or 0) - int(baseline_holdout.get("passed", 0) or 0),
+            "holdout_pass_rate": round(
+                float(candidate_holdout.get("pass_rate", 0.0) or 0.0)
+                - float(baseline_holdout.get("pass_rate", 0.0) or 0.0),
+                4,
+            ),
+        },
+        "reasons": reasons,
+    }
+
+
+def build_integrity_gate(
+    *,
+    verdict: dict[str, Any],
+    artifact_coverage: dict[str, dict[str, bool]],
+    student_request: RunRequest,
+    student_result: dict[str, Any],
+    teacher_eval_result: dict[str, Any],
+    integrity_policy: dict[str, Any] | None = None,
+    blocked_criteria: list[dict[str, Any]] | None = None,
+    honesty_note: str = "",
+) -> dict[str, Any]:
+    """Evaluate machine-readable integrity gates for promotion enforcement."""
+    integrity_policy = integrity_policy or {}
+    blocked_ids = {
+        item.get("id")
+        for item in (blocked_criteria or [])
+        if isinstance(item, dict) and item.get("id")
+    }
+
+    student_payload = student_request.to_dict()
+    student_bundle = _load_json_file(student_result.get("artifact_bundle_path"))
+    student_view = student_bundle.get("student_view") if isinstance(student_bundle.get("student_view"), dict) else {}
+    student_prompt_pack = student_payload.get("student_prompt_pack") if isinstance(student_payload.get("student_prompt_pack"), dict) else {}
+
+    all_present = all(all(checks.values()) for checks in artifact_coverage.values())
+    missing_artifacts = {
+        stage_name: [artifact for artifact, present in checks.items() if not present]
+        for stage_name, checks in artifact_coverage.items()
+        if not all(checks.values())
+    }
+
+    public_regression_gate = {
+        "status": "pass" if verdict["label"] in ("better", "equal") else "fail",
+        "reason": (
+            "Candidate cleared the public regression comparison."
+            if verdict["label"] in ("better", "equal")
+            else "Candidate regressed on the public regression comparison."
+        ),
+        "detail": {
+            "comparison_label": verdict["label"],
+            "delta_pass_rate": verdict["delta_pass_rate"],
+            "delta_average_score": verdict["delta_average_score"],
+        },
+    }
+
+    artifact_gate = {
+        "status": "pass" if all_present else "fail",
+        "reason": "Required stage artifacts are present." if all_present else "Required stage artifacts are missing.",
+        "detail": {
+            "all_artifacts_present": all_present,
+            "missing_artifacts": missing_artifacts,
+        },
+    }
+
+    no_holdout_leakage = (
+        "teacher_evaluation" not in student_payload
+        and int(student_prompt_pack.get("sealed_holdout_count", 0) or 0) == 0
+        and int(student_view.get("sealed_holdout_count", 0) or 0) == 0
+        and "teacher_output" not in student_bundle
+    )
+    holdout_gate = {
+        "status": "pass" if no_holdout_leakage else "fail",
+        "reason": (
+            "Student stage stayed public-only and exposed no teacher score output."
+            if no_holdout_leakage
+            else "Student stage leaked holdout or teacher-eval state into the public-only step."
+        ),
+        "detail": {
+            "request_has_teacher_evaluation": "teacher_evaluation" in student_payload,
+            "prompt_pack_sealed_holdout_count": int(student_prompt_pack.get("sealed_holdout_count", 0) or 0),
+            "student_view_sealed_holdout_count": int(student_view.get("sealed_holdout_count", 0) or 0),
+            "teacher_output_present": "teacher_output" in student_bundle,
+        },
+    }
+
+    fake_claims_ok = all(
+        marker in blocked_ids
+        for marker in (
+            "mutation-surface-enforcement",
+            "verdict-stability",
+            "sealed-holdout-coverage",
+            "live-execution-backend",
+        )
+    ) and "LocalReplayRunner" in honesty_note and "not live execution" in honesty_note
+    fake_claims_gate = {
+        "status": "pass" if fake_claims_ok else "fail",
+        "reason": (
+            "Known limitations are surfaced explicitly instead of being claimed away."
+            if fake_claims_ok
+            else "Required honesty markers are missing from the receipt."
+        ),
+        "detail": {
+            "blocked_criteria_ids": sorted(blocked_ids),
+            "honesty_note": honesty_note,
+        },
+    }
+
+    execution_honesty = teacher_eval_result.get("execution_honesty") if isinstance(teacher_eval_result.get("execution_honesty"), dict) else {}
+    check_results = execution_honesty.get("check_results") if isinstance(execution_honesty.get("check_results"), list) else []
+    executed_checks = [
+        check for check in check_results
+        if isinstance(check, dict) and check.get("execution_status") == "executed"
+    ]
+    failed_checks = [
+        check.get("id") or check.get("command") or "unknown-check"
+        for check in executed_checks
+        if check.get("exit_code") not in (0, None)
+    ]
+    if not check_results or not executed_checks:
+        demo_tests_gate = {
+            "status": "blocked",
+            "reason": "Repo checks were not executed on this LocalReplayRunner path, so demo/tests cannot clear yet.",
+            "detail": {
+                "check_results_present": bool(check_results),
+                "executed_check_count": len(executed_checks),
+            },
+        }
+    elif failed_checks:
+        demo_tests_gate = {
+            "status": "fail",
+            "reason": "One or more executed repo checks failed.",
+            "detail": {
+                "executed_check_count": len(executed_checks),
+                "failed_checks": failed_checks,
+            },
+        }
+    else:
+        demo_tests_gate = {
+            "status": "pass",
+            "reason": "Executed repo checks passed.",
+            "detail": {
+                "executed_check_count": len(executed_checks),
+                "failed_checks": [],
+            },
+        }
+
+    sealed_eval_status = integrity_policy.get("sealed_eval", "blocked")
+    certification_status = integrity_policy.get("certification", "blocked")
+
+    gates = {
+        "public_regression": public_regression_gate,
+        "required_artifacts_present": artifact_gate,
+        "no_holdout_leakage": holdout_gate,
+        "no_fake_claims": fake_claims_gate,
+        "demo_tests_still_work": demo_tests_gate,
+        "sealed_eval": {
+            "status": sealed_eval_status,
+            "reason": "Sealed/private families are outside this public-regression lane.",
+            "detail": {"policy": integrity_policy.get("sealed_eval")},
+        },
+        "certification": {
+            "status": certification_status,
+            "reason": "Certification remains blocked until a sealed evaluation lane exists.",
+            "detail": {"policy": integrity_policy.get("certification")},
+        },
+    }
+
+    failed_gates = [name for name, gate in gates.items() if gate["status"] == "fail"]
+    blocked_gates = [name for name, gate in gates.items() if gate["status"] == "blocked"]
+    overall_status = "fail" if failed_gates else "blocked" if blocked_gates else "pass"
+
+    return {
+        "status": overall_status,
+        "promotion_eligible": overall_status == "pass" and public_regression_gate["status"] == "pass",
+        "failed_gates": failed_gates,
+        "blocked_gates": blocked_gates,
+        "gates": gates,
+        "public_regression": public_regression_gate["status"],
+        "sealed_eval": sealed_eval_status,
+        "certification": certification_status,
+        "all_artifacts_present": all_present,
+        "artifact_coverage": artifact_coverage,
+        "provenance_present": "provenance" in teacher_eval_result,
+    }
+
+
+def build_promotion_decision(
+    *,
+    comparison: dict[str, Any],
+    integrity_gate: dict[str, Any],
+) -> dict[str, Any]:
+    """Collapse raw comparison plus integrity gates into the effective promotion outcome."""
+    failed_gates = list(integrity_gate.get("failed_gates", []))
+    blocked_gates = list(integrity_gate.get("blocked_gates", []))
+    comparison_label = comparison.get("verdict", "unknown")
+
+    if failed_gates:
+        return {
+            "status": "fail",
+            "effective_label": "rejected",
+            "comparison_label": comparison_label,
+            "eligible_for_weighted_promotion": False,
+            "failed_gates": failed_gates,
+            "blocked_gates": blocked_gates,
+            "reason": f"Weighted promotion rejected because integrity gates failed: {', '.join(failed_gates)}.",
+        }
+    if blocked_gates:
+        return {
+            "status": "blocked",
+            "effective_label": "blocked",
+            "comparison_label": comparison_label,
+            "eligible_for_weighted_promotion": False,
+            "failed_gates": failed_gates,
+            "blocked_gates": blocked_gates,
+            "reason": f"Weighted promotion is blocked until: {', '.join(blocked_gates)}.",
+        }
+    if comparison_label in ("better", "equal"):
+        return {
+            "status": "pass",
+            "effective_label": comparison_label,
+            "comparison_label": comparison_label,
+            "eligible_for_weighted_promotion": True,
+            "failed_gates": failed_gates,
+            "blocked_gates": blocked_gates,
+            "reason": "Comparison cleared and every integrity gate passed.",
+        }
+    return {
+        "status": "fail",
+        "effective_label": comparison_label,
+        "comparison_label": comparison_label,
+        "eligible_for_weighted_promotion": False,
+        "failed_gates": failed_gates,
+        "blocked_gates": blocked_gates,
+        "reason": "Candidate did not clear the baseline comparison.",
+    }
+
+
 # ---------------------------------------------------------------------------
 # Main orchestrator
 # ---------------------------------------------------------------------------
@@ -543,21 +840,35 @@ def run_autoresearch_alpha(
         stage_dir = bridge.artifacts_root / stage_run_id
         artifact_coverage[stage_name] = _collect_stage_artifact_coverage(stage_dir)
 
-    all_present = all(
-        all(checks.values())
-        for checks in artifact_coverage.values()
+    comparison = build_comparison_summary(
+        baseline_run_id=baseline_run_id,
+        candidate_run_id=teacher_eval_run_id,
+        baseline_score=baseline_aggregate,
+        candidate_score=candidate_aggregate,
+        verdict=verdict,
+        comparison_policy=comparison_policy,
     )
-
-    # Integrity gating
-    public_regression_pass = verdict["label"] in ("better", "equal")
-    integrity_gate = {
-        "public_regression": "pass" if public_regression_pass else "fail",
-        "sealed_eval": "blocked",
-        "certification": "blocked",
-        "all_artifacts_present": all_present,
-        "artifact_coverage": artifact_coverage,
-        "provenance_present": "provenance" in teacher_eval_result,
-    }
+    honesty_note = (
+        "This is a public-regression autoresearch alpha loop with three real stages "
+        "executed through RunBridge. "
+        "The backend is LocalReplayRunner (deterministic shim, not live execution). "
+        "Sealed holdout families are explicitly excluded. "
+        "Mutation-surface enforcement and verdict stability are not yet implemented."
+    )
+    integrity_gate = build_integrity_gate(
+        verdict=verdict,
+        artifact_coverage=artifact_coverage,
+        student_request=student_request,
+        student_result=student_result,
+        teacher_eval_result=teacher_eval_result,
+        integrity_policy=integrity_policy,
+        blocked_criteria=BLOCKED_CRITERIA,
+        honesty_note=honesty_note,
+    )
+    promotion_decision = build_promotion_decision(
+        comparison=comparison,
+        integrity_gate=integrity_gate,
+    )
 
     finished_at = _utc_now()
 
@@ -578,11 +889,13 @@ def run_autoresearch_alpha(
                 "run_id": baseline_run_id,
                 "status": baseline_result.get("status", "unknown"),
                 "aggregate_score": baseline_aggregate,
+                "total_score": comparison["baseline_total_score"],
                 "machine_score": baseline_result.get("machine_score", 0.0),
             },
             "candidate-student": {
                 "run_id": student_run_id,
                 "status": student_result.get("status", "unknown"),
+                "total_score": round(float(student_result.get("machine_score", 0.0) or 0.0), 4),
                 "machine_score": student_result.get("machine_score", 0.0),
                 "note": "Student prompt-pack only; no teacher evaluation in this stage.",
             },
@@ -590,35 +903,44 @@ def run_autoresearch_alpha(
                 "run_id": teacher_eval_run_id,
                 "status": teacher_eval_result.get("status", "unknown"),
                 "aggregate_score": candidate_aggregate,
+                "total_score": comparison["candidate_total_score"],
                 "machine_score": teacher_eval_result.get("machine_score", 0.0),
                 "verdict_text": teacher_scorecard.get("verdict", ""),
                 "scenario_count": len(teacher_scorecard.get("scenario_results", [])),
                 "public_curriculum_themes": teacher_scorecard.get("public_curriculum_themes", []),
+                "effective_label": promotion_decision["effective_label"],
             },
         },
+        "comparison": comparison,
         "comparison_verdict": verdict,
         "score_deltas": {
             "pass_rate": verdict["delta_pass_rate"],
             "average_score": verdict["delta_average_score"],
+            "total_score": comparison["total_score_delta"],
+            "category_deltas": comparison["category_deltas"],
         },
+        "promotion_decision": promotion_decision,
         "iteration_history": iteration_history,
         "run_record_history": records,
         "integrity_gate": integrity_gate,
         "phase_c_acceptance": PHASE_C_ACCEPTANCE,
         "blocked_criteria": BLOCKED_CRITERIA,
-        "honesty_note": (
-            "This is a public-regression autoresearch alpha loop with three real stages "
-            "executed through RunBridge. "
-            "The backend is LocalReplayRunner (deterministic shim, not live execution). "
-            "Sealed holdout families are explicitly excluded. "
-            "Mutation-surface enforcement and verdict stability are not yet implemented."
-        ),
+        "honesty_note": honesty_note,
     }
 
-    # --- Write top-level receipt ---
+    # --- Write top-level receipt + comparison summary ---
     receipt_path = bridge.artifacts_root / "autoresearch-alpha.json"
     receipt_path.write_text(json.dumps(receipt, indent=2))
+
+    comparison_summary_path = bridge.artifacts_root / "autoresearch-alpha.comparison.json"
+    comparison_summary_path.write_text(json.dumps({
+        "comparison": comparison,
+        "integrity_gate": integrity_gate,
+        "promotion_decision": promotion_decision,
+    }, indent=2))
+
     receipt["receipt_path"] = str(receipt_path)
+    receipt["comparison_summary_path"] = str(comparison_summary_path)
 
     return receipt
 
