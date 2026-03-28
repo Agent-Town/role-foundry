@@ -1,0 +1,66 @@
+{
+  "description": "Example autoresearch alpha public-regression loop — three real stages through RunBridge.",
+  "run_id_prefix": "autoresearch-alpha-example",
+  "public_benchmark_pack": "benchmarks/public-pack-v1/benchmark-pack.json",
+  "max_episodes": 4,
+  "family_registry": "benchmarks/public-pack-v1/episode-family-registry.json",
+  "integrity_policy": {
+    "public_regression": "required",
+    "sealed_eval": "blocked",
+    "certification": "blocked"
+  },
+  "comparison_policy": {
+    "metric": "pass_rate",
+    "direction": "higher_is_better",
+    "tolerance": 0.0
+  },
+  "stages": {
+    "baseline-eval": {
+      "request": {
+        "teacher_evaluation": {
+          "teacher": {
+            "id": "autoresearch-alpha-teacher",
+            "name": "Autoresearch Alpha Teacher",
+            "agent_role": "teacher"
+          },
+          "student": {
+            "id": "autoresearch-alpha-baseline",
+            "name": "Autoresearch Alpha Baseline",
+            "agent_role": "student"
+          },
+          "student_prompt_summary": "Baseline evaluation of public benchmark episodes.",
+          "teacher_verdict": "Baseline teacher evaluation against public benchmark pack."
+        }
+      }
+    },
+    "candidate-student": {
+      "request": {
+        "prompt_pack_episode_ids": [
+          "pbpv1-e01",
+          "pbpv1-e02",
+          "pbpv1-e03",
+          "pbpv1-e04"
+        ]
+      }
+    },
+    "candidate-teacher-eval": {
+      "request": {
+        "teacher_evaluation": {
+          "teacher": {
+            "id": "autoresearch-alpha-teacher",
+            "name": "Autoresearch Alpha Teacher",
+            "agent_role": "teacher"
+          },
+          "student": {
+            "id": "autoresearch-alpha-candidate",
+            "name": "Autoresearch Alpha Candidate",
+            "agent_role": "student"
+          },
+          "student_prompt_summary": "Candidate evaluation after student training on public benchmark episodes.",
+          "teacher_verdict": "Candidate teacher evaluation against public benchmark pack."
+        }
+      }
+    }
+  },
+  "honesty_note": "This example runs against LocalReplayRunner (deterministic shim). It exercises three real stages through RunBridge but does not execute live commands, enforce mutation budgets, or claim sealed-holdout coverage."
+}

@@ -297,6 +297,70 @@ python3 -m runner_bridge.cli \
 
 The second command is not a claim that Clawith is running. It is just the fastest zero-secret way to verify the transcript/artifact contract locally.
 
+## Autoresearch alpha — public-regression loop
+
+The `runner_bridge.autoresearch_alpha` module implements a real three-stage public-regression loop that executes each stage as a separate run through RunBridge.
+
+### Three stages
+
+| # | Stage | What it does | RunBridge call? |
+|---|-------|-------------|-----------------|
+| 1 | `baseline-eval` | Teacher evaluation of the baseline state | Yes — full run with `teacher_evaluation` |
+| 2 | `candidate-student` | Student consumes the public benchmark prompt pack only (no teacher evaluation) | Yes — run with `student_prompt_pack` extra only |
+| 3 | `candidate-teacher-eval` | Teacher evaluation of the candidate, with `previous_iteration` injected from the **real** baseline aggregate score | Yes — full run with `teacher_evaluation` |
+
+Each stage gets its own run directory, its own `request.json` / `result.json` / `transcript.ndjson` / `artifact-bundle.json`, and its own provenance receipts.
+
+### CLI entrypoint
+
+```bash
+python3 -m runner_bridge.autoresearch_alpha \
+  --request runner_bridge/examples/autoresearch-alpha-public-loop.json \
+  --artifacts-root runtime/runs
+```
+
+### Request shape
+
+The request JSON follows a stage-config shape:
+
+```json
+{
+  "run_id_prefix": "autoresearch-alpha-example",
+  "public_benchmark_pack": "benchmarks/public-pack-v1/benchmark-pack.json",
+  "family_registry": "benchmarks/public-pack-v1/episode-family-registry.json",
+  "integrity_policy": { "public_regression": "required", "sealed_eval": "blocked" },
+  "comparison_policy": { "metric": "pass_rate", "direction": "higher_is_better" },
+  "stages": {
+    "baseline-eval": { "request": { "teacher_evaluation": { ... } } },
+    "candidate-student": { "request": { "prompt_pack_episode_ids": [...] } },
+    "candidate-teacher-eval": { "request": { "teacher_evaluation": { ... } } }
+  }
+}
+```
+
+### Artifact outputs
+
+```text
+artifacts_root/
+  autoresearch-alpha.json               # top-level receipt
+  autoresearch-alpha.request.json       # copy of the request
+  <prefix>.run-record-history.json      # per-stage lifecycle (queued → running → completed)
+  <prefix>-baseline-eval/               # stage 1 run dir
+  <prefix>-candidate-student/           # stage 2 run dir
+  <prefix>-candidate-teacher-eval/      # stage 3 run dir
+```
+
+### Honest blocked claims
+
+The receipt surfaces explicit `blocked_criteria` and `phase_c_acceptance`:
+
+- **C003** (live execution backend) — blocked; LocalReplayRunner is a deterministic shim
+- **C007** (sealed eval / certification) — blocked; public-regression lane only
+
+The `integrity_gate` reports `public_regression: pass|fail` but honestly marks `sealed_eval: blocked` and `certification: blocked`.
+
+This loop does not claim sealed-holdout coverage, live execution, mutation enforcement, or verdict stability. Those remain honestly blocked.
+
 ## What is still not done
 
 - no native consumer OAuth in Clawith

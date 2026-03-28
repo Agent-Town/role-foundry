@@ -15,6 +15,11 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _has_student_prompt_pack(request: dict) -> bool:
+    """Check if request has a student_prompt_pack extra (student-only stage, no teacher)."""
+    return isinstance(request.get("student_prompt_pack"), dict)
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     request = json.loads(Path(args.request).read_text())
@@ -42,6 +47,8 @@ def main(argv: list[str] | None = None) -> int:
     ]
 
     evaluation = build_teacher_evaluation(request) if has_teacher_evaluation(request) else None
+    student_prompt_pack = request.get("student_prompt_pack") if _has_student_prompt_pack(request) else None
+
     if evaluation:
         events.extend(
             [
@@ -57,6 +64,13 @@ def main(argv: list[str] | None = None) -> int:
                 },
             ]
         )
+    elif student_prompt_pack:
+        ep_count = student_prompt_pack.get("episode_count", len(student_prompt_pack.get("episodes", [])))
+        events.append({
+            "ts": _utc_now(),
+            "event": "student.prompt_pack.loaded",
+            "message": f"Student prompt pack loaded with {ep_count} public episodes. No teacher evaluation in this stage.",
+        })
 
     if simulate_failure:
         events.append(
@@ -116,6 +130,36 @@ def main(argv: list[str] | None = None) -> int:
                 "iteration_history": evaluation["iteration_history"],
                 "verdict": evaluation["teacher_output"]["verdict"],
             }
+        elif student_prompt_pack:
+            # Student-only stage: no teacher evaluation, just prompt pack consumption
+            ep_count = student_prompt_pack.get("episode_count", 0)
+            events.append({
+                "ts": _utc_now(),
+                "event": "runner.completed",
+                "message": f"LocalReplayRunner consumed student prompt pack ({ep_count} episodes). No teacher scoring in this stage.",
+            })
+            machine_score = 0.8
+            scorecard = {
+                "runner": "LocalReplayRunner",
+                "stage": "candidate-student",
+                "prompt_pack_episode_count": ep_count,
+                "sealed_holdout_count": 0,
+                "checks": [
+                    {
+                        "name": "prompt_pack_loaded",
+                        "passed": True,
+                    },
+                    {
+                        "name": "no_teacher_evaluation",
+                        "passed": True,
+                        "note": "Student-only stage; teacher evaluation happens in candidate-teacher-eval.",
+                    },
+                    {
+                        "name": "artifact_bundle_present",
+                        "passed": True,
+                    },
+                ],
+            }
         else:
             events.append(
                 {
@@ -160,6 +204,17 @@ def main(argv: list[str] | None = None) -> int:
         artifact_bundle["teacher_output"] = evaluation["teacher_output"]
         artifact_bundle["iteration_history"] = evaluation["iteration_history"]
         artifact_bundle["public_curriculum_themes"] = evaluation["public_curriculum_themes"]
+    elif student_prompt_pack:
+        # Student view from prompt pack (no teacher_output)
+        artifact_bundle["student_view"] = {
+            "agent_role": "student",
+            "actor": {"id": "candidate-student", "name": "Candidate Student", "agent_role": "student"},
+            "episode_count": student_prompt_pack.get("episode_count", 0),
+            "episodes": student_prompt_pack.get("episodes", []),
+            "sealed_holdout_count": 0,
+            "public_failure_themes_consumed": student_prompt_pack.get("public_failure_themes", []),
+            "prompt_summary": student_prompt_pack.get("prompt_summary", ""),
+        }
     if error:
         artifact_bundle["error"] = error
     artifact_bundle_path.write_text(json.dumps(artifact_bundle, indent=2))

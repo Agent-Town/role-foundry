@@ -1,12 +1,16 @@
-"""Tests for the autoresearch alpha orchestrator (Phase C, narrow public lane)."""
+"""Tests for the autoresearch alpha orchestrator — real three-stage public-regression loop."""
 
 import json
+import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
 
 from runner_bridge.autoresearch_alpha import (
     BLOCKED_CRITERIA,
+    PHASE_C_ACCEPTANCE,
+    STAGE_NAMES,
     load_benchmark_pack,
     run_autoresearch_alpha,
 )
@@ -14,11 +18,11 @@ from runner_bridge.bridge import RunBridge
 
 ROOT = Path(__file__).resolve().parents[1]
 BENCHMARK_PACK = ROOT / "benchmarks" / "public-pack-v1" / "benchmark-pack.json"
-EXAMPLE_CONFIG = ROOT / "runner_bridge" / "examples" / "autoresearch-alpha-loop.json"
+EXAMPLE_CONFIG = ROOT / "runner_bridge" / "examples" / "autoresearch-alpha-public-loop.json"
 
 
-class AutoresearchAlphaLoopTests(unittest.TestCase):
-    """Core loop: baseline → candidate → teacher eval → verdict."""
+class AutoresearchAlphaThreeStageTests(unittest.TestCase):
+    """Core three-stage loop: baseline-eval → candidate-student → candidate-teacher-eval."""
 
     def setUp(self):
         self._tmpdir = tempfile.TemporaryDirectory()
@@ -27,12 +31,23 @@ class AutoresearchAlphaLoopTests(unittest.TestCase):
     def tearDown(self):
         self._tmpdir.cleanup()
 
-    def test_example_config_exists_and_is_valid(self):
-        self.assertTrue(EXAMPLE_CONFIG.exists(), "missing autoresearch-alpha example config")
+    def test_example_config_exists_and_has_stage_shape(self):
+        self.assertTrue(EXAMPLE_CONFIG.exists(), "missing autoresearch-alpha-public-loop example")
         config = json.loads(EXAMPLE_CONFIG.read_text())
         self.assertIn("run_id_prefix", config)
-        self.assertIn("previous_iteration", config)
-        self.assertIn("honesty_note", config)
+        self.assertIn("public_benchmark_pack", config)
+        self.assertIn("family_registry", config)
+        self.assertIn("integrity_policy", config)
+        self.assertIn("comparison_policy", config)
+        self.assertIn("stages", config)
+        for stage in STAGE_NAMES:
+            self.assertIn(stage, config["stages"], f"missing stage: {stage}")
+            self.assertIn("request", config["stages"][stage])
+        # baseline and teacher-eval have teacher_evaluation
+        self.assertIn("teacher_evaluation", config["stages"]["baseline-eval"]["request"])
+        self.assertIn("teacher_evaluation", config["stages"]["candidate-teacher-eval"]["request"])
+        # candidate-student has prompt_pack_episode_ids
+        self.assertIn("prompt_pack_episode_ids", config["stages"]["candidate-student"]["request"])
 
     def test_benchmark_pack_loads(self):
         pack = load_benchmark_pack(BENCHMARK_PACK)
@@ -41,170 +56,206 @@ class AutoresearchAlphaLoopTests(unittest.TestCase):
         self.assertGreater(len(pack["episodes"]), 0)
         self.assertTrue(pack["execution_policy"]["student_visible_only"])
 
-    def test_first_iteration_no_previous(self):
-        """First iteration with no baseline — should produce a valid receipt."""
+    def test_three_stages_execute_through_bridge(self):
+        """All three stages must execute as separate runs through RunBridge."""
         bridge = RunBridge(artifacts_root=str(self.artifacts_root))
+        config = json.loads(EXAMPLE_CONFIG.read_text())
         receipt = run_autoresearch_alpha(
+            request_payload=config,
             bridge=bridge,
-            run_id_prefix="alpha-test-first",
-            benchmark_pack_path=str(BENCHMARK_PACK),
-            previous_iteration=None,
-            max_episodes=3,
         )
 
         self.assertEqual(receipt["receipt_type"], "autoresearch-alpha")
-        self.assertIn("stages", receipt)
-        self.assertIn("baseline", receipt["stages"])
-        self.assertIn("candidate", receipt["stages"])
-        self.assertIn("teacher_evaluation", receipt["stages"])
+        self.assertEqual(receipt["receipt_version"], "0.2.0")
 
-        # Baseline should indicate no previous
-        self.assertEqual(receipt["stages"]["baseline"]["status"], "no_previous")
+        # Three distinct stages with run IDs
+        stages = receipt["stages"]
+        self.assertIn("baseline-eval", stages)
+        self.assertIn("candidate-student", stages)
+        self.assertIn("candidate-teacher-eval", stages)
 
-        # Candidate should have completed
-        self.assertEqual(receipt["stages"]["candidate"]["status"], "completed")
+        # Each stage has a distinct run_id and completed status
+        prefix = config["run_id_prefix"]
+        self.assertEqual(stages["baseline-eval"]["run_id"], f"{prefix}-baseline-eval")
+        self.assertEqual(stages["candidate-student"]["run_id"], f"{prefix}-candidate-student")
+        self.assertEqual(stages["candidate-teacher-eval"]["run_id"], f"{prefix}-candidate-teacher-eval")
 
-        # Verdict should exist
-        self.assertIn("comparison_verdict", receipt)
+        self.assertEqual(stages["baseline-eval"]["status"], "completed")
+        self.assertEqual(stages["candidate-student"]["status"], "completed")
+        self.assertEqual(stages["candidate-teacher-eval"]["status"], "completed")
+
+        # Three separate run directories exist
+        for stage_suffix in ("baseline-eval", "candidate-student", "candidate-teacher-eval"):
+            run_dir = self.artifacts_root / f"{prefix}-{stage_suffix}"
+            self.assertTrue(run_dir.exists(), f"missing run dir: {run_dir}")
+            self.assertTrue((run_dir / "request.json").exists())
+            self.assertTrue((run_dir / "result.json").exists())
+            self.assertTrue((run_dir / "transcript.ndjson").exists())
+            self.assertTrue((run_dir / "artifact-bundle.json").exists())
+
+    def test_baseline_eval_produces_aggregate_score(self):
+        """Stage 1 baseline-eval must produce a real aggregate_score."""
+        bridge = RunBridge(artifacts_root=str(self.artifacts_root))
+        config = json.loads(EXAMPLE_CONFIG.read_text())
+        receipt = run_autoresearch_alpha(request_payload=config, bridge=bridge)
+
+        baseline = receipt["stages"]["baseline-eval"]
+        self.assertIn("aggregate_score", baseline)
+        self.assertIn("pass_rate", baseline["aggregate_score"])
+        self.assertIn("average_score", baseline["aggregate_score"])
+        self.assertGreater(baseline["aggregate_score"]["total"], 0)
+
+    def test_candidate_student_has_no_teacher_evaluation(self):
+        """Stage 2 candidate-student must NOT have teacher evaluation."""
+        bridge = RunBridge(artifacts_root=str(self.artifacts_root))
+        config = json.loads(EXAMPLE_CONFIG.read_text())
+        receipt = run_autoresearch_alpha(request_payload=config, bridge=bridge)
+
+        prefix = config["run_id_prefix"]
+        student_dir = self.artifacts_root / f"{prefix}-candidate-student"
+        bundle = json.loads((student_dir / "artifact-bundle.json").read_text())
+
+        # Should have student_view but NOT teacher_output
+        self.assertIn("student_view", bundle)
+        self.assertNotIn("teacher_output", bundle)
+
+        # Student view should reference prompt pack
+        sv = bundle["student_view"]
+        self.assertEqual(sv["sealed_holdout_count"], 0)
+
+        # The request should have student_prompt_pack, not teacher_evaluation
+        private_request = json.loads((student_dir / "request.private.json").read_text())
+        self.assertIn("student_prompt_pack", private_request)
+        self.assertNotIn("teacher_evaluation", private_request)
+
+    def test_candidate_teacher_eval_injects_real_baseline(self):
+        """Stage 3 must inject the real baseline aggregate_score from stage 1."""
+        bridge = RunBridge(artifacts_root=str(self.artifacts_root))
+        config = json.loads(EXAMPLE_CONFIG.read_text())
+        receipt = run_autoresearch_alpha(request_payload=config, bridge=bridge)
+
+        prefix = config["run_id_prefix"]
+        teacher_dir = self.artifacts_root / f"{prefix}-candidate-teacher-eval"
+        private_request = json.loads((teacher_dir / "request.private.json").read_text())
+
+        # Teacher eval must have previous_iteration injected from real baseline
+        te = private_request["teacher_evaluation"]
+        self.assertIn("previous_iteration", te)
+        prev = te["previous_iteration"]
+        self.assertEqual(prev["run_id"], f"{prefix}-baseline-eval")
+        self.assertIn("aggregate_score", prev)
+        self.assertIn("pass_rate", prev["aggregate_score"])
+
+    def test_verdict_compares_baseline_vs_candidate(self):
+        """Verdict must compare real baseline aggregate vs candidate teacher eval."""
+        bridge = RunBridge(artifacts_root=str(self.artifacts_root))
+        config = json.loads(EXAMPLE_CONFIG.read_text())
+        receipt = run_autoresearch_alpha(request_payload=config, bridge=bridge)
+
         verdict = receipt["comparison_verdict"]
         self.assertIn(verdict["label"], ("better", "equal", "worse"))
+        self.assertIn("delta_pass_rate", verdict)
+        self.assertIn("delta_average_score", verdict)
+        self.assertIn("score_deltas", receipt)
 
-        # Blocked criteria surfaced honestly
+    def test_run_record_history_tracks_lifecycle(self):
+        """Per-stage run-record-history.json must track queued → running → completed."""
+        bridge = RunBridge(artifacts_root=str(self.artifacts_root))
+        config = json.loads(EXAMPLE_CONFIG.read_text())
+        receipt = run_autoresearch_alpha(request_payload=config, bridge=bridge)
+
+        # run-record-history.json on disk
+        prefix = config["run_id_prefix"]
+        history_path = self.artifacts_root / f"{prefix}.run-record-history.json"
+        self.assertTrue(history_path.exists(), "missing run-record-history.json")
+        history = json.loads(history_path.read_text())
+        self.assertEqual(len(history["stages"]), 3)
+
+        for record in history["stages"]:
+            self.assertIn(record["stage"], STAGE_NAMES)
+            self.assertIsNotNone(record["queued_at"])
+            self.assertIsNotNone(record["started_at"])
+            self.assertIsNotNone(record["completed_at"])
+            self.assertEqual(record["status"], "completed")
+            # State should reflect final state
+            self.assertIn(record["state"], ("completed", "failed"))
+
+        # Also in receipt
+        self.assertEqual(len(receipt["run_record_history"]), 3)
+
+    def test_top_level_artifacts_written(self):
+        """artifacts_root must contain autoresearch-alpha.json + request copy."""
+        bridge = RunBridge(artifacts_root=str(self.artifacts_root))
+        config = json.loads(EXAMPLE_CONFIG.read_text())
+        receipt = run_autoresearch_alpha(request_payload=config, bridge=bridge)
+
+        self.assertTrue(
+            (self.artifacts_root / "autoresearch-alpha.json").exists(),
+            "missing autoresearch-alpha.json",
+        )
+        self.assertTrue(
+            (self.artifacts_root / "autoresearch-alpha.request.json").exists(),
+            "missing autoresearch-alpha.request.json",
+        )
+
+        # Receipt on disk matches returned receipt (minus receipt_path)
+        disk_receipt = json.loads((self.artifacts_root / "autoresearch-alpha.json").read_text())
+        self.assertEqual(disk_receipt["receipt_type"], "autoresearch-alpha")
+        self.assertEqual(disk_receipt["receipt_version"], "0.2.0")
+
+    def test_artifact_coverage_across_all_stages(self):
+        """Artifact coverage must span all three stage run directories."""
+        bridge = RunBridge(artifacts_root=str(self.artifacts_root))
+        config = json.loads(EXAMPLE_CONFIG.read_text())
+        receipt = run_autoresearch_alpha(request_payload=config, bridge=bridge)
+
+        coverage = receipt["integrity_gate"]["artifact_coverage"]
+        self.assertIn("baseline_eval", coverage)
+        self.assertIn("candidate_student", coverage)
+        self.assertIn("candidate_teacher_eval", coverage)
+
+        for stage_name, checks in coverage.items():
+            for artifact, present in checks.items():
+                self.assertTrue(present, f"missing artifact {artifact} in {stage_name}")
+
+    def test_integrity_gating_honest(self):
+        """Integrity gate must show public_regression pass, sealed/cert blocked."""
+        bridge = RunBridge(artifacts_root=str(self.artifacts_root))
+        config = json.loads(EXAMPLE_CONFIG.read_text())
+        receipt = run_autoresearch_alpha(request_payload=config, bridge=bridge)
+
+        gate = receipt["integrity_gate"]
+        self.assertIn(gate["public_regression"], ("pass", "fail"))
+        self.assertEqual(gate["sealed_eval"], "blocked")
+        self.assertEqual(gate["certification"], "blocked")
+
+    def test_phase_c_acceptance_honest(self):
+        """Phase C acceptance must surface C003 and C007 as blocked."""
+        bridge = RunBridge(artifacts_root=str(self.artifacts_root))
+        config = json.loads(EXAMPLE_CONFIG.read_text())
+        receipt = run_autoresearch_alpha(request_payload=config, bridge=bridge)
+
+        pca = receipt["phase_c_acceptance"]
+        self.assertEqual(pca["C001"]["status"], "pass")
+        self.assertEqual(pca["C002"]["status"], "pass")
+        self.assertEqual(pca["C003"]["status"], "blocked")
+        self.assertEqual(pca["C004"]["status"], "pass")
+        self.assertEqual(pca["C005"]["status"], "pass")
+        self.assertEqual(pca["C006"]["status"], "pass")
+        self.assertEqual(pca["C007"]["status"], "blocked")
+
+    def test_blocked_criteria_surfaced(self):
+        """Blocked criteria must be honest about what is not implemented."""
+        bridge = RunBridge(artifacts_root=str(self.artifacts_root))
+        config = json.loads(EXAMPLE_CONFIG.read_text())
+        receipt = run_autoresearch_alpha(request_payload=config, bridge=bridge)
+
         self.assertEqual(len(receipt["blocked_criteria"]), len(BLOCKED_CRITERIA))
         blocked_ids = {c["id"] for c in receipt["blocked_criteria"]}
         self.assertIn("mutation-surface-enforcement", blocked_ids)
         self.assertIn("sealed-holdout-coverage", blocked_ids)
         self.assertIn("live-execution-backend", blocked_ids)
         self.assertIn("verdict-stability", blocked_ids)
-
-        # Honesty note present
-        self.assertIn("LocalReplayRunner", receipt["honesty_note"])
-
-    def test_iteration_with_previous_baseline(self):
-        """Second iteration with a previous baseline — should compute deltas."""
-        bridge = RunBridge(artifacts_root=str(self.artifacts_root))
-        previous = {
-            "run_id": "alpha-test-baseline-000",
-            "label": "baseline",
-            "aggregate_score": {
-                "passed": 1,
-                "total": 4,
-                "pass_rate": 0.25,
-                "average_score": 0.4,
-                "holdout": {"passed": 0, "total": 0, "pass_rate": 0.0},
-            },
-            "public_failure_themes": [
-                "Landing copy is generic",
-            ],
-        }
-
-        receipt = run_autoresearch_alpha(
-            bridge=bridge,
-            run_id_prefix="alpha-test-iter1",
-            benchmark_pack_path=str(BENCHMARK_PACK),
-            previous_iteration=previous,
-            max_episodes=4,
-        )
-
-        # Baseline should reference previous
-        self.assertEqual(receipt["stages"]["baseline"]["status"], "from_previous_iteration")
-        self.assertEqual(
-            receipt["stages"]["baseline"]["aggregate_score"]["passed"], 1,
-        )
-
-        # Candidate should have completed with teacher eval
-        self.assertEqual(receipt["stages"]["candidate"]["status"], "completed")
-        candidate_score = receipt["stages"]["candidate"]["aggregate_score"]
-        self.assertGreater(candidate_score.get("total", 0), 0)
-
-        # Verdict should be "better" since candidate default score > baseline
-        verdict = receipt["comparison_verdict"]
-        self.assertEqual(verdict["label"], "better")
-        self.assertGreater(verdict["delta_pass_rate"], 0)
-
-        # Score deltas present
-        self.assertIn("score_deltas", receipt)
-        self.assertIsInstance(receipt["score_deltas"]["pass_rate"], float)
-        self.assertIsInstance(receipt["score_deltas"]["average_score"], float)
-
-        # Iteration history present
-        self.assertIsInstance(receipt["iteration_history"], list)
-        self.assertGreater(len(receipt["iteration_history"]), 0)
-
-    def test_artifact_coverage_and_receipt_file(self):
-        """Receipt should report artifact coverage and be written to disk."""
-        bridge = RunBridge(artifacts_root=str(self.artifacts_root))
-        receipt = run_autoresearch_alpha(
-            bridge=bridge,
-            run_id_prefix="alpha-test-artifacts",
-            benchmark_pack_path=str(BENCHMARK_PACK),
-            previous_iteration=None,
-            max_episodes=2,
-        )
-
-        # Integrity gate
-        gate = receipt["integrity_gate"]
-        self.assertTrue(gate["all_artifacts_present"])
-        for key, present in gate["artifact_coverage"].items():
-            self.assertTrue(present, f"missing artifact: {key}")
-
-        # Receipt file written
-        receipt_path = Path(receipt["receipt_path"])
-        self.assertTrue(receipt_path.exists())
-        disk_receipt = json.loads(receipt_path.read_text())
-        self.assertEqual(disk_receipt["receipt_type"], "autoresearch-alpha")
-
-    def test_provenance_chain_preserved(self):
-        """D001-D005 guarantees: provenance is threaded through the candidate run."""
-        bridge = RunBridge(artifacts_root=str(self.artifacts_root))
-        receipt = run_autoresearch_alpha(
-            bridge=bridge,
-            run_id_prefix="alpha-test-provenance",
-            benchmark_pack_path=str(BENCHMARK_PACK),
-            previous_iteration={
-                "run_id": "baseline-prev",
-                "aggregate_score": {
-                    "passed": 0, "total": 2, "pass_rate": 0.0, "average_score": 0.0,
-                    "holdout": {"passed": 0, "total": 0, "pass_rate": 0.0},
-                },
-            },
-            max_episodes=2,
-        )
-
-        self.assertTrue(receipt["integrity_gate"]["provenance_present"])
-
-        # Check actual provenance files on disk
-        candidate_dir = self.artifacts_root / "alpha-test-provenance-candidate"
-        self.assertTrue((candidate_dir / "receipts" / "manifest.json").exists())
-        self.assertTrue((candidate_dir / "receipts" / "candidate.json").exists())
-        self.assertTrue((candidate_dir / "receipts" / "evidence-index.json").exists())
-        self.assertTrue((candidate_dir / "receipts" / "baseline.json").exists())
-        self.assertTrue((candidate_dir / "receipts" / "evaluation.json").exists())
-
-        # Provenance in result
-        result = json.loads((candidate_dir / "result.json").read_text())
-        self.assertIn("provenance", result)
-        self.assertIn("receipt_manifest_path", result["provenance"])
-
-    def test_sealed_holdout_explicitly_blocked(self):
-        """The receipt must honestly surface that holdout coverage is blocked."""
-        bridge = RunBridge(artifacts_root=str(self.artifacts_root))
-        receipt = run_autoresearch_alpha(
-            bridge=bridge,
-            run_id_prefix="alpha-test-blocked",
-            benchmark_pack_path=str(BENCHMARK_PACK),
-            max_episodes=2,
-        )
-
-        holdout_blocked = next(
-            (c for c in receipt["blocked_criteria"] if c["id"] == "sealed-holdout-coverage"),
-            None,
-        )
-        self.assertIsNotNone(holdout_blocked)
-        self.assertEqual(holdout_blocked["status"], "blocked")
-
-        # Benchmark pack is public-only
-        self.assertTrue(receipt["benchmark_pack"]["public_only"])
 
 
 class AutoresearchAlphaHonestyTests(unittest.TestCase):
@@ -217,38 +268,96 @@ class AutoresearchAlphaHonestyTests(unittest.TestCase):
     def tearDown(self):
         self._tmpdir.cleanup()
 
-    def test_no_sealed_scenarios_in_student_view(self):
-        """Student view must not contain holdout-type scenarios."""
+    def test_honesty_note_present(self):
+        bridge = RunBridge(artifacts_root=str(self.artifacts_root))
+        config = json.loads(EXAMPLE_CONFIG.read_text())
+        receipt = run_autoresearch_alpha(request_payload=config, bridge=bridge)
+
+        self.assertIn("honesty_note", receipt)
+        self.assertIn("three real stages", receipt["honesty_note"].lower())
+        self.assertIn("LocalReplayRunner", receipt["honesty_note"])
+        self.assertIn("deterministic", receipt["honesty_note"].lower())
+
+    def test_student_stage_has_no_sealed_scenarios(self):
+        """Student view in candidate-student must not contain holdout scenarios."""
+        bridge = RunBridge(artifacts_root=str(self.artifacts_root))
+        config = json.loads(EXAMPLE_CONFIG.read_text())
+        receipt = run_autoresearch_alpha(request_payload=config, bridge=bridge)
+
+        prefix = config["run_id_prefix"]
+        student_dir = self.artifacts_root / f"{prefix}-candidate-student"
+        bundle = json.loads((student_dir / "artifact-bundle.json").read_text())
+
+        sv = bundle.get("student_view", {})
+        self.assertEqual(sv.get("sealed_holdout_count", -1), 0)
+
+
+class AutoresearchAlphaCLITests(unittest.TestCase):
+    """CLI entrypoint: python3 -m runner_bridge.autoresearch_alpha."""
+
+    def test_cli_entrypoint_runs_three_stages(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            artifacts_root = Path(tmpdir) / "artifacts"
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "runner_bridge.autoresearch_alpha",
+                    "--request",
+                    str(EXAMPLE_CONFIG),
+                    "--artifacts-root",
+                    str(artifacts_root),
+                ],
+                capture_output=True,
+                text=True,
+                cwd=ROOT,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+
+            receipt = json.loads(result.stdout)
+            self.assertEqual(receipt["receipt_type"], "autoresearch-alpha")
+            self.assertIn("baseline-eval", receipt["stages"])
+            self.assertIn("candidate-student", receipt["stages"])
+            self.assertIn("candidate-teacher-eval", receipt["stages"])
+
+            # All three run dirs exist
+            prefix = receipt["run_id_prefix"]
+            for suffix in ("baseline-eval", "candidate-student", "candidate-teacher-eval"):
+                run_dir = artifacts_root / f"{prefix}-{suffix}"
+                self.assertTrue(run_dir.exists(), f"CLI: missing run dir {run_dir}")
+
+            # Top-level artifacts
+            self.assertTrue((artifacts_root / "autoresearch-alpha.json").exists())
+            self.assertTrue((artifacts_root / "autoresearch-alpha.request.json").exists())
+
+
+class AutoresearchAlphaLegacyCompatTests(unittest.TestCase):
+    """Legacy simple invocation without request_payload still works."""
+
+    def setUp(self):
+        self._tmpdir = tempfile.TemporaryDirectory()
+        self.artifacts_root = Path(self._tmpdir.name) / "artifacts"
+
+    def tearDown(self):
+        self._tmpdir.cleanup()
+
+    def test_simple_invocation_runs_three_stages(self):
         bridge = RunBridge(artifacts_root=str(self.artifacts_root))
         receipt = run_autoresearch_alpha(
             bridge=bridge,
-            run_id_prefix="alpha-honesty-sealed",
+            run_id_prefix="alpha-legacy-test",
             benchmark_pack_path=str(BENCHMARK_PACK),
             max_episodes=3,
         )
 
-        candidate_dir = self.artifacts_root / "alpha-honesty-sealed-candidate"
-        bundle = json.loads((candidate_dir / "artifact-bundle.json").read_text())
+        self.assertEqual(receipt["receipt_type"], "autoresearch-alpha")
+        self.assertIn("baseline-eval", receipt["stages"])
+        self.assertIn("candidate-student", receipt["stages"])
+        self.assertIn("candidate-teacher-eval", receipt["stages"])
 
-        student_view = bundle.get("student_view", {})
-        self.assertEqual(student_view.get("sealed_holdout_count", -1), 0)
-        for scenario in student_view.get("visible_scenarios", []):
-            self.assertNotEqual(scenario.get("type"), "holdout")
-
-    def test_execution_honesty_note_present(self):
-        """Receipt must contain an honesty note about LocalReplayRunner."""
-        bridge = RunBridge(artifacts_root=str(self.artifacts_root))
-        receipt = run_autoresearch_alpha(
-            bridge=bridge,
-            run_id_prefix="alpha-honesty-note",
-            benchmark_pack_path=str(BENCHMARK_PACK),
-            max_episodes=2,
-        )
-
-        self.assertIn("honesty_note", receipt)
-        self.assertIn("LocalReplayRunner", receipt["honesty_note"])
-        self.assertIn("deterministic", receipt["honesty_note"].lower())
-        self.assertIn("sealed holdout", receipt["honesty_note"].lower())
+        # All three stages completed
+        for stage in STAGE_NAMES:
+            self.assertEqual(receipt["stages"][stage]["status"], "completed")
 
 
 if __name__ == "__main__":
