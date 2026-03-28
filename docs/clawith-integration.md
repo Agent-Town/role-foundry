@@ -192,6 +192,12 @@ If you point `--seed` at a stock upstream instance, it now refuses the write whe
 - no claim that runner bridge patch endpoints already ship in upstream Clawith
 - no destructive seed writes during the default compose live preflight
 
+## Phase F readiness checker
+
+For structured adapter-first bring-up readiness (F001–F004), see:
+- `docs/clawith-adapter-bringup.md` — seam-to-upstream mapping matrix and non-claims
+- `scripts/check_clawith_readiness.py` — GET-only readiness checker with JSON output
+
 ## Bottom line
 
 Use live mode to verify **real upstream Clawith readiness**, not to fake it.
