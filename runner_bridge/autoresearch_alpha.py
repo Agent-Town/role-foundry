@@ -19,7 +19,7 @@ CLI entrypoint:
 Honest status:
   - LocalReplayRunner is the only wired backend (deterministic, no real exec).
   - Mutation-surface auditing only uses declared changed-files / diff-stats evidence.
-  - Verdict stability: single-pass only; no multi-round convergence yet.
+  - Verdict stability: conditionally cleared when stability_policy replay runs pass.
   - Holdout/private families: explicitly blocked.
 """
 
@@ -162,10 +162,20 @@ def _load_stage_packet_runtime(request_cfg: dict[str, Any], run_id: str) -> dict
     return deepcopy(packet_runtime) if isinstance(packet_runtime, dict) else None
 
 
-def _build_blocked_criteria(mutation_surface_audit: dict[str, Any]) -> list[dict[str, Any]]:
+def _build_blocked_criteria(
+    mutation_surface_audit: dict[str, Any],
+    stability_report: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
     if mutation_surface_audit.get("status") in {"pass", "fail"}:
-        return deepcopy(STATIC_BLOCKED_CRITERIA)
-    return deepcopy(BLOCKED_CRITERIA)
+        criteria = deepcopy(STATIC_BLOCKED_CRITERIA)
+    else:
+        criteria = deepcopy(BLOCKED_CRITERIA)
+
+    # Remove verdict-stability from blocked when replay runs actually passed
+    if isinstance(stability_report, dict) and stability_report.get("status") == "pass":
+        criteria = [c for c in criteria if c.get("id") != "verdict-stability"]
+
+    return criteria
 
 
 def _derive_mutation_surface_audit(
@@ -207,7 +217,10 @@ def _derive_mutation_surface_audit(
     }
 
 
-def _build_honesty_note(mutation_surface_audit: dict[str, Any]) -> str:
+def _build_honesty_note(
+    mutation_surface_audit: dict[str, Any],
+    stability_report: dict[str, Any] | None = None,
+) -> str:
     mutation_status = mutation_surface_audit.get("status", "unavailable")
     if mutation_status == "pass":
         mutation_line = (
@@ -222,13 +235,24 @@ def _build_honesty_note(mutation_surface_audit: dict[str, Any]) -> str:
         mutation_line = (
             "Mutation-surface auditing is wired, but this run did not provide enough declared diff evidence to clear it."
         )
+
+    if isinstance(stability_report, dict) and stability_report.get("status") == "pass":
+        stability_line = (
+            "Verdict stability passed on the deterministic LocalReplayRunner path: "
+            f"{stability_report.get('total_runs', 0)} repeated runs agreed within configured thresholds. "
+            "This only demonstrates deterministic replay repeatability; "
+            "live/non-deterministic verdict stability is not claimed."
+        )
+    else:
+        stability_line = "Verdict stability is still single-pass only."
+
     return (
         "This is a public-regression autoresearch alpha loop with three real stages "
         "executed through RunBridge. "
         "The backend is LocalReplayRunner (deterministic shim, not live execution). "
         "Sealed holdout families are explicitly excluded. "
         f"{mutation_line} "
-        "Verdict stability is still single-pass only."
+        f"{stability_line}"
     )
 
 
@@ -682,10 +706,16 @@ def build_integrity_gate(
             "detail": mutation_surface_audit,
         }
 
-    fake_claims_ok = all(
+    # verdict-stability can be honestly absent from blocked_ids when the
+    # stability_report cleared it — but only if the honesty note explicitly
+    # says deterministic replay repeatability (not live stability).
+    verdict_stability_honest = (
+        "verdict-stability" in blocked_ids
+        or "deterministic replay repeatability" in honesty_note
+    )
+    fake_claims_ok = verdict_stability_honest and all(
         marker in blocked_ids
         for marker in (
-            "verdict-stability",
             "sealed-holdout-coverage",
             "live-execution-backend",
         )
@@ -837,6 +867,141 @@ def build_promotion_decision(
         "failed_gates": failed_gates,
         "blocked_gates": blocked_gates,
         "reason": "Candidate did not clear the baseline comparison.",
+    }
+
+
+# ---------------------------------------------------------------------------
+# Verdict stability — deterministic repeated-run comparison
+# ---------------------------------------------------------------------------
+
+def _run_stability_replays(
+    *,
+    bridge: "RunBridge",
+    run_id_prefix: str,
+    episodes: list[dict[str, Any]],
+    stages_cfg: dict[str, Any],
+    baseline_aggregate: dict[str, Any],
+    baseline_run_id: str,
+    replay_count: int,
+) -> list[dict[str, Any]]:
+    """Re-run baseline-eval + candidate-teacher-eval with distinct run_ids.
+
+    Returns a list of per-replay verdict dicts, each containing the run_ids
+    and computed verdict for that replay pair.
+    """
+    replays: list[dict[str, Any]] = []
+
+    baseline_request_cfg = stages_cfg.get("baseline-eval", {}).get("request", {})
+    teacher_request_cfg = stages_cfg.get("candidate-teacher-eval", {}).get("request", {})
+
+    for i in range(1, replay_count + 1):
+        replay_baseline_run_id = f"{run_id_prefix}-stability-r{i}-baseline-eval"
+        replay_teacher_run_id = f"{run_id_prefix}-stability-r{i}-candidate-teacher-eval"
+
+        replay_baseline_request = _prepare_baseline_eval_request(
+            run_id=replay_baseline_run_id,
+            episodes=episodes,
+            request_cfg=baseline_request_cfg,
+        )
+        replay_baseline_result = bridge.run(replay_baseline_request)
+        replay_baseline_scorecard = replay_baseline_result.get("scorecard", {})
+        replay_baseline_agg = replay_baseline_scorecard.get("aggregate_score", {
+            "passed": 0, "total": 0, "pass_rate": 0.0, "average_score": 0.0,
+        })
+
+        replay_teacher_request = _prepare_candidate_teacher_eval_request(
+            run_id=replay_teacher_run_id,
+            episodes=episodes,
+            request_cfg=teacher_request_cfg,
+            baseline_aggregate_score=replay_baseline_agg,
+            baseline_run_id=replay_baseline_run_id,
+        )
+        replay_teacher_result = bridge.run(replay_teacher_request)
+        replay_teacher_scorecard = replay_teacher_result.get("scorecard", {})
+        replay_candidate_agg = replay_teacher_scorecard.get("aggregate_score", {})
+
+        replay_verdict = _compute_verdict(replay_baseline_agg, replay_candidate_agg)
+        replays.append({
+            "replay_index": i,
+            "baseline_run_id": replay_baseline_run_id,
+            "candidate_run_id": replay_teacher_run_id,
+            "verdict": replay_verdict,
+        })
+
+    return replays
+
+
+def build_stability_report(
+    *,
+    primary_verdict: dict[str, Any],
+    primary_baseline_run_id: str,
+    primary_candidate_run_id: str,
+    replays: list[dict[str, Any]],
+    stability_policy: dict[str, Any],
+) -> dict[str, Any]:
+    """Build a machine-readable stability report from repeated-run verdicts.
+
+    Thresholds (from stability_policy):
+      - min_agreement: fraction of runs that must share the primary verdict label (default 1.0)
+      - max_spread: maximum allowed spread in delta_average_score across runs (default 0.10)
+    """
+    min_agreement = float(stability_policy.get("min_agreement", 1.0))
+    max_spread = float(stability_policy.get("max_spread", 0.10))
+
+    all_verdicts = [
+        {
+            "run_index": 0,
+            "baseline_run_id": primary_baseline_run_id,
+            "candidate_run_id": primary_candidate_run_id,
+            "label": primary_verdict["label"],
+            "delta_pass_rate": primary_verdict["delta_pass_rate"],
+            "delta_average_score": primary_verdict["delta_average_score"],
+        },
+    ]
+    for replay in replays:
+        rv = replay["verdict"]
+        all_verdicts.append({
+            "run_index": replay["replay_index"],
+            "baseline_run_id": replay["baseline_run_id"],
+            "candidate_run_id": replay["candidate_run_id"],
+            "label": rv["label"],
+            "delta_pass_rate": rv["delta_pass_rate"],
+            "delta_average_score": rv["delta_average_score"],
+        })
+
+    total_runs = len(all_verdicts)
+    labels = [v["label"] for v in all_verdicts]
+    primary_label = primary_verdict["label"]
+    agreeing = sum(1 for lbl in labels if lbl == primary_label)
+    agreement_rate = agreeing / total_runs if total_runs > 0 else 0.0
+
+    delta_scores = [v["delta_average_score"] for v in all_verdicts]
+    score_spread = round(max(delta_scores) - min(delta_scores), 4) if delta_scores else 0.0
+
+    agreement_ok = agreement_rate >= min_agreement
+    spread_ok = score_spread <= max_spread
+    passed = agreement_ok and spread_ok
+
+    return {
+        "status": "pass" if passed else "fail",
+        "total_runs": total_runs,
+        "replay_count": total_runs - 1,
+        "primary_label": primary_label,
+        "agreement_rate": round(agreement_rate, 4),
+        "score_spread": score_spread,
+        "thresholds": {
+            "min_agreement": min_agreement,
+            "max_spread": max_spread,
+        },
+        "checks": {
+            "agreement_ok": agreement_ok,
+            "spread_ok": spread_ok,
+        },
+        "verdicts": all_verdicts,
+        "honesty_note": (
+            "This stability report covers deterministic LocalReplayRunner repeated runs only. "
+            "It does not demonstrate live or non-deterministic verdict stability."
+        ),
     }
 
 
@@ -1030,8 +1195,31 @@ def run_autoresearch_alpha(
         student_request=student_request,
         student_result=student_result,
     )
-    blocked_criteria = _build_blocked_criteria(mutation_surface_audit)
-    honesty_note = _build_honesty_note(mutation_surface_audit)
+
+    # --- Verdict stability: optional deterministic repeated-run replays ---
+    stability_policy = cfg.get("stability_policy") if request_payload else None
+    stability_report: dict[str, Any] | None = None
+    if isinstance(stability_policy, dict) and int(stability_policy.get("replay_count", 0)) > 0:
+        replay_count = int(stability_policy["replay_count"])
+        replays = _run_stability_replays(
+            bridge=bridge,
+            run_id_prefix=run_id_prefix,
+            episodes=episodes,
+            stages_cfg=stages_cfg,
+            baseline_aggregate=baseline_aggregate,
+            baseline_run_id=baseline_run_id,
+            replay_count=replay_count,
+        )
+        stability_report = build_stability_report(
+            primary_verdict=verdict,
+            primary_baseline_run_id=baseline_run_id,
+            primary_candidate_run_id=teacher_eval_run_id,
+            replays=replays,
+            stability_policy=stability_policy,
+        )
+
+    blocked_criteria = _build_blocked_criteria(mutation_surface_audit, stability_report)
+    honesty_note = _build_honesty_note(mutation_surface_audit, stability_report)
     integrity_gate = build_integrity_gate(
         verdict=verdict,
         artifact_coverage=artifact_coverage,
@@ -1107,6 +1295,8 @@ def run_autoresearch_alpha(
         "blocked_criteria": blocked_criteria,
         "honesty_note": honesty_note,
     }
+    if stability_report is not None:
+        receipt["stability_report"] = stability_report
 
     # --- Write top-level receipt + comparison summary ---
     receipt_path = bridge.artifacts_root / "autoresearch-alpha.json"

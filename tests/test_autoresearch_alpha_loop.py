@@ -13,6 +13,7 @@ from runner_bridge.autoresearch_alpha import (
     STAGE_NAMES,
     build_comparison_summary,
     build_promotion_decision,
+    build_stability_report,
     load_benchmark_pack,
     run_autoresearch_alpha,
 )
@@ -552,6 +553,216 @@ class AutoresearchAlphaLegacyCompatTests(unittest.TestCase):
         # All three stages completed
         for stage in STAGE_NAMES:
             self.assertEqual(receipt["stages"][stage]["status"], "completed")
+
+
+class AutoresearchAlphaVerdictStabilityTests(unittest.TestCase):
+    """Verdict stability — deterministic repeated-run comparison on LocalReplayRunner."""
+
+    def setUp(self):
+        self._tmpdir = tempfile.TemporaryDirectory()
+        self.artifacts_root = Path(self._tmpdir.name) / "artifacts"
+
+    def tearDown(self):
+        self._tmpdir.cleanup()
+
+    def _stability_config(self, replay_count=2, min_agreement=1.0, max_spread=0.10):
+        config = json.loads(EXAMPLE_CONFIG.read_text())
+        config["stability_policy"] = {
+            "replay_count": replay_count,
+            "min_agreement": min_agreement,
+            "max_spread": max_spread,
+        }
+        return config
+
+    def test_stability_report_present_when_policy_configured(self):
+        """When stability_policy with replay_count > 0, receipt must have stability_report."""
+        bridge = RunBridge(artifacts_root=str(self.artifacts_root))
+        config = self._stability_config(replay_count=2)
+        receipt = run_autoresearch_alpha(request_payload=config, bridge=bridge)
+
+        self.assertIn("stability_report", receipt)
+        report = receipt["stability_report"]
+        self.assertEqual(report["total_runs"], 3)  # 1 primary + 2 replays
+        self.assertEqual(report["replay_count"], 2)
+        self.assertIn(report["status"], ("pass", "fail"))
+        self.assertIn("verdicts", report)
+        self.assertEqual(len(report["verdicts"]), 3)
+
+    def test_stability_clears_verdict_stability_blocked_criterion(self):
+        """Passing stability replays must remove verdict-stability from blocked_criteria."""
+        bridge = RunBridge(artifacts_root=str(self.artifacts_root))
+        config = self._stability_config(replay_count=2)
+        receipt = run_autoresearch_alpha(request_payload=config, bridge=bridge)
+
+        # LocalReplayRunner is deterministic so all replays must agree
+        self.assertEqual(receipt["stability_report"]["status"], "pass")
+
+        blocked_ids = {c["id"] for c in receipt["blocked_criteria"]}
+        self.assertNotIn("verdict-stability", blocked_ids)
+        # Other blocked criteria must still be present
+        self.assertIn("sealed-holdout-coverage", blocked_ids)
+        self.assertIn("live-execution-backend", blocked_ids)
+
+    def test_stability_honesty_note_mentions_deterministic_only(self):
+        """Honesty note must clarify that stability covers only deterministic replay."""
+        bridge = RunBridge(artifacts_root=str(self.artifacts_root))
+        config = self._stability_config(replay_count=2)
+        receipt = run_autoresearch_alpha(request_payload=config, bridge=bridge)
+
+        self.assertIn("deterministic replay repeatability", receipt["honesty_note"])
+        self.assertIn("not claimed", receipt["honesty_note"].lower())
+        # Must still mention LocalReplayRunner
+        self.assertIn("LocalReplayRunner", receipt["honesty_note"])
+
+    def test_stability_report_has_linked_run_ids(self):
+        """Each verdict in stability_report must have linked baseline + candidate run_ids."""
+        bridge = RunBridge(artifacts_root=str(self.artifacts_root))
+        config = self._stability_config(replay_count=2)
+        receipt = run_autoresearch_alpha(request_payload=config, bridge=bridge)
+
+        for v in receipt["stability_report"]["verdicts"]:
+            self.assertIn("baseline_run_id", v)
+            self.assertIn("candidate_run_id", v)
+            self.assertIn("label", v)
+            self.assertIn("delta_pass_rate", v)
+            self.assertIn("delta_average_score", v)
+
+        # Run IDs must be distinct across verdicts
+        all_baseline_ids = [v["baseline_run_id"] for v in receipt["stability_report"]["verdicts"]]
+        self.assertEqual(len(all_baseline_ids), len(set(all_baseline_ids)))
+
+    def test_stability_report_score_spread_and_agreement(self):
+        """Stability report must surface agreement_rate and score_spread."""
+        bridge = RunBridge(artifacts_root=str(self.artifacts_root))
+        config = self._stability_config(replay_count=2)
+        receipt = run_autoresearch_alpha(request_payload=config, bridge=bridge)
+
+        report = receipt["stability_report"]
+        self.assertIn("agreement_rate", report)
+        self.assertIn("score_spread", report)
+        self.assertIn("thresholds", report)
+        self.assertEqual(report["thresholds"]["min_agreement"], 1.0)
+        self.assertEqual(report["thresholds"]["max_spread"], 0.10)
+        self.assertIn("checks", report)
+        self.assertTrue(report["checks"]["agreement_ok"])
+        self.assertTrue(report["checks"]["spread_ok"])
+
+    def test_no_stability_report_without_policy(self):
+        """Without stability_policy, receipt must NOT have stability_report."""
+        bridge = RunBridge(artifacts_root=str(self.artifacts_root))
+        config = json.loads(EXAMPLE_CONFIG.read_text())
+        # Ensure no stability_policy (the example has replay_count: 0)
+        config.pop("stability_policy", None)
+        receipt = run_autoresearch_alpha(request_payload=config, bridge=bridge)
+
+        self.assertNotIn("stability_report", receipt)
+        blocked_ids = {c["id"] for c in receipt["blocked_criteria"]}
+        self.assertIn("verdict-stability", blocked_ids)
+
+    def test_stability_report_zero_replay_count_is_no_op(self):
+        """stability_policy with replay_count=0 must behave like no policy."""
+        bridge = RunBridge(artifacts_root=str(self.artifacts_root))
+        config = self._stability_config(replay_count=0)
+        receipt = run_autoresearch_alpha(request_payload=config, bridge=bridge)
+
+        self.assertNotIn("stability_report", receipt)
+        blocked_ids = {c["id"] for c in receipt["blocked_criteria"]}
+        self.assertIn("verdict-stability", blocked_ids)
+
+    def test_stability_report_honesty_note_in_report(self):
+        """The stability_report itself must carry an honesty note about scope."""
+        bridge = RunBridge(artifacts_root=str(self.artifacts_root))
+        config = self._stability_config(replay_count=2)
+        receipt = run_autoresearch_alpha(request_payload=config, bridge=bridge)
+
+        report = receipt["stability_report"]
+        self.assertIn("honesty_note", report)
+        self.assertIn("deterministic", report["honesty_note"].lower())
+        self.assertIn("LocalReplayRunner", report["honesty_note"])
+
+    def test_integrity_gate_still_passes_when_stability_clears(self):
+        """Integrity gate no_fake_claims must still pass when verdict-stability is cleared."""
+        bridge = RunBridge(artifacts_root=str(self.artifacts_root))
+        config = self._stability_config(replay_count=2)
+        receipt = run_autoresearch_alpha(request_payload=config, bridge=bridge)
+
+        self.assertEqual(
+            receipt["integrity_gate"]["gates"]["no_fake_claims"]["status"],
+            "pass",
+        )
+
+
+class AutoresearchAlphaStabilityReportUnitTests(unittest.TestCase):
+    """Unit tests for build_stability_report."""
+
+    def test_all_agree_pass(self):
+        primary = {"label": "better", "delta_pass_rate": 0.25, "delta_average_score": 0.25}
+        replays = [
+            {
+                "replay_index": 1,
+                "baseline_run_id": "r1-base",
+                "candidate_run_id": "r1-cand",
+                "verdict": {"label": "better", "delta_pass_rate": 0.25, "delta_average_score": 0.25},
+            },
+            {
+                "replay_index": 2,
+                "baseline_run_id": "r2-base",
+                "candidate_run_id": "r2-cand",
+                "verdict": {"label": "better", "delta_pass_rate": 0.25, "delta_average_score": 0.25},
+            },
+        ]
+        report = build_stability_report(
+            primary_verdict=primary,
+            primary_baseline_run_id="p-base",
+            primary_candidate_run_id="p-cand",
+            replays=replays,
+            stability_policy={"min_agreement": 1.0, "max_spread": 0.10},
+        )
+        self.assertEqual(report["status"], "pass")
+        self.assertEqual(report["total_runs"], 3)
+        self.assertEqual(report["agreement_rate"], 1.0)
+        self.assertEqual(report["score_spread"], 0.0)
+
+    def test_disagreement_fails(self):
+        primary = {"label": "better", "delta_pass_rate": 0.25, "delta_average_score": 0.25}
+        replays = [
+            {
+                "replay_index": 1,
+                "baseline_run_id": "r1-base",
+                "candidate_run_id": "r1-cand",
+                "verdict": {"label": "worse", "delta_pass_rate": -0.10, "delta_average_score": -0.10},
+            },
+        ]
+        report = build_stability_report(
+            primary_verdict=primary,
+            primary_baseline_run_id="p-base",
+            primary_candidate_run_id="p-cand",
+            replays=replays,
+            stability_policy={"min_agreement": 1.0, "max_spread": 0.10},
+        )
+        self.assertEqual(report["status"], "fail")
+        self.assertFalse(report["checks"]["agreement_ok"])
+
+    def test_spread_exceeds_threshold_fails(self):
+        primary = {"label": "better", "delta_pass_rate": 0.25, "delta_average_score": 0.25}
+        replays = [
+            {
+                "replay_index": 1,
+                "baseline_run_id": "r1-base",
+                "candidate_run_id": "r1-cand",
+                "verdict": {"label": "better", "delta_pass_rate": 0.25, "delta_average_score": 0.10},
+            },
+        ]
+        report = build_stability_report(
+            primary_verdict=primary,
+            primary_baseline_run_id="p-base",
+            primary_candidate_run_id="p-cand",
+            replays=replays,
+            stability_policy={"min_agreement": 1.0, "max_spread": 0.10},
+        )
+        self.assertEqual(report["status"], "fail")
+        self.assertFalse(report["checks"]["spread_ok"])
+        self.assertGreater(report["score_spread"], 0.10)
 
 
 if __name__ == "__main__":

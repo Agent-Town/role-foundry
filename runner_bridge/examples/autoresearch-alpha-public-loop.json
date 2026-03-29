@@ -62,5 +62,11 @@
       }
     }
   },
-  "honesty_note": "This example runs against LocalReplayRunner (deterministic shim). It exercises three real stages through RunBridge, can audit declared mutation-surface evidence when provided, but does not execute live commands or claim sealed-holdout coverage."
+  "stability_policy": {
+    "_comment": "Optional: set replay_count >= 2 to enable deterministic repeated-run verdict stability checks.",
+    "replay_count": 0,
+    "min_agreement": 1.0,
+    "max_spread": 0.10
+  },
+  "honesty_note": "This example runs against LocalReplayRunner (deterministic shim). It exercises three real stages through RunBridge, can audit declared mutation-surface evidence when provided, but does not execute live commands or claim sealed-holdout coverage. Verdict stability is available when stability_policy.replay_count > 0."
 }

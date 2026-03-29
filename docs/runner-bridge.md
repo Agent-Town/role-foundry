@@ -359,7 +359,45 @@ The receipt surfaces explicit `blocked_criteria` and `phase_c_acceptance`:
 
 The `integrity_gate` reports `public_regression: pass|fail` but honestly marks `sealed_eval: blocked` and `certification: blocked`.
 
-This loop does not claim sealed-holdout coverage or live execution. Mutation-surface auditing is available when declared diff evidence is present; otherwise it stays honestly blocked. Verdict stability still remains blocked.
+This loop does not claim sealed-holdout coverage or live execution. Mutation-surface auditing is available when declared diff evidence is present; otherwise it stays honestly blocked.
+
+### Verdict stability (deterministic replay only)
+
+When `stability_policy` is present in the request with `replay_count >= 1`, the orchestrator re-runs the baseline-eval + candidate-teacher-eval pair that many extra times through LocalReplayRunner and compares verdicts.
+
+The stability report is added to the receipt as `stability_report` and includes:
+
+- `total_runs` — primary run + replay count
+- `agreement_rate` — fraction of runs sharing the primary verdict label
+- `score_spread` — max − min of `delta_average_score` across all runs
+- per-run verdict details with linked `baseline_run_id` / `candidate_run_id`
+
+Two thresholds gate the pass/fail decision:
+
+| Threshold | Default | Meaning |
+|-----------|---------|---------|
+| `min_agreement` | 1.0 | All runs must agree on the verdict label |
+| `max_spread` | 0.10 | Score deltas must stay within this band |
+
+When the stability report passes:
+- `verdict-stability` is removed from `blocked_criteria`
+- the `honesty_note` explicitly states this only demonstrates **deterministic replay repeatability**, not live or non-deterministic verdict stability
+
+When the stability report fails (or is absent), `verdict-stability` remains blocked — the same as before this feature.
+
+Example request snippet:
+
+```json
+{
+  "stability_policy": {
+    "replay_count": 2,
+    "min_agreement": 1.0,
+    "max_spread": 0.10
+  }
+}
+```
+
+Important: this is **not** a claim about live verdict stability. LocalReplayRunner is deterministic, so repeated runs are expected to agree. The value is in proving that the scoring pipeline itself is repeatable and that no hidden non-determinism creeps into the verdict path.
 
 ## What is still not done
 
