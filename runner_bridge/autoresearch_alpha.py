@@ -11,16 +11,28 @@ sealed/holdout coverage or live execution. Mutation-surface auditing is wired
 through the receipt layer, but it only clears when the run provides a declared
 diff surface strong enough to evaluate honestly.
 
+An optional local private-holdout manifest may be supplied via the
+``private_holdout_manifest`` key in the request payload or the
+``--private-holdout-manifest`` CLI flag.  When present the manifest is loaded
+from a **local, untracked** path and its teacher-only content is hydrated
+into the two teacher-eval stages only (baseline-eval and
+candidate-teacher-eval), inside ``request.private.json`` / teacher-only
+artifacts.  The candidate-student stage stays public-only and exposes only
+a ``sealed_holdout_count`` metadata integer — no teacher-only content leaks.
+
 CLI entrypoint:
     python3 -m runner_bridge.autoresearch_alpha \\
         --request runner_bridge/examples/autoresearch-alpha-public-loop.json \\
-        --artifacts-root runtime/runs
+        --artifacts-root runtime/runs \\
+        --private-holdout-manifest path/to/local-holdout-manifest.json
 
 Honest status:
   - LocalReplayRunner is the only wired backend (deterministic, no real exec).
   - Mutation-surface auditing only uses declared changed-files / diff-stats evidence.
   - Verdict stability: single-pass only; no multi-round convergence yet.
-  - Holdout/private families: explicitly blocked.
+  - Holdout/private families: explicitly blocked for sealed eval / certification.
+  - Private-holdout manifest support is local-only replay coverage, NOT certified
+    sealed eval or live execution.
 """
 
 from __future__ import annotations
@@ -66,6 +78,18 @@ STATIC_BLOCKED_CRITERIA = [
     },
 ]
 
+# When a local private-holdout manifest is attached, sealed-holdout-coverage
+# upgrades to "local-replay-only" — still blocked for certification purposes.
+LOCAL_HOLDOUT_CRITERIA_OVERRIDE = {
+    "id": "sealed-holdout-coverage",
+    "status": "blocked",
+    "reason": (
+        "Local private-holdout manifest attached — teacher-eval stages "
+        "hydrate holdout content for local replay coverage only. "
+        "This is NOT certified sealed eval or live execution."
+    ),
+}
+
 BLOCKED_CRITERIA = [MUTATION_SURFACE_BLOCKED_CRITERION, *STATIC_BLOCKED_CRITERIA]
 
 PHASE_C_ACCEPTANCE = {
@@ -95,6 +119,51 @@ def load_benchmark_pack(pack_path: str | Path | None = None) -> dict[str, Any]:
     if not path.exists():
         raise FileNotFoundError(f"Benchmark pack not found: {path}")
     return json.loads(path.read_text())
+
+
+def load_private_holdout_manifest(manifest_path: str | Path) -> dict[str, Any]:
+    """Load a local private-holdout manifest JSON.
+
+    The manifest must contain ``holdout_scenarios`` (list of teacher-only
+    scenario dicts) and ``meta`` with at least an ``id`` field.  The manifest
+    is local-only and must NOT be checked into the repo.
+
+    Returns the parsed manifest dict.
+    """
+    path = Path(manifest_path)
+    if not path.exists():
+        raise FileNotFoundError(f"Private holdout manifest not found: {path}")
+    manifest = json.loads(path.read_text())
+    if "holdout_scenarios" not in manifest or not isinstance(manifest["holdout_scenarios"], list):
+        raise ValueError("Private holdout manifest must contain a 'holdout_scenarios' list.")
+    if "meta" not in manifest or not isinstance(manifest["meta"], dict):
+        raise ValueError("Private holdout manifest must contain a 'meta' dict.")
+    return manifest
+
+
+def _hydrate_teacher_holdout_scenarios(
+    teacher_eval: dict[str, Any],
+    holdout_scenarios: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Inject holdout scenarios into a teacher_evaluation payload (teacher-only).
+
+    Each holdout scenario is marked ``type: holdout`` and includes teacher-only
+    fields (``holdout_prompt``, ``rubric``).  These are hydrated into
+    ``request.private.json`` / teacher-only artifacts only.
+    """
+    te = deepcopy(teacher_eval)
+    existing = te.get("scenarios", [])
+    for hs in holdout_scenarios:
+        scenario = deepcopy(hs)
+        scenario.setdefault("type", "holdout")
+        scenario.setdefault("passed", False)
+        scenario.setdefault("score", 0.0)
+        scenario.setdefault("teacher_notes", "Private holdout — local replay only.")
+        existing.append(scenario)
+    te["scenarios"] = existing
+    te["private_holdout_injected"] = True
+    te["private_holdout_count"] = len(holdout_scenarios)
+    return te
 
 
 def _utc_now() -> str:
@@ -162,10 +231,21 @@ def _load_stage_packet_runtime(request_cfg: dict[str, Any], run_id: str) -> dict
     return deepcopy(packet_runtime) if isinstance(packet_runtime, dict) else None
 
 
-def _build_blocked_criteria(mutation_surface_audit: dict[str, Any]) -> list[dict[str, Any]]:
+def _build_blocked_criteria(
+    mutation_surface_audit: dict[str, Any],
+    *,
+    private_holdout_manifest: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
     if mutation_surface_audit.get("status") in {"pass", "fail"}:
-        return deepcopy(STATIC_BLOCKED_CRITERIA)
-    return deepcopy(BLOCKED_CRITERIA)
+        base = deepcopy(STATIC_BLOCKED_CRITERIA)
+    else:
+        base = deepcopy(BLOCKED_CRITERIA)
+    if private_holdout_manifest:
+        base = [
+            LOCAL_HOLDOUT_CRITERIA_OVERRIDE if c["id"] == "sealed-holdout-coverage" else c
+            for c in base
+        ]
+    return base
 
 
 def _derive_mutation_surface_audit(
@@ -207,7 +287,11 @@ def _derive_mutation_surface_audit(
     }
 
 
-def _build_honesty_note(mutation_surface_audit: dict[str, Any]) -> str:
+def _build_honesty_note(
+    mutation_surface_audit: dict[str, Any],
+    *,
+    private_holdout_manifest: dict[str, Any] | None = None,
+) -> str:
     mutation_status = mutation_surface_audit.get("status", "unavailable")
     if mutation_status == "pass":
         mutation_line = (
@@ -222,11 +306,21 @@ def _build_honesty_note(mutation_surface_audit: dict[str, Any]) -> str:
         mutation_line = (
             "Mutation-surface auditing is wired, but this run did not provide enough declared diff evidence to clear it."
         )
+
+    holdout_line = "Sealed holdout families are explicitly excluded."
+    if private_holdout_manifest:
+        holdout_count = len(private_holdout_manifest.get("holdout_scenarios", []))
+        holdout_line = (
+            f"A local private-holdout manifest was attached ({holdout_count} holdout scenario(s)). "
+            "Teacher-eval stages hydrate holdout content for local-only replay coverage. "
+            "This is NOT certified sealed eval or live execution."
+        )
+
     return (
         "This is a public-regression autoresearch alpha loop with three real stages "
         "executed through RunBridge. "
         "The backend is LocalReplayRunner (deterministic shim, not live execution). "
-        "Sealed holdout families are explicitly excluded. "
+        f"{holdout_line} "
         f"{mutation_line} "
         "Verdict stability is still single-pass only."
     )
@@ -597,6 +691,7 @@ def build_integrity_gate(
     integrity_policy: dict[str, Any] | None = None,
     blocked_criteria: list[dict[str, Any]] | None = None,
     honesty_note: str = "",
+    private_holdout_manifest: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Evaluate machine-readable integrity gates for promotion enforcement."""
     integrity_policy = integrity_policy or {}
@@ -641,10 +736,26 @@ def build_integrity_gate(
         },
     }
 
+    # sealed_holdout_count is metadata (just a count); it is allowed when a
+    # private-holdout manifest is attached.  Content (prompts / rubrics) must
+    # never leak into the student stage regardless.
+    prompt_pack_holdout_count = int(student_prompt_pack.get("sealed_holdout_count", 0) or 0)
+    student_view_holdout_count = int(student_view.get("sealed_holdout_count", 0) or 0)
+    holdout_count_ok = (
+        prompt_pack_holdout_count == 0 and student_view_holdout_count == 0
+    ) if not private_holdout_manifest else True  # count-only metadata is allowed
+
+    # Content leakage checks (always enforced)
+    student_view_scenarios = student_view.get("scenarios", student_view.get("visible_scenarios", []))
+    holdout_content_leaked = any(
+        isinstance(s, dict) and s.get("type") == "holdout" and (s.get("holdout_prompt") or s.get("rubric"))
+        for s in (student_view_scenarios if isinstance(student_view_scenarios, list) else [])
+    )
+
     no_holdout_leakage = (
         "teacher_evaluation" not in student_payload
-        and int(student_prompt_pack.get("sealed_holdout_count", 0) or 0) == 0
-        and int(student_view.get("sealed_holdout_count", 0) or 0) == 0
+        and holdout_count_ok
+        and not holdout_content_leaked
         and "teacher_output" not in student_bundle
     )
     holdout_gate = {
@@ -656,9 +767,11 @@ def build_integrity_gate(
         ),
         "detail": {
             "request_has_teacher_evaluation": "teacher_evaluation" in student_payload,
-            "prompt_pack_sealed_holdout_count": int(student_prompt_pack.get("sealed_holdout_count", 0) or 0),
-            "student_view_sealed_holdout_count": int(student_view.get("sealed_holdout_count", 0) or 0),
+            "prompt_pack_sealed_holdout_count": prompt_pack_holdout_count,
+            "student_view_sealed_holdout_count": student_view_holdout_count,
             "teacher_output_present": "teacher_output" in student_bundle,
+            "holdout_content_leaked": holdout_content_leaked,
+            "private_holdout_manifest_attached": private_holdout_manifest is not None,
         },
     }
 
@@ -854,12 +967,18 @@ def run_autoresearch_alpha(
     benchmark_pack_path: str | Path | None = None,
     previous_iteration: dict[str, Any] | None = None,
     max_episodes: int | None = None,
+    private_holdout_manifest_path: str | Path | None = None,
 ) -> dict[str, Any]:
     """Execute one autoresearch alpha iteration — real three-stage loop.
 
     Returns a machine-readable receipt with stage lifecycle, comparison
     verdict, score deltas, integrity gate status, artifact coverage,
     and explicit blocked criteria.
+
+    If *private_holdout_manifest_path* is provided (or the request payload
+    contains ``private_holdout_manifest``), teacher-only holdout content is
+    hydrated into the two teacher-eval stages.  The candidate-student stage
+    stays public-only and exposes only ``sealed_holdout_count`` metadata.
     """
     started_at = _utc_now()
 
@@ -872,11 +991,20 @@ def run_autoresearch_alpha(
         stages_cfg = cfg.get("stages", {})
         comparison_policy = cfg.get("comparison_policy", {})
         integrity_policy = cfg.get("integrity_policy", {})
+        if not private_holdout_manifest_path:
+            private_holdout_manifest_path = cfg.get("private_holdout_manifest")
     else:
         run_id_prefix = run_id_prefix or "autoresearch-alpha"
         stages_cfg = {}
         comparison_policy = {}
         integrity_policy = {}
+
+    # --- load private holdout manifest if provided ---
+    private_holdout_manifest: dict[str, Any] | None = None
+    holdout_scenarios: list[dict[str, Any]] = []
+    if private_holdout_manifest_path:
+        private_holdout_manifest = load_private_holdout_manifest(private_holdout_manifest_path)
+        holdout_scenarios = private_holdout_manifest.get("holdout_scenarios", [])
 
     pack = load_benchmark_pack(benchmark_pack_path)
     episodes = pack.get("episodes", [])
@@ -935,6 +1063,12 @@ def run_autoresearch_alpha(
         episodes=episodes,
         request_cfg=baseline_request_cfg,
     )
+    # Hydrate holdout scenarios into baseline teacher eval (teacher-only)
+    if holdout_scenarios and "teacher_evaluation" in baseline_request.extras:
+        baseline_request.extras["teacher_evaluation"] = _hydrate_teacher_holdout_scenarios(
+            baseline_request.extras["teacher_evaluation"],
+            holdout_scenarios,
+        )
     baseline_result = bridge.run(baseline_request)
 
     baseline_scorecard = baseline_result.get("scorecard", {})
@@ -964,6 +1098,9 @@ def run_autoresearch_alpha(
         request_cfg=student_request_cfg,
         public_failure_themes=public_failure_themes,
     )
+    # candidate-student stays public-only; expose only sealed_holdout_count metadata
+    if holdout_scenarios and "student_prompt_pack" in student_request.extras:
+        student_request.extras["student_prompt_pack"]["sealed_holdout_count"] = len(holdout_scenarios)
     student_result = bridge.run(student_request)
 
     records[1] = _advance_record(
@@ -989,6 +1126,12 @@ def run_autoresearch_alpha(
         baseline_aggregate_score=baseline_aggregate,
         baseline_run_id=baseline_run_id,
     )
+    # Hydrate holdout scenarios into candidate teacher eval (teacher-only)
+    if holdout_scenarios and "teacher_evaluation" in teacher_eval_request.extras:
+        teacher_eval_request.extras["teacher_evaluation"] = _hydrate_teacher_holdout_scenarios(
+            teacher_eval_request.extras["teacher_evaluation"],
+            holdout_scenarios,
+        )
     teacher_eval_result = bridge.run(teacher_eval_request)
 
     teacher_scorecard = teacher_eval_result.get("scorecard", {})
@@ -1030,8 +1173,14 @@ def run_autoresearch_alpha(
         student_request=student_request,
         student_result=student_result,
     )
-    blocked_criteria = _build_blocked_criteria(mutation_surface_audit)
-    honesty_note = _build_honesty_note(mutation_surface_audit)
+    blocked_criteria = _build_blocked_criteria(
+        mutation_surface_audit,
+        private_holdout_manifest=private_holdout_manifest,
+    )
+    honesty_note = _build_honesty_note(
+        mutation_surface_audit,
+        private_holdout_manifest=private_holdout_manifest,
+    )
     integrity_gate = build_integrity_gate(
         verdict=verdict,
         artifact_coverage=artifact_coverage,
@@ -1042,6 +1191,7 @@ def run_autoresearch_alpha(
         integrity_policy=integrity_policy,
         blocked_criteria=blocked_criteria,
         honesty_note=honesty_note,
+        private_holdout_manifest=private_holdout_manifest,
     )
     promotion_decision = build_promotion_decision(
         comparison=comparison,
@@ -1108,6 +1258,23 @@ def run_autoresearch_alpha(
         "honesty_note": honesty_note,
     }
 
+    # --- local private holdout summary ---
+    if private_holdout_manifest:
+        manifest_meta = private_holdout_manifest.get("meta", {})
+        receipt["local_private_holdout"] = {
+            "manifest_id": manifest_meta.get("id", "unknown"),
+            "holdout_scenario_count": len(holdout_scenarios),
+            "hydrated_stages": ["baseline-eval", "candidate-teacher-eval"],
+            "student_stage_exposure": "sealed_holdout_count metadata only",
+            "honesty_note": (
+                "This is local-only replay coverage using a private holdout manifest. "
+                "It is NOT certified sealed eval or live execution. "
+                "Teacher-only holdout content was hydrated into baseline-eval and "
+                "candidate-teacher-eval via request.private.json only."
+            ),
+            "integrity_status": "local-replay-only",
+        }
+
     # --- Write top-level receipt + comparison summary ---
     receipt_path = bridge.artifacts_root / "autoresearch-alpha.json"
     receipt_path.write_text(json.dumps(receipt, indent=2))
@@ -1139,6 +1306,11 @@ def build_parser() -> argparse.ArgumentParser:
         default="runtime/runs",
         help="Directory for run artifacts",
     )
+    parser.add_argument(
+        "--private-holdout-manifest",
+        default=None,
+        help="Path to a local private-holdout manifest JSON (untracked, teacher-only).",
+    )
     return parser
 
 
@@ -1157,6 +1329,7 @@ def main(argv: list[str] | None = None) -> int:
             request_payload=request_payload,
             bridge=bridge,
             artifacts_root=args.artifacts_root,
+            private_holdout_manifest_path=args.private_holdout_manifest,
         )
     except Exception as exc:
         print(f"error: {exc}", file=sys.stderr)
