@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "id": "private-holdout-pack-template",
+    "version": "0.1.0",
+    "description": "Template for a local-only private-holdout pack. This file defines the manifest schema and separation contract. It contains zero teacher-only prompt or rubric content.",
+    "honesty_note": "This is a structural template, not a real holdout pack. Real holdout packs are authored locally by teachers and must never be committed to version control.",
+    "spec": "specs/012-private-holdout-pack.md",
+    "doc": "docs/private-holdout-authoring.md"
+  },
+  "schema": {
+    "required_top_level_fields": [
+      "meta",
+      "holdout_families",
+      "integrity_policy",
+      "evaluation_contract_ref"
+    ],
+    "meta_required_fields": [
+      "id",
+      "version",
+      "role_id",
+      "created_by",
+      "created_at",
+      "description"
+    ],
+    "holdout_family_required_fields": [
+      "id",
+      "title",
+      "visibility",
+      "readiness_state",
+      "episode_count"
+    ],
+    "holdout_episode_required_fields": [
+      "id",
+      "family_id",
+      "title",
+      "visibility",
+      "teacher_only"
+    ]
+  },
+  "constraints": {
+    "visibility_must_be": "teacher_only",
+    "teacher_only_must_be": true,
+    "student_visible_must_be": false,
+    "tracked_by_git": false,
+    "local_only": true,
+    "default_local_directory": "local/private-holdout-packs/",
+    "forbidden_in_tracked_files": [
+      "teacher_prompt",
+      "holdout_prompt",
+      "scoring_rubric",
+      "judge-only prompt",
+      "grading rubric",
+      "private rubric text",
+      "sealed prompt text"
+    ]
+  },
+  "separation_contract": {
+    "public_pack_path": "benchmarks/public-pack-v1/",
+    "private_pack_local_path": "local/private-holdout-packs/",
+    "overlap_policy": "zero_overlap",
+    "family_id_namespace": {
+      "public": "rf.*.public.*",
+      "private": "rf.*.holdout.*"
+    },
+    "promotion_direction": "private holdout failure themes may promote into public curriculum tasks, but private prompt text must never appear in tracked files",
+    "evaluation_contract_shared": true,
+    "evaluation_contract_path": "data/curriculum/frontend-product-engineer-evaluation-contract.v1.json"
+  },
+  "example_holdout_family_shape": {
+    "_comment": "This is a structural example only. No real holdout content is present.",
+    "id": "rf.frontend-product-engineer.holdout.EXAMPLE",
+    "title": "EXAMPLE — replace with real holdout family title",
+    "visibility": "teacher_only",
+    "readiness_state": "draft",
+    "episode_count": 0,
+    "episodes": []
+  }
+}

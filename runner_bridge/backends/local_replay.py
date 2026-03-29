@@ -388,7 +388,7 @@ def main(argv: list[str] | None = None) -> int:
             "actor": {"id": "candidate-student", "name": "Candidate Student", "agent_role": "student"},
             "episode_count": student_prompt_pack.get("episode_count", 0),
             "episodes": student_prompt_pack.get("episodes", []),
-            "sealed_holdout_count": 0,
+            "sealed_holdout_count": int(student_prompt_pack.get("sealed_holdout_count", 0) or 0),
             "public_failure_themes_consumed": student_prompt_pack.get("public_failure_themes", []),
             "prompt_summary": student_prompt_pack.get("prompt_summary", ""),
         }

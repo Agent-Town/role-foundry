@@ -165,6 +165,7 @@ Using different model families for building and judging reduces correlated self-
 - `docs/public-benchmark-pack-v1.md` — public-safe benchmark pack scope and blocked families
 - `docs/frontend-product-engineer-seed-curriculum.md` — public seed-task registry, packet schema, and audit commands for the frozen Frontend/Product Engineer role
 - `docs/curriculum-operating-split.md` — teacher vs student responsibilities, canonical contract surface, and honest implemented-vs-future status
+- `docs/private-holdout-authoring.md` — teacher guide for authoring local-only private holdout packs with zero tracked content
 - `docs/conversation-log.md` — curated build log for the submission
 - `docs/agent-town-connection.md` — Agent Town relationship
 - `docs/synthesis-hackathon-ideation.md` — ideation and ranking
@@ -175,6 +176,7 @@ Using different model families for building and judging reduces correlated self-
 - `specs/008-public-benchmark-pack-v1.md` — public benchmark pack contract for the current alpha spine
 - `specs/009-clawith-readiness-probe.md` — adapter-first upstream readiness probe
 - `specs/010-live-ui-read-model.md` — read-only browser adapter for configured live/read-model exports
+- `specs/012-private-holdout-pack.md` — separation contract and template for local-only private holdout packs
 - `specs/014-frontend-product-engineer-20-task-curriculum.md` — TDD-first 20-task curriculum contract for the first Frontend/Product Engineer apprentice
 
 ## License

@@ -9,12 +9,14 @@ from pathlib import Path
 
 from runner_bridge.autoresearch_alpha import (
     BLOCKED_CRITERIA,
+    LOCAL_HOLDOUT_CRITERIA_OVERRIDE,
     PHASE_C_ACCEPTANCE,
     STAGE_NAMES,
     build_comparison_summary,
     build_promotion_decision,
     build_stability_report,
     load_benchmark_pack,
+    load_private_holdout_manifest,
     run_autoresearch_alpha,
 )
 from runner_bridge.bridge import RunBridge
@@ -554,6 +556,303 @@ class AutoresearchAlphaLegacyCompatTests(unittest.TestCase):
         for stage in STAGE_NAMES:
             self.assertEqual(receipt["stages"][stage]["status"], "completed")
 
+class AutoresearchAlphaPrivateHoldoutTests(unittest.TestCase):
+    """Private-holdout manifest: local-only replay coverage, NOT certified sealed eval."""
+
+    HOLDOUT_MANIFEST = {
+        "meta": {"id": "test-holdout-manifest-v1", "version": "1.0.0"},
+        "holdout_scenarios": [
+            {
+                "id": "holdout-scenario-alpha",
+                "title": "Alpha holdout scenario",
+                "type": "holdout",
+                "difficulty": "hard",
+                "holdout_prompt": "SECRET teacher-only holdout prompt text",
+                "rubric": "SECRET rubric for grading",
+                "passed": False,
+                "score": 0.0,
+                "teacher_notes": "Private holdout — local replay only.",
+            },
+            {
+                "id": "holdout-scenario-beta",
+                "title": "Beta holdout scenario",
+                "type": "holdout",
+                "difficulty": "hard",
+                "holdout_prompt": "Another SECRET holdout prompt",
+                "rubric": "Another SECRET rubric",
+                "passed": False,
+                "score": 0.0,
+                "teacher_notes": "Private holdout — local replay only.",
+            },
+        ],
+    }
+
+    def setUp(self):
+        self._tmpdir = tempfile.TemporaryDirectory()
+        self.artifacts_root = Path(self._tmpdir.name) / "artifacts"
+        # Write manifest to a temp file (local, untracked)
+        self._manifest_path = Path(self._tmpdir.name) / "holdout-manifest.json"
+        self._manifest_path.write_text(json.dumps(self.HOLDOUT_MANIFEST, indent=2))
+
+    def tearDown(self):
+        self._tmpdir.cleanup()
+
+    def _run_with_holdout(self, *, via_payload: bool = False) -> dict:
+        bridge = RunBridge(artifacts_root=str(self.artifacts_root))
+        config = json.loads(EXAMPLE_CONFIG.read_text())
+        if via_payload:
+            config["private_holdout_manifest"] = str(self._manifest_path)
+            return run_autoresearch_alpha(request_payload=config, bridge=bridge)
+        return run_autoresearch_alpha(
+            request_payload=config,
+            bridge=bridge,
+            private_holdout_manifest_path=str(self._manifest_path),
+        )
+
+    def test_load_private_holdout_manifest_validates_shape(self):
+        manifest = load_private_holdout_manifest(self._manifest_path)
+        self.assertEqual(len(manifest["holdout_scenarios"]), 2)
+        self.assertEqual(manifest["meta"]["id"], "test-holdout-manifest-v1")
+
+    def test_load_private_holdout_manifest_rejects_missing_file(self):
+        with self.assertRaises(FileNotFoundError):
+            load_private_holdout_manifest("/nonexistent/path.json")
+
+    def test_load_private_holdout_manifest_rejects_invalid_shape(self):
+        bad_manifest = Path(self._tmpdir.name) / "bad.json"
+        bad_manifest.write_text(json.dumps({"meta": {}}))
+        with self.assertRaises(ValueError):
+            load_private_holdout_manifest(bad_manifest)
+
+    def test_holdout_hydrated_into_baseline_eval_private_request(self):
+        """baseline-eval request.private.json must contain holdout scenarios."""
+        receipt = self._run_with_holdout()
+        prefix = receipt["run_id_prefix"]
+        baseline_dir = self.artifacts_root / f"{prefix}-baseline-eval"
+        private_request = json.loads((baseline_dir / "request.private.json").read_text())
+        te = private_request["teacher_evaluation"]
+        self.assertTrue(te.get("private_holdout_injected"))
+        self.assertEqual(te["private_holdout_count"], 2)
+        holdout_ids = [s["id"] for s in te["scenarios"] if s.get("type") == "holdout"]
+        self.assertIn("holdout-scenario-alpha", holdout_ids)
+        self.assertIn("holdout-scenario-beta", holdout_ids)
+
+    def test_holdout_hydrated_into_candidate_teacher_eval_private_request(self):
+        """candidate-teacher-eval request.private.json must contain holdout scenarios."""
+        receipt = self._run_with_holdout()
+        prefix = receipt["run_id_prefix"]
+        teacher_dir = self.artifacts_root / f"{prefix}-candidate-teacher-eval"
+        private_request = json.loads((teacher_dir / "request.private.json").read_text())
+        te = private_request["teacher_evaluation"]
+        self.assertTrue(te.get("private_holdout_injected"))
+        self.assertEqual(te["private_holdout_count"], 2)
+        holdout_ids = [s["id"] for s in te["scenarios"] if s.get("type") == "holdout"]
+        self.assertIn("holdout-scenario-alpha", holdout_ids)
+        self.assertIn("holdout-scenario-beta", holdout_ids)
+
+    def test_student_stage_public_only_no_holdout_content(self):
+        """candidate-student must NOT contain holdout prompt/rubric text."""
+        receipt = self._run_with_holdout()
+        prefix = receipt["run_id_prefix"]
+        student_dir = self.artifacts_root / f"{prefix}-candidate-student"
+
+        # request.json (public) must not have holdout content
+        public_request = json.loads((student_dir / "request.json").read_text())
+        public_text = json.dumps(public_request)
+        self.assertNotIn("SECRET teacher-only holdout prompt", public_text)
+        self.assertNotIn("SECRET rubric", public_text)
+        self.assertNotIn("teacher_evaluation", public_request)
+
+        # request.private.json must not have teacher_evaluation either
+        private_request = json.loads((student_dir / "request.private.json").read_text())
+        self.assertNotIn("teacher_evaluation", private_request)
+
+        # student_view in artifact bundle must not leak holdout content
+        bundle = json.loads((student_dir / "artifact-bundle.json").read_text())
+        self.assertNotIn("teacher_output", bundle)
+        sv = bundle["student_view"]
+        sv_text = json.dumps(sv)
+        self.assertNotIn("SECRET", sv_text)
+        self.assertNotIn("holdout_prompt", sv_text)
+        # Check no holdout scenario objects leaked (not just substring "rubric"
+        # which may appear in public episode text)
+        holdout_scenarios_in_sv = [
+            s for s in sv.get("episodes", [])
+            if isinstance(s, dict) and s.get("type") == "holdout"
+        ]
+        self.assertEqual(len(holdout_scenarios_in_sv), 0, "holdout scenarios leaked into student_view")
+
+    def test_student_stage_exposes_sealed_holdout_count_metadata(self):
+        """candidate-student student_view must expose sealed_holdout_count."""
+        receipt = self._run_with_holdout()
+        prefix = receipt["run_id_prefix"]
+        student_dir = self.artifacts_root / f"{prefix}-candidate-student"
+        bundle = json.loads((student_dir / "artifact-bundle.json").read_text())
+        sv = bundle["student_view"]
+        self.assertEqual(sv["sealed_holdout_count"], 2)
+
+    def test_request_json_never_contains_holdout_text(self):
+        """request.json (public artifact) must never contain holdout prompt/rubric."""
+        receipt = self._run_with_holdout()
+        prefix = receipt["run_id_prefix"]
+        for suffix in ("baseline-eval", "candidate-student", "candidate-teacher-eval"):
+            run_dir = self.artifacts_root / f"{prefix}-{suffix}"
+            public_request = json.loads((run_dir / "request.json").read_text())
+            public_text = json.dumps(public_request)
+            self.assertNotIn("SECRET teacher-only holdout prompt", public_text, f"holdout leaked in {suffix}/request.json")
+            self.assertNotIn("SECRET rubric", public_text, f"rubric leaked in {suffix}/request.json")
+
+    def test_receipt_has_local_private_holdout_summary(self):
+        """Receipt must include local_private_holdout with honest summary."""
+        receipt = self._run_with_holdout()
+        self.assertIn("local_private_holdout", receipt)
+        lph = receipt["local_private_holdout"]
+        self.assertEqual(lph["manifest_id"], "test-holdout-manifest-v1")
+        self.assertEqual(lph["holdout_scenario_count"], 2)
+        self.assertEqual(lph["hydrated_stages"], ["baseline-eval", "candidate-teacher-eval"])
+        self.assertEqual(lph["student_stage_exposure"], "sealed_holdout_count metadata only")
+        self.assertIn("local-only replay coverage", lph["honesty_note"])
+        self.assertIn("NOT certified sealed eval", lph["honesty_note"])
+        self.assertEqual(lph["integrity_status"], "local-replay-only")
+
+    def test_honesty_note_mentions_local_holdout(self):
+        """Honesty note must mention local private-holdout manifest."""
+        receipt = self._run_with_holdout()
+        self.assertIn("local private-holdout manifest", receipt["honesty_note"].lower())
+        self.assertIn("NOT certified sealed eval", receipt["honesty_note"])
+        self.assertIn("local-only replay coverage", receipt["honesty_note"].lower())
+
+    def test_blocked_criteria_overrides_sealed_holdout_coverage(self):
+        """sealed-holdout-coverage criterion must use local holdout override."""
+        receipt = self._run_with_holdout()
+        holdout_criteria = [
+            c for c in receipt["blocked_criteria"]
+            if c["id"] == "sealed-holdout-coverage"
+        ]
+        self.assertEqual(len(holdout_criteria), 1)
+        self.assertEqual(holdout_criteria[0]["status"], "blocked")
+        self.assertIn("Local private-holdout manifest attached", holdout_criteria[0]["reason"])
+
+    def test_integrity_gate_no_holdout_leakage_passes(self):
+        """no_holdout_leakage gate must pass (count metadata allowed, no content leak)."""
+        receipt = self._run_with_holdout()
+        gate = receipt["integrity_gate"]["gates"]["no_holdout_leakage"]
+        self.assertEqual(gate["status"], "pass")
+        self.assertTrue(gate["detail"]["private_holdout_manifest_attached"])
+        self.assertFalse(gate["detail"]["holdout_content_leaked"])
+
+    def test_sealed_eval_and_certification_remain_blocked(self):
+        """Sealed eval and certification must remain blocked even with local holdout."""
+        receipt = self._run_with_holdout()
+        self.assertEqual(receipt["integrity_gate"]["sealed_eval"], "blocked")
+        self.assertEqual(receipt["integrity_gate"]["certification"], "blocked")
+
+    def test_private_holdout_via_payload_key(self):
+        """private_holdout_manifest key in request payload works like CLI arg."""
+        receipt = self._run_with_holdout(via_payload=True)
+        self.assertIn("local_private_holdout", receipt)
+        self.assertEqual(receipt["local_private_holdout"]["holdout_scenario_count"], 2)
+
+    def test_without_holdout_no_local_private_holdout_in_receipt(self):
+        """Without holdout manifest, receipt must NOT have local_private_holdout."""
+        bridge = RunBridge(artifacts_root=str(self.artifacts_root))
+        config = json.loads(EXAMPLE_CONFIG.read_text())
+        receipt = run_autoresearch_alpha(request_payload=config, bridge=bridge)
+        self.assertNotIn("local_private_holdout", receipt)
+
+    def test_cli_with_private_holdout_manifest(self):
+        """CLI --private-holdout-manifest flag must work."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            artifacts_root = Path(tmpdir) / "artifacts"
+            manifest_path = Path(tmpdir) / "holdout.json"
+            manifest_path.write_text(json.dumps(self.HOLDOUT_MANIFEST, indent=2))
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "runner_bridge.autoresearch_alpha",
+                    "--request",
+                    str(EXAMPLE_CONFIG),
+                    "--artifacts-root",
+                    str(artifacts_root),
+                    "--private-holdout-manifest",
+                    str(manifest_path),
+                ],
+                capture_output=True,
+                text=True,
+                cwd=ROOT,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            receipt = json.loads(result.stdout)
+            self.assertIn("local_private_holdout", receipt)
+            self.assertEqual(receipt["local_private_holdout"]["holdout_scenario_count"], 2)
+
+class AutoresearchAlphaReconciledAlphaSpineTests(unittest.TestCase):
+    """Combined-path checks: local private holdout + deterministic verdict stability."""
+
+    HOLDOUT_MANIFEST = {
+        "meta": {"id": "reconciled-holdout-v1", "version": "1.0.0"},
+        "holdout_scenarios": [
+            {
+                "id": "holdout-scenario-reconcile",
+                "title": "Reconciled holdout scenario",
+                "type": "holdout",
+                "difficulty": "hard",
+                "holdout_prompt": "SECRET reconcile-only prompt",
+                "rubric": "SECRET reconcile-only rubric",
+                "passed": False,
+                "score": 0.0,
+                "teacher_notes": "Private holdout — local replay only.",
+            }
+        ],
+    }
+
+    def setUp(self):
+        self._tmpdir = tempfile.TemporaryDirectory()
+        self.artifacts_root = Path(self._tmpdir.name) / "artifacts"
+        self._manifest_path = Path(self._tmpdir.name) / "holdout-manifest.json"
+        self._manifest_path.write_text(json.dumps(self.HOLDOUT_MANIFEST, indent=2))
+
+    def tearDown(self):
+        self._tmpdir.cleanup()
+
+    def test_holdout_and_stability_share_the_same_honest_local_replay_path(self):
+        bridge = RunBridge(artifacts_root=str(self.artifacts_root))
+        config = json.loads(EXAMPLE_CONFIG.read_text())
+        config["private_holdout_manifest"] = str(self._manifest_path)
+        config["stability_policy"] = {
+            "replay_count": 2,
+            "min_agreement": 1.0,
+            "max_spread": 0.10,
+        }
+
+        receipt = run_autoresearch_alpha(request_payload=config, bridge=bridge)
+
+        self.assertIn("local_private_holdout", receipt)
+        self.assertIn("stability_report", receipt)
+        self.assertEqual(receipt["stability_report"]["status"], "pass")
+
+        blocked = {item["id"]: item for item in receipt["blocked_criteria"]}
+        self.assertNotIn("verdict-stability", blocked)
+        self.assertIn("sealed-holdout-coverage", blocked)
+        self.assertIn("Local private-holdout manifest attached", blocked["sealed-holdout-coverage"]["reason"])
+
+        self.assertIn("local private-holdout manifest", receipt["honesty_note"].lower())
+        self.assertIn("deterministic replay repeatability", receipt["honesty_note"])
+        self.assertEqual(receipt["promotion_decision"]["status"], "blocked")
+        self.assertEqual(receipt["integrity_gate"]["sealed_eval"], "blocked")
+        self.assertEqual(receipt["integrity_gate"]["certification"], "blocked")
+
+        replay_verdicts = receipt["stability_report"]["verdicts"][1:]
+        self.assertEqual(len(replay_verdicts), 2)
+        for verdict in replay_verdicts:
+            for run_id in (verdict["baseline_run_id"], verdict["candidate_run_id"]):
+                private_request = json.loads(
+                    (self.artifacts_root / run_id / "request.private.json").read_text()
+                )
+                teacher_eval = private_request["teacher_evaluation"]
+                self.assertTrue(teacher_eval["private_holdout_injected"])
+                self.assertEqual(teacher_eval["private_holdout_count"], 1)
 
 class AutoresearchAlphaVerdictStabilityTests(unittest.TestCase):
     """Verdict stability — deterministic repeated-run comparison on LocalReplayRunner."""
@@ -763,7 +1062,6 @@ class AutoresearchAlphaStabilityReportUnitTests(unittest.TestCase):
         self.assertEqual(report["status"], "fail")
         self.assertFalse(report["checks"]["spread_ok"])
         self.assertGreater(report["score_spread"], 0.10)
-
 
 if __name__ == "__main__":
     unittest.main()

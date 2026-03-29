@@ -361,6 +361,18 @@ The `integrity_gate` reports `public_regression: pass|fail` but honestly marks `
 
 This loop does not claim sealed-holdout coverage or live execution. Mutation-surface auditing is available when declared diff evidence is present; otherwise it stays honestly blocked.
 
+### Local private holdout seam (still blocked for certification)
+
+The same alpha loop can optionally take a local-only private holdout manifest via the request payload (`private_holdout_manifest`) or the CLI flag (`--private-holdout-manifest`).
+
+When present:
+- baseline-eval and candidate-teacher-eval hydrate the teacher-only holdout scenarios into `request.private.json`
+- candidate-student stays public-only and only receives `sealed_holdout_count` metadata
+- `sealed-holdout-coverage` remains **blocked** and is relabeled as local replay coverage only
+- `sealed_eval` and `certification` remain **blocked**
+
+This is a separation seam for local replay coverage, not a claim that sealed eval is solved.
+
 ### Verdict stability (deterministic replay only)
 
 When `stability_policy` is present in the request with `replay_count >= 1`, the orchestrator re-runs the baseline-eval + candidate-teacher-eval pair that many extra times through LocalReplayRunner and compares verdicts.
